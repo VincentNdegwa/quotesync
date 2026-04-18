@@ -4,7 +4,7 @@ use App\Models\Role;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 
-test('workspace members settings page is displayed', function () {
+test('teams management page is displayed', function () {
     $user = User::factory()->create();
     $workspace = $user->currentWorkspace;
 
@@ -25,10 +25,10 @@ test('workspace members settings page is displayed', function () {
     ]);
 
     $this->actingAs($user)
-        ->get(route('members.edit'))
+        ->get(route('teams.index'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('settings/Members')
+            ->component('teams/Index')
             ->where('workspace.id', $workspace->id)
             ->where('canInvite', true)
             ->has('members', 2)

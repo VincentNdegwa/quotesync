@@ -17,7 +17,7 @@ defineOptions({
     },
 });
 
-const props = defineProps<{
+defineProps<{
     email?: string;
     invitation?: string;
 }>();
@@ -57,17 +57,17 @@ const props = defineProps<{
                     :tabindex="2"
                     autocomplete="email"
                     name="email"
-                    v-model="props.email"
+                    :value="email"
                     placeholder="email@example.com"
                 />
                 <InputError :message="errors.email" />
             </div>
 
             <input
-                v-if="props.invitation"
+                v-if="invitation"
                 type="hidden"
                 name="invitation"
-                :value="props.invitation"
+                :value="invitation"
             />
 
             <div class="grid gap-2">

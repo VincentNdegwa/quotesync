@@ -9,6 +9,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Invitations\InvitationService;
+use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
@@ -17,7 +18,10 @@ class CreateNewUser implements CreatesNewUsers
 {
     use PasswordValidationRules, ProfileValidationRules;
 
-    public function __construct(private InvitationService $invitationService) {}
+    public function __construct(
+        private InvitationService $invitationService,
+        private WorkspaceSettingsService $workspaceSettingsService,
+    ) {}
 
     /**
      * Validate and create a newly registered user.
@@ -45,6 +49,7 @@ class CreateNewUser implements CreatesNewUsers
             ]);
 
             $workspace->forceFill(['owner_id' => $user->id])->save();
+            $this->workspaceSettingsService->initializeWorkspace($workspace);
 
             $adminRole = Role::query()->firstOrCreate(
                 ['name' => 'admin', 'workspace_id' => null],

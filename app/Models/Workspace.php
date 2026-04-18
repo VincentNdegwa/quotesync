@@ -45,10 +45,30 @@ class Workspace extends LaratrustTeam
     }
 
     /**
+     * Get key-value settings for this workspace.
+     *
+     * @return HasMany<WorkspaceSetting, $this>
+     */
+    public function settings(): HasMany
+    {
+        return $this->hasMany(WorkspaceSetting::class);
+    }
+
+    /**
      * Route notifications to the workspace owner by default.
      */
     public function routeNotificationForMail(Notification $notification): array|string|null
     {
         return $this->owner?->email;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'settings_onboarded_at' => 'datetime',
+        ];
     }
 }

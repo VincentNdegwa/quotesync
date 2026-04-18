@@ -1,9 +1,10 @@
 <?php
 
 use App\Http\Controllers\InvitationController;
-use App\Http\Controllers\Settings\MembersController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
+use App\Http\Controllers\Settings\WorkspaceOnboardingController;
+use App\Http\Controllers\Settings\WorkspaceSettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->group(function () {
@@ -17,15 +18,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('settings/security', [SecurityController::class, 'edit'])->name('security.edit');
-    Route::get('settings/members', [MembersController::class, 'edit'])->name('members.edit');
+    Route::get('business-setup/onboarding', [WorkspaceOnboardingController::class, 'show'])
+        ->name('business-setup.onboarding');
+    Route::put('business-setup/onboarding', [WorkspaceOnboardingController::class, 'complete'])
+        ->name('business-setup.onboarding.complete');
+    Route::put('business-setup/onboarding/{group}', [WorkspaceOnboardingController::class, 'update'])
+        ->name('business-setup.onboarding.update');
+    Route::get('business-setup/{group?}', [WorkspaceSettingsController::class, 'show'])
+        ->name('business-setup.show');
+    Route::put('business-setup/{group}', [WorkspaceSettingsController::class, 'update'])
+        ->name('business-setup.update');
 
     Route::put('settings/password', [SecurityController::class, 'update'])
         ->middleware('throttle:6,1')
         ->name('user-password.update');
 
-    Route::post('settings/invitations', [InvitationController::class, 'store'])
+    Route::post('teams/invitations', [InvitationController::class, 'store'])
         ->name('invitations.store');
-    Route::delete('settings/invitations/{invitation}', [InvitationController::class, 'destroy'])
+    Route::delete('teams/invitations/{invitation}', [InvitationController::class, 'destroy'])
         ->name('invitations.destroy');
 
     Route::inertia('settings/appearance', 'settings/Appearance')->name('appearance.edit');

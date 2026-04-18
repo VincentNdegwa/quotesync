@@ -81,7 +81,7 @@ class MembersController extends Controller
 
         $canInvite = $workspace->owner_id === $user->id || $user->hasRole('admin', $workspace);
 
-        return Inertia::render('settings/Members', [
+        return Inertia::render('teams/Index', [
             'workspace' => [
                 'id' => $workspace->id,
                 'name' => $workspace->name,

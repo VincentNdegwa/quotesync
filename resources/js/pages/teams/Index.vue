@@ -21,8 +21,8 @@ defineOptions({
     layout: {
         breadcrumbs: [
             {
-                title: 'Members',
-                href: '/settings/members',
+                title: 'Teams',
+                href: '/teams',
             },
         ],
     },
@@ -30,22 +30,22 @@ defineOptions({
 
 const roleDisplay = (role: WorkspaceRoleOption): string => role.display_name ?? role.name;
 
-const inviteAction = '/settings/invitations';
+const inviteAction = '/teams/invitations';
 
 const cancelInvitation = (code: string): void => {
-    router.delete(`/settings/invitations/${code}`, {
+    router.delete(`/teams/invitations/${code}`, {
         preserveScroll: true,
     });
 };
 </script>
 
 <template>
-    <Head title="Members" />
+    <Head title="Teams" />
 
     <div class="space-y-6">
         <Heading
             variant="small"
-            title="Members"
+            title="Teams"
             :description="`Manage members and invitations for ${workspace.display_name ?? workspace.name}`"
         />
 

@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -50,6 +51,8 @@ class UserFactory extends Factory
             ]);
 
             $workspace->forceFill(['owner_id' => $user->id])->save();
+
+            app(WorkspaceSettingsService::class)->initializeWorkspace($workspace, markOnboarded: true);
 
             $adminRole = Role::query()->firstOrCreate(
                 ['name' => 'admin', 'workspace_id' => null],

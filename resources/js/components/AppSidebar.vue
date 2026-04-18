@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { LayoutGrid } from 'lucide-vue-next';
+import { Building2, LayoutGrid, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
@@ -28,7 +28,18 @@ const mainNavItems = computed<NavItem[]>(() => [
     },
 ]);
 
-const footerNavItems: NavItem[] = [];
+const footerNavItems: NavItem[] = [
+    {
+        title: 'Business setup',
+        href: '/business-setup/brand',
+        icon: Building2,
+    },
+    {
+        title: 'Teams',
+        href: '/teams',
+        icon: Users,
+    },
+];
 </script>
 
 <template>
