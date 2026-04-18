@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { Building2, LayoutGrid, Users } from 'lucide-vue-next';
+import { Building2, LayoutGrid, SlidersHorizontal, Tags, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
@@ -25,6 +25,21 @@ const mainNavItems = computed<NavItem[]>(() => [
         title: 'Dashboard',
         href: dashboardUrl.value,
         icon: LayoutGrid,
+    },
+    {
+        title: 'Clients',
+        href: '/clients',
+        icon: Users,
+    },
+    {
+        title: 'Catalog',
+        href: '/catalog',
+        icon: Tags,
+    },
+    {
+        title: 'Configuration',
+        href: '/configuration',
+        icon: SlidersHorizontal,
     },
 ]);
 

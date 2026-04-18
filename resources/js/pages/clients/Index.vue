@@ -1,0 +1,329 @@
+<script setup lang="ts">
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
+import ClientSlideOver from '@/components/clients/ClientSlideOver.vue';
+import Heading from '@/components/Heading.vue';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import ClientHeaderActions from '@/pages/clients/components/ClientHeaderActions.vue';
+import ClientsDataTable from '@/pages/clients/components/ClientsDataTable.vue';
+import ConfigurationTagCreateDialog from '@/pages/configuration/tags/components/CreateDialog.vue';
+import type { ClientRecord, Paginator } from '@/types';
+
+type Filters = {
+    search: string;
+    country: string;
+    currency: string;
+    tag: string;
+};
+
+const ALL_OPTION = '__all__';
+
+const props = defineProps<{
+    clients: Paginator<ClientRecord>;
+    filters: Filters;
+    countries: string[];
+    currencies: string[];
+    tags: string[];
+}>();
+
+defineOptions({
+    layout: {
+        breadcrumbs: [
+            {
+                title: 'Clients',
+                href: '/clients',
+            },
+        ],
+    },
+});
+
+const query = useForm({
+    search: props.filters.search ?? '',
+    country: props.filters.country ? props.filters.country : ALL_OPTION,
+    currency: props.filters.currency ? props.filters.currency : ALL_OPTION,
+    tag: props.filters.tag ? props.filters.tag : ALL_OPTION,
+});
+
+let debounceHandle: ReturnType<typeof setTimeout> | null = null;
+
+watch(
+    () => ({ ...query.data() }),
+    () => {
+        if (debounceHandle) {
+            clearTimeout(debounceHandle);
+        }
+
+        debounceHandle = setTimeout(() => {
+            router.get(
+                '/clients',
+                {
+                    ...query.data(),
+                    country: query.country === ALL_OPTION ? '' : query.country,
+                    currency:
+                        query.currency === ALL_OPTION ? '' : query.currency,
+                    tag: query.tag === ALL_OPTION ? '' : query.tag,
+                },
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                },
+            );
+        }, 250);
+    },
+    { deep: true },
+);
+
+const selectedIds = ref<number[]>([]);
+const isSlideOverOpen = ref(false);
+const editingClient = ref<ClientRecord | null>(null);
+const tagDialogOpen = ref(false);
+
+const form = useForm({
+    company_name: '',
+    contact_name: '',
+    email: '',
+    phone: '',
+    whatsapp: '',
+    address: '',
+    city: '',
+    country: '',
+    currency: '',
+    language: '',
+    tax_number: '',
+    notes: '',
+    tags_text: '',
+});
+
+const openCreate = (): void => {
+    editingClient.value = null;
+    form.reset();
+    form.clearErrors();
+    isSlideOverOpen.value = true;
+};
+
+const openEdit = (client: ClientRecord): void => {
+    editingClient.value = client;
+    form.defaults({
+        company_name: client.company_name ?? '',
+        contact_name: client.contact_name ?? '',
+        email: client.email ?? '',
+        phone: client.phone ?? '',
+        whatsapp: client.whatsapp ?? '',
+        address: client.address ?? '',
+        city: client.city ?? '',
+        country: client.country ?? '',
+        currency: client.currency ?? '',
+        language: client.language ?? '',
+        tax_number: client.tax_number ?? '',
+        notes: client.notes ?? '',
+        tags_text: (client.tags ?? []).join(', '),
+    });
+    form.reset();
+    form.clearErrors();
+    isSlideOverOpen.value = true;
+};
+
+const submit = (): void => {
+    form.transform((data) => ({
+        ...data,
+        tags: data.tags_text
+            .split(',')
+            .map((tag) => tag.trim())
+            .filter((tag) => tag !== ''),
+    })).submit(
+        editingClient.value ? 'put' : 'post',
+        editingClient.value ? `/clients/${editingClient.value.id}` : '/clients',
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                isSlideOverOpen.value = false;
+                form.reset();
+                form.clearErrors();
+            },
+        },
+    );
+};
+
+const bulkDelete = (): void => {
+    if (selectedIds.value.length === 0) {
+        return;
+    }
+
+    router.post(
+        '/clients/bulk-delete',
+        { ids: selectedIds.value },
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                selectedIds.value = [];
+            },
+        },
+    );
+};
+
+const exportSelected = (): void => {
+    if (selectedIds.value.length === 0) {
+        return;
+    }
+
+    window.location.href = `/clients/export/csv?ids=${selectedIds.value.join(',')}`;
+};
+</script>
+
+<template>
+    <Head title="Clients" />
+
+    <div class="space-y-6">
+        <div
+            class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+        >
+            <Heading
+                title="Clients"
+                description="Manage your client directory for quoting and pipeline tracking."
+            />
+
+            <div
+                class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+            >
+                <ClientHeaderActions
+                    @open-create-client="openCreate"
+                    @open-create-tag="tagDialogOpen = true"
+                />
+            </div>
+        </div>
+
+        <div class="rounded-lg border p-3">
+            <div class="flex flex-col gap-3 md:flex-row md:items-center">
+                <Input
+                    v-model="query.search"
+                    placeholder="Search company, contact, or email"
+                    class="w-full lg:w-[420px] xl:w-[520px]"
+                />
+
+                <Select v-model="query.country">
+                    <SelectTrigger class="w-full md:w-44">
+                        <SelectValue placeholder="Country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem :value="ALL_OPTION"
+                            >All countries</SelectItem
+                        >
+                        <SelectItem
+                            v-for="country in countries"
+                            :key="country"
+                            :value="country"
+                        >
+                            {{ country }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+
+                <Select v-model="query.currency">
+                    <SelectTrigger class="w-full md:w-44">
+                        <SelectValue placeholder="Currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem :value="ALL_OPTION"
+                            >All currencies</SelectItem
+                        >
+                        <SelectItem
+                            v-for="currency in currencies"
+                            :key="currency"
+                            :value="currency"
+                        >
+                            {{ currency }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+
+                <Select v-model="query.tag">
+                    <SelectTrigger class="w-full md:w-44">
+                        <SelectValue placeholder="Tag" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem :value="ALL_OPTION">All tags</SelectItem>
+                        <SelectItem v-for="tag in tags" :key="tag" :value="tag">
+                            {{ tag }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2" v-if="selectedIds.length > 0">
+            <Button variant="outline" @click="exportSelected"
+                >Export selected</Button
+            >
+            <Button variant="destructive" @click="bulkDelete"
+                >Delete selected</Button
+            >
+        </div>
+
+        <ClientsDataTable
+            :data="clients.data"
+            @edit="openEdit"
+            @update:selected-ids="selectedIds = $event"
+        />
+
+        <div
+            class="flex w-full flex-wrap items-center justify-end gap-2"
+            v-if="clients.links.length > 1"
+        >
+            <template
+                v-for="(link, index) in clients.links"
+                :key="`${link.label}-${index}`"
+            >
+                <Link
+                    v-if="link.url"
+                    :href="link.url"
+                    class="inline-flex h-9 items-center rounded-md border px-3 text-sm"
+                    :class="
+                        link.active
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'bg-background hover:bg-accent'
+                    "
+                >
+                    {{
+                        index === 0
+                            ? 'Previous'
+                            : index === clients.links.length - 1
+                              ? 'Next'
+                              : link.label
+                    }}
+                </Link>
+                <span
+                    v-else
+                    class="inline-flex h-9 items-center rounded-md border px-3 text-sm text-muted-foreground"
+                >
+                    {{
+                        index === 0
+                            ? 'Previous'
+                            : index === clients.links.length - 1
+                              ? 'Next'
+                              : link.label
+                    }}
+                </span>
+            </template>
+        </div>
+
+        <ClientSlideOver
+            v-model:open="isSlideOverOpen"
+            v-model:form="form"
+            :client="editingClient"
+            :processing="form.processing"
+            :errors="form.errors"
+            @submit="submit"
+        />
+
+        <ConfigurationTagCreateDialog v-model:open="tagDialogOpen" />
+    </div>
+</template>

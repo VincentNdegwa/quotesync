@@ -65,7 +65,7 @@ const cancelInvitation = (code: string): void => {
                     reset-on-success
                 >
                     <div class="grid gap-2">
-                        <Label for="invite-email">Email</Label>
+                        <Label for="invite-email" required>Email</Label>
                         <Input
                             id="invite-email"
                             name="email"
@@ -77,7 +77,7 @@ const cancelInvitation = (code: string): void => {
                     </div>
 
                     <div class="grid gap-2">
-                        <Label for="invite-role">Role</Label>
+                        <Label for="invite-role" required>Role</Label>
                         <select
                             id="invite-role"
                             name="role_id"

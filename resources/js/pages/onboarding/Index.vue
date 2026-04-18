@@ -214,7 +214,7 @@ const handleFormSuccess = (): void => {
             
             <div v-if="stepIndex === 1" class="space-y-4">
                 <div class="grid gap-2">
-                    <Label for="company_name">Company Name</Label>
+                    <Label for="company_name" required>Company Name</Label>
                     <Input
                         id="company_name"
                         v-model="onboardingForm.data.company_name"
@@ -225,7 +225,7 @@ const handleFormSuccess = (): void => {
                 </div>
 
                 <div class="grid gap-2">
-                    <Label>Country</Label>
+                    <Label required>Country</Label>
                     <Select v-model="onboardingForm.data.country" name="country">
                         <SelectTrigger class="w-full" >
                             <SelectValue placeholder="Select Country" />
@@ -245,7 +245,7 @@ const handleFormSuccess = (): void => {
 
             <div v-if="stepIndex === 2" class="space-y-4">
                 <div class="grid gap-2">
-                    <Label>Default Currency</Label>
+                    <Label required>Default Currency</Label>
                        <Select v-model="onboardingForm.data.currency" name="currency">
                         <SelectTrigger class="w-full" >
                             <SelectValue placeholder="Select Currency" />
@@ -259,7 +259,7 @@ const handleFormSuccess = (): void => {
                     <InputError :message="errors.currency" />
                 </div>
                 <div class="grid gap-2">
-                    <Label>Quote Prefix</Label>
+                    <Label required>Quote Prefix</Label>
                     <Input v-model="onboardingForm.data.quote_prefix" name="quote_prefix" placeholder="QS" />
                     <p class="text-xs text-muted-foreground italic">
                         Sample: {{ onboardingForm.data.quote_prefix || 'QS' }}-{{ new Date().getFullYear() }}-001
