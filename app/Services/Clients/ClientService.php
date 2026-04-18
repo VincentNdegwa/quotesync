@@ -3,6 +3,7 @@
 namespace App\Services\Clients;
 
 use App\Models\Client;
+use App\Models\ConfigurationTag;
 use App\Models\Workspace;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -19,6 +20,7 @@ class ClientService
     {
         $query = Client::query()
             ->where('workspace_id', $workspace->id)
+            ->with(['tags:id,name'])
             ->select('clients.*');
 
         $search = trim((string) Arr::get($filters, 'search', ''));
@@ -47,7 +49,7 @@ class ClientService
         $tag = trim((string) Arr::get($filters, 'tag', ''));
 
         if ($tag !== '') {
-            $query->whereJsonContains('tags', $tag);
+            $query->whereHas('tags', fn (Builder $builder) => $builder->where('name', $tag));
         }
 
         if (Schema::hasTable('quotes')) {
@@ -81,10 +83,16 @@ class ClientService
      */
     public function create(Workspace $workspace, array $payload): Client
     {
-        return Client::query()->create([
+        $tagIds = Arr::pull($payload, 'tag_ids', []);
+
+        $client = Client::query()->create([
             ...$payload,
             'workspace_id' => $workspace->id,
         ]);
+
+        $client->tags()->sync($this->resolveTagIds($workspace, $tagIds));
+
+        return $client->refresh();
     }
 
     /**
@@ -92,7 +100,10 @@ class ClientService
      */
     public function update(Client $client, array $payload): Client
     {
+        $tagIds = Arr::pull($payload, 'tag_ids', []);
+
         $client->fill($payload)->save();
+        $client->tags()->sync($this->resolveTagIds($client->workspace, $tagIds));
 
         return $client->refresh();
     }
@@ -111,6 +122,24 @@ class ClientService
             ->where('workspace_id', $workspace->id)
             ->whereIn('id', $ids)
             ->delete();
+    }
+
+    /**
+     * @param  array<int, int|string>|mixed  $tagIds
+     * @return array<int, int>
+     */
+    private function resolveTagIds(Workspace $workspace, mixed $tagIds): array
+    {
+        if (! is_array($tagIds) || $tagIds === []) {
+            return [];
+        }
+
+        return ConfigurationTag::query()
+            ->where('workspace_id', $workspace->id)
+            ->whereIn('id', $tagIds)
+            ->pluck('id')
+            ->map(fn (int $id): int => $id)
+            ->all();
     }
 
     /**

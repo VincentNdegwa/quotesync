@@ -1,11 +1,20 @@
 <script setup lang="ts">
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Head, Link, router, setLayoutProps, useForm } from '@inertiajs/vue3';
+import { computed, watchEffect } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     Table,
     TableBody,
@@ -20,21 +29,23 @@ import {
     TabsList,
     TabsTrigger,
 } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
 import type { ClientRecord, ClientStats } from '@/types';
 
 const props = defineProps<{
     client: ClientRecord;
     stats: ClientStats;
+    availableTags: Array<{ id: number; name: string }>;
 }>();
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            { title: 'Clients', href: '/clients' },
-            { title: 'Client detail', href: `/clients/${props.client.id}` },
-        ],
-    },
+const breadcrumbs = computed(() => [
+    { title: 'Clients', href: '/clients' },
+    { title: props.client.company_name, href: `/clients/${props.client.id}` },
+]);
+
+watchEffect(() => {
+    setLayoutProps({
+        breadcrumbs: breadcrumbs.value,
+    });
 });
 
 const form = useForm({
@@ -49,23 +60,29 @@ const form = useForm({
     currency: props.client.currency ?? '',
     language: props.client.language ?? '',
     tax_number: props.client.tax_number ?? '',
-    notes: props.client.notes ?? '',
-    tags_text: (props.client.tags ?? []).join(', '),
+    tag_ids: props.client.tag_ids ?? [],
 });
 
 const saveClient = (): void => {
-    form
-        .transform((data) => ({
-            ...data,
-            tags: data.tags_text
-                .split(',')
-                .map((tag) => tag.trim())
-                .filter((tag) => tag !== ''),
-        }))
-        .put(`/clients/${props.client.id}`, {
+    form.put(`/clients/${props.client.id}`, {
             preserveScroll: true,
         });
 };
+
+const selectedTagIds = computed<string[]>({
+    get: () => {
+        if (!Array.isArray(form.tag_ids)) {
+            return [];
+        }
+
+        return form.tag_ids.map((id: number | string) => String(id));
+    },
+    set: (values) => {
+        form.tag_ids = values
+            .map((value) => Number(value))
+            .filter((value) => Number.isFinite(value));
+    },
+});
 
 const statusBadgeVariant = (status: string | null | undefined): 'secondary' | 'default' | 'destructive' | 'outline' => {
     if (status === 'won') {
@@ -170,13 +187,27 @@ const deleteClient = (): void => {
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="tags_text">Tags (comma-separated)</Label>
-                    <Input id="tags_text" v-model="form.tags_text" @blur="saveClient" />
-                </div>
-
-                <div class="grid gap-2">
-                    <Label for="notes">Notes</Label>
-                    <Textarea id="notes" v-model="form.notes" @blur="saveClient" />
+                    <Label>Tags</Label>
+                    <Select v-model="selectedTagIds" multiple>
+                        <SelectTrigger class="w-full md:w-[320px]">
+                            <SelectValue placeholder="Select tags" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                <SelectLabel>Available tags</SelectLabel>
+                                <SelectItem
+                                    v-for="tag in availableTags"
+                                    :key="tag.id"
+                                    :value="String(tag.id)"
+                                >
+                                    {{ tag.name }}
+                                </SelectItem>
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                    <p v-if="availableTags.length === 0" class="text-sm text-muted-foreground">
+                        No tags found. Create tags in Configuration.
+                    </p>
                 </div>
 
                 <div class="flex justify-end">

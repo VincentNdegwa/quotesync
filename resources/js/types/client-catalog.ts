@@ -11,8 +11,8 @@ export type ClientRecord = {
     currency: string | null;
     language: string | null;
     tax_number: string | null;
-    notes: string | null;
     tags: string[] | null;
+    tag_ids?: number[];
     created_at: string;
     quotes_sent_count?: number;
     total_value_won?: number;
@@ -57,12 +57,12 @@ export type CatalogItemRecord = {
     unit: string;
     unit_price: number | string;
     cost_price: number | string;
-    tax_rate: number | string;
     is_active: boolean;
     usage_count: number;
     image_path: string | null;
     category?: { id: number; name: string } | null;
-    tax?: { id: number; name: string; rate: number | string } | null;
+    taxes?: Array<{ id: number; name: string; rate: number | string }>;
+    tax_ids?: number[];
     created_at: string;
 };
 

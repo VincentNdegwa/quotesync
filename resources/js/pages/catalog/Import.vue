@@ -18,7 +18,6 @@ defineProps<{
         unit: string;
         unit_price: number;
         cost_price: number;
-        tax_rate: number;
     }>;
     importToken?: string;
     totalRows?: number;
@@ -56,7 +55,6 @@ defineOptions({
                         <TableHead>Unit</TableHead>
                         <TableHead class="text-right">Unit price</TableHead>
                         <TableHead class="text-right">Cost price</TableHead>
-                        <TableHead class="text-right">Tax rate</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -66,7 +64,6 @@ defineOptions({
                         <TableCell>{{ row.unit }}</TableCell>
                         <TableCell class="text-right">{{ row.unit_price }}</TableCell>
                         <TableCell class="text-right">{{ row.cost_price }}</TableCell>
-                        <TableCell class="text-right">{{ row.tax_rate }}</TableCell>
                     </TableRow>
                 </TableBody>
             </Table>

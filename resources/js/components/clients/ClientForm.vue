@@ -1,8 +1,17 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 const form = defineModel<Record<string, any>>('form', {
     required: true,
@@ -10,7 +19,23 @@ const form = defineModel<Record<string, any>>('form', {
 
 defineProps<{
     errors: Record<string, string>;
+    availableTags: Array<{ id: number; name: string }>;
 }>();
+
+const selectedTagIds = computed<string[]>({
+    get: () => {
+        if (!Array.isArray(form.value.tag_ids)) {
+            return [];
+        }
+
+        return form.value.tag_ids.map((id: number | string) => String(id));
+    },
+    set: (values) => {
+        form.value.tag_ids = values
+            .map((value) => Number(value))
+            .filter((value) => Number.isFinite(value));
+    },
+});
 </script>
 
 <template>
@@ -90,15 +115,28 @@ defineProps<{
         </div>
 
         <div class="grid gap-2">
-            <Label for="tags_text">Tags (comma-separated)</Label>
-            <Input id="tags_text" v-model="form.tags_text" placeholder="priority, repeat, retail" />
-            <InputError :message="errors.tags" />
-        </div>
-
-        <div class="grid gap-2">
-            <Label for="notes">Notes</Label>
-            <Textarea id="notes" v-model="form.notes" />
-            <InputError :message="errors.notes" />
+            <Label>Tags</Label>
+            <Select v-model="selectedTagIds" multiple>
+                <SelectTrigger class="w-full">
+                    <SelectValue placeholder="Select tags" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectGroup>
+                        <SelectLabel>Available tags</SelectLabel>
+                        <SelectItem
+                            v-for="tag in availableTags"
+                            :key="tag.id"
+                            :value="String(tag.id)"
+                        >
+                            {{ tag.name }}
+                        </SelectItem>
+                    </SelectGroup>
+                </SelectContent>
+            </Select>
+            <p v-if="availableTags.length === 0" class="text-sm text-muted-foreground">
+                No tags found. Create tags in Configuration.
+            </p>
+            <InputError :message="errors.tag_ids" />
         </div>
     </div>
 </template>

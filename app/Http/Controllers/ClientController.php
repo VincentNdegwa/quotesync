@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientRequest;
 use App\Models\Client;
+use App\Models\ConfigurationTag;
 use App\Models\Workspace;
 use App\Services\Clients\ClientService;
 use Illuminate\Http\RedirectResponse;
@@ -34,7 +35,11 @@ class ClientController extends Controller
 
         return Inertia::render('clients/Index', [
             'filters' => $filters,
-            'clients' => $clients,
+            'clients' => $clients->through(fn (Client $client): array => [
+                ...$client->toArray(),
+                'tags' => $client->tags->pluck('name')->values()->all(),
+                'tag_ids' => $client->tags->pluck('id')->values()->all(),
+            ]),
             'countries' => Client::query()
                 ->where('workspace_id', $workspace->id)
                 ->whereNotNull('country')
@@ -49,15 +54,15 @@ class ClientController extends Controller
                 ->orderBy('currency')
                 ->pluck('currency')
                 ->values(),
-            'tags' => Client::query()
+            'tags' => ConfigurationTag::query()
                 ->where('workspace_id', $workspace->id)
-                ->whereNotNull('tags')
-                ->get(['tags'])
-                ->pluck('tags')
-                ->flatten()
-                ->filter()
-                ->unique()
-                ->sort()
+                ->where('is_active', true)
+                ->orderByRaw('LOWER(name)')
+                ->get(['id', 'name'])
+                ->map(fn (ConfigurationTag $tag): array => [
+                    'id' => $tag->id,
+                    'name' => $tag->name,
+                ])
                 ->values(),
         ]);
     }
@@ -85,8 +90,22 @@ class ClientController extends Controller
         abort_unless($workspace instanceof Workspace && $client->workspace_id === $workspace->id, 404);
 
         return Inertia::render('clients/Show', [
-            'client' => $client,
+            'client' => [
+                ...$client->load(['tags:id,name'])->toArray(),
+                'tags' => $client->tags->pluck('name')->values()->all(),
+                'tag_ids' => $client->tags->pluck('id')->values()->all(),
+            ],
             'stats' => $clientService->quoteStatsForClient($client),
+            'availableTags' => ConfigurationTag::query()
+                ->where('workspace_id', $workspace->id)
+                ->where('is_active', true)
+                ->orderByRaw('LOWER(name)')
+                ->get(['id', 'name'])
+                ->map(fn (ConfigurationTag $tag): array => [
+                    'id' => $tag->id,
+                    'name' => $tag->name,
+                ])
+                ->values(),
         ]);
     }
 

@@ -49,9 +49,14 @@ class StoreCatalogItemRequest extends FormRequest
             'unit' => ['required', Rule::in(['hr', 'day', 'unit', 'sqm', 'kg', 'm', 'lot', 'month'])],
             'unit_price' => ['required', 'numeric', 'min:0'],
             'cost_price' => ['nullable', 'numeric', 'min:0'],
-            'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'catalog_category_id' => ['nullable', 'integer', Rule::exists('catalog_categories', 'id')->where('workspace_id', $workspace?->id)],
-            'tax_id' => ['nullable', 'integer', Rule::exists('taxes', 'id')->where('workspace_id', $workspace?->id)],
+            'tax_ids' => ['nullable', 'array'],
+            'tax_ids.*' => [
+                'integer',
+                Rule::exists('taxes', 'id')->where(fn ($query) => $query
+                    ->where('workspace_id', $workspace?->id)
+                    ->whereNull('deleted_at')),
+            ],
             'is_active' => ['nullable', 'boolean'],
             'image' => ['nullable', 'image', 'max:5120'],
         ];

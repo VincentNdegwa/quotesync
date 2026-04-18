@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 
@@ -24,8 +26,6 @@ use Illuminate\Support\Facades\Auth;
     'currency',
     'language',
     'tax_number',
-    'notes',
-    'tags',
     'created_by',
 ])]
 class Client extends Model
@@ -61,12 +61,28 @@ class Client extends Model
     }
 
     /**
+     * @return BelongsToMany<ConfigurationTag, $this>
+     */
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(ConfigurationTag::class, 'client_tags')
+            ->withTimestamps();
+    }
+
+    /**
+     * @return MorphMany<Note, $this>
+     */
+    public function notes(): MorphMany
+    {
+        return $this->morphMany(Note::class, 'noteable');
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
-            'tags' => 'array',
             'deleted_at' => 'datetime',
         ];
     }

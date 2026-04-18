@@ -2,19 +2,24 @@
 
 namespace App\Models;
 
-use Database\Factories\ConfigurationTagFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['workspace_id', 'name', 'is_active', 'created_by'])]
-class ConfigurationTag extends Model
+#[Fillable(['workspace_id', 'content', 'noteable_type', 'noteable_id', 'created_by'])]
+class Note extends Model
 {
-    /** @use HasFactory<ConfigurationTagFactory> */
-    use HasFactory, SoftDeletes;
+    use SoftDeletes;
+
+    /**
+     * @return MorphTo<Model, $this>
+     */
+    public function noteable(): MorphTo
+    {
+        return $this->morphTo();
+    }
 
     /**
      * @return BelongsTo<Workspace, $this>
@@ -33,21 +38,11 @@ class ConfigurationTag extends Model
     }
 
     /**
-     * @return BelongsToMany<Client, $this>
-     */
-    public function clients(): BelongsToMany
-    {
-        return $this->belongsToMany(Client::class, 'client_tags')
-            ->withTimestamps();
-    }
-
-    /**
      * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
-            'is_active' => 'boolean',
             'deleted_at' => 'datetime',
         ];
     }

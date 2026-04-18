@@ -42,7 +42,6 @@ class CatalogImportController extends Controller
                     'unit' => trim((string) ($data['unit'] ?? 'unit')),
                     'unit_price' => (float) ($data['unit_price'] ?? 0),
                     'cost_price' => (float) ($data['cost_price'] ?? 0),
-                    'tax_rate' => (float) ($data['tax_rate'] ?? 0),
                 ];
             })
             ->filter(fn (array $row): bool => $row['name'] !== '')
@@ -113,7 +112,6 @@ class CatalogImportController extends Controller
                 'unit' => in_array($row['unit'], ['hr', 'day', 'unit', 'sqm', 'kg', 'm', 'lot', 'month'], true) ? $row['unit'] : 'unit',
                 'unit_price' => $row['unit_price'],
                 'cost_price' => $row['cost_price'],
-                'tax_rate' => $row['tax_rate'],
                 'is_active' => true,
             ]);
 

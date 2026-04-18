@@ -31,7 +31,16 @@ class CatalogItemController extends Controller
 
         return Inertia::render('catalog/Index', [
             'filters' => $filters,
-            'items' => $catalogItemService->paginateForIndex($workspace, $filters),
+            'items' => $catalogItemService->paginateForIndex($workspace, $filters)
+                ->through(fn (CatalogItem $item): array => [
+                    ...$item->toArray(),
+                    'taxes' => $item->taxes->map(fn (Tax $tax): array => [
+                        'id' => $tax->id,
+                        'name' => $tax->name,
+                        'rate' => $tax->rate,
+                    ])->values()->all(),
+                    'tax_ids' => $item->taxes->pluck('id')->values()->all(),
+                ]),
             'categories' => CatalogCategory::query()
                 ->where('workspace_id', $workspace->id)
                 ->orderBy('sort_order')
@@ -76,10 +85,24 @@ class CatalogItemController extends Controller
 
         abort_unless($workspace instanceof Workspace && $catalog->workspace_id === $workspace->id, 404);
 
-        $catalog->load(['category:id,name', 'tax:id,name,rate']);
+        $catalog->load(['category:id,name', 'taxes:id,name,rate']);
 
         return Inertia::render('catalog/Show', [
-            'item' => $catalog,
+            'item' => [
+                ...$catalog->toArray(),
+                'taxes' => $catalog->taxes->map(fn (Tax $tax): array => [
+                    'id' => $tax->id,
+                    'name' => $tax->name,
+                    'rate' => $tax->rate,
+                ])->values()->all(),
+                'tax_ids' => $catalog->taxes->pluck('id')->values()->all(),
+            ],
+            'availableTaxes' => Tax::query()
+                ->where('workspace_id', $workspace->id)
+                ->where('is_active', true)
+                ->orderByDesc('is_default')
+                ->orderByRaw('LOWER(name)')
+                ->get(['id', 'name', 'rate']),
             'margin' => [
                 'profit_per_unit' => (float) $catalog->unit_price - (float) $catalog->cost_price,
                 'margin_percent' => (float) $catalog->unit_price > 0

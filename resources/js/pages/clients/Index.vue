@@ -31,7 +31,7 @@ const props = defineProps<{
     filters: Filters;
     countries: string[];
     currencies: string[];
-    tags: string[];
+    tags: Array<{ id: number; name: string }>;
 }>();
 
 defineOptions({
@@ -99,8 +99,7 @@ const form = useForm({
     currency: '',
     language: '',
     tax_number: '',
-    notes: '',
-    tags_text: '',
+    tag_ids: [] as number[],
 });
 
 const openCreate = (): void => {
@@ -124,8 +123,7 @@ const openEdit = (client: ClientRecord): void => {
         currency: client.currency ?? '',
         language: client.language ?? '',
         tax_number: client.tax_number ?? '',
-        notes: client.notes ?? '',
-        tags_text: (client.tags ?? []).join(', '),
+        tag_ids: client.tag_ids ?? [],
     });
     form.reset();
     form.clearErrors();
@@ -133,13 +131,7 @@ const openEdit = (client: ClientRecord): void => {
 };
 
 const submit = (): void => {
-    form.transform((data) => ({
-        ...data,
-        tags: data.tags_text
-            .split(',')
-            .map((tag) => tag.trim())
-            .filter((tag) => tag !== ''),
-    })).submit(
+    form.submit(
         editingClient.value ? 'put' : 'post',
         editingClient.value ? `/clients/${editingClient.value.id}` : '/clients',
         {
@@ -251,8 +243,8 @@ const exportSelected = (): void => {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem :value="ALL_OPTION">All tags</SelectItem>
-                        <SelectItem v-for="tag in tags" :key="tag" :value="tag">
-                            {{ tag }}
+                        <SelectItem v-for="tag in tags" :key="tag.id" :value="tag.name">
+                            {{ tag.name }}
                         </SelectItem>
                     </SelectContent>
                 </Select>
@@ -321,6 +313,7 @@ const exportSelected = (): void => {
             :client="editingClient"
             :processing="form.processing"
             :errors="form.errors"
+            :available-tags="tags"
             @submit="submit"
         />
 

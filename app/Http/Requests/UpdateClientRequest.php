@@ -58,9 +58,13 @@ class UpdateClientRequest extends FormRequest
             'currency' => ['nullable', 'string', 'size:3'],
             'language' => ['nullable', 'string', 'max:10'],
             'tax_number' => ['nullable', 'string', 'max:100'],
-            'notes' => ['nullable', 'string'],
-            'tags' => ['nullable', 'array'],
-            'tags.*' => ['string', 'max:50'],
+            'tag_ids' => ['nullable', 'array'],
+            'tag_ids.*' => [
+                'integer',
+                Rule::exists('configuration_tags', 'id')->where(fn ($query) => $query
+                    ->where('workspace_id', $workspace?->id)
+                    ->whereNull('deleted_at')),
+            ],
         ];
     }
 }

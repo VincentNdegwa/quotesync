@@ -18,7 +18,7 @@ class CatalogItemService
     {
         $query = CatalogItem::query()
             ->where('workspace_id', $workspace->id)
-            ->with(['category:id,name', 'tax:id,name,rate']);
+            ->with(['category:id,name', 'taxes:id,name,rate']);
 
         $search = trim((string) Arr::get($filters, 'search', ''));
 
@@ -53,13 +53,16 @@ class CatalogItemService
      */
     public function create(Workspace $workspace, array $payload): CatalogItem
     {
-        $taxRate = $this->resolveTaxRate($workspace, $payload);
+        $taxIds = Arr::pull($payload, 'tax_ids', []);
 
-        return CatalogItem::query()->create([
+        $item = CatalogItem::query()->create([
             ...$payload,
             'workspace_id' => $workspace->id,
-            'tax_rate' => $taxRate,
         ]);
+
+        $item->taxes()->sync($this->resolveTaxIds($workspace, $taxIds));
+
+        return $item->refresh();
     }
 
     /**
@@ -67,13 +70,13 @@ class CatalogItemService
      */
     public function update(CatalogItem $item, array $payload): CatalogItem
     {
-        $workspace = $item->workspace;
-        $taxRate = $this->resolveTaxRate($workspace, $payload);
+        $taxIds = Arr::pull($payload, 'tax_ids', []);
 
         $item->fill([
             ...$payload,
-            'tax_rate' => $taxRate,
         ])->save();
+
+        $item->taxes()->sync($this->resolveTaxIds($item->workspace, $taxIds));
 
         return $item->refresh();
     }
@@ -102,20 +105,20 @@ class CatalogItemService
     }
 
     /**
-     * @param  array<string, mixed>  $payload
+     * @param  array<int, int|string>|mixed  $taxIds
+     * @return array<int, int>
      */
-    private function resolveTaxRate(Workspace $workspace, array $payload): float
+    private function resolveTaxIds(Workspace $workspace, mixed $taxIds): array
     {
-        if (Arr::has($payload, 'tax_id') && Arr::get($payload, 'tax_id') !== null) {
-            $tax = Tax::query()
-                ->where('workspace_id', $workspace->id)
-                ->find((int) Arr::get($payload, 'tax_id'));
-
-            if ($tax !== null) {
-                return (float) $tax->rate;
-            }
+        if (! is_array($taxIds) || $taxIds === []) {
+            return [];
         }
 
-        return (float) Arr::get($payload, 'tax_rate', 0);
+        return Tax::query()
+            ->where('workspace_id', $workspace->id)
+            ->whereIn('id', $taxIds)
+            ->pluck('id')
+            ->map(fn (int $id): int => $id)
+            ->all();
     }
 }

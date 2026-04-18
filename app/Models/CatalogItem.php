@@ -8,20 +8,20 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 
 #[Fillable([
     'workspace_id',
     'catalog_category_id',
-    'tax_id',
     'name',
     'description',
     'sku',
     'unit',
     'unit_price',
     'cost_price',
-    'tax_rate',
     'image_path',
     'is_active',
     'usage_count',
@@ -60,11 +60,12 @@ class CatalogItem extends Model
     }
 
     /**
-     * @return BelongsTo<Tax, $this>
+     * @return BelongsToMany<Tax, $this>
      */
-    public function tax(): BelongsTo
+    public function taxes(): BelongsToMany
     {
-        return $this->belongsTo(Tax::class);
+        return $this->belongsToMany(Tax::class, 'catalog_item_tax')
+            ->withTimestamps();
     }
 
     /**
@@ -76,6 +77,14 @@ class CatalogItem extends Model
     }
 
     /**
+     * @return MorphMany<Note, $this>
+     */
+    public function notes(): MorphMany
+    {
+        return $this->morphMany(Note::class, 'noteable');
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -83,7 +92,6 @@ class CatalogItem extends Model
         return [
             'unit_price' => 'decimal:2',
             'cost_price' => 'decimal:2',
-            'tax_rate' => 'decimal:2',
             'is_active' => 'boolean',
             'deleted_at' => 'datetime',
         ];

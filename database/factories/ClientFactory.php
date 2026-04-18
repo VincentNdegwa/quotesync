@@ -34,8 +34,6 @@ class ClientFactory extends Factory
             'currency' => fake()->randomElement(['USD', 'NGN', 'KES', 'EUR']),
             'language' => fake()->randomElement(['en', 'fr', 'es', 'pt']),
             'tax_number' => strtoupper(fake()->bothify('TAX-####-??')),
-            'notes' => fake()->sentence(),
-            'tags' => [fake()->word(), fake()->word()],
         ];
     }
 }

@@ -102,9 +102,8 @@ const form = useForm({
     unit: 'unit',
     unit_price: 0,
     cost_price: 0,
-    tax_rate: 0,
     catalog_category_id: NONE_OPTION,
-    tax_id: NONE_OPTION,
+    tax_ids: [] as number[],
     is_active: true,
     image: null as File | null,
 });
@@ -118,7 +117,7 @@ const openCreate = (): void => {
     form.clearErrors();
     form.unit = 'unit';
     form.catalog_category_id = NONE_OPTION;
-    form.tax_id = NONE_OPTION;
+    form.tax_ids = [];
     form.is_active = true;
     isSheetOpen.value = true;
 };
@@ -132,9 +131,8 @@ const openEdit = (item: CatalogItemRecord): void => {
         unit: item.unit,
         unit_price: Number(item.unit_price ?? 0),
         cost_price: Number(item.cost_price ?? 0),
-        tax_rate: Number(item.tax_rate ?? 0),
         catalog_category_id: item.category?.id ? String(item.category.id) : NONE_OPTION,
-        tax_id: item.tax?.id ? String(item.tax.id) : NONE_OPTION,
+        tax_ids: (item.taxes ?? []).map((tax) => tax.id),
         is_active: Boolean(item.is_active),
         image: null,
     });
@@ -148,7 +146,7 @@ const submitItem = (): void => {
         .transform((data) => ({
             ...data,
             catalog_category_id: data.catalog_category_id === NONE_OPTION ? null : data.catalog_category_id,
-            tax_id: data.tax_id === NONE_OPTION ? null : data.tax_id,
+            tax_ids: data.tax_ids,
         }))
         .submit(editingItem.value ? 'put' : 'post', editingItem.value ? `/catalog/${editingItem.value.id}` : '/catalog', {
         preserveScroll: true,

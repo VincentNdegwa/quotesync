@@ -68,7 +68,6 @@ class ImportCatalogItemsJob implements ShouldQueue
                     'unit' => in_array($unit, $allowedUnits, true) ? $unit : 'unit',
                     'unit_price' => (float) ($row['unit_price'] ?? 0),
                     'cost_price' => (float) ($row['cost_price'] ?? 0),
-                    'tax_rate' => (float) ($row['tax_rate'] ?? 0),
                     'is_active' => true,
                 ]);
 

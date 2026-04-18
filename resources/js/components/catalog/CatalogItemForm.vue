@@ -1,11 +1,14 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
+    SelectLabel,
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
@@ -24,6 +27,21 @@ defineProps<{
     categories: CatalogCategoryRecord[];
     taxes: TaxRecord[];
 }>();
+
+const selectedTaxIds = computed<string[]>({
+    get: () => {
+        if (!Array.isArray(form.value.tax_ids)) {
+            return [];
+        }
+
+        return form.value.tax_ids.map((id: number | string) => String(id));
+    },
+    set: (values) => {
+        form.value.tax_ids = values
+            .map((value) => Number(value))
+            .filter((value) => Number.isFinite(value));
+    },
+});
 </script>
 
 <template>
@@ -68,7 +86,7 @@ defineProps<{
             </div>
         </div>
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div class="grid gap-2">
                 <Label for="unit_price" required>Unit price</Label>
                 <Input id="unit_price" type="number" step="0.01" min="0" v-model="form.unit_price" />
@@ -79,12 +97,6 @@ defineProps<{
                 <Label for="cost_price">Cost price</Label>
                 <Input id="cost_price" type="number" step="0.01" min="0" v-model="form.cost_price" />
                 <InputError :message="errors.cost_price" />
-            </div>
-
-            <div class="grid gap-2">
-                <Label for="tax_rate">Tax rate %</Label>
-                <Input id="tax_rate" type="number" step="0.01" min="0" max="100" v-model="form.tax_rate" />
-                <InputError :message="errors.tax_rate" />
             </div>
         </div>
 
@@ -110,23 +122,28 @@ defineProps<{
             </div>
 
             <div class="grid gap-2">
-                <Label for="tax_id">Tax preset</Label>
-                <Select v-model="form.tax_id">
-                    <SelectTrigger id="tax_id" class="w-full">
-                        <SelectValue placeholder="Select tax" />
+                <Label>Taxes</Label>
+                <Select v-model="selectedTaxIds" multiple>
+                    <SelectTrigger class="w-full">
+                        <SelectValue placeholder="Select taxes" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem :value="NONE_OPTION">No tax preset</SelectItem>
-                        <SelectItem
-                            v-for="tax in taxes"
-                            :key="tax.id"
-                            :value="String(tax.id)"
-                        >
-                            {{ tax.name }} ({{ tax.rate }}%)
-                        </SelectItem>
+                        <SelectGroup>
+                            <SelectLabel>Available taxes</SelectLabel>
+                            <SelectItem
+                                v-for="tax in taxes"
+                                :key="tax.id"
+                                :value="String(tax.id)"
+                            >
+                                {{ tax.name }} ({{ tax.rate }}%)
+                            </SelectItem>
+                        </SelectGroup>
                     </SelectContent>
                 </Select>
-                <InputError :message="errors.tax_id" />
+                <p v-if="taxes.length === 0" class="text-sm text-muted-foreground">
+                    No active taxes found. Create taxes in Configuration.
+                </p>
+                <InputError :message="errors.tax_ids" />
             </div>
         </div>
 

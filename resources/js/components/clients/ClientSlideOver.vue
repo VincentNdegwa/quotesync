@@ -25,6 +25,7 @@ const props = defineProps<{
     client?: MinimalClient | null;
     processing: boolean;
     errors: Record<string, string>;
+    availableTags: Array<{ id: number; name: string }>;
 }>();
 
 const emit = defineEmits<{
@@ -48,7 +49,7 @@ const title = computed(() =>
                     </SheetDescription>
                 </SheetHeader>
 
-                <ClientForm v-model:form="form" :errors="errors" />
+                <ClientForm v-model:form="form" :errors="errors" :available-tags="availableTags" />
 
                 <SheetFooter>
                     <Button type="button" variant="outline" @click="emit('update:open', false)">

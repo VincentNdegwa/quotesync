@@ -1,16 +1,26 @@
 <script setup lang="ts">
 import { Head, Link, setLayoutProps, useForm } from '@inertiajs/vue3';
+import { computed, watchEffect } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import type { CatalogItemRecord } from '@/types';
-import { computed, watchEffect } from 'vue';
 
 const props = defineProps<{
     item: CatalogItemRecord;
+    availableTaxes: Array<{ id: number; name: string; rate: number | string }>;
     margin: {
         profit_per_unit: number;
         margin_percent: number;
@@ -36,9 +46,24 @@ const form = useForm({
     unit: props.item.unit,
     unit_price: Number(props.item.unit_price ?? 0),
     cost_price: Number(props.item.cost_price ?? 0),
-    tax_rate: Number(props.item.tax_rate ?? 0),
+    tax_ids: props.item.tax_ids ?? [],
     is_active: Boolean(props.item.is_active),
     image: null as File | null,
+});
+
+const selectedTaxIds = computed<string[]>({
+    get: () => {
+        if (!Array.isArray(form.tax_ids)) {
+            return [];
+        }
+
+        return form.tax_ids.map((id: number | string) => String(id));
+    },
+    set: (values) => {
+        form.tax_ids = values
+            .map((value) => Number(value))
+            .filter((value) => Number.isFinite(value));
+    },
 });
 
 const save = (): void => {
@@ -100,10 +125,6 @@ const save = (): void => {
                     <Input id="unit" v-model="form.unit" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="tax_rate">Tax rate</Label>
-                    <Input id="tax_rate" type="number" min="0" max="100" step="0.01" v-model="form.tax_rate" />
-                </div>
-                <div class="grid gap-2">
                     <Label for="unit_price">Unit price</Label>
                     <Input id="unit_price" type="number" min="0" step="0.01" v-model="form.unit_price" />
                 </div>
@@ -111,6 +132,30 @@ const save = (): void => {
                     <Label for="cost_price">Cost price</Label>
                     <Input id="cost_price" type="number" min="0" step="0.01" v-model="form.cost_price" />
                 </div>
+            </div>
+
+            <div class="grid gap-2">
+                <Label>Taxes</Label>
+                <Select v-model="selectedTaxIds" multiple>
+                    <SelectTrigger class="w-full md:w-[320px]">
+                        <SelectValue placeholder="Select taxes" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectGroup>
+                            <SelectLabel>Available taxes</SelectLabel>
+                            <SelectItem
+                                v-for="tax in availableTaxes"
+                                :key="tax.id"
+                                :value="String(tax.id)"
+                            >
+                                {{ tax.name }} ({{ tax.rate }}%)
+                            </SelectItem>
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
+                <p v-if="availableTaxes.length === 0" class="text-sm text-muted-foreground">
+                    No active taxes found.
+                </p>
             </div>
 
             <div class="grid gap-2">
