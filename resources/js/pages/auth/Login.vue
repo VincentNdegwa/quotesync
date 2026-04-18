@@ -19,10 +19,12 @@ defineOptions({
     },
 });
 
-defineProps<{
+const props = defineProps<{
     status?: string;
     canResetPassword: boolean;
     canRegister: boolean;
+    email?: string;
+    invitation?: string;
 }>();
 </script>
 
@@ -53,10 +55,18 @@ defineProps<{
                     autofocus
                     :tabindex="1"
                     autocomplete="email"
+                    v-model="props.email"
                     placeholder="email@example.com"
                 />
                 <InputError :message="errors.email" />
             </div>
+
+            <input
+                v-if="props.invitation"
+                type="hidden"
+                name="invitation"
+                :value="props.invitation"
+            />
 
             <div class="grid gap-2">
                 <div class="flex items-center justify-between">

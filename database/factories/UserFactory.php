@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Enums\TeamRole;
-use App\Models\Team;
+use App\Models\Role;
 use App\Models\User;
+use App\Models\Workspace;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -44,15 +44,23 @@ class UserFactory extends Factory
     public function configure(): static
     {
         return $this->afterCreating(function ($user) {
-            $team = Team::factory()->personal()->create([
-                'name' => $user->name."'s Team",
+            $workspace = Workspace::query()->create([
+                'name' => sprintf('%s Workspace #%d', $user->name, $user->id),
+                'display_name' => sprintf('%s Workspace', $user->name),
             ]);
 
-            $team->members()->attach($user, [
-                'role' => TeamRole::Owner->value,
-            ]);
+            $workspace->forceFill(['owner_id' => $user->id])->save();
 
-            $user->switchTeam($team);
+            $adminRole = Role::query()->firstOrCreate(
+                ['name' => 'admin', 'workspace_id' => null],
+                [
+                    'display_name' => 'Admin',
+                    'description' => 'Default admin role for newly registered users.',
+                ],
+            );
+
+            $user->addRole($adminRole, $workspace);
+            $user->switchWorkspace($workspace);
         });
     }
 

@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Teams\TeamInvitationController;
-use App\Http\Middleware\EnsureTeamMembership;
+use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\WorkspaceSwitchController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -9,14 +9,17 @@ Route::inertia('/', 'Welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->name('home');
 
-Route::prefix('{current_team}')
-    ->middleware(['auth', 'verified', EnsureTeamMembership::class])
-    ->group(function () {
-        Route::inertia('dashboard', 'Dashboard')->name('dashboard');
-    });
+Route::inertia('dashboard', 'Dashboard')
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
+
+Route::get('invitations/{invitation}/accept', [InvitationController::class, 'accept'])
+    ->middleware('signed:relative')
+    ->name('invitations.accept');
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('invitations/{invitation}/accept', [TeamInvitationController::class, 'accept'])->name('invitations.accept');
+    Route::post('workspaces/{workspace}/switch', WorkspaceSwitchController::class)
+        ->name('workspaces.switch');
 });
 
 require __DIR__.'/settings.php';

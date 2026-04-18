@@ -9,8 +9,17 @@ export type User = {
     [key: string]: unknown;
 };
 
+export type WorkspaceSummary = {
+    id: number;
+    name: string;
+    display_name: string | null;
+    is_owner: boolean;
+};
+
 export type Auth = {
     user: User;
+    currentWorkspace: WorkspaceSummary | null;
+    workspaces: WorkspaceSummary[];
 };
 
 export type TwoFactorConfigContent = {

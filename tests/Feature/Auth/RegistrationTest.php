@@ -19,5 +19,11 @@ test('new users can register', function () {
     $this->assertAuthenticated();
 
     $user = User::where('email', 'test@example.com')->first();
+
+    expect($user)->not->toBeNull();
+    expect($user->currentWorkspace)->not->toBeNull();
+    expect($user->currentWorkspace?->owner_id)->toBe($user->id);
+    expect($user->hasRole('admin', $user->currentWorkspace))->toBeTrue();
+
     $response->assertRedirect(route('dashboard'));
 });
