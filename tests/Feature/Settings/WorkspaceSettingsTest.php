@@ -2,6 +2,8 @@
 
 use App\Models\User;
 use App\Models\WorkspaceSetting;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('workspace settings page renders visible groups', function () {
@@ -48,4 +50,88 @@ test('workspace settings can be updated for a dynamic group', function () {
         'key' => 'timezone',
         'value' => 'Africa/Lagos',
     ]);
+});
+
+test('workspace settings logo upload stores a public file path', function () {
+    Storage::fake('public');
+
+    $user = User::factory()->create();
+    $workspace = $user->currentWorkspace;
+
+    $response = $this->actingAs($user)
+        ->put('/business-setup/brand', [
+            'settings' => [
+                'company_name' => 'Acme Inc',
+                'logo_path' => UploadedFile::fake()->image('logo.png'),
+            ],
+        ]);
+
+    $response->assertRedirect();
+
+    $storedLogoSetting = WorkspaceSetting::query()
+        ->where('workspace_id', $workspace->id)
+        ->where('group', 'brand')
+        ->where('key', 'logo_path')
+        ->first();
+
+    expect($storedLogoSetting)->not->toBeNull();
+    expect($storedLogoSetting?->value)->toBeString();
+    Storage::disk('public')->assertExists((string) $storedLogoSetting?->value);
+});
+
+test('workspace settings array field is stored as json', function () {
+    $user = User::factory()->create();
+    $workspace = $user->currentWorkspace;
+
+    $response = $this->actingAs($user)
+        ->put('/business-setup/quotes', [
+            'settings' => [
+                'quote_prefix' => 'QS',
+                'quote_number_sequence' => 1,
+                'quote_validity_days' => 30,
+                'default_currency' => 'USD',
+                'show_margin_to_roles' => ['owner', 'admin'],
+            ],
+        ]);
+
+    $response->assertRedirect();
+
+    $storedSetting = WorkspaceSetting::query()
+        ->where('workspace_id', $workspace->id)
+        ->where('group', 'quotes')
+        ->where('key', 'show_margin_to_roles')
+        ->first();
+
+    expect($storedSetting)->not->toBeNull();
+    expect($storedSetting?->cast)->toBe('json');
+    expect(json_decode((string) $storedSetting?->value, true))->toBe(['owner', 'admin']);
+});
+
+test('workspace notification channels are stored as array values', function () {
+    $user = User::factory()->create();
+    $workspace = $user->currentWorkspace;
+
+    $response = $this->actingAs($user)
+        ->put('/business-setup/notifications', [
+            'settings' => [
+                'notify_quote_viewed' => true,
+                'notify_quote_viewed_channel' => ['in_app'],
+                'notify_quote_accepted' => true,
+                'notify_quote_accepted_channel' => ['in_app', 'mail'],
+                'notify_quote_declined' => true,
+                'notify_quote_declined_channel' => ['in_app', 'mail'],
+            ],
+        ]);
+
+    $response->assertRedirect();
+
+    $acceptedChannelsSetting = WorkspaceSetting::query()
+        ->where('workspace_id', $workspace->id)
+        ->where('group', 'notifications')
+        ->where('key', 'notify_quote_accepted_channel')
+        ->first();
+
+    expect($acceptedChannelsSetting)->not->toBeNull();
+    expect($acceptedChannelsSetting?->cast)->toBe('json');
+    expect(json_decode((string) $acceptedChannelsSetting?->value, true))->toBe(['in_app', 'mail']);
 });

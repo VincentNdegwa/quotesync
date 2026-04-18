@@ -306,7 +306,16 @@ class WorkspaceSettingsService
                     ...$this->validationRulesForType($type, $field),
                 ];
 
-                return ["settings.{$key}" => $rules];
+                $fieldRules = ["settings.{$key}" => $rules];
+
+                if ($type === 'array' && Arr::has($field, 'options')) {
+                    $fieldRules["settings.{$key}.*"] = [
+                        'string',
+                        'in:'.implode(',', Arr::get($field, 'options', [])),
+                    ];
+                }
+
+                return $fieldRules;
             })
             ->all();
     }
@@ -321,7 +330,14 @@ class WorkspaceSettingsService
             'boolean' => ['boolean'],
             'integer' => array_filter(['integer', isset($field['min']) ? 'min:'.$field['min'] : null, isset($field['max']) ? 'max:'.$field['max'] : null]),
             'float' => array_filter(['numeric', isset($field['min']) ? 'min:'.$field['min'] : null, isset($field['max']) ? 'max:'.$field['max'] : null]),
+            'array' => ['array'],
             'json' => ['array'],
+            'file' => array_filter([
+                'file',
+                isset($field['image']) && $field['image'] === true ? 'image' : null,
+                isset($field['mimes']) ? 'mimes:'.implode(',', (array) $field['mimes']) : null,
+                isset($field['max']) ? 'max:'.$field['max'] : null,
+            ]),
             'email' => array_filter(['string', 'email', isset($field['max']) ? 'max:'.$field['max'] : null]),
             'url' => array_filter(['string', 'url', isset($field['max']) ? 'max:'.$field['max'] : null]),
             'timezone' => ['string', 'timezone'],
@@ -343,6 +359,7 @@ class WorkspaceSettingsService
             'boolean' => 'boolean',
             'integer' => 'integer',
             'float' => 'float',
+            'array' => 'json',
             'json' => 'json',
             default => 'string',
         };

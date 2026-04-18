@@ -52,11 +52,19 @@ class WorkspaceSettingsController extends Controller
         abort_unless($workspace instanceof Workspace, 404);
 
         $validated = $request->validated();
+        $settingsPayload = $validated['settings'];
+
+        if ($request->hasFile('settings.logo_path')) {
+            $settingsPayload['logo_path'] = $request->file('settings.logo_path')?->store(
+                "workspaces/{$workspace->id}/branding",
+                'public',
+            );
+        }
 
         $settingsService->updateGroup(
             $workspace,
             $group,
-            $validated['settings'],
+            $settingsPayload,
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Business setup updated.')]);
