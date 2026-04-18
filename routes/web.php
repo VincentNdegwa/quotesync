@@ -9,6 +9,8 @@ use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\ConfigurationTagController;
 use App\Http\Controllers\ConfigurationUnitController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\QuoteController;
+use App\Http\Controllers\QuoteTemplateController;
 use App\Http\Controllers\Settings\MembersController;
 use App\Http\Controllers\TaxController;
 use App\Http\Controllers\WorkspaceSwitchController;
@@ -47,6 +49,10 @@ Route::middleware(['auth'])->group(function () {
 
         Route::post('catalog/bulk-action', [CatalogItemController::class, 'bulkAction'])->name('catalog.bulk-action');
 
+        Route::resource('quotes', QuoteController::class);
+
+        Route::resource('quote-templates', QuoteTemplateController::class);
+
         Route::get('catalog/import', [CatalogImportController::class, 'create'])->name('catalog.import.create');
         Route::post('catalog/import/preview', [CatalogImportController::class, 'preview'])->name('catalog.import.preview');
         Route::post('catalog/import/confirm', [CatalogImportController::class, 'store'])->name('catalog.import.store');
@@ -72,6 +78,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('configuration/units', [ConfigurationUnitController::class, 'store'])->name('configuration.units.store');
         Route::put('configuration/units/{unit}', [ConfigurationUnitController::class, 'update'])->name('configuration.units.update');
         Route::delete('configuration/units/{unit}', [ConfigurationUnitController::class, 'destroy'])->name('configuration.units.destroy');
+
+        Route::get('configuration/templates', [QuoteTemplateController::class, 'index'])->name('configuration.templates');
 
         Route::get('taxes', [TaxController::class, 'index'])->name('taxes.index');
         Route::post('taxes', [TaxController::class, 'store'])->name('taxes.store');

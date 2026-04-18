@@ -12,6 +12,7 @@ const navItems: NavItem[] = [
     { title: 'Categories', href: '/configuration/categories' },
     { title: 'Tags', href: '/configuration/tags' },
     { title: 'Units', href: '/configuration/units' },
+    { title: 'Templates', href: '/configuration/templates' },
 ];
 
 const { isCurrentOrParentUrl } = useCurrentUrl();
