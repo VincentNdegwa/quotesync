@@ -2,6 +2,8 @@
 import { Head, Link, router, setLayoutProps, useForm } from '@inertiajs/vue3';
 import { computed, watchEffect } from 'vue';
 import Heading from '@/components/Heading.vue';
+import CountryCombobox from '@/components/location/CountryCombobox.vue';
+import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -178,11 +180,11 @@ const deleteClient = (): void => {
                     </div>
                     <div class="grid gap-2">
                         <Label for="country">Country</Label>
-                        <Input id="country" v-model="form.country" />
+                        <CountryCombobox v-model="form.country" trigger-class="w-full" />
                     </div>
                     <div class="grid gap-2">
                         <Label for="currency">Currency</Label>
-                        <Input id="currency" v-model="form.currency" />
+                        <CurrencyCombobox v-model="form.currency" trigger-class="w-full" />
                     </div>
                 </div>
 

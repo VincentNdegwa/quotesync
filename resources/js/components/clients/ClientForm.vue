@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
+import CountryCombobox from '@/components/location/CountryCombobox.vue';
+import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -74,25 +76,26 @@ const selectedTagIds = computed<string[]>({
             </div>
         </div>
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div class="grid gap-2">
                 <Label for="country">Country code</Label>
-                <Input id="country" maxlength="2" v-model="form.country" placeholder="NG" />
+                <CountryCombobox v-model="form.country" trigger-class="w-full" />
                 <InputError :message="errors.country" />
             </div>
 
             <div class="grid gap-2">
                 <Label for="currency">Currency</Label>
-                <Input id="currency" maxlength="3" v-model="form.currency" placeholder="USD" />
+                <CurrencyCombobox v-model="form.currency" trigger-class="w-full" />
                 <InputError :message="errors.currency" />
             </div>
 
-            <div class="grid gap-2">
-                <Label for="language">Language</Label>
-                <Input id="language" maxlength="10" v-model="form.language" placeholder="en" />
-                <InputError :message="errors.language" />
-            </div>
         </div>
+
+        <!-- <div class="grid gap-2">
+            <Label for="language">Language</Label>
+            <Input id="language" maxlength="10" v-model="form.language" placeholder="en" />
+            <InputError :message="errors.language" />
+        </div> -->
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div class="grid gap-2">

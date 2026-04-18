@@ -72,6 +72,10 @@ class WorkspaceOnboardingController extends Controller
                 'currency' => $quoteFields->get('default_currency')['value'] ?? null,
                 'quote_prefix' => $quoteFields->get('quote_prefix')['value'] ?? null,
             ],
+            'localization' => [
+                'language' => $localizationFields->get('language')['value'] ?? 'en',
+            ],
+            'availableLanguages' => array_values((array) config('workspace-settings.groups.localization.fields.language.options', ['en'])),
             'availableRoles' => $availableRoles,
             'defaultRoleId' => $defaultRoleId,
         ]);
@@ -117,6 +121,7 @@ class WorkspaceOnboardingController extends Controller
                 'localization',
                 [
                     'currency' => $validated['currency'],
+                    'language' => $validated['language'],
                 ],
                 markOnboardingComplete: false,
             );

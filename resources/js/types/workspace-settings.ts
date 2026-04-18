@@ -56,6 +56,10 @@ export type WorkspaceOnboardingPageProps = {
         currency: string | null;
         quote_prefix: string | null;
     };
+    localization: {
+        language: string | null;
+    };
+    availableLanguages: string[];
     availableRoles: Array<{
         id: number;
         name: string;

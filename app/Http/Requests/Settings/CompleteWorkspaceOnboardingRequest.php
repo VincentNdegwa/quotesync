@@ -52,9 +52,12 @@ class CompleteWorkspaceOnboardingRequest extends FormRequest
         }
 
         if ($stepIndex === 2) {
+            $languageOptions = (array) config('workspace-settings.groups.localization.fields.language.options', ['en']);
+
             return [
                 ...$rules,
                 'currency' => ['required', 'string', 'size:3'],
+                'language' => ['required', 'string', Rule::in($languageOptions)],
                 'quote_prefix' => ['required', 'string', 'max:20'],
             ];
         }

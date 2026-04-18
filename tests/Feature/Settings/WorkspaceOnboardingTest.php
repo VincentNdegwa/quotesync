@@ -29,6 +29,8 @@ test('workspace onboarding page renders and accepts required settings', function
             ->where('currentStepIndex', 1)
             ->has('business')
             ->has('quoteDefaults')
+            ->has('localization')
+            ->has('availableLanguages')
             ->has('availableRoles')
             ->has('defaultRoleId'),
         );
@@ -48,6 +50,7 @@ test('workspace onboarding page renders and accepts required settings', function
             'step_index' => 2,
             'navigation' => 'next',
             'currency' => 'NGN',
+            'language' => 'en',
             'quote_prefix' => 'QS',
         ])
         ->assertRedirect(route('business-setup.onboarding', ['step' => 3]));

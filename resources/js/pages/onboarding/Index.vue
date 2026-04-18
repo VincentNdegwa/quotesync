@@ -4,6 +4,9 @@ import { Check, Circle, Dot } from 'lucide-vue-next';
 import type { PropType } from 'vue';
 import { computed, reactive, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
+import CountryCombobox from '@/components/location/CountryCombobox.vue';
+import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
+import LanguageCombobox from '@/components/location/LanguageCombobox.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,9 +27,9 @@ import {
 } from '@/components/ui/stepper';
 import type { WorkspaceOnboardingPageProps } from '@/types';
 import {
-    currencyOptions,
-    filterCountryOptions,
+    translationLanguageOptions,
 } from '@/utils/location-options';
+import type { LanguageOption } from '@/utils/location-options';
 
 const props = defineProps({
     workspace: {
@@ -49,6 +52,16 @@ const props = defineProps({
         required: false,
         default: null,
     },
+    localization: {
+        type: Object as PropType<WorkspaceOnboardingPageProps['localization']>,
+        required: false,
+        default: null,
+    },
+    availableLanguages: {
+        type: Array as PropType<WorkspaceOnboardingPageProps['availableLanguages']>,
+        required: false,
+        default: () => [],
+    },
     availableRoles: {
         type: Array as PropType<WorkspaceOnboardingPageProps['availableRoles']>,
         required: false,
@@ -67,7 +80,6 @@ const props = defineProps({
 });
 
 const stepIndex = ref(props.currentStepIndex ?? 1);
-const countryQuery = ref('');
 
 watch(
     () => props.currentStepIndex,
@@ -80,13 +92,24 @@ watch(
 
 const wizardSteps = [
     { step: 1, title: 'Your business', description: 'Company and country' },
-    { step: 2, title: 'Quote defaults', description: 'Currency and numbering' },
+    { step: 2, title: 'Quote defaults', description: 'Currency, language, and numbering' },
     { step: 3, title: 'Invite team', description: 'Add your colleagues' },
 ];
 
-const filteredCountries = computed(() =>
-    filterCountryOptions(countryQuery.value),
-);
+const languageOptions = computed<LanguageOption[]>(() => {
+    if (props.availableLanguages.length === 0) {
+        return translationLanguageOptions;
+    }
+
+    const labelMap = new Map(
+        translationLanguageOptions.map((language) => [language.code, language.label]),
+    );
+
+    return props.availableLanguages.map((language) => ({
+        code: language,
+        label: labelMap.get(language) ?? language.toUpperCase(),
+    }));
+});
 
 const onboardingForm = reactive({
     method: 'put' as const,
@@ -98,6 +121,7 @@ const onboardingForm = reactive({
         country: props.business?.country ?? '',
         logo_path: props.business?.logo_path ?? '',
         currency: props.quoteDefaults?.currency ?? 'USD',
+        language: props.localization?.language ?? 'en',
         quote_prefix: props.quoteDefaults?.quote_prefix ?? 'QS',
         invites: [
             { email: '', role_id: props.defaultRoleId ? String(props.defaultRoleId) : '' },
@@ -122,6 +146,14 @@ watch(
     (quoteDefaults) => {
         onboardingForm.data.currency = quoteDefaults?.currency ?? 'USD';
         onboardingForm.data.quote_prefix = quoteDefaults?.quote_prefix ?? 'QS';
+    },
+    { immediate: true },
+);
+
+watch(
+    () => props.localization,
+    (localization) => {
+        onboardingForm.data.language = localization?.language ?? 'en';
     },
     { immediate: true },
 );
@@ -226,19 +258,8 @@ const handleFormSuccess = (): void => {
 
                 <div class="grid gap-2">
                     <Label required>Country</Label>
-                    <Select v-model="onboardingForm.data.country" name="country">
-                        <SelectTrigger class="w-full" >
-                            <SelectValue placeholder="Select Country" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <div class="p-2">
-                                <Input v-model="countryQuery" placeholder="Filter..." class="h-8" />
-                            </div>
-                            <SelectItem v-for="c in filteredCountries" :key="c.code" :value="c.code">
-                                {{ c.label }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <CountryCombobox v-model="onboardingForm.data.country" trigger-class="w-full" />
+                    <input type="hidden" name="country" :value="onboardingForm.data.country" />
                     <InputError :message="errors.country" />
                 </div>
             </div>
@@ -246,17 +267,19 @@ const handleFormSuccess = (): void => {
             <div v-if="stepIndex === 2" class="space-y-4">
                 <div class="grid gap-2">
                     <Label required>Default Currency</Label>
-                       <Select v-model="onboardingForm.data.currency" name="currency">
-                        <SelectTrigger class="w-full" >
-                            <SelectValue placeholder="Select Currency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem v-for="c in currencyOptions" :key="c.code" :value="c.code">
-                                {{ c.label }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <CurrencyCombobox v-model="onboardingForm.data.currency" trigger-class="w-full" />
+                    <input type="hidden" name="currency" :value="onboardingForm.data.currency" />
                     <InputError :message="errors.currency" />
+                </div>
+                <div class="grid gap-2">
+                    <Label required>Interface Language</Label>
+                    <LanguageCombobox
+                        v-model="onboardingForm.data.language"
+                        :options="languageOptions"
+                        trigger-class="w-full"
+                    />
+                    <input type="hidden" name="language" :value="onboardingForm.data.language" />
+                    <InputError :message="errors.language" />
                 </div>
                 <div class="grid gap-2">
                     <Label required>Quote Prefix</Label>

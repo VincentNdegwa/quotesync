@@ -3,6 +3,9 @@ import { Form, Head } from '@inertiajs/vue3';
 import { computed, reactive, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import CountryCombobox from '@/components/location/CountryCombobox.vue';
+import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
+import LanguageCombobox from '@/components/location/LanguageCombobox.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +24,10 @@ import type {
     WorkspaceSettingsField,
     WorkspaceSettingsPageProps,
 } from '@/types';
+import {
+    translationLanguageOptions,
+} from '@/utils/location-options';
+import type { LanguageOption } from '@/utils/location-options';
 
 const props = defineProps<WorkspaceSettingsPageProps>();
 
@@ -164,6 +171,25 @@ const optionDisplayLabel = (option: string): string => {
         .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
         .join(' ');
 };
+
+const isLanguageField = (field: WorkspaceSettingsField): boolean => {
+    return field.type === 'select' && field.key.toLowerCase().includes('language');
+};
+
+const languageOptionsForField = (field: WorkspaceSettingsField): LanguageOption[] => {
+    const labels = new Map(
+        translationLanguageOptions.map((language) => [language.code, language.label]),
+    );
+
+    const source = field.options && field.options.length > 0
+        ? field.options
+        : translationLanguageOptions.map((language) => language.code);
+
+    return source.map((code) => ({
+        code,
+        label: labels.get(code) ?? optionDisplayLabel(code),
+    }));
+};
 </script>
 
 <template>
@@ -217,6 +243,43 @@ const optionDisplayLabel = (option: string): string => {
                         />
                         <span>Enabled</span>
                     </label>
+                </div>
+
+                <div v-else-if="field.type === 'country'" class="space-y-2">
+                    <CountryCombobox
+                        v-model="formValues[field.key]"
+                        :trigger-class="'w-full'"
+                    />
+                    <input
+                        :name="`settings[${field.key}]`"
+                        type="hidden"
+                        :value="formValues[field.key]"
+                    />
+                </div>
+
+                <div v-else-if="field.type === 'currency'" class="space-y-2">
+                    <CurrencyCombobox
+                        v-model="formValues[field.key]"
+                        :trigger-class="'w-full'"
+                    />
+                    <input
+                        :name="`settings[${field.key}]`"
+                        type="hidden"
+                        :value="formValues[field.key]"
+                    />
+                </div>
+
+                <div v-else-if="isLanguageField(field)" class="space-y-2">
+                    <LanguageCombobox
+                        v-model="formValues[field.key]"
+                        :options="languageOptionsForField(field)"
+                        :trigger-class="'w-full'"
+                    />
+                    <input
+                        :name="`settings[${field.key}]`"
+                        type="hidden"
+                        :value="formValues[field.key]"
+                    />
                 </div>
 
                 <Select

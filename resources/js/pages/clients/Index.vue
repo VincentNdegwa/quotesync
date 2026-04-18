@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import ClientSlideOver from '@/components/clients/ClientSlideOver.vue';
 import Heading from '@/components/Heading.vue';
+import CountryCombobox from '@/components/location/CountryCombobox.vue';
+import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -16,6 +18,13 @@ import ClientHeaderActions from '@/pages/clients/components/ClientHeaderActions.
 import ClientsDataTable from '@/pages/clients/components/ClientsDataTable.vue';
 import ConfigurationTagCreateDialog from '@/pages/configuration/tags/components/CreateDialog.vue';
 import type { ClientRecord, Paginator } from '@/types';
+import type { CountryOption } from '@/utils/location-options';
+import {
+    commonCountryOptions,
+    commonCurrencyOptions,
+    countryOptions,
+    currencyOptions,
+} from '@/utils/location-options';
 
 type Filters = {
     search: string;
@@ -29,10 +38,28 @@ const ALL_OPTION = '__all__';
 const props = defineProps<{
     clients: Paginator<ClientRecord>;
     filters: Filters;
-    countries: string[];
-    currencies: string[];
     tags: Array<{ id: number; name: string }>;
 }>();
+
+const countryFilterOptions = computed<CountryOption[]>(() => {
+    const commonCodes = new Set(commonCountryOptions.map((country) => country.code));
+
+    return [
+        { code: ALL_OPTION, label: 'All countries', currency: '' },
+        ...commonCountryOptions,
+        ...countryOptions.filter((country) => !commonCodes.has(country.code)),
+    ];
+});
+
+const currencyFilterOptions = computed(() => {
+    const commonCodes = new Set(commonCurrencyOptions.map((currency) => currency.code));
+
+    return [
+        { code: ALL_OPTION, label: 'All currencies' },
+        ...commonCurrencyOptions,
+        ...currencyOptions.filter((currency) => !commonCodes.has(currency.code)),
+    ];
+});
 
 defineOptions({
     layout: {
@@ -201,41 +228,25 @@ const exportSelected = (): void => {
                     class="w-full lg:w-[420px] xl:w-[520px]"
                 />
 
-                <Select v-model="query.country">
-                    <SelectTrigger class="w-full md:w-44">
-                        <SelectValue placeholder="Country" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem :value="ALL_OPTION"
-                            >All countries</SelectItem
-                        >
-                        <SelectItem
-                            v-for="country in countries"
-                            :key="country"
-                            :value="country"
-                        >
-                            {{ country }}
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
+                <CountryCombobox
+                    v-model="query.country"
+                    :options="countryFilterOptions"
+                    placeholder="Country"
+                    search-placeholder="Search country..."
+                    empty-text="No country found."
+                    trigger-class="w-full md:w-44"
+                    :common-limit="20"
+                />
 
-                <Select v-model="query.currency">
-                    <SelectTrigger class="w-full md:w-44">
-                        <SelectValue placeholder="Currency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem :value="ALL_OPTION"
-                            >All currencies</SelectItem
-                        >
-                        <SelectItem
-                            v-for="currency in currencies"
-                            :key="currency"
-                            :value="currency"
-                        >
-                            {{ currency }}
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
+                <CurrencyCombobox
+                    v-model="query.currency"
+                    :options="currencyFilterOptions"
+                    placeholder="Currency"
+                    search-placeholder="Search currency..."
+                    empty-text="No currency found."
+                    trigger-class="w-full md:w-44"
+                    :common-limit="20"
+                />
 
                 <Select v-model="query.tag">
                     <SelectTrigger class="w-full md:w-44">
