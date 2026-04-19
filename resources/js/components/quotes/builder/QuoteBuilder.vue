@@ -1,5 +1,6 @@
 #resources/js/components/quotes/builder/QuoteBuilder.vue
 <script setup lang="ts">
+import { useEventListener } from '@vueuse/core';
 import { computed, ref } from 'vue';
 import BlockConfigPanel from '@/components/builder/BlockConfigPanel.vue';
 import BlockList from '@/components/builder/BlockList.vue';
@@ -110,6 +111,7 @@ const moveBlock = (fromIndex: number, toIndex: number): void => {
     }
 
     blocks.splice(toIndex, 0, moved);
+    selectedBlockId.value = moved.id;
 };
 
 const moveBlockById = (blockId: string, direction: 'up' | 'down'): void => {
@@ -151,6 +153,35 @@ const deleteBlock = (blockId: string): void => {
     if (selectedBlockId.value === blockId) {
         selectedBlockId.value = currentLayout.value.blocks[index]?.id ?? currentLayout.value.blocks[index - 1]?.id ?? null;
     }
+};
+
+const duplicateBlock = (blockId: string): void => {
+    const sourceIndex = currentLayout.value.blocks.findIndex((block) => block.id === blockId);
+
+    if (sourceIndex < 0) {
+        return;
+    }
+
+    const source = currentLayout.value.blocks[sourceIndex];
+
+    if (!source) {
+        return;
+    }
+
+    const duplicated = createBlock(source.type);
+    const clonedConfig = typeof structuredClone === 'function'
+        ? structuredClone(source.config)
+        : JSON.parse(JSON.stringify(source.config));
+
+    duplicated.visible = source.visible;
+    duplicated.locked = false;
+    duplicated.label = source.label ?? null;
+    duplicated.config = clonedConfig;
+
+    const insertionIndex = sourceIndex + 1;
+
+    currentLayout.value.blocks.splice(insertionIndex, 0, duplicated);
+    selectedBlockId.value = duplicated.id;
 };
 
 const createEmptyLineItem = (sortOrder: number): QuoteBuilderLineItem => ({
@@ -487,6 +518,55 @@ const onSave = (): void => {
     emit('save');
 };
 
+const isTypingTarget = (target: EventTarget | null): boolean => {
+    if (!(target instanceof HTMLElement)) {
+        return false;
+    }
+
+    const tagName = target.tagName;
+
+    return target.isContentEditable
+        || tagName === 'INPUT'
+        || tagName === 'TEXTAREA'
+        || tagName === 'SELECT'
+        || target.closest('[contenteditable="true"]') !== null;
+};
+
+useEventListener('keydown', (event: KeyboardEvent) => {
+    const key = event.key.toLowerCase();
+    const hasCommand = event.metaKey || event.ctrlKey;
+
+    if (hasCommand && key === 's') {
+        event.preventDefault();
+
+        if (!props.processing && !props.systemLocked) {
+            onSave();
+        }
+
+        return;
+    }
+
+    if (hasCommand && key === 'd') {
+        event.preventDefault();
+
+        if (isTypingTarget(event.target)) {
+            return;
+        }
+
+        if (canvasMode.value !== 'edit') {
+            return;
+        }
+
+        const activeBlockId = selectedBlockId.value ?? currentLayout.value.blocks[0]?.id ?? null;
+
+        if (!activeBlockId) {
+            return;
+        }
+
+        duplicateBlock(activeBlockId);
+    }
+}, { capture: true });
+
 const addableBlockTypes = ADDABLE_BLOCK_TYPES;
 </script>
 
@@ -537,6 +617,7 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                         @select-block="(blockId) => (selectedBlockId = blockId)"
                         @move-up="(blockId) => moveBlockById(blockId, 'up')"
                         @move-down="(blockId) => moveBlockById(blockId, 'down')"
+                        @move-block="(payload) => moveBlock(payload.fromIndex, payload.toIndex)"
                         @insert-up="(payload) => insertBlockRelative(payload.blockId, payload.type, 'up')"
                         @insert-down="(payload) => insertBlockRelative(payload.blockId, payload.type, 'down')"
                         @add-line-items-section="addSection()"

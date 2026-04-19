@@ -27,9 +27,13 @@ const emit = defineEmits<{
     (e: 'insert-down', type: BlockType): void;
     (e: 'toggle-visible'): void;
     (e: 'delete'): void;
+    (e: 'drag-start', blockId: string): void;
+    (e: 'drag-end'): void;
+    (e: 'drop', blockId: string): void;
 }>();
 
 const isHovered = ref(false);
+const rootRef = ref<HTMLElement | null>(null);
 
 const showActions = computed(() => isHovered.value || props.isSelected);
 const canDelete = computed(() => !props.block.locked);
@@ -61,24 +65,91 @@ const editabilityClass = computed(() => {
 });
 
 const displayName = (type: BlockType): string => type.replaceAll('_', ' ');
+
+const isTypingTarget = (target: EventTarget | null): boolean => {
+    if (!(target instanceof HTMLElement)) {
+        return false;
+    }
+
+    const tagName = target.tagName;
+
+    return target.isContentEditable
+        || tagName === 'INPUT'
+        || tagName === 'TEXTAREA'
+        || tagName === 'SELECT'
+        || target.closest('[contenteditable="true"]') !== null;
+};
+
+const handleSelect = (): void => {
+    emit('select');
+    rootRef.value?.focus();
+};
+
+const handleKeydown = (event: KeyboardEvent): void => {
+    if (!props.isSelected) {
+        return;
+    }
+
+    if (isTypingTarget(event.target)) {
+        return;
+    }
+
+    const key = event.key.toLowerCase();
+
+    if ((event.key === 'ArrowUp' || key === 'w') && !props.isFirst) {
+        event.preventDefault();
+        emit('move-up');
+
+        return;
+    }
+
+    if ((event.key === 'ArrowDown' || key === 's') && !props.isLast) {
+        event.preventDefault();
+        emit('move-down');
+    }
+};
+
+const handleDragStart = (event: DragEvent): void => {
+    if (event.dataTransfer) {
+        event.dataTransfer.setData('text/plain', props.block.id);
+        event.dataTransfer.effectAllowed = 'move';
+
+        if (rootRef.value) {
+            event.dataTransfer.setDragImage(rootRef.value, 8, 8);
+        }
+    }
+
+    emit('drag-start', props.block.id);
+};
 </script>
 
 <template>
     <div
+        ref="rootRef"
+        role="button"
+        tabindex="0"
         class="group relative rounded-md border border-transparent p-2 transition-all"
         :class="[
             isSelected ? 'border-gray-400 ring-2 ring-gray-400/45' : 'hover:border-gray-300',
             block.visible ? '' : 'opacity-60',
         ]"
+        @keydown="handleKeydown"
+        @dragover.prevent
+        @drop.prevent="emit('drop', block.id)"
         @mouseenter="isHovered = true"
         @mouseleave="isHovered = false"
-        @click.stop="emit('select')"
+        @click.stop="handleSelect"
     >
         <div
             v-if="showActions"
             class="absolute -top-9 left-1/2 z-20 flex -translate-x-1/2 items-center gap-0.5 rounded-md border bg-background px-1 py-0.5 shadow-lg"
         >
-            <span class="cursor-grab rounded p-1 text-muted-foreground">
+            <span
+                draggable="true"
+                class="cursor-grab rounded p-1 text-muted-foreground active:cursor-grabbing"
+                @dragstart.stop="handleDragStart"
+                @dragend.stop="emit('drag-end')"
+            >
                 <GripVertical class="h-3.5 w-3.5" />
             </span>
 

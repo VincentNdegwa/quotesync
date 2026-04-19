@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import EditableBlock from '@/components/builder/EditableBlock.vue';
 import CoverMessageBlock from '@/components/renderer/blocks/CoverMessageBlock.vue';
 import DividerBlock from '@/components/renderer/blocks/DividerBlock.vue';
@@ -40,6 +40,7 @@ const emit = defineEmits<{
     (e: 'move-down', blockId: string): void;
     (e: 'insert-up', payload: { blockId: string; type: BlockType }): void;
     (e: 'insert-down', payload: { blockId: string; type: BlockType }): void;
+    (e: 'move-block', payload: { fromIndex: number; toIndex: number }): void;
     (e: 'add-line-items-section', blockId: string): void;
     (e: 'remove-line-items-section', payload: { blockId: string; sectionIndex: number }): void;
     (e: 'add-line-item', payload: { blockId: string; sectionIndex: number }): void;
@@ -80,6 +81,40 @@ const renderBlocks = computed(() => {
     return props.layout.blocks.filter((block) => block.visible);
 });
 
+const draggedBlockId = ref<string | null>(null);
+
+const handleDragStart = (blockId: string): void => {
+    draggedBlockId.value = blockId;
+};
+
+const handleDrop = (targetBlockId: string): void => {
+    if (!draggedBlockId.value || draggedBlockId.value === targetBlockId) {
+        draggedBlockId.value = null;
+
+        return;
+    }
+
+    const fromIndex = props.layout.blocks.findIndex((block) => block.id === draggedBlockId.value);
+    const toIndex = props.layout.blocks.findIndex((block) => block.id === targetBlockId);
+
+    if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
+        draggedBlockId.value = null;
+
+        return;
+    }
+
+    emit('move-block', {
+        fromIndex,
+        toIndex,
+    });
+
+    draggedBlockId.value = null;
+};
+
+const handleDragEnd = (): void => {
+    draggedBlockId.value = null;
+};
+
 const handleAddLineItem = (blockId: string, sectionIndex: number): void => {
     emit('add-line-item', { blockId, sectionIndex });
 };
@@ -107,6 +142,33 @@ const handleUpdatePaymentTerms = (blockId: string, payload: { label: string; cus
         customText: payload.customText,
     });
 };
+
+const handleRemoveSection = (blockId: string, sectionIndex: number): void => {
+    emit('remove-line-items-section', { blockId, sectionIndex });
+};
+
+const handleUpdateCoverMessage = (blockId: string, value: string | null): void => {
+    emit('update-cover-message', { blockId, value });
+};
+
+const handleUpdateCoverLabel = (blockId: string, value: string | null): void => {
+    emit('update-cover-label', { blockId, value });
+};
+
+const handleUpdateTerms = (blockId: string, value: string | null): void => {
+    emit('update-terms', { blockId, value });
+};
+
+const handleUpdateTermsLabel = (blockId: string, value: string | null): void => {
+    emit('update-terms-label', { blockId, value });
+};
+
+const handleUpdateSignatureContent = (
+    blockId: string,
+    payload: { acceptButtonText?: string | null; declineButtonText?: string | null; legalText?: string | null },
+): void => {
+    emit('update-signature-content', { blockId, ...payload });
+};
 </script>
 
 <template>
@@ -125,6 +187,9 @@ const handleUpdatePaymentTerms = (blockId: string, payload: { label: string; cus
                 @move-down="emit('move-down', block.id)"
                 @insert-up="(type) => emit('insert-up', { blockId: block.id, type })"
                 @insert-down="(type) => emit('insert-down', { blockId: block.id, type })"
+                @drag-start="(blockId) => handleDragStart(blockId)"
+                @drag-end="handleDragEnd"
+                @drop="(targetBlockId) => handleDrop(targetBlockId)"
                 @toggle-visible="emit('toggle-visible', block.id)"
                 @delete="emit('delete-block', block.id)"
             >
@@ -136,16 +201,16 @@ const handleUpdatePaymentTerms = (blockId: string, payload: { label: string; cus
                     :edit-mode="editMode"
                     :preview-mode="false"
                     @add-section="emit('add-line-items-section', block.id)"
-                    @remove-section="(sectionIndex) => emit('remove-line-items-section', { blockId: block.id, sectionIndex })"
-                    @add-line-item="(sectionIndex) => handleAddLineItem(block.id, sectionIndex)"
-                    @edit-line-item="(payload) => handleEditLineItem(block.id, payload)"
-                    @update-section-title="(payload) => handleUpdateSectionTitle(block.id, payload)"
-                    @update-cover-message="(value) => emit('update-cover-message', { blockId: block.id, value })"
-                    @update-cover-label="(value) => emit('update-cover-label', { blockId: block.id, value })"
-                    @update-terms="(value) => emit('update-terms', { blockId: block.id, value })"
-                    @update-terms-label="(value) => emit('update-terms-label', { blockId: block.id, value })"
-                    @update-payment-terms="(payload) => handleUpdatePaymentTerms(block.id, payload)"
-                    @update-signature-content="(payload) => emit('update-signature-content', { blockId: block.id, ...payload })"
+                    @remove-section="handleRemoveSection(block.id, $event)"
+                    @add-line-item="handleAddLineItem(block.id, $event)"
+                    @edit-line-item="handleEditLineItem(block.id, $event)"
+                    @update-section-title="handleUpdateSectionTitle(block.id, $event)"
+                    @update-cover-message="handleUpdateCoverMessage(block.id, $event)"
+                    @update-cover-label="handleUpdateCoverLabel(block.id, $event)"
+                    @update-terms="handleUpdateTerms(block.id, $event)"
+                    @update-terms-label="handleUpdateTermsLabel(block.id, $event)"
+                    @update-payment-terms="handleUpdatePaymentTerms(block.id, $event)"
+                    @update-signature-content="handleUpdateSignatureContent(block.id, $event)"
                 />
             </EditableBlock>
 

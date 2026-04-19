@@ -599,10 +599,6 @@ notifications (Laravel's built-in notifications table)
 'notifications' => [
     'unread_count' => ...,
     'latest'       => [...] // last 5
-],
-'flash' => [
-    'success' => session('success'),
-    'error'   => session('error'),
 ]
 ```
 
