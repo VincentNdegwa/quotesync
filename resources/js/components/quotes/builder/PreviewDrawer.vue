@@ -8,12 +8,19 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
-import type { BrandingData, QuoteData, QuoteBuilderState, TemplateLayout } from '@/types';
+import type {
+    BrandingData,
+    BuilderClientOption,
+    QuoteData,
+    QuoteBuilderState,
+    TemplateLayout,
+} from '@/types';
 
 const props = defineProps<{
     open: boolean;
     mode: 'quote' | 'template';
     state: QuoteBuilderState;
+    clients?: BuilderClientOption[];
     currentLayout: TemplateLayout;
     branding?: {
         company_name: string | null;
@@ -55,6 +62,14 @@ const computeLineItemTotals = (item: QuoteBuilderState['sections'][number]['line
         subtotal,
     };
 };
+
+const selectedClient = computed<BuilderClientOption | null>(() => {
+    if (!props.state.client_id) {
+        return null;
+    }
+
+    return props.clients?.find((client) => client.id === props.state.client_id) ?? null;
+});
 
 const quoteData = computed<QuoteData>(() => {
     const sections = props.state.sections.map((section) => ({
@@ -111,6 +126,11 @@ const quoteData = computed<QuoteData>(() => {
         id: props.state.id,
         number: props.state.number,
         title: props.state.title,
+        client: {
+            id: props.state.client_id,
+            companyName: selectedClient.value?.company_name ?? null,
+            address: null,
+        },
         createdAt: new Date().toISOString(),
         validUntil: props.state.valid_until,
         currency: props.state.currency,

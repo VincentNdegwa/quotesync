@@ -26,8 +26,10 @@ defineProps<{
         </div>
         <div :class="config.layout === 'split' ? 'text-right' : ''">
             <p v-if="config.showLabels" class="text-xs uppercase tracking-wide text-muted-foreground">To</p>
-            <p class="font-semibold">Client</p>
-            <p v-if="config.showClientAddress" class="text-muted-foreground">Selected in quote details</p>
+            <p class="font-semibold">{{ quote.client?.companyName || 'Client' }}</p>
+            <p v-if="config.showClientAddress" class="text-muted-foreground">
+                {{ quote.client?.address || 'No client address available' }}
+            </p>
         </div>
     </div>
 </template>

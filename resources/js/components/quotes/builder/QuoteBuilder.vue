@@ -211,7 +211,7 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
         />
 
         <div class="flex min-h-0 flex-1 overflow-hidden rounded-lg border bg-card">
-            <div class="w-[220px] shrink-0 overflow-y-auto border-r p-3">
+            <div class="w-55 shrink-0 overflow-y-auto border-r p-3">
                 <BlockList
                     :blocks="currentLayout.blocks"
                     :selected-block-id="selectedBlockId"
@@ -241,6 +241,7 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
             :open="previewOpen"
             :mode="mode"
             :state="localState"
+            :clients="clients"
             :branding="branding"
             :current-layout="currentLayout"
             @update:open="(value) => (previewOpen = value)"

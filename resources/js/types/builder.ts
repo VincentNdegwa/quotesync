@@ -242,6 +242,11 @@ export type QuoteData = {
   id: number | null;
   number: string | null;
   title: string;
+  client: {
+    id: number | null;
+    companyName: string | null;
+    address: string | null;
+  } | null;
   createdAt: string | null;
   validUntil: string | null;
   currency: string | null;
