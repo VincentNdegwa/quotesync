@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Auth;
     'cover_message',
     'notes',
     'terms',
+    'layout',
     'is_active',
     'is_system',
     'usage_count',
@@ -75,6 +76,7 @@ class QuoteTemplate extends Model
         return [
             'is_active' => 'boolean',
             'is_system' => 'boolean',
+            'layout' => 'array',
         ];
     }
 }

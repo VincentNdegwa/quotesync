@@ -6,6 +6,8 @@ use App\Models\CatalogItem;
 use App\Models\Quote;
 use App\Models\QuoteTemplate;
 use App\Models\Workspace;
+use App\Models\WorkspaceSetting;
+use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
@@ -13,6 +15,10 @@ use Illuminate\Support\Facades\DB;
 
 class QuoteService
 {
+    public function __construct(
+        private WorkspaceSettingsService $workspaceSettingsService,
+    ) {}
+
     /**
      * @param  array<string, mixed>  $filters
      */
@@ -55,18 +61,146 @@ class QuoteService
     public function create(Workspace $workspace, array $payload): Quote
     {
         return DB::transaction(function () use ($workspace, $payload): Quote {
+            $this->workspaceSettingsService->syncDefaults($workspace);
+
             $sections = Arr::pull($payload, 'sections', []);
+            $layoutSnapshot = Arr::pull($payload, 'layout_snapshot');
+            $layout = Arr::pull($payload, 'layout');
+            $templateId = Arr::get($payload, 'template_id');
+            $quoteSettings = $this->quoteSettings($workspace, lockForUpdate: true);
+
+            if (! is_array($layoutSnapshot) && is_array($layout)) {
+                $layoutSnapshot = $layout;
+            }
+
+            $sequence = max(1, (int) Arr::get($quoteSettings, 'quote_number_sequence', 1));
+            $number = trim((string) Arr::get($payload, 'number', ''));
+            $generatedNumber = false;
+
+            if ($number === '') {
+                if ((bool) Arr::get($quoteSettings, 'quote_number_reset_yearly', true)) {
+                    $hasQuoteInCurrentYear = Quote::query()
+                        ->withTrashed()
+                        ->where('workspace_id', $workspace->id)
+                        ->whereYear('created_at', (int) now()->year)
+                        ->exists();
+
+                    if (! $hasQuoteInCurrentYear) {
+                        $sequence = 1;
+                    }
+                }
+
+                $payload['number'] = $this->formatQuoteNumber(
+                    (string) Arr::get($quoteSettings, 'quote_prefix', 'QS'),
+                    $sequence,
+                );
+
+                $generatedNumber = true;
+            }
+
+            if (Arr::get($payload, 'valid_until') === null) {
+                $validityDays = max(1, (int) Arr::get($quoteSettings, 'quote_validity_days', 30));
+                $payload['valid_until'] = now()->addDays($validityDays)->toDateString();
+            }
+
+            if (! is_array($layoutSnapshot) && $templateId) {
+                $templateLayout = QuoteTemplate::query()
+                    ->where('workspace_id', $workspace->id)
+                    ->whereKey($templateId)
+                    ->value('layout');
+
+                $layoutSnapshot = is_array($templateLayout) ? $templateLayout : null;
+            }
 
             $quote = Quote::query()->create([
                 ...$payload,
                 'workspace_id' => $workspace->id,
                 'status' => Arr::get($payload, 'status', 'draft'),
+                'layout_snapshot' => $layoutSnapshot,
             ]);
+
+            if ($generatedNumber) {
+                $this->updateQuoteSequence($workspace, $sequence + 1);
+            }
 
             $this->syncSections($quote, $sections);
 
             return $quote->refresh();
         });
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function quoteSettings(Workspace $workspace, bool $lockForUpdate = false): array
+    {
+        $query = WorkspaceSetting::query()
+            ->where('workspace_id', $workspace->id)
+            ->where('group', 'quotes')
+            ->whereIn('key', [
+                'quote_prefix',
+                'quote_number_sequence',
+                'quote_number_reset_yearly',
+                'quote_validity_days',
+            ]);
+
+        if ($lockForUpdate) {
+            $query->lockForUpdate();
+        }
+
+        $settings = $query->get(['key', 'value', 'cast'])->keyBy('key');
+
+        $prefix = $this->decodeWorkspaceSetting($settings->get('quote_prefix')?->value, $settings->get('quote_prefix')?->cast, 'QS');
+        $sequence = $this->decodeWorkspaceSetting($settings->get('quote_number_sequence')?->value, $settings->get('quote_number_sequence')?->cast, 1);
+        $resetYearly = $this->decodeWorkspaceSetting($settings->get('quote_number_reset_yearly')?->value, $settings->get('quote_number_reset_yearly')?->cast, true);
+        $validityDays = $this->decodeWorkspaceSetting($settings->get('quote_validity_days')?->value, $settings->get('quote_validity_days')?->cast, 30);
+
+        return [
+            'quote_prefix' => is_string($prefix) && trim($prefix) !== '' ? trim($prefix) : 'QS',
+            'quote_number_sequence' => max(1, (int) $sequence),
+            'quote_number_reset_yearly' => (bool) $resetYearly,
+            'quote_validity_days' => max(1, (int) $validityDays),
+        ];
+    }
+
+    private function updateQuoteSequence(Workspace $workspace, int $nextSequence): void
+    {
+        WorkspaceSetting::query()->updateOrCreate(
+            [
+                'workspace_id' => $workspace->id,
+                'group' => 'quotes',
+                'key' => 'quote_number_sequence',
+            ],
+            [
+                'value' => (string) max(1, $nextSequence),
+                'cast' => 'integer',
+                'encrypted' => false,
+            ],
+        );
+    }
+
+    private function formatQuoteNumber(string $prefix, int $sequence): string
+    {
+        return sprintf('%s-%d-%03d', strtoupper($prefix), (int) now()->year, $sequence);
+    }
+
+    /**
+     * @param  mixed  $default
+     * @return mixed
+     */
+    private function decodeWorkspaceSetting(?string $value, ?string $cast, $default)
+    {
+        if ($value === null) {
+            return $default;
+        }
+
+        return match ($cast) {
+            'boolean' => $value === '1',
+            'integer' => (int) $value,
+            'float' => (float) $value,
+            'json' => json_decode($value, true, 512, JSON_THROW_ON_ERROR),
+            default => $value,
+        };
     }
 
     /**
@@ -76,8 +210,17 @@ class QuoteService
     {
         return DB::transaction(function () use ($quote, $payload): Quote {
             $sections = Arr::pull($payload, 'sections', []);
+            $layoutSnapshot = Arr::pull($payload, 'layout_snapshot');
+            $layout = Arr::pull($payload, 'layout');
 
-            $quote->fill($payload)->save();
+            if (! is_array($layoutSnapshot) && is_array($layout)) {
+                $layoutSnapshot = $layout;
+            }
+
+            $quote->fill([
+                ...$payload,
+                'layout_snapshot' => is_array($layoutSnapshot) ? $layoutSnapshot : null,
+            ])->save();
 
             $this->syncSections($quote, $sections);
 
@@ -112,12 +255,14 @@ class QuoteService
             'terms' => $quote->terms,
             'notes' => $quote->notes,
             'template_id' => $quote->template_id,
+            'layout_snapshot' => $quote->layout_snapshot,
             'requires_deposit' => (bool) $quote->requires_deposit,
             'deposit_amount' => $quote->deposit_amount,
             'subtotal' => $quote->subtotal,
             'discount_amount' => $quote->discount_amount,
             'tax_amount' => $quote->tax_amount,
             'total' => $quote->total,
+            'layout' => $quote->layout_snapshot,
             'sections' => $quote->sections->map(function ($section): array {
                 return [
                     'id' => $section->id,
@@ -173,6 +318,7 @@ class QuoteService
         return [
             'title' => $template->name,
             'template_id' => $template->id,
+            'layout_snapshot' => $template->layout,
             'cover_message' => $template->cover_message,
             'terms' => $template->terms,
             'notes' => $template->notes,

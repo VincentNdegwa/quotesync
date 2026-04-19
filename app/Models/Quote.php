@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Auth;
     'valid_until',
     'version',
     'template_id',
+    'layout_snapshot',
     'parent_quote_id',
     'subtotal',
     'discount_amount',
@@ -132,6 +133,7 @@ class Quote extends Model
     {
         return [
             'valid_until' => 'date',
+            'layout_snapshot' => 'array',
             'subtotal' => 'decimal:2',
             'discount_amount' => 'decimal:2',
             'tax_amount' => 'decimal:2',

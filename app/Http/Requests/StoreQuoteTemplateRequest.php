@@ -42,6 +42,7 @@ class StoreQuoteTemplateRequest extends FormRequest
             'cover_message' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],
             'terms' => ['nullable', 'string'],
+            'layout' => ['nullable', 'array'],
             'is_active' => ['nullable', 'boolean'],
             'sections' => ['required', 'array', 'min:1'],
             'sections.*.title' => ['required', 'string', 'max:255'],

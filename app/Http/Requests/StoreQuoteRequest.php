@@ -57,6 +57,8 @@ class StoreQuoteRequest extends FormRequest
             'cover_message' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],
             'terms' => ['nullable', 'string'],
+            'layout' => ['nullable', 'array'],
+            'layout_snapshot' => ['nullable', 'array'],
             'template_id' => [
                 'nullable',
                 'integer',

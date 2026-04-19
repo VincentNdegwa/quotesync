@@ -79,6 +79,11 @@ class QuoteController extends Controller
                 ->find($templateId);
         }
 
+        /** @var Collection<int, array<string, mixed>> $quoteFields */
+        $quoteFields = collect($workspaceSettingsService->groupForFrontend($workspace, 'quotes')['fields'] ?? [])->keyBy('key');
+        $defaultCurrency = (string) ($quoteFields->get('default_currency')['value'] ?? 'USD');
+        $validityDays = max(1, (int) ($quoteFields->get('quote_validity_days')['value'] ?? 30));
+
         $initialState = [
             'id' => null,
             'number' => null,
@@ -86,12 +91,14 @@ class QuoteController extends Controller
             'status' => 'draft',
             'client_id' => null,
             'assigned_to' => $request->user()?->id,
-            'currency' => 'USD',
-            'valid_until' => now()->addDays(30)->toDateString(),
+            'currency' => $defaultCurrency,
+            'valid_until' => now()->addDays($validityDays)->toDateString(),
             'cover_message' => null,
             'terms' => null,
             'notes' => null,
             'template_id' => $template?->id,
+            'layout' => null,
+            'layout_snapshot' => null,
             'requires_deposit' => false,
             'deposit_amount' => null,
             'subtotal' => 0,

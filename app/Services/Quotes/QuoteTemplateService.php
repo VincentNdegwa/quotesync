@@ -119,6 +119,8 @@ class QuoteTemplateService
             'discount_amount' => 0,
             'tax_amount' => 0,
             'total' => 0,
+            'layout' => $template->layout,
+            'layout_snapshot' => $template->layout,
             'is_active' => (bool) $template->is_active,
             'is_system' => (bool) $template->is_system,
             'sections' => $template->sections->map(fn ($section): array => [
