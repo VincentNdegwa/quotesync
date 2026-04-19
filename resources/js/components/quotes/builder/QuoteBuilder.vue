@@ -1,7 +1,7 @@
 #resources/js/components/quotes/builder/QuoteBuilder.vue
 <script setup lang="ts">
 import { useEventListener } from '@vueuse/core';
-import { computed, ref } from 'vue';
+import { computed, ref, toRaw } from 'vue';
 import BlockConfigPanel from '@/components/builder/BlockConfigPanel.vue';
 import BlockList from '@/components/builder/BlockList.vue';
 import BuilderHeader from '@/components/quotes/builder/BuilderHeader.vue';
@@ -155,6 +155,16 @@ const deleteBlock = (blockId: string): void => {
     }
 };
 
+const cloneBlockConfig = <T>(config: T): T => {
+    const rawConfig = toRaw(config);
+
+    try {
+        return structuredClone(rawConfig);
+    } catch {
+        return JSON.parse(JSON.stringify(rawConfig)) as T;
+    }
+};
+
 const duplicateBlock = (blockId: string): void => {
     const sourceIndex = currentLayout.value.blocks.findIndex((block) => block.id === blockId);
 
@@ -169,9 +179,7 @@ const duplicateBlock = (blockId: string): void => {
     }
 
     const duplicated = createBlock(source.type);
-    const clonedConfig = typeof structuredClone === 'function'
-        ? structuredClone(source.config)
-        : JSON.parse(JSON.stringify(source.config));
+    const clonedConfig = cloneBlockConfig(source.config);
 
     duplicated.visible = source.visible;
     duplicated.locked = false;
@@ -535,6 +543,7 @@ const isTypingTarget = (target: EventTarget | null): boolean => {
 useEventListener('keydown', (event: KeyboardEvent) => {
     const key = event.key.toLowerCase();
     const hasCommand = event.metaKey || event.ctrlKey;
+    const isDuplicateShortcut = hasCommand && event.code === 'KeyD';
 
     if (hasCommand && key === 's') {
         event.preventDefault();
@@ -546,7 +555,7 @@ useEventListener('keydown', (event: KeyboardEvent) => {
         return;
     }
 
-    if (hasCommand && key === 'd') {
+    if (isDuplicateShortcut) {
         event.preventDefault();
 
         if (isTypingTarget(event.target)) {
@@ -632,6 +641,7 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                         @update-payment-terms="(payload) => updatePaymentTermsContent(payload.blockId, { label: payload.label, customText: payload.customText })"
                         @update-signature-content="(payload) => updateSignatureContent(payload.blockId, payload)"
                         @toggle-visible="(blockId) => toggleBlockVisibility(blockId)"
+                        @duplicate-block="(blockId) => duplicateBlock(blockId)"
                         @delete-block="(blockId) => deleteBlock(blockId)"
                     />
                 </div>

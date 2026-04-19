@@ -53,6 +53,7 @@ const emit = defineEmits<{
     (e: 'update-payment-terms', payload: { blockId: string; label: string; customText: string | null }): void;
     (e: 'update-signature-content', payload: { blockId: string; acceptButtonText?: string | null; declineButtonText?: string | null; legalText?: string | null }): void;
     (e: 'toggle-visible', blockId: string): void;
+    (e: 'duplicate-block', blockId: string): void;
     (e: 'delete-block', blockId: string): void;
 }>();
 
@@ -191,6 +192,7 @@ const handleUpdateSignatureContent = (
                 @drag-end="handleDragEnd"
                 @drop="(targetBlockId) => handleDrop(targetBlockId)"
                 @toggle-visible="emit('toggle-visible', block.id)"
+                @duplicate="emit('duplicate-block', block.id)"
                 @delete="emit('delete-block', block.id)"
             >
                 <component

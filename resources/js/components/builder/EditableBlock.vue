@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronDown, ChevronUp, EyeOff, GripVertical, Lock, Plus, Trash2 } from 'lucide-vue-next';
+import { ChevronDown, ChevronUp, Copy, EyeOff, GripVertical, Lock, Plus, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import {
     DropdownMenu,
@@ -25,6 +25,7 @@ const emit = defineEmits<{
     (e: 'move-down'): void;
     (e: 'insert-up', type: BlockType): void;
     (e: 'insert-down', type: BlockType): void;
+    (e: 'duplicate'): void;
     (e: 'toggle-visible'): void;
     (e: 'delete'): void;
     (e: 'drag-start', blockId: string): void;
@@ -106,6 +107,13 @@ const handleKeydown = (event: KeyboardEvent): void => {
     if ((event.key === 'ArrowDown' || key === 's') && !props.isLast) {
         event.preventDefault();
         emit('move-down');
+
+        return;
+    }
+
+    if ((event.key === 'Delete' || event.key === 'Backspace') && canDelete.value) {
+        event.preventDefault();
+        emit('delete');
     }
 };
 
@@ -237,6 +245,14 @@ const handleDragStart = (event: DragEvent): void => {
             </span>
 
             <div class="mx-1 h-4 w-px bg-border" />
+
+            <button
+                type="button"
+                class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                @click.stop="emit('duplicate')"
+            >
+                <Copy class="h-3.5 w-3.5" />
+            </button>
 
             <button
                 v-if="canDelete"
