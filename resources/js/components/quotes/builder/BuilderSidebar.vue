@@ -1,3 +1,4 @@
+#resources/js/components/quotes/builder/BuilderSidebar.vue
 <script setup lang="ts">
 import { Layers3 } from 'lucide-vue-next';
 import { computed } from 'vue';

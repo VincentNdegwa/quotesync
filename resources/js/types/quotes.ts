@@ -1,3 +1,5 @@
+import type { TemplateLayout } from './builder';
+
 export type TaxSnapshot = {
     tax_id: number | null;
     tax_label: string;
@@ -48,6 +50,8 @@ export type QuoteBuilderState = {
     discount_amount: number;
     tax_amount: number;
     total: number;
+    layout?: TemplateLayout | null;
+    layout_snapshot?: TemplateLayout | null;
     description?: string | null;
     industry?: string | null;
     is_active?: boolean;

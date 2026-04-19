@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { Eye } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 defineProps<{
     mode: 'quote' | 'template';
@@ -10,6 +10,7 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
+    (e: 'preview'): void;
     (e: 'save'): void;
 }>();
 
@@ -19,21 +20,26 @@ const title = defineModel<string>('title', {
 </script>
 
 <template>
-    <div class="flex flex-col gap-3 rounded-lg border p-4 md:flex-row md:items-end md:justify-between">
-        <div class="grid w-full gap-3 md:max-w-3xl md:grid-cols-3">
-            <!-- <Label for="builder-title">{{ mode === 'quote' ? 'Quote title' : 'Template name' }}</Label> -->
+    <div class="rounded-lg border bg-card p-4">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <Input
                 id="builder-title"
                 v-model="title"
                 :placeholder="mode === 'quote' ? 'Enter quote title' : 'Enter template name'"
                 :disabled="systemLocked"
-                class="md:col-span-2"
+                class="w-full lg:max-w-2xl"
             />
 
-        </div>
+            <div class="flex items-center gap-2">
+                <Button variant="outline" :disabled="processing" @click="emit('preview')">
+                    <Eye class="mr-2 size-4" />
+                    Preview
+                </Button>
 
-        <Button :disabled="processing || systemLocked" @click="emit('save')">
-            {{ mode === 'quote' ? 'Save quote' : 'Save template' }}
-        </Button>
+                <Button :disabled="processing || systemLocked" @click="emit('save')">
+                    {{ mode === 'quote' ? 'Save quote' : 'Save template' }}
+                </Button>
+            </div>
+        </div>
     </div>
 </template>
