@@ -2,11 +2,9 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import type { CoverMessageBlockConfig, QuoteBuilderState } from '@/types';
+import type { CoverMessageBlockConfig } from '@/types';
 
 const config = defineModel<CoverMessageBlockConfig>({ required: true });
-const quoteState = defineModel<QuoteBuilderState>('quoteState', { required: true });
 
 const fontSizeOptions = [
     { value: 'sm', label: 'S' },
@@ -35,39 +33,12 @@ const updateNullableColor = (
             <p
                 class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
             >
-                Content
+                Display
             </p>
-
-            <div class="mb-3 space-y-1.5">
-                <p class="text-xs text-muted-foreground">Message content</p>
-                <Textarea
-                    :model-value="quoteState.cover_message ?? ''"
-                    rows="5"
-                    placeholder="Write your cover message"
-                    class="text-sm"
-                    @update:model-value="
-                        (value) =>
-                            (quoteState.cover_message =
-                                String(value ?? '').trim().length > 0
-                                    ? String(value)
-                                    : null)
-                    "
-                />
-            </div>
 
             <div class="mb-3 flex items-center justify-between rounded border px-2.5 py-1.5 text-sm">
                 <span>Show label</span>
                 <Switch v-model="config.showLabel" class="scale-75" />
-            </div>
-
-            <div class="space-y-1.5" :class="!config.showLabel ? 'opacity-60' : ''">
-                <p class="text-xs text-muted-foreground">Label text</p>
-                <Input
-                    v-model="config.labelText"
-                    placeholder="A note from us"
-                    class="h-8 text-sm"
-                    :disabled="!config.showLabel"
-                />
             </div>
         </div>
 
@@ -122,61 +93,60 @@ const updateNullableColor = (
             </div>
         </div>
 
-        <div class="grid grid-cols-1 divide-x lg:grid-cols-2">
-            <div class="px-4 py-3">
-                <p
-                    class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
-                >
-                    Layout
-                </p>
+        <div class="border-b px-4 py-3">
+            <p
+                class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+            >
+                Layout
+            </p>
 
-                <div class="mb-3">
-                    <p class="mb-1.5 text-xs text-muted-foreground">Padding</p>
-                    <div class="flex gap-1">
-                        <button
-                            v-for="size in paddingOptions"
-                            :key="size.value"
-                            type="button"
-                            class="flex-1 rounded border py-1 text-sm font-semibold transition-colors"
-                            :class="
-                                config.paddingSize === size.value
-                                    ? 'border-primary bg-primary/10 text-primary'
-                                    : 'hover:border-muted-foreground/50'
-                            "
-                            @click="config.paddingSize = size.value"
-                        >
-                            {{ size.label }}
-                        </button>
-                    </div>
-                </div>
-
-                <div>
-                    <p class="mb-1.5 text-xs text-muted-foreground">Font size</p>
-                    <div class="flex gap-1">
-                        <button
-                            v-for="size in fontSizeOptions"
-                            :key="size.value"
-                            type="button"
-                            class="flex-1 rounded border py-1 text-sm font-semibold transition-colors"
-                            :class="
-                                config.fontSize === size.value
-                                    ? 'border-primary bg-primary/10 text-primary'
-                                    : 'hover:border-muted-foreground/50'
-                            "
-                            @click="config.fontSize = size.value"
-                        >
-                            {{ size.label }}
-                        </button>
-                    </div>
+            <div class="mb-3">
+                <p class="mb-1.5 text-xs text-muted-foreground">Padding</p>
+                <div class="flex gap-1">
+                    <button
+                        v-for="size in paddingOptions"
+                        :key="size.value"
+                        type="button"
+                        class="flex-1 rounded border py-1 text-sm font-semibold transition-colors"
+                        :class="
+                            config.paddingSize === size.value
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'hover:border-muted-foreground/50'
+                        "
+                        @click="config.paddingSize = size.value"
+                    >
+                        {{ size.label }}
+                    </button>
                 </div>
             </div>
 
-            <div class="px-4 py-3">
-                <p
-                    class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
-                >
-                    Appearance
-                </p>
+            <div>
+                <p class="mb-1.5 text-xs text-muted-foreground">Font size</p>
+                <div class="flex gap-1">
+                    <button
+                        v-for="size in fontSizeOptions"
+                        :key="size.value"
+                        type="button"
+                        class="flex-1 rounded border py-1 text-sm font-semibold transition-colors"
+                        :class="
+                            config.fontSize === size.value
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'hover:border-muted-foreground/50'
+                        "
+                        @click="config.fontSize = size.value"
+                    >
+                        {{ size.label }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-4 py-3">
+            <p
+                class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+            >
+                Appearance
+            </p>
 
                 <div class="mb-3">
                     <p class="mb-1.5 text-xs text-muted-foreground">Background color</p>
@@ -277,19 +247,18 @@ const updateNullableColor = (
                     </div>
                 </div>
 
-                <div class="pt-1">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        @click="
-                            config.backgroundColor = null;
-                            config.borderLeftColor = null;
-                        "
-                    >
-                        Clear colors
-                    </Button>
-                </div>
+            <div class="pt-1">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    @click="
+                        config.backgroundColor = null;
+                        config.borderLeftColor = null;
+                    "
+                >
+                    Clear colors
+                </Button>
             </div>
         </div>
     </div>

@@ -58,8 +58,8 @@ const updateNullableColor = (value: unknown): void => {
             </div>
         </div>
 
-        <div class="grid grid-cols-1 divide-x lg:grid-cols-2">
-            <div class="px-4 py-3">
+        <div class="border-b px-4 py-3">
+            <div>
                 <p class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Layout</p>
                 <p class="mb-1.5 text-xs text-muted-foreground">Spacing</p>
                 <div class="flex gap-1">
@@ -79,8 +79,10 @@ const updateNullableColor = (value: unknown): void => {
                     </button>
                 </div>
             </div>
+        </div>
 
-            <div class="px-4 py-3">
+        <div class="px-4 py-3">
+            <div>
                 <p class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Appearance</p>
                 <p class="mb-1.5 text-xs text-muted-foreground">Color</p>
                 <div class="flex items-center gap-2">
@@ -98,9 +100,7 @@ const updateNullableColor = (value: unknown): void => {
                         class="h-8 font-mono text-xs"
                         @update:model-value="updateNullableColor"
                     />
-                    <Button type="button" variant="ghost" size="sm" class="h-8 px-2 text-xs" @click="config.color = null">
-                        X
-                    </Button>
+                    <Button type="button" variant="ghost" size="sm" class="h-8 px-2 text-xs" @click="config.color = null">X</Button>
                 </div>
             </div>
         </div>

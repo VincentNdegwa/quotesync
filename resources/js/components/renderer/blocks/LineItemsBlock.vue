@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { BrandingData, LineItemsBlockConfig, QuoteData } from '@/types';
 
 const props = defineProps<{
@@ -7,117 +9,73 @@ const props = defineProps<{
     quote: QuoteData;
     branding: BrandingData;
     previewMode: boolean;
+    editMode?: boolean;
 }>();
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+const emit = defineEmits<{
+    (e: 'add-section'): void;
+    (e: 'remove-section', sectionIndex: number): void;
+    (e: 'add-line-item', sectionIndex: number): void;
+    (e: 'edit-line-item', payload: { sectionIndex: number; lineItemIndex: number }): void;
+    (e: 'update-section-title', payload: { sectionIndex: number; title: string }): void;
+}>();
 
-const fmt = (value: number): string =>
-    new Intl.NumberFormat(undefined, {
+const fmt = (value: number): string => {
+    return new Intl.NumberFormat(undefined, {
         style: 'currency',
         currency: props.quote.currency || 'USD',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     }).format(Number(value || 0));
+};
 
 type LineItem = QuoteData['sections'][number]['lineItems'][number];
 type Section = QuoteData['sections'][number];
 
-// ─── Font / padding maps ─────────────────────────────────────────────────────
+const fontClass = computed(() => ({ sm: 'text-xs', md: 'text-sm', lg: 'text-base' })[props.config.fontSize]);
+const titleClass = computed(() => ({ sm: 'text-sm', md: 'text-base', lg: 'text-lg' })[props.config.fontSize]);
+const cellPad = computed(() => ({ sm: 'px-2 py-1.5', md: 'px-3 py-2.5', lg: 'px-4 py-3.5' })[props.config.fontSize]);
 
-const fontClass = computed(() =>
-    ({ sm: 'text-xs', md: 'text-sm', lg: 'text-base' })[props.config.fontSize],
-);
-
-const nameFontClass = computed(() =>
-    ({ sm: 'text-sm', md: 'text-base', lg: 'text-lg' })[props.config.fontSize],
-);
-
-const cellPad = computed(() =>
-    ({ sm: 'px-2 py-1.5', md: 'px-3 py-2.5', lg: 'px-4 py-3.5' })[props.config.fontSize],
-);
-
-// ─── Grid template columns ───────────────────────────────────────────────────
-// Build a CSS grid-template-columns string from config.
-// description col gets the remainder so it always fills.
-
-const gridTemplate = computed((): string => {
-    const c = props.config;
-    const w = c.columnWidths;
-
-    const cols: string[] = [];
-
-    // Description is always first and fills remaining space
-    cols.push('1fr');
-
-    if (c.showQuantity) {
-        cols.push(`${w.quantity}%`);
-    }
-
-    if (c.showUnitPrice) {
-        cols.push(`${w.unitPrice}%`);
-    }
-
-    if (c.showDiscount) {
-        cols.push(`${w.discount}%`);
-    }
-
-    if (c.showTax) {
-        cols.push(`${w.tax}%`);
-    }
-
-    if (c.showLineTotal) {
-        cols.push(`${w.total}%`);
-    }
-
-    return cols.join(' ');
+const isColumnLayout = computed(() => ['default', 'bordered', 'striped'].includes(props.config.tableStyle));
+const isMinimal = computed(() => props.config.tableStyle === 'minimal');
+const isCards = computed(() => props.config.tableStyle === 'cards');
+const borderedCellClass = computed(() => (props.config.tableStyle === 'bordered' ? 'border-l first:border-l-0' : ''));
+const columnCount = computed(() => {
+    return 1
+        + Number(props.config.showQuantity)
+        + Number(props.config.showUnitPrice)
+        + Number(props.config.showDiscount)
+        + Number(props.config.showTax)
+        + Number(props.config.showLineTotal);
 });
 
-// ─── Section subtotal ────────────────────────────────────────────────────────
-
-const sectionSubtotal = (section: Section): number =>
-    section.lineItems.reduce((sum, item) => sum + Number(item.total || 0), 0);
-
-// ─── Inline meta line (minimal + cards) ─────────────────────────────────────
+const sectionSubtotal = (section: Section): number => section.lineItems.reduce((sum, item) => sum + Number(item.total || 0), 0);
 
 const itemMeta = (item: LineItem): string => {
-    const c = props.config;
     const parts: string[] = [];
 
-    if (c.showQuantity) {
-        const unit = c.showUnit && item.unit ? ` ${item.unit}` : '';
-        parts.push(`${item.quantity}${unit}`);
+    if (props.config.showQuantity) {
+        parts.push(`${item.quantity}${props.config.showUnit && item.unit ? ` ${item.unit}` : ''}`);
     }
 
-    if (c.showUnitPrice) {
-        const unit = c.showUnit && item.unit ? `/${item.unit}` : '';
-        parts.push(`${fmt(item.unitPrice)}${unit}`);
+    if (props.config.showUnitPrice) {
+        parts.push(fmt(item.unitPrice));
     }
 
-    if (c.showDiscount && Number(item.discountPercent || 0) > 0) {
+    if (props.config.showDiscount && Number(item.discountPercent || 0) > 0) {
         parts.push(`${item.discountPercent}% disc`);
     }
 
-    if (c.showTax && Number(item.taxAmount || 0) > 0) {
+    if (props.config.showTax && Number(item.taxAmount || 0) > 0) {
         parts.push(`tax ${fmt(item.taxAmount)}`);
     }
 
     return parts.join(' · ');
 };
 
-// ─── Optional item helpers ────────────────────────────────────────────────────
-
-const isGreyed = (item: LineItem): boolean =>
-    item.isOptional && props.config.optionalItemStyle === 'greyed';
-
-const showBadge = (item: LineItem): boolean =>
-    item.isOptional &&
-    props.config.showOptionalBadge &&
-    props.config.optionalItemStyle === 'badge';
-
-const showCheckbox = (item: LineItem): boolean =>
-    item.isOptional && props.config.optionalItemStyle === 'checkbox';
-
-// ─── Striped row color ────────────────────────────────────────────────────────
+const isGreyed = (item: LineItem): boolean => item.isOptional && props.config.optionalItemStyle === 'greyed';
+const showBadge = (item: LineItem): boolean => item.isOptional && props.config.showOptionalBadge && props.config.optionalItemStyle === 'badge';
+const showCheckbox = (item: LineItem): boolean => item.isOptional && props.config.optionalItemStyle === 'checkbox';
 
 const stripeClass = (index: number): string => {
     if (props.config.tableStyle !== 'striped' || !props.config.alternateRowColor) {
@@ -126,331 +84,191 @@ const stripeClass = (index: number): string => {
 
     return index % 2 !== 0 ? 'bg-muted/40' : '';
 };
-
-// ─── Border / header color styles ────────────────────────────────────────────
-
-const borderStyle = computed(() => ({
-    borderColor: props.config.borderColor ?? undefined,
-}));
-
-const headerBgStyle = computed(() => ({
-    backgroundColor: props.config.headerBackgroundColor ?? undefined,
-    borderColor: props.config.borderColor ?? undefined,
-}));
-
-// ─── Style flags ─────────────────────────────────────────────────────────────
-
-const isColumnLayout = computed(() =>
-    ['default', 'bordered', 'striped'].includes(props.config.tableStyle),
-);
-
-const isMinimal = computed(() => props.config.tableStyle === 'minimal');
-const isCards = computed(() => props.config.tableStyle === 'cards');
 </script>
 
 <template>
     <div class="px-6 py-4" :class="fontClass">
-
-        <!-- ── Empty state (builder preview only) ─────────────────────── -->
-        <div
-            v-if="quote.sections.length === 0 && previewMode"
-            class="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground"
-        >
-            No line items yet. Add products from the catalog.
+        <div v-if="quote.sections.length === 0 && previewMode" class="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+            No line items yet.
         </div>
 
-        <!-- ── Sections loop ──────────────────────────────────────────── -->
-        <div
-            v-for="section in quote.sections"
-            :key="`section-${section.id ?? section.title}`"
-            class="mb-8 last:mb-0"
-        >
-            <!-- Section title -->
-            <h4
-                v-if="config.showSectionTitles && section.title"
-                class="mb-3 font-semibold tracking-tight"
-                :class="nameFontClass"
-                :style="{ color: branding.primaryColor }"
-            >
-                {{ section.title }}
-            </h4>
+        <div v-for="(section, sectionIndex) in quote.sections" :key="`section-${section.id ?? sectionIndex}`" class="group/section mb-8 last:mb-0">
+            <div class="mb-3 flex items-center justify-between gap-2">
+                <InlineEditableText
+                    v-if="config.showSectionTitles && editMode"
+                    :model-value="section.title"
+                    :edit-mode="editMode"
+                    :multiline="false"
+                    wrapper-class="w-full max-w-[18rem]"
+                    display-class="font-semibold tracking-tight text-sm"
+                    placeholder="Section name"
+                    empty-text="Section name"
+                    @update:model-value="(value) => emit('update-section-title', { sectionIndex, title: value ?? '' })"
+                />
+                <h4 v-else-if="config.showSectionTitles && section.title" class="font-semibold tracking-tight" :class="titleClass" :style="{ color: branding.primaryColor }">
+                    {{ section.title }}
+                </h4>
 
-            <!-- ════════════════════════════════════════════════════════
-                 STYLE: default | bordered | striped
-                 Uses CSS grid with grid-template-columns
-                 ════════════════════════════════════════════════════════ -->
+                <div v-if="editMode" class="flex items-center gap-1.5 opacity-0 transition-opacity group-hover/section:opacity-100">
+                    <button
+                        type="button"
+                        class="rounded border px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
+                        @click="emit('add-line-item', sectionIndex)"
+                    >
+                        + Add item
+                    </button>
+                    <button
+                        v-if="quote.sections.length > 1"
+                        type="button"
+                        class="rounded border border-destructive/40 px-2 py-1 text-xs text-destructive hover:bg-destructive/10"
+                        @click="emit('remove-section', sectionIndex)"
+                    >
+                        Remove
+                    </button>
+                </div>
+            </div>
+
             <template v-if="isColumnLayout">
-                <div
-                    class="overflow-hidden rounded-md border"
-                    :style="borderStyle"
-                >
-                    <!-- Header row -->
-                    <div
-                        class="grid items-center border-b"
-                        :class="cellPad"
-                        :style="[headerBgStyle, { gridTemplateColumns: gridTemplate }]"
-                    >
-                        <div class="truncate text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            Item
-                        </div>
-                        <div v-if="config.showQuantity" class="text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            Qty
-                        </div>
-                        <div v-if="config.showUnitPrice" class="text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            Unit Price
-                        </div>
-                        <div v-if="config.showDiscount" class="text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            Disc
-                        </div>
-                        <div v-if="config.showTax" class="text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            Tax
-                        </div>
-                        <div v-if="config.showLineTotal" class="text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            Total
-                        </div>
-                    </div>
+                <div class="overflow-hidden rounded-sm border" :style="{ borderColor: config.borderColor ?? undefined }">
+                    <Table class="table-fixed">
+                        <colgroup>
+                            <col>
+                            <col v-if="config.showQuantity" :style="{ width: `${config.columnWidths.quantity}%` }">
+                            <col v-if="config.showUnitPrice" :style="{ width: `${config.columnWidths.unitPrice}%` }">
+                            <col v-if="config.showDiscount" :style="{ width: `${config.columnWidths.discount}%` }">
+                            <col v-if="config.showTax" :style="{ width: `${config.columnWidths.tax}%` }">
+                            <col v-if="config.showLineTotal" :style="{ width: `${config.columnWidths.total}%` }">
+                        </colgroup>
 
-                    <!-- Item rows -->
-                    <div
-                        v-for="(item, itemIndex) in section.lineItems"
-                        :key="`col-item-${item.id ?? itemIndex}`"
-                        class="border-b last:border-b-0"
-                        :class="[stripeClass(itemIndex)]"
-                        :style="borderStyle"
-                    >
-                        <!-- Main grid row -->
-                        <div
-                            class="grid items-start"
-                            :class="[cellPad, isGreyed(item) ? 'opacity-50' : '']"
-                            :style="{ gridTemplateColumns: gridTemplate }"
-                        >
-                            <!-- Description cell -->
-                            <div class="min-w-0 pr-4">
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <span class="font-medium leading-snug" :class="nameFontClass">
-                                        {{ item.name || 'Line item' }}
-                                    </span>
-                                    <!-- Optional badge inline with name -->
-                                    <span
-                                        v-if="showBadge(item)"
-                                        class="inline-flex items-center rounded-full border px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
-                                    >
-                                        Optional
-                                    </span>
-                                </div>
-
-                                <!-- Description (not in bordered — too cramped) -->
-                                <p
-                                    v-if="config.showItemDescription && config.tableStyle !== 'bordered' && item.description"
-                                    class="mt-0.5 text-xs text-muted-foreground"
+                        <TableHeader>
+                            <TableRow :style="{ backgroundColor: config.headerBackgroundColor ?? undefined, borderColor: config.borderColor ?? undefined }">
+                                <TableHead class="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground" :class="[cellPad, borderedCellClass]" :style="{ borderColor: config.borderColor ?? undefined }">Item</TableHead>
+                                <TableHead
+                                    v-if="config.showQuantity"
+                                    class="text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                                    :class="[cellPad, borderedCellClass]"
+                                    :style="{ borderColor: config.borderColor ?? undefined }"
                                 >
-                                    {{ item.description }}
-                                </p>
+                                    Qty
+                                </TableHead>
+                                <TableHead
+                                    v-if="config.showUnitPrice"
+                                    class="text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                                    :class="[cellPad, borderedCellClass]"
+                                    :style="{ borderColor: config.borderColor ?? undefined }"
+                                >
+                                    Unit
+                                </TableHead>
+                                <TableHead
+                                    v-if="config.showDiscount"
+                                    class="text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                                    :class="[cellPad, borderedCellClass]"
+                                    :style="{ borderColor: config.borderColor ?? undefined }"
+                                >
+                                    Disc
+                                </TableHead>
+                                <TableHead
+                                    v-if="config.showTax"
+                                    class="text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                                    :class="[cellPad, borderedCellClass]"
+                                    :style="{ borderColor: config.borderColor ?? undefined }"
+                                >
+                                    Tax
+                                </TableHead>
+                                <TableHead
+                                    v-if="config.showLineTotal"
+                                    class="text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                                    :class="[cellPad, borderedCellClass]"
+                                    :style="{ borderColor: config.borderColor ?? undefined }"
+                                >
+                                    Total
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
 
-                                <!-- SKU -->
-                                <p v-if="config.showSku && item.sku" class="mt-0.5 font-mono text-[10px] text-muted-foreground/70">
-                                    {{ item.sku }}
-                                </p>
-                            </div>
+                        <TableBody>
+                            <template v-for="(item, lineItemIndex) in section.lineItems" :key="`item-${item.id ?? lineItemIndex}`">
+                                <TableRow
+                                    :class="[stripeClass(lineItemIndex), editMode ? 'cursor-pointer hover:bg-primary/5' : '']"
+                                    :style="{ borderColor: config.borderColor ?? undefined }"
+                                    @click="editMode && emit('edit-line-item', { sectionIndex, lineItemIndex })"
+                                >
+                                    <TableCell class="pr-4 align-top" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.borderColor ?? undefined }">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="font-medium" :class="titleClass">{{ item.name || 'Line item' }}</span>
+                                            <span v-if="showBadge(item)" class="rounded-full border px-1.5 py-px text-[10px] uppercase tracking-wide text-muted-foreground">Optional</span>
+                                        </div>
+                                        <p v-if="config.showItemDescription && item.description" class="mt-0.5 text-xs text-muted-foreground">{{ item.description }}</p>
+                                        <p v-if="config.showSku && item.sku" class="mt-0.5 text-[10px] text-muted-foreground/70">SKU {{ item.sku }}</p>
+                                    </TableCell>
+                                    <TableCell v-if="config.showQuantity" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.borderColor ?? undefined }">{{ item.quantity }}</TableCell>
+                                    <TableCell v-if="config.showUnitPrice" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.borderColor ?? undefined }">{{ fmt(item.unitPrice) }}</TableCell>
+                                    <TableCell v-if="config.showDiscount" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.borderColor ?? undefined }">{{ item.discountPercent || 0 }}%</TableCell>
+                                    <TableCell v-if="config.showTax" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.borderColor ?? undefined }">{{ fmt(item.taxAmount) }}</TableCell>
+                                    <TableCell v-if="config.showLineTotal" class="text-right font-semibold tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.borderColor ?? undefined }">{{ fmt(item.total) }}</TableCell>
+                                </TableRow>
 
-                            <!-- Quantity -->
-                            <div v-if="config.showQuantity" class="text-right tabular-nums">
-                                {{ item.quantity }}
-                                <span v-if="config.showUnit && item.unit" class="text-muted-foreground">
-                                    {{ item.unit }}
-                                </span>
-                            </div>
+                                <TableRow v-if="showCheckbox(item)" :style="{ borderColor: config.borderColor ?? undefined }">
+                                    <TableCell :colspan="columnCount" class="border-t border-dashed px-3 py-2 text-xs text-muted-foreground" :style="{ borderColor: config.borderColor ?? undefined }">
+                                        <label class="inline-flex items-center gap-2">
+                                            <input type="checkbox" class="h-3.5 w-3.5 rounded accent-primary" :disabled="previewMode" />
+                                            <span>Include this item</span>
+                                        </label>
+                                    </TableCell>
+                                </TableRow>
+                            </template>
+                        </TableBody>
+                    </Table>
 
-                            <!-- Unit price -->
-                            <div v-if="config.showUnitPrice" class="text-right tabular-nums">
-                                {{ fmt(item.unitPrice) }}
-                            </div>
-
-                            <!-- Discount -->
-                            <div v-if="config.showDiscount" class="text-right tabular-nums">
-                                <span v-if="Number(item.discountPercent || 0) > 0">
-                                    {{ item.discountPercent }}%
-                                </span>
-                                <span v-else class="text-muted-foreground/40">—</span>
-                            </div>
-
-                            <!-- Tax -->
-                            <div v-if="config.showTax" class="text-right tabular-nums">
-                                <span v-if="Number(item.taxAmount || 0) > 0">
-                                    {{ fmt(item.taxAmount) }}
-                                </span>
-                                <span v-else class="text-muted-foreground/40">—</span>
-                            </div>
-
-                            <!-- Total -->
-                            <div v-if="config.showLineTotal" class="text-right font-semibold tabular-nums">
-                                {{ fmt(item.total) }}
-                            </div>
-                        </div>
-
-                        <!-- Checkbox row for optional items (below the grid) -->
-                        <div
-                            v-if="showCheckbox(item)"
-                            class="flex items-center gap-2 border-t border-dashed px-3 py-2 text-xs text-muted-foreground"
-                            :style="borderStyle"
-                        >
-                            <input type="checkbox" class="h-3.5 w-3.5 cursor-pointer rounded accent-primary" :disabled="previewMode" />
-                            <span>Include this item</span>
-                        </div>
-                    </div>
-
-                    <!-- Section subtotal -->
-                    <div
-                        v-if="config.showSectionSubtotals"
-                        class="flex items-center justify-end border-t px-3 py-2"
-                        :style="borderStyle"
-                    >
+                    <div v-if="config.showSectionSubtotals" class="flex justify-end border-t px-3 py-2" :style="{ borderColor: config.borderColor ?? undefined }">
                         <span class="text-xs text-muted-foreground">Section subtotal&nbsp;</span>
-                        <span class="font-semibold" :class="fontClass">
-                            {{ fmt(sectionSubtotal(section)) }}
-                        </span>
-                    </div>
-                </div>
-            </template>
-
-            <!-- ════════════════════════════════════════════════════════
-                 STYLE: minimal
-                 No borders, just spacing and typography
-                 ════════════════════════════════════════════════════════ -->
-            <template v-else-if="isMinimal">
-                <div class="space-y-0 divide-y divide-border/40">
-                    <div
-                        v-for="(item, itemIndex) in section.lineItems"
-                        :key="`min-item-${item.id ?? itemIndex}`"
-                        class="py-3"
-                        :class="isGreyed(item) ? 'opacity-50' : ''"
-                    >
-                        <!-- Name + total -->
-                        <div class="flex items-start justify-between gap-4">
-                            <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                                <span class="font-medium leading-snug" :class="nameFontClass">
-                                    {{ item.name || 'Line item' }}
-                                </span>
-                                <span
-                                    v-if="showBadge(item)"
-                                    class="inline-flex items-center rounded-full border px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
-                                >
-                                    Optional
-                                </span>
-                            </div>
-                            <span v-if="config.showLineTotal" class="shrink-0 font-semibold tabular-nums">
-                                {{ fmt(item.total) }}
-                            </span>
-                        </div>
-
-                        <!-- Description -->
-                        <p
-                            v-if="config.showItemDescription && item.description"
-                            class="mt-0.5 text-xs text-muted-foreground"
-                        >
-                            {{ item.description }}
-                        </p>
-
-                        <!-- Meta line: qty · price · discount · tax -->
-                        <p v-if="itemMeta(item)" class="mt-0.5 text-xs text-muted-foreground/70">
-                            {{ itemMeta(item) }}
-                        </p>
-
-                        <!-- SKU -->
-                        <p v-if="config.showSku && item.sku" class="mt-0.5 font-mono text-[10px] text-muted-foreground/50">
-                            SKU {{ item.sku }}
-                        </p>
-
-                        <!-- Checkbox -->
-                        <div v-if="showCheckbox(item)" class="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground">
-                            <input type="checkbox" class="h-3.5 w-3.5 cursor-pointer rounded accent-primary" :disabled="previewMode" />
-                            <span>Include this item</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Divider + section subtotal -->
-                <div class="mt-1 border-t pt-2">
-                    <p v-if="config.showSectionSubtotals" class="text-right text-xs">
-                        <span class="text-muted-foreground">Section subtotal&nbsp;</span>
-                        <span class="font-semibold">{{ fmt(sectionSubtotal(section)) }}</span>
-                    </p>
-                </div>
-            </template>
-
-            <!-- ════════════════════════════════════════════════════════
-                 STYLE: cards
-                 Each item is its own card, no table columns
-                 ════════════════════════════════════════════════════════ -->
-            <template v-else-if="isCards">
-                <div class="space-y-3">
-                    <div
-                        v-for="(item, itemIndex) in section.lineItems"
-                        :key="`card-item-${item.id ?? itemIndex}`"
-                        class="rounded-lg border p-4 transition-colors"
-                        :class="isGreyed(item) ? 'opacity-50' : ''"
-                        :style="{ borderColor: config.borderColor ?? undefined }"
-                    >
-                        <!-- Name + total -->
-                        <div class="flex items-start justify-between gap-4">
-                            <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                                <span class="font-semibold leading-snug" :class="nameFontClass">
-                                    {{ item.name || 'Line item' }}
-                                </span>
-                                <span
-                                    v-if="showBadge(item)"
-                                    class="inline-flex items-center rounded-full border px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
-                                >
-                                    Optional
-                                </span>
-                            </div>
-                            <span v-if="config.showLineTotal" class="shrink-0 text-right font-semibold tabular-nums" :class="nameFontClass">
-                                {{ fmt(item.total) }}
-                            </span>
-                        </div>
-
-                        <!-- Description -->
-                        <p
-                            v-if="config.showItemDescription && item.description"
-                            class="mt-1 text-sm text-muted-foreground"
-                        >
-                            {{ item.description }}
-                        </p>
-
-                        <!-- Meta line -->
-                        <p v-if="itemMeta(item)" class="mt-1 text-xs text-muted-foreground/70">
-                            {{ itemMeta(item) }}
-                        </p>
-
-                        <!-- SKU -->
-                        <p v-if="config.showSku && item.sku" class="mt-1 font-mono text-[10px] text-muted-foreground/50">
-                            SKU {{ item.sku }}
-                        </p>
-
-                        <!-- Checkbox for optional -->
-                        <div
-                            v-if="showCheckbox(item)"
-                            class="mt-3 flex items-center gap-2 rounded-md border border-dashed p-2 text-xs text-muted-foreground"
-                        >
-                            <input
-                                type="checkbox"
-                                class="h-3.5 w-3.5 cursor-pointer rounded accent-primary"
-                                :disabled="previewMode"
-                            />
-                            <span>Include this item in my order</span>
-                        </div>
-                    </div>
-
-                    <!-- Section subtotal -->
-                    <div v-if="config.showSectionSubtotals" class="text-right text-xs">
-                        <span class="text-muted-foreground">Section subtotal&nbsp;</span>
                         <span class="font-semibold">{{ fmt(sectionSubtotal(section)) }}</span>
                     </div>
                 </div>
             </template>
 
+            <template v-else-if="isMinimal || isCards">
+                <div :class="isCards ? 'space-y-3' : 'space-y-0 divide-y divide-border/40'">
+                    <div
+                        v-for="(item, lineItemIndex) in section.lineItems"
+                        :key="`compact-${item.id ?? lineItemIndex}`"
+                        :class="[
+                            isCards ? 'rounded-lg border p-4' : 'py-3',
+                            isGreyed(item) ? 'opacity-50' : '',
+                            editMode ? 'cursor-pointer hover:bg-primary/5' : '',
+                        ]"
+                        :style="isCards ? { borderColor: config.borderColor ?? undefined } : undefined"
+                        @click="editMode && emit('edit-line-item', { sectionIndex, lineItemIndex })"
+                    >
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                                <span class="font-medium" :class="titleClass">{{ item.name || 'Line item' }}</span>
+                                <span v-if="showBadge(item)" class="rounded-full border px-1.5 py-px text-[10px] uppercase tracking-wide text-muted-foreground">Optional</span>
+                            </div>
+                            <span v-if="config.showLineTotal" class="shrink-0 font-semibold tabular-nums">{{ fmt(item.total) }}</span>
+                        </div>
+                        <p v-if="config.showItemDescription && item.description" class="mt-0.5 text-xs text-muted-foreground">{{ item.description }}</p>
+                        <p v-if="itemMeta(item)" class="mt-0.5 text-xs text-muted-foreground/70">{{ itemMeta(item) }}</p>
+                    </div>
+                </div>
+
+                <div v-if="config.showSectionSubtotals" class="mt-2 text-right text-xs">
+                    <span class="text-muted-foreground">Section subtotal&nbsp;</span>
+                    <span class="font-semibold">{{ fmt(sectionSubtotal(section)) }}</span>
+                </div>
+            </template>
+
+            <div v-if="editMode" class="mt-3">
+                <button type="button" class="rounded border px-2 py-1 text-xs text-muted-foreground hover:bg-muted" @click="emit('add-line-item', sectionIndex)">
+                    + Add item
+                </button>
+            </div>
         </div>
-        <!-- end sections loop -->
 
+        <div v-if="editMode" class="mt-4">
+            <button type="button" class="rounded border border-dashed px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted" @click="emit('add-section')">
+                + Add section
+            </button>
+        </div>
     </div>
 </template>

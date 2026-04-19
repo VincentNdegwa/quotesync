@@ -101,7 +101,7 @@ const updateToggle = (
             >
                 Design
             </p>
-            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <button
                     v-for="option in styleOptions"
                     :key="option.value"
@@ -149,8 +149,8 @@ const updateToggle = (
             </div>
         </div>
 
-        <div class="grid grid-cols-1 divide-x lg:grid-cols-2">
-            <div class="px-4 py-3">
+        <div class="border-b px-4 py-3">
+            <div>
                 <p
                     class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                 >
@@ -197,8 +197,10 @@ const updateToggle = (
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="px-4 py-3">
+        <div class="px-4 py-3">
+            <div>
                 <p
                     class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                 >

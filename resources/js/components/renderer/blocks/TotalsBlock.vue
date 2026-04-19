@@ -128,30 +128,30 @@ const taxLines = computed(() => {
                 config.fontSize === 'sm' ? 'text-xs' : config.fontSize === 'lg' ? 'text-base' : 'text-sm',
                 config.style === 'card' ? 'rounded-md border p-3' : '',
                 config.style === 'bordered' ? 'border-t pt-3' : '',
-                config.style === 'highlighted' ? 'rounded-md bg-muted/40 p-3' : '',
+                config.style === 'highlighted' ? 'rounded-sm bg-muted/10 p-3' : '',
             ]"
         >
             <div v-if="config.showSubtotal" class="flex items-center justify-between">
-                <span class="text-muted-foreground">Subtotal</span>
+                <span class="text-muted">Subtotal</span>
                 <span class="tabular-nums">{{ formatCurrency(computedSubtotal) }}</span>
             </div>
 
             <div v-if="taxLines.length > 0" class="my-2 border-t" />
 
             <div v-if="config.showGlobalDiscount" class="flex items-center justify-between">
-                <span class="text-muted-foreground">Discount</span>
+                <span class="text-muted">Discount</span>
                 <span class="tabular-nums">-{{ formatCurrency(computedDiscountAmount) }}</span>
             </div>
 
             <div v-for="taxLine in taxLines" :key="taxLine.label" class="flex items-center justify-between">
-                <span class="text-muted-foreground">{{ taxLine.label }}</span>
+                <span class="text-muted">{{ taxLine.label }}</span>
                 <span class="tabular-nums">{{ formatCurrency(taxLine.amount) }}</span>
             </div>
 
             <div v-if="config.showTaxTotal && taxLines.length > 0" class="my-2 border-t" />
 
             <div v-if="config.showTaxTotal" class="flex items-center justify-between">
-                <span class="text-muted-foreground">Total tax</span>
+                <span class="text-muted">Total tax</span>
                 <span class="tabular-nums">{{ formatCurrency(computedTaxAmount) }}</span>
             </div>
 
