@@ -4,7 +4,6 @@ namespace App\Http\Requests;
 
 use App\Models\CatalogCategory;
 use App\Models\Workspace;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateCatalogCategoryRequest extends FormRequest

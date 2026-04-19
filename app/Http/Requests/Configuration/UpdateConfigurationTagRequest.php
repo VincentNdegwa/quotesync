@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests\Configuration;
 
+use App\Http\Requests\FormRequest;
 use App\Models\ConfigurationTag;
 use App\Models\Workspace;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateConfigurationTagRequest extends FormRequest

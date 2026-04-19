@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Configuration;
 
+use App\Http\Requests\FormRequest;
 use App\Models\Workspace;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreConfigurationUnitRequest extends FormRequest

@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests\Settings;
 
+use App\Http\Requests\FormRequest;
 use App\Models\Workspace;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateWorkspaceSettingsRequest extends FormRequest

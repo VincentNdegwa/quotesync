@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests\Settings;
 
+use App\Http\Requests\FormRequest;
 use App\Models\Role;
 use App\Models\Workspace;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class CompleteWorkspaceOnboardingRequest extends FormRequest
