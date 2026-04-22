@@ -132,3 +132,54 @@ export type QuoteTemplateRecord = {
     sections_count: number;
     updated_at: string | null;
 };
+
+export type QuoteLineItem = {
+    id: number;
+    name: string;
+    description: string | null;
+    quantity: number | string;
+    unit_price: number | string;
+    total: number | string;
+    is_optional: boolean;
+};
+
+export type QuoteSection = {
+    id: number;
+    title: string;
+    line_items: QuoteLineItem[];
+};
+
+export type QuoteActivity = {
+    id: number;
+    type: string;
+    description: string;
+    metadata: Record<string, unknown> | null;
+    created_at: string | null;
+    user: { id: number; name: string } | null;
+};
+
+export type Quote = {
+    id: number;
+    quote_uuid: string;
+    number: string | null;
+    title: string;
+    status: string;
+    total: number | string;
+    subtotal: number | string;
+    discount_amount: number | string;
+    tax_amount: number | string;
+    currency: string | null;
+    valid_until: string | null;
+    view_count: number;
+    time_spent_seconds: number;
+    viewed_at: string | null;
+    sent_at: string | null;
+    accepted_at: string | null;
+    declined_at: string | null;
+    decline_reason: string | null;
+    created_at: string | null;
+    updated_at: string | null;
+    client: { id: number; company_name: string } | null;
+    sections: QuoteSection[];
+    activities: QuoteActivity[];
+};

@@ -48,7 +48,7 @@ class QuoteSentMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'mail.quote-sent',
+            markdown: 'mail.quote-sent',
             with: [
                 'subjectLine' => $this->subjectLine,
                 'messageBody' => $this->messageBody,

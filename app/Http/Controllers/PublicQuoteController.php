@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Workspace;
 use App\Notifications\QuoteViewedNotification;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Collection;
@@ -68,6 +69,7 @@ class PublicQuoteController extends Controller
 
         return Inertia::render('public/QuoteView', [
             'quote' => $this->quoteRendererPayload($quote),
+            'quote_uuid' => $quote->quote_uuid,
             'layout' => $this->quoteLayoutPayload($quote),
             'branding' => $this->brandingPayload($quote->workspace, $workspaceSettingsService),
             'status' => $quote->status,
@@ -84,6 +86,10 @@ class PublicQuoteController extends Controller
             'id' => $quote->id,
             'number' => $quote->number,
             'title' => $quote->title,
+            'status' => $quote->status,
+            'signaturePath' => $quote->signature_path ? Storage::url($quote->signature_path) : null,
+            'signerName' => $quote->signer_name,
+            'acceptedAt' => $quote->accepted_at?->toISOString(),
             'client' => [
                 'id' => $quote->client?->id,
                 'companyName' => $quote->client?->company_name,
@@ -170,5 +176,79 @@ class PublicQuoteController extends Controller
             ->filter()
             ->unique('id')
             ->values();
+    }
+
+    public function accept(string $quoteUuid, Request $request): RedirectResponse
+    {
+        $quote = Quote::query()->where('quote_uuid', $quoteUuid)->firstOrFail();
+
+        if (in_array($quote->status, ['accepted', 'declined', 'expired'])) {
+            return back()->with('error', 'This quote cannot be accepted.');
+        }
+
+        $validated = $request->validate([
+            'signer_name' => ['nullable', 'string', 'max:255'],
+            'signature' => ['required', 'string', 'starts_with:data:image/png;base64,'],
+        ]);
+
+        $signatureData = substr($validated['signature'], strpos($validated['signature'], ',') + 1);
+        $signatureData = base64_decode($signatureData);
+        $fileName = 'signatures/'.$quote->id.'_'.time().'.png';
+        Storage::disk('public')->put($fileName, $signatureData);
+
+        $signerName = $validated['signer_name'] ?? 'Client';
+
+        $quote->forceFill([
+            'status' => 'accepted',
+            'accepted_at' => now(),
+            'signature_path' => $fileName,
+            'signer_name' => $validated['signer_name'] ?? null,
+            'signer_ip' => $request->ip(),
+        ])->save();
+
+        QuoteActivity::query()->create([
+            'quote_id' => $quote->id,
+            'workspace_id' => $quote->workspace_id,
+            'user_id' => null,
+            'type' => 'status_changed',
+            'description' => 'Quote was accepted and signed by '.$signerName.'.',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'metadata' => ['status' => 'accepted', 'signer_name' => $validated['signer_name'] ?? null],
+        ]);
+
+        return back()->with('success', 'Quote has been successfully accepted.');
+    }
+
+    public function decline(string $quoteUuid, Request $request): RedirectResponse
+    {
+        $quote = Quote::query()->where('quote_uuid', $quoteUuid)->firstOrFail();
+
+        if (in_array($quote->status, ['accepted', 'declined', 'expired'])) {
+            return back()->with('error', 'This quote cannot be declined.');
+        }
+
+        $validated = $request->validate([
+            'decline_reason' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $quote->forceFill([
+            'status' => 'declined',
+            'declined_at' => now(),
+            'decline_reason' => $validated['decline_reason'] ?? null,
+        ])->save();
+
+        QuoteActivity::query()->create([
+            'quote_id' => $quote->id,
+            'workspace_id' => $quote->workspace_id,
+            'user_id' => null,
+            'type' => 'status_changed',
+            'description' => 'Quote was declined by the client.',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'metadata' => ['status' => 'declined', 'reason' => $validated['decline_reason'] ?? null],
+        ]);
+
+        return back()->with('success', 'Quote has been declined.');
     }
 }

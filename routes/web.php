@@ -36,6 +36,10 @@ Route::get('invitations/{invitation}/accept', [InvitationController::class, 'acc
 
 Route::get('q/{quoteUuid}', [PublicQuoteController::class, 'show'])
     ->name('public-quotes.show');
+Route::post('q/{quoteUuid}/accept', [PublicQuoteController::class, 'accept'])
+    ->name('public-quotes.accept');
+Route::post('q/{quoteUuid}/decline', [PublicQuoteController::class, 'decline'])
+    ->name('public-quotes.decline');
 
 Route::middleware(['auth'])->group(function () {
     Route::post('workspaces/{workspace}/switch', WorkspaceSwitchController::class)

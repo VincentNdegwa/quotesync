@@ -1,16 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import type { Quote } from '@/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 
 const props = defineProps<{
-    quote: {
-        status: string;
-        view_count: number;
-        time_spent_seconds: number;
-        viewed_at: string | null;
-        sent_at: string | null;
-        accepted_at: string | null;
-        declined_at: string | null;
-    };
+    quote: Quote;
 }>();
 
 const totalMinutes = computed(() => Math.round((props.quote.time_spent_seconds || 0) / 60));
@@ -26,36 +21,41 @@ const statusTimeline = computed(() => {
 </script>
 
 <template>
-    <section class="rounded-lg border p-4">
-        <h3 class="text-sm font-semibold">Quote stats</h3>
+    <Card class="border-none shadow-sm ring-1 ring-border/50">
+        <CardHeader class="pb-3">
+            <CardTitle class="text-lg">Quote Stats</CardTitle>
+        </CardHeader>
+        <CardContent>
+            <div class="space-y-4 text-sm">
+                <div class="flex items-center justify-between">
+                    <span class="text-muted-foreground font-medium text-xs uppercase tracking-wider">Viewed</span>
+                    <span class="font-semibold text-foreground">{{ quote.view_count }} times</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-muted-foreground font-medium text-xs uppercase tracking-wider">Reading time</span>
+                    <span class="font-semibold text-foreground">{{ totalMinutes }} min</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-muted-foreground font-medium text-xs uppercase tracking-wider">Last viewed</span>
+                    <span class="font-semibold text-foreground">{{ quote.viewed_at ? new Date(quote.viewed_at).toLocaleDateString() : '—' }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-muted-foreground font-medium text-xs uppercase tracking-wider">Status</span>
+                    <span class="font-semibold capitalize text-foreground">{{ quote.status }}</span>
+                </div>
+            </div>
 
-        <div class="mt-3 space-y-2 text-sm">
-            <div class="flex items-center justify-between">
-                <span class="text-muted-foreground">Viewed</span>
-                <span class="font-semibold">{{ quote.view_count }} times</span>
-            </div>
-            <div class="flex items-center justify-between">
-                <span class="text-muted-foreground">Reading time</span>
-                <span class="font-semibold">{{ totalMinutes }} min</span>
-            </div>
-            <div class="flex items-center justify-between">
-                <span class="text-muted-foreground">Last viewed</span>
-                <span class="font-semibold">{{ quote.viewed_at || '—' }}</span>
-            </div>
-            <div class="flex items-center justify-between">
-                <span class="text-muted-foreground">Status</span>
-                <span class="font-semibold capitalize">{{ quote.status }}</span>
-            </div>
-        </div>
+            <Separator class="my-5 opacity-50" />
 
-        <div class="mt-4 border-t pt-3">
-            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Timeline</p>
-            <ul class="space-y-2 text-xs">
-                <li v-for="step in statusTimeline" :key="step.key" class="flex items-center justify-between rounded border px-2 py-1.5">
-                    <span class="font-medium">{{ step.label }}</span>
-                    <span class="text-muted-foreground">{{ step.at || '—' }}</span>
-                </li>
-            </ul>
-        </div>
-    </section>
+            <div>
+                <p class="mb-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Timeline</p>
+                <ul class="space-y-3">
+                    <li v-for="step in statusTimeline" :key="step.key" class="flex items-center justify-between">
+                        <span class="font-medium text-sm text-foreground">{{ step.label }}</span>
+                        <span class="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">{{ step.at ? new Date(step.at).toLocaleDateString() : '—' }}</span>
+                    </li>
+                </ul>
+            </div>
+        </CardContent>
+    </Card>
 </template>

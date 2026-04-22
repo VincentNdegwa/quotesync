@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\SendQuoteRequest;
 use App\Jobs\SendQuoteEmailJob;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
@@ -10,7 +9,7 @@ use App\Models\Workspace;
 use App\Notifications\QuoteSentInternalNotification;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Arr;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -19,7 +18,7 @@ use Inertia\Inertia;
 class QuoteSendController extends Controller
 {
     public function store(
-        SendQuoteRequest $request,
+        Request $request,
         Quote $quote,
         WorkspaceSettingsService $workspaceSettingsService,
     ): RedirectResponse {
@@ -29,6 +28,17 @@ class QuoteSendController extends Controller
 
         $quote->loadMissing(['client', 'sections.lineItems']);
 
+        $to = $quote->client?->email;
+
+        if (empty($to)) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('Client does not have an email address.'),
+            ]);
+
+            return back();
+        }
+
         $emailFields = collect($workspaceSettingsService->groupForFrontend($workspace, 'email')['fields'] ?? [])->keyBy('key');
         $brandFields = collect($workspaceSettingsService->groupForFrontend($workspace, 'brand')['fields'] ?? [])->keyBy('key');
 
@@ -36,8 +46,8 @@ class QuoteSendController extends Controller
         $logoPath = $brandFields->get('logo_path')['value'] ?? null;
         $logoUrl = is_string($logoPath) && $logoPath !== '' ? Storage::url($logoPath) : null;
 
-        $subjectTemplate = trim((string) $request->string('subject'));
-        $bodyTemplate = (string) ($request->input('message_body') ?? ($emailFields->get('quote_email_template')['value'] ?? ''));
+        $subjectTemplate = $emailFields->get('quote_email_subject')['value'] ?? 'Your Quote {quote_number} from {company_name}';
+        $bodyTemplate = $emailFields->get('quote_email_template')['value'] ?? "Hi {client_name},\n\nPlease review quote {quote_number} totaling {quote_total}.";
 
         $merge = [
             '{client_name}' => (string) ($quote->client?->contact_name ?: $quote->client?->company_name ?: 'Client'),
@@ -52,26 +62,14 @@ class QuoteSendController extends Controller
         $subjectLine = strtr($subjectTemplate, $merge);
         $messageBody = strtr($bodyTemplate, $merge);
 
-        $cc = collect(Arr::wrap($request->input('cc', [])))
-            ->map(fn ($email): string => trim((string) $email))
-            ->filter()
-            ->values()
-            ->all();
-
-        $scheduleEnabled = (bool) $request->boolean('schedule_enabled');
-        $sendAt = $scheduleEnabled && $request->filled('send_at')
-            ? Carbon::parse((string) $request->input('send_at'))
-            : now();
-
+        $sendAt = now();
         $viewUrl = route('public-quotes.show', ['quoteUuid' => $quote->quote_uuid]);
-        $unsubscribeUrl = $quote->client?->email
-            ? url('/unsubscribe?email='.urlencode($quote->client->email))
-            : null;
+        $unsubscribeUrl = url('/unsubscribe?email='.urlencode($to));
 
         SendQuoteEmailJob::dispatch(
             quoteId: $quote->id,
-            to: (string) $request->string('to'),
-            cc: $cc,
+            to: $to,
+            cc: [],
             subjectLine: $subjectLine,
             messageBody: $messageBody,
             companyName: $companyName,
@@ -89,15 +87,13 @@ class QuoteSendController extends Controller
             'quote_id' => $quote->id,
             'workspace_id' => $workspace->id,
             'user_id' => $request->user()?->id,
-            'type' => $scheduleEnabled ? 'scheduled' : 'sent',
-            'description' => $scheduleEnabled
-                ? 'Quote delivery scheduled.'
-                : 'Quote sent to client.',
+            'type' => 'sent',
+            'description' => 'Quote sent to client.',
             'metadata' => [
-                'to' => (string) $request->string('to'),
-                'cc' => $cc,
+                'to' => $to,
+                'cc' => [],
                 'channel' => 'email',
-                'scheduled_at' => $scheduleEnabled ? $sendAt->toISOString() : null,
+                'scheduled_at' => null,
             ],
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
@@ -107,16 +103,14 @@ class QuoteSendController extends Controller
             $workspace->members()->get(),
             new QuoteSentInternalNotification(
                 quote: $quote,
-                scheduled: $scheduleEnabled,
-                scheduledAt: $scheduleEnabled ? $sendAt->toDateTimeString() : null,
+                scheduled: false,
+                scheduledAt: null,
             ),
         );
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => $scheduleEnabled
-                ? __('Quote send scheduled.')
-                : __('Quote sent successfully.'),
+            'message' => __('Quote sent successfully.'),
         ]);
 
         return back();

@@ -40,6 +40,9 @@ use Illuminate\Support\Str;
     'declined_at',
     'decline_reason',
     'created_by',
+    'signature_path',
+    'signer_name',
+    'signer_ip',
 ])]
 class Quote extends Model
 {

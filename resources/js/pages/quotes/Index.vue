@@ -2,7 +2,6 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
-import SendModal from '@/components/quotes/SendModal.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +22,8 @@ import {
 } from '@/components/ui/table';
 import type { Paginator, QuoteListRecord } from '@/types';
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
+import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 
 type Filters = {
     search: string;
@@ -33,11 +34,6 @@ type Filters = {
 const props = defineProps<{
     filters: Filters;
     quotes: Paginator<QuoteListRecord>;
-    sendDefaults: {
-        company_name: string;
-        subject_template: string;
-        body_template: string;
-    };
 }>();
 
 defineOptions({
@@ -104,18 +100,45 @@ const statusVariant = (status: string): 'outline' | 'secondary' | 'destructive' 
 };
 
 const hasQuotes = computed(() => props.quotes.data.length > 0);
-const sendOpen = ref(false);
-const selectedForSend = ref<QuoteListRecord | null>(null);
+
+const showDeleteDialog = ref(false);
+const quoteToDelete = ref<number | null>(null);
 
 const removeQuote = (quoteId: number): void => {
-    router.delete(`/quotes/${quoteId}`, {
-        preserveScroll: true,
-    });
+    quoteToDelete.value = quoteId;
+    showDeleteDialog.value = true;
 };
 
-const openSend = (quote: QuoteListRecord): void => {
-    selectedForSend.value = quote;
-    sendOpen.value = true;
+const executeDelete = (): void => {
+    if (quoteToDelete.value) {
+        router.delete(QuoteController.destroy(quoteToDelete.value).url, {
+            preserveScroll: true,
+            onSuccess: () => {
+                showDeleteDialog.value = false;
+                quoteToDelete.value = null;
+            }
+        });
+    }
+};
+
+const showSendDialog = ref(false);
+const quoteToSend = ref<number | null>(null);
+
+const sendQuote = (quoteId: number): void => {
+    quoteToSend.value = quoteId;
+    showSendDialog.value = true;
+};
+
+const executeSend = (): void => {
+    if (quoteToSend.value) {
+        router.post(QuoteSendController.store(quoteToSend.value).url, {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                showSendDialog.value = false;
+                quoteToSend.value = null;
+            }
+        });
+    }
 };
 </script>
 
@@ -198,7 +221,7 @@ const openSend = (quote: QuoteListRecord): void => {
                         <TableCell class="text-right">{{ quote.total.toFixed(2) }}</TableCell>
                         <TableCell>{{ quote.valid_until || '—' }}</TableCell>
                         <TableCell class="text-right space-x-2">
-                            <Button size="sm" @click="openSend(quote)">Send</Button>
+                            <Button size="sm" @click="sendQuote(quote.id)">Send</Button>
                             <Button size="sm">
                                 <Link :href="QuoteController.show(quote.id).url" >View</Link>
                             </Button>
@@ -248,10 +271,21 @@ const openSend = (quote: QuoteListRecord): void => {
             </template>
         </div>
 
-        <SendModal
-            v-model:open="sendOpen"
-            :quote="selectedForSend"
-            :send-defaults="sendDefaults"
+        <ConfirmDialog
+            v-model:open="showDeleteDialog"
+            title="Delete quote"
+            description="Are you sure you want to delete this quote? This action cannot be undone."
+            confirm-text="Delete"
+            variant="destructive"
+            @confirm="executeDelete"
+        />
+
+        <ConfirmDialog
+            v-model:open="showSendDialog"
+            title="Send quote"
+            description="Are you sure you want to send this quote to the client?"
+            confirm-text="Send"
+            @confirm="executeSend"
         />
     </div>
 </template>
