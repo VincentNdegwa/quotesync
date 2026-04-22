@@ -308,6 +308,23 @@ export const ADDABLE_BLOCK_TYPES: BlockType[] = [
   'spacer',
 ];
 
+export const BLOCK_EDITABILITY: Record<BlockType, 'content' | 'auto' | 'mixed'> = {
+  header: 'auto',
+  from_to: 'auto',
+  cover_message: 'content',
+  line_items: 'mixed',
+  totals: 'auto',
+  rich_text: 'content',
+  image: 'content',
+  image_row: 'content',
+  payment_terms: 'content',
+  timeline: 'content',
+  terms: 'content',
+  signature: 'mixed',
+  divider: 'auto',
+  spacer: 'auto',
+};
+
 const defaultTheme = (): ThemeConfig => ({
   primaryColor: '#2563EB',
   accentColor: '#F59E0B',
@@ -397,7 +414,7 @@ export const createBlock = <T extends BlockType>(type: T): LayoutBlock<T> => {
           showOptionalBadge: true,
           optionalItemStyle: 'badge',
           headerBackgroundColor: null,
-          alternateRowColor: false,
+          alternateRowColor: true,
           borderColor: null,
           fontSize: 'md',
           columnWidths: {

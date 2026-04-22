@@ -1,23 +1,31 @@
 #resources/js/components/quotes/builder/QuoteBuilder.vue
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { useEventListener } from '@vueuse/core';
+import { computed, ref, toRaw } from 'vue';
 import BlockConfigPanel from '@/components/builder/BlockConfigPanel.vue';
 import BlockList from '@/components/builder/BlockList.vue';
 import BuilderHeader from '@/components/quotes/builder/BuilderHeader.vue';
-import PreviewDrawer from '@/components/quotes/builder/PreviewDrawer.vue';
+import LineItemDrawer from '@/components/quotes/builder/LineItemDrawer.vue';
 import QuoteSettingsBar from '@/components/quotes/builder/QuoteSettingsBar.vue';
+import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
 import { useQuoteBuilder } from '@/composables/useQuoteBuilder';
 import { ADDABLE_BLOCK_TYPES, createBlock, ensureTemplateLayout } from '@/types';
 import type {
+    BrandingData,
     Block,
     BlockType,
     BuilderCatalogItem,
     BuilderBranding,
     BuilderClientOption,
+    QuoteData,
     BuilderTaxOption,
     BuilderTemplateOption,
+    CoverMessageBlockConfig,
     QuoteBuilderLineItem,
     QuoteBuilderState,
+    PaymentTermsBlockConfig,
+    SignatureBlockConfig,
+    TermsBlockConfig,
     TemplateLayout,
 } from '@/types';
 
@@ -25,7 +33,7 @@ const model = defineModel<QuoteBuilderState>({
     required: true,
 });
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         mode: 'quote' | 'template';
         clients?: BuilderClientOption[];
@@ -56,7 +64,10 @@ const currentLayout = ref<TemplateLayout>(
 );
 
 const selectedBlockId = ref<string | null>(currentLayout.value.blocks[0]?.id ?? null);
-const previewOpen = ref(false);
+const canvasMode = ref<'edit' | 'preview'>('edit');
+const blockListOpen = ref(false);
+const editingLineItem = ref<{ sectionIndex: number; lineItemIndex: number } | null>(null);
+const lineItemDrawerOpen = ref(false);
 
 const selectedBlock = computed<Block | null>(() => {
     if (!selectedBlockId.value) {
@@ -88,6 +99,10 @@ const {
 } = useQuoteBuilder(localState);
 
 const moveBlock = (fromIndex: number, toIndex: number): void => {
+    if (fromIndex < 0 || toIndex < 0 || fromIndex >= currentLayout.value.blocks.length || toIndex >= currentLayout.value.blocks.length) {
+        return;
+    }
+
     const blocks = currentLayout.value.blocks;
     const [moved] = blocks.splice(fromIndex, 1);
 
@@ -96,6 +111,18 @@ const moveBlock = (fromIndex: number, toIndex: number): void => {
     }
 
     blocks.splice(toIndex, 0, moved);
+    selectedBlockId.value = moved.id;
+};
+
+const moveBlockById = (blockId: string, direction: 'up' | 'down'): void => {
+    const currentIndex = currentLayout.value.blocks.findIndex((block) => block.id === blockId);
+
+    if (currentIndex < 0) {
+        return;
+    }
+
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    moveBlock(currentIndex, targetIndex);
 };
 
 const toggleBlockVisibility = (blockId: string): void => {
@@ -106,6 +133,63 @@ const toggleBlockVisibility = (blockId: string): void => {
     }
 
     block.visible = !block.visible;
+};
+
+const deleteBlock = (blockId: string): void => {
+    const index = currentLayout.value.blocks.findIndex((block) => block.id === blockId);
+
+    if (index < 0) {
+        return;
+    }
+
+    const block = currentLayout.value.blocks[index];
+
+    if (!block || block.locked) {
+        return;
+    }
+
+    currentLayout.value.blocks.splice(index, 1);
+
+    if (selectedBlockId.value === blockId) {
+        selectedBlockId.value = currentLayout.value.blocks[index]?.id ?? currentLayout.value.blocks[index - 1]?.id ?? null;
+    }
+};
+
+const cloneBlockConfig = <T>(config: T): T => {
+    const rawConfig = toRaw(config);
+
+    try {
+        return structuredClone(rawConfig);
+    } catch {
+        return JSON.parse(JSON.stringify(rawConfig)) as T;
+    }
+};
+
+const duplicateBlock = (blockId: string): void => {
+    const sourceIndex = currentLayout.value.blocks.findIndex((block) => block.id === blockId);
+
+    if (sourceIndex < 0) {
+        return;
+    }
+
+    const source = currentLayout.value.blocks[sourceIndex];
+
+    if (!source) {
+        return;
+    }
+
+    const duplicated = createBlock(source.type);
+    const clonedConfig = cloneBlockConfig(source.config);
+
+    duplicated.visible = source.visible;
+    duplicated.locked = false;
+    duplicated.label = source.label ?? null;
+    duplicated.config = clonedConfig;
+
+    const insertionIndex = sourceIndex + 1;
+
+    currentLayout.value.blocks.splice(insertionIndex, 0, duplicated);
+    selectedBlockId.value = duplicated.id;
 };
 
 const createEmptyLineItem = (sortOrder: number): QuoteBuilderLineItem => ({
@@ -136,12 +220,61 @@ const addSection = (): void => {
 };
 
 const removeSection = (sectionIndex: number): void => {
+    if (localState.value.sections.length <= 1) {
+        return;
+    }
+
     if (sectionIndex < 0 || sectionIndex >= localState.value.sections.length) {
         return;
     }
 
     localState.value.sections.splice(sectionIndex, 1);
 };
+
+const openLineItemDrawer = (sectionIndex: number, lineItemIndex: number): void => {
+    const section = localState.value.sections[sectionIndex];
+    const item = section?.line_items[lineItemIndex];
+
+    if (!section || !item) {
+        return;
+    }
+
+    editingLineItem.value = { sectionIndex, lineItemIndex };
+    lineItemDrawerOpen.value = true;
+};
+
+const closeLineItemDrawer = (): void => {
+    lineItemDrawerOpen.value = false;
+    editingLineItem.value = null;
+};
+
+const removeEditingLineItem = (): void => {
+    if (!editingLineItem.value) {
+        return;
+    }
+
+    removeLineItem(editingLineItem.value.sectionIndex, editingLineItem.value.lineItemIndex);
+    closeLineItemDrawer();
+};
+
+const drawerItem = computed({
+    get: () => {
+        if (!editingLineItem.value) {
+            return null;
+        }
+
+        const section = localState.value.sections[editingLineItem.value.sectionIndex];
+
+        if (!section) {
+            return null;
+        }
+
+        return section.line_items[editingLineItem.value.lineItemIndex] ?? null;
+    },
+    set: () => {
+        // mutations happen on the referenced line item object itself
+    },
+});
 
 const addLineItem = (sectionIndex: number): void => {
     const section = localState.value.sections[sectionIndex];
@@ -170,6 +303,211 @@ const addBlock = (type: BlockType): void => {
     selectedBlockId.value = block.id;
 };
 
+const insertBlockRelative = (targetBlockId: string, type: BlockType, position: 'up' | 'down'): void => {
+    const targetIndex = currentLayout.value.blocks.findIndex((block) => block.id === targetBlockId);
+
+    if (targetIndex < 0) {
+        addBlock(type);
+
+        return;
+    }
+
+    const block = createBlock(type);
+    const insertionIndex = position === 'up' ? targetIndex : targetIndex + 1;
+
+    currentLayout.value.blocks.splice(insertionIndex, 0, block);
+    selectedBlockId.value = block.id;
+};
+
+const updateSectionTitle = (sectionIndex: number, title: string): void => {
+    const section = localState.value.sections[sectionIndex];
+
+    if (!section) {
+        return;
+    }
+
+    section.title = title;
+};
+
+const updatePaymentTermsContent = (blockId: string, payload: { label: string; customText: string | null }): void => {
+    const block = currentLayout.value.blocks.find((entry) => entry.id === blockId && entry.type === 'payment_terms');
+
+    if (!block || block.type !== 'payment_terms') {
+        return;
+    }
+
+    const config = block.config as PaymentTermsBlockConfig;
+
+    config.label = payload.label;
+    config.customText = payload.customText;
+};
+
+const updateCoverLabel = (blockId: string, value: string | null): void => {
+    const block = currentLayout.value.blocks.find((entry) => entry.id === blockId && entry.type === 'cover_message');
+
+    if (!block || block.type !== 'cover_message') {
+        return;
+    }
+
+    const config = block.config as CoverMessageBlockConfig;
+
+    config.labelText = (value ?? '').trim() || 'A note from us';
+};
+
+const updateTermsLabel = (blockId: string, value: string | null): void => {
+    const block = currentLayout.value.blocks.find((entry) => entry.id === blockId && entry.type === 'terms');
+
+    if (!block || block.type !== 'terms') {
+        return;
+    }
+
+    const config = block.config as TermsBlockConfig;
+
+    config.label = (value ?? '').trim() || 'Terms & Conditions';
+};
+
+const updateSignatureContent = (
+    blockId: string,
+    payload: { acceptButtonText?: string | null; declineButtonText?: string | null; legalText?: string | null },
+): void => {
+    const block = currentLayout.value.blocks.find((entry) => entry.id === blockId && entry.type === 'signature');
+
+    if (!block || block.type !== 'signature') {
+        return;
+    }
+
+    const config = block.config as SignatureBlockConfig;
+
+    if (payload.acceptButtonText !== undefined) {
+        config.acceptButtonText = (payload.acceptButtonText ?? '').trim() || 'Accept & Sign';
+    }
+
+    if (payload.declineButtonText !== undefined) {
+        config.declineButtonText = (payload.declineButtonText ?? '').trim() || 'Decline';
+    }
+
+    if (payload.legalText !== undefined) {
+        config.legalText = (payload.legalText ?? '').trim() || 'By signing you agree to the terms listed above.';
+    }
+};
+
+const toNumber = (value: number | string | null | undefined): number => {
+    const parsed = Number(value ?? 0);
+
+    return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const computeLineItemTotals = (item: QuoteBuilderState['sections'][number]['line_items'][number]) => {
+    const quantity = Math.max(toNumber(item.quantity), 0);
+    const unitPrice = Math.max(toNumber(item.unit_price), 0);
+    const discountPercent = Math.min(Math.max(toNumber(item.discount_percent), 0), 100);
+
+    const subtotal = quantity * unitPrice * (1 - discountPercent / 100);
+    const taxAmount = item.taxes.reduce((sum, tax) => {
+        const rate = Math.max(toNumber(tax.tax_rate), 0);
+
+        return sum + (subtotal * rate) / 100;
+    }, 0);
+
+    return {
+        taxAmount,
+        total: subtotal + taxAmount,
+    };
+};
+
+const selectedClient = computed<BuilderClientOption | null>(() => {
+    if (!localState.value.client_id) {
+        return null;
+    }
+
+    return (props.clients ?? []).find((client) => client.id === localState.value.client_id) ?? null;
+});
+
+const quoteData = computed<QuoteData>(() => {
+    const sections = localState.value.sections.map((section) => ({
+        id: section.id,
+        title: section.title,
+        lineItems: section.line_items.map((item) => {
+            const computedTotals = computeLineItemTotals(item);
+
+            return {
+                id: item.id,
+                name: item.name,
+                description: item.description,
+                quantity: item.quantity,
+                unit: item.unit,
+                sku: null,
+                unitPrice: item.unit_price,
+                discountPercent: item.discount_percent,
+                taxes: item.taxes.map((tax) => ({
+                    taxId: tax.tax_id,
+                    taxLabel: tax.tax_label,
+                    taxRate: tax.tax_rate,
+                })),
+                taxAmount: computedTotals.taxAmount,
+                total: computedTotals.total,
+                isOptional: item.is_optional,
+            };
+        }),
+    }));
+
+    const subtotal = sections.reduce((sum, section) => {
+        return sum + section.lineItems.reduce((lineSum, item) => {
+            if (item.isOptional) {
+                return lineSum;
+            }
+
+            const quantity = Math.max(toNumber(item.quantity), 0);
+            const unitPrice = Math.max(toNumber(item.unitPrice), 0);
+            const discountPercent = Math.min(Math.max(toNumber(item.discountPercent), 0), 100);
+
+            return lineSum + quantity * unitPrice * (1 - discountPercent / 100);
+        }, 0);
+    }, 0);
+
+    const taxAmount = sections.reduce((sum, section) => {
+        return sum + section.lineItems.reduce((lineSum, item) => {
+            return item.isOptional ? lineSum : lineSum + toNumber(item.taxAmount);
+        }, 0);
+    }, 0);
+
+    const discountAmount = Math.max(toNumber(localState.value.discount_amount), 0);
+
+    return {
+        id: localState.value.id,
+        number: localState.value.number,
+        title: localState.value.title,
+        client: {
+            id: localState.value.client_id,
+            companyName: selectedClient.value?.company_name ?? null,
+            address: null,
+        },
+        createdAt: new Date().toISOString(),
+        validUntil: localState.value.valid_until,
+        currency: localState.value.currency,
+        coverMessage: localState.value.cover_message,
+        terms: localState.value.terms,
+        subtotal,
+        discountAmount,
+        taxAmount,
+        total: subtotal + taxAmount - discountAmount,
+        sections,
+    };
+});
+
+const brandingData = computed<BrandingData>(() => {
+    return {
+        companyName: props.branding?.company_name ?? null,
+        logoUrl: props.branding?.logo_url ?? null,
+        primaryColor: props.branding?.primary_color ?? '#2563EB',
+        accentColor: props.branding?.accent_color ?? '#F59E0B',
+        companyEmail: props.branding?.company_email ?? null,
+        companyPhone: props.branding?.company_phone ?? null,
+        companyAddress: props.branding?.company_address ?? null,
+        companyTagline: props.branding?.company_tagline ?? null,
+    };
+});
+
 const persistLayoutToState = (): void => {
     localState.value.layout = currentLayout.value;
     localState.value.layout_snapshot = currentLayout.value;
@@ -188,6 +526,56 @@ const onSave = (): void => {
     emit('save');
 };
 
+const isTypingTarget = (target: EventTarget | null): boolean => {
+    if (!(target instanceof HTMLElement)) {
+        return false;
+    }
+
+    const tagName = target.tagName;
+
+    return target.isContentEditable
+        || tagName === 'INPUT'
+        || tagName === 'TEXTAREA'
+        || tagName === 'SELECT'
+        || target.closest('[contenteditable="true"]') !== null;
+};
+
+useEventListener('keydown', (event: KeyboardEvent) => {
+    const key = event.key.toLowerCase();
+    const hasCommand = event.metaKey || event.ctrlKey;
+    const isDuplicateShortcut = hasCommand && event.code === 'KeyD';
+
+    if (hasCommand && key === 's') {
+        event.preventDefault();
+
+        if (!props.processing && !props.systemLocked) {
+            onSave();
+        }
+
+        return;
+    }
+
+    if (isDuplicateShortcut) {
+        event.preventDefault();
+
+        if (isTypingTarget(event.target)) {
+            return;
+        }
+
+        if (canvasMode.value !== 'edit') {
+            return;
+        }
+
+        const activeBlockId = selectedBlockId.value ?? currentLayout.value.blocks[0]?.id ?? null;
+
+        if (!activeBlockId) {
+            return;
+        }
+
+        duplicateBlock(activeBlockId);
+    }
+}, { capture: true });
+
 const addableBlockTypes = ADDABLE_BLOCK_TYPES;
 </script>
 
@@ -196,9 +584,12 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
         <BuilderHeader
             v-model:title="builderTitle"
             :mode="mode"
+            :canvas-mode="canvasMode"
+            :block-list-open="blockListOpen"
             :system-locked="systemLocked"
             :processing="processing"
-            @preview="previewOpen = true"
+            @set-canvas-mode="(nextMode) => (canvasMode = nextMode)"
+            @toggle-block-list="blockListOpen = !blockListOpen"
             @save="onSave"
         />
 
@@ -211,7 +602,7 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
         />
 
         <div class="flex min-h-0 flex-1 overflow-hidden rounded-lg border bg-card">
-            <div class="w-55 shrink-0 overflow-y-auto border-r p-3">
+            <div v-if="blockListOpen" class="w-55 shrink-0 overflow-y-auto border-r p-3">
                 <BlockList
                     :blocks="currentLayout.blocks"
                     :selected-block-id="selectedBlockId"
@@ -223,28 +614,57 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                 />
             </div>
 
-            <div class="min-w-0 flex-1 overflow-hidden p-4">
+            <div class="min-w-0 flex-1 overflow-y-auto bg-muted/30 p-6">
+                <div class="mx-auto w-full max-w-4xl rounded-lg border bg-white p-6 shadow-sm">
+                    <QuoteRenderer
+                        :quote="quoteData"
+                        :layout="currentLayout"
+                        :branding="brandingData"
+                        :preview-mode="canvasMode === 'preview'"
+                        :edit-mode="canvasMode === 'edit'"
+                        :selected-block-id="selectedBlockId"
+                        @select-block="(blockId) => (selectedBlockId = blockId)"
+                        @move-up="(blockId) => moveBlockById(blockId, 'up')"
+                        @move-down="(blockId) => moveBlockById(blockId, 'down')"
+                        @move-block="(payload) => moveBlock(payload.fromIndex, payload.toIndex)"
+                        @insert-up="(payload) => insertBlockRelative(payload.blockId, payload.type, 'up')"
+                        @insert-down="(payload) => insertBlockRelative(payload.blockId, payload.type, 'down')"
+                        @add-line-items-section="addSection()"
+                        @remove-line-items-section="(payload) => removeSection(payload.sectionIndex)"
+                        @add-line-item="(payload) => addLineItem(payload.sectionIndex)"
+                        @edit-line-item="(payload) => openLineItemDrawer(payload.sectionIndex, payload.lineItemIndex)"
+                        @update-line-items-section-title="(payload) => updateSectionTitle(payload.sectionIndex, payload.title)"
+                        @update-cover-message="(payload) => (localState.cover_message = payload.value)"
+                        @update-cover-label="(payload) => updateCoverLabel(payload.blockId, payload.value)"
+                        @update-terms="(payload) => (localState.terms = payload.value)"
+                        @update-terms-label="(payload) => updateTermsLabel(payload.blockId, payload.value)"
+                        @update-payment-terms="(payload) => updatePaymentTermsContent(payload.blockId, { label: payload.label, customText: payload.customText })"
+                        @update-signature-content="(payload) => updateSignatureContent(payload.blockId, payload)"
+                        @toggle-visible="(blockId) => toggleBlockVisibility(blockId)"
+                        @duplicate-block="(blockId) => duplicateBlock(blockId)"
+                        @delete-block="(blockId) => deleteBlock(blockId)"
+                    />
+                </div>
+            </div>
+
+            <div v-if="canvasMode === 'edit' && selectedBlockModel" class="w-[320px] shrink-0 overflow-y-auto border-l p-3">
                 <BlockConfigPanel
                     v-model:block="selectedBlockModel"
                     v-model:quote-state="localState"
                     :catalog-items="catalogItems"
                     :taxes="taxes"
-                    @add-section="addSection()"
-                    @remove-section="(sectionIndex) => removeSection(sectionIndex)"
-                    @add-line-item="(sectionIndex) => addLineItem(sectionIndex)"
-                    @remove-line-item="(payload) => removeLineItem(payload.sectionIndex, payload.lineItemIndex)"
                 />
             </div>
         </div>
 
-        <PreviewDrawer
-            :open="previewOpen"
-            :mode="mode"
-            :state="localState"
-            :clients="clients"
-            :branding="branding"
-            :current-layout="currentLayout"
-            @update:open="(value) => (previewOpen = value)"
+        <LineItemDrawer
+            :open="lineItemDrawerOpen"
+            v-model:item="drawerItem"
+            :catalog-items="catalogItems"
+            :taxes="taxes"
+            :currency="localState.currency"
+            @close="closeLineItemDrawer()"
+            @remove="removeEditingLineItem()"
         />
     </div>
 </template>

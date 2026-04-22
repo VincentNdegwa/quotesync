@@ -81,8 +81,8 @@ const updateNullableColor = (
             </div>
         </div>
 
-        <div class="grid grid-cols-1 divide-x lg:grid-cols-2">
-            <div class="px-4 py-3">
+        <div class="border-b px-4 py-3">
+            <div>
                 <p class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Layout</p>
 
                 <div class="mb-3">
@@ -112,8 +112,10 @@ const updateNullableColor = (
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="px-4 py-3">
+        <div class="px-4 py-3">
+            <div>
                 <p class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Appearance</p>
 
                 <label class="mb-3 flex cursor-pointer items-center justify-between rounded border px-2.5 py-1.5 text-sm hover:bg-muted/40">

@@ -107,8 +107,8 @@ const syncImageSlots = (columns: 2 | 3): void => {
             </div>
         </div>
 
-        <div class="grid grid-cols-1 divide-x lg:grid-cols-2">
-            <div class="px-4 py-3">
+        <div class="border-b px-4 py-3">
+            <div>
                 <p class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Layout</p>
 
                 <div class="mb-3">
@@ -129,8 +129,10 @@ const syncImageSlots = (columns: 2 | 3): void => {
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="px-4 py-3">
+        <div class="px-4 py-3">
+            <div>
                 <p class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Appearance</p>
 
                 <div class="mb-3">

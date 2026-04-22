@@ -177,88 +177,86 @@ const captionAlignmentOptions = [
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 divide-x lg:grid-cols-2">
-                <div class="px-4 py-3">
-                    <p
-                        class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
-                    >
-                        Layout
-                    </p>
-
-                    <div class="mb-3">
-                        <p class="mb-1.5 text-xs text-muted-foreground">
-                            Corner radius
-                        </p>
-                        <div class="flex flex-wrap gap-1">
-                            <button
-                                v-for="option in radiusOptions"
-                                :key="option.value"
-                                type="button"
-                                class="min-w-10 rounded border px-2 py-1 text-xs font-semibold transition-colors"
-                                :class="
-                                    config.borderRadius === option.value
-                                        ? 'border-primary bg-primary/10 text-primary'
-                                        : 'hover:border-muted-foreground/50'
-                                "
-                                @click="config.borderRadius = option.value"
-                            >
-                                {{ option.label }}
-                            </button>
-                        </div>
-                    </div>
-
-                    <div>
-                        <p class="mb-1.5 text-xs text-muted-foreground">
-                            Padding
-                        </p>
-                        <div class="flex gap-1">
-                            <button
-                                v-for="size in paddingOptions"
-                                :key="size.value"
-                                type="button"
-                                class="flex-1 rounded border py-1 text-sm font-semibold transition-colors"
-                                :class="
-                                    config.paddingSize === size.value
-                                        ? 'border-primary bg-primary/10 text-primary'
-                                        : 'hover:border-muted-foreground/50'
-                                "
-                                @click="config.paddingSize = size.value"
-                            >
-                                {{ size.label }}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div
-                    class="px-4 py-3"
-                    :class="!config.showCaption ? 'opacity-60' : ''"
+            <div class="border-t px-4 py-3">
+                <p
+                    class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                 >
-                    <p
-                        class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
-                    >
-                        Caption
-                    </p>
+                    Layout
+                </p>
+
+                <div class="mb-3">
                     <p class="mb-1.5 text-xs text-muted-foreground">
-                        Caption alignment
+                        Corner radius
                     </p>
-                    <div class="grid grid-cols-3 gap-1">
+                    <div class="flex flex-wrap gap-1">
                         <button
-                            v-for="option in captionAlignmentOptions"
+                            v-for="option in radiusOptions"
                             :key="option.value"
                             type="button"
-                            class="rounded border py-1 text-xs font-semibold transition-colors"
+                            class="min-w-10 rounded border px-2 py-1 text-xs font-semibold transition-colors"
                             :class="
-                                config.captionAlignment === option.value
+                                config.borderRadius === option.value
                                     ? 'border-primary bg-primary/10 text-primary'
                                     : 'hover:border-muted-foreground/50'
                             "
-                            :disabled="!config.showCaption"
-                            @click="config.captionAlignment = option.value"
+                            @click="config.borderRadius = option.value"
                         >
                             {{ option.label }}
                         </button>
                     </div>
+                </div>
+
+                <div>
+                    <p class="mb-1.5 text-xs text-muted-foreground">
+                        Padding
+                    </p>
+                    <div class="flex gap-1">
+                        <button
+                            v-for="size in paddingOptions"
+                            :key="size.value"
+                            type="button"
+                            class="flex-1 rounded border py-1 text-sm font-semibold transition-colors"
+                            :class="
+                                config.paddingSize === size.value
+                                    ? 'border-primary bg-primary/10 text-primary'
+                                    : 'hover:border-muted-foreground/50'
+                            "
+                            @click="config.paddingSize = size.value"
+                        >
+                            {{ size.label }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                class="border-t px-4 py-3"
+                :class="!config.showCaption ? 'opacity-60' : ''"
+            >
+                <p
+                    class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                >
+                    Caption
+                </p>
+                <p class="mb-1.5 text-xs text-muted-foreground">
+                    Caption alignment
+                </p>
+                <div class="grid grid-cols-3 gap-1">
+                    <button
+                        v-for="option in captionAlignmentOptions"
+                        :key="option.value"
+                        type="button"
+                        class="rounded border py-1 text-xs font-semibold transition-colors"
+                        :class="
+                            config.captionAlignment === option.value
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'hover:border-muted-foreground/50'
+                        "
+                        :disabled="!config.showCaption"
+                        @click="config.captionAlignment = option.value"
+                    >
+                        {{ option.label }}
+                    </button>
                 </div>
             </div>
         </div>

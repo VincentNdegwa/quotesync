@@ -16,21 +16,13 @@ import TimelineConfig from '@/components/builder/config-panels/TimelineConfig.vu
 import TotalsConfig from '@/components/builder/config-panels/TotalsConfig.vue';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import type { Block, BuilderCatalogItem, BuilderTaxOption, QuoteBuilderState } from '@/types';
+import type { Block, BuilderCatalogItem, BuilderTaxOption } from '@/types';
 
 const block = defineModel<Block | null>('block', { required: true });
-const quoteState = defineModel<QuoteBuilderState>('quoteState', { required: true });
 
 defineProps<{
     catalogItems: BuilderCatalogItem[];
     taxes: BuilderTaxOption[];
-}>();
-
-const emit = defineEmits<{
-    (e: 'add-section'): void;
-    (e: 'remove-section', sectionIndex: number): void;
-    (e: 'add-line-item', sectionIndex: number): void;
-    (e: 'remove-line-item', payload: { sectionIndex: number; lineItemIndex: number }): void;
 }>();
 </script>
 
@@ -55,17 +47,10 @@ const emit = defineEmits<{
 
         <HeaderConfig v-else-if="block.type === 'header'" v-model="block.config" />
         <FromToConfig v-else-if="block?.type === 'from_to'" v-model="block.config" />
-        <CoverMessageConfig v-else-if="block?.type === 'cover_message'" v-model="block.config" v-model:quote-state="quoteState" />
+        <CoverMessageConfig v-else-if="block?.type === 'cover_message'" v-model="block.config" />
         <LineItemsConfig
             v-else-if="block?.type === 'line_items'"
             v-model="block.config"
-            v-model:quote-state="quoteState"
-            :catalog-items="catalogItems"
-            :taxes="taxes"
-            @add-section="emit('add-section')"
-            @remove-section="(sectionIndex) => emit('remove-section', sectionIndex)"
-            @add-line-item="(sectionIndex) => emit('add-line-item', sectionIndex)"
-            @remove-line-item="(payload) => emit('remove-line-item', payload)"
         />
         <TotalsConfig v-else-if="block?.type === 'totals'" v-model="block.config" />
         <RichTextConfig v-else-if="block?.type === 'rich_text'" v-model="block.config" />
@@ -73,7 +58,7 @@ const emit = defineEmits<{
         <ImageRowConfig v-else-if="block?.type === 'image_row'" v-model="block.config" />
         <PaymentTermsConfig v-else-if="block?.type === 'payment_terms'" v-model="block.config" />
         <TimelineConfig v-else-if="block?.type === 'timeline'" v-model="block.config" />
-        <TermsConfig v-else-if="block?.type === 'terms'" v-model="block.config" v-model:quote-state="quoteState" />
+        <TermsConfig v-else-if="block?.type === 'terms'" v-model="block.config" />
         <SignatureConfig v-else-if="block?.type === 'signature'" v-model="block.config" />
         <DividerConfig v-else-if="block?.type === 'divider'" v-model="block.config" />
         <SpacerConfig v-else-if="block?.type === 'spacer'" v-model="block.config" />
