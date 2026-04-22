@@ -2,6 +2,7 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
+import SendModal from '@/components/quotes/SendModal.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import type { Paginator, QuoteListRecord } from '@/types';
+import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 
 type Filters = {
     search: string;
@@ -31,6 +33,11 @@ type Filters = {
 const props = defineProps<{
     filters: Filters;
     quotes: Paginator<QuoteListRecord>;
+    sendDefaults: {
+        company_name: string;
+        subject_template: string;
+        body_template: string;
+    };
 }>();
 
 defineOptions({
@@ -97,11 +104,18 @@ const statusVariant = (status: string): 'outline' | 'secondary' | 'destructive' 
 };
 
 const hasQuotes = computed(() => props.quotes.data.length > 0);
+const sendOpen = ref(false);
+const selectedForSend = ref<QuoteListRecord | null>(null);
 
 const removeQuote = (quoteId: number): void => {
     router.delete(`/quotes/${quoteId}`, {
         preserveScroll: true,
     });
+};
+
+const openSend = (quote: QuoteListRecord): void => {
+    selectedForSend.value = quote;
+    sendOpen.value = true;
 };
 </script>
 
@@ -184,8 +198,12 @@ const removeQuote = (quoteId: number): void => {
                         <TableCell class="text-right">{{ quote.total.toFixed(2) }}</TableCell>
                         <TableCell>{{ quote.valid_until || '—' }}</TableCell>
                         <TableCell class="text-right space-x-2">
+                            <Button size="sm" @click="openSend(quote)">Send</Button>
+                            <Button size="sm">
+                                <Link :href="QuoteController.show(quote.id).url" >View</Link>
+                            </Button>
                             <Button size="sm" variant="outline" as-child>
-                                <Link :href="`/quotes/${quote.id}/edit`">Edit</Link>
+                                <Link :href="QuoteController.edit(quote.id).url">Edit</Link>
                             </Button>
                             <Button size="sm" variant="destructive" @click="removeQuote(quote.id)">Delete</Button>
                         </TableCell>
@@ -229,5 +247,11 @@ const removeQuote = (quoteId: number): void => {
                 </span>
             </template>
         </div>
+
+        <SendModal
+            v-model:open="sendOpen"
+            :quote="selectedForSend"
+            :send-defaults="sendDefaults"
+        />
     </div>
 </template>

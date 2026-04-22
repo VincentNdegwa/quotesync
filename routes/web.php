@@ -8,8 +8,12 @@ use App\Http\Controllers\ClientImportController;
 use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\ConfigurationTagController;
 use App\Http\Controllers\ConfigurationUnitController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PublicQuoteController;
 use App\Http\Controllers\QuoteController;
+use App\Http\Controllers\QuoteSendController;
 use App\Http\Controllers\QuoteTemplateController;
 use App\Http\Controllers\Settings\MembersController;
 use App\Http\Controllers\TaxController;
@@ -22,13 +26,16 @@ Route::inertia('/', 'Welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->name('home');
 
-Route::inertia('dashboard', 'Dashboard')
+Route::get('dashboard', DashboardController::class)
     ->middleware(['auth', 'verified', EnsureWorkspaceSettingsOnboarded::class])
     ->name('dashboard');
 
 Route::get('invitations/{invitation}/accept', [InvitationController::class, 'accept'])
     ->middleware('signed:relative')
     ->name('invitations.accept');
+
+Route::get('q/{quoteUuid}', [PublicQuoteController::class, 'show'])
+    ->name('public-quotes.show');
 
 Route::middleware(['auth'])->group(function () {
     Route::post('workspaces/{workspace}/switch', WorkspaceSwitchController::class)
@@ -50,6 +57,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('catalog/bulk-action', [CatalogItemController::class, 'bulkAction'])->name('catalog.bulk-action');
 
         Route::resource('quotes', QuoteController::class);
+        Route::post('quotes/{quote}/send', [QuoteSendController::class, 'store'])->name('quotes.send');
+        Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+        Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
         Route::resource('quote-templates', QuoteTemplateController::class);
 
