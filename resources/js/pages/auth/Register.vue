@@ -16,6 +16,11 @@ defineOptions({
         description: 'Enter your details below to create your account',
     },
 });
+
+defineProps<{
+    email?: string;
+    invitation?: string;
+}>();
 </script>
 
 <template>
@@ -52,10 +57,18 @@ defineOptions({
                     :tabindex="2"
                     autocomplete="email"
                     name="email"
+                    :value="email"
                     placeholder="email@example.com"
                 />
                 <InputError :message="errors.email" />
             </div>
+
+            <input
+                v-if="invitation"
+                type="hidden"
+                name="invitation"
+                :value="invitation"
+            />
 
             <div class="grid gap-2">
                 <Label for="password">Password</Label>
