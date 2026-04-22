@@ -17,6 +17,7 @@ class QuoteService
 {
     public function __construct(
         private WorkspaceSettingsService $workspaceSettingsService,
+        private QuoteNumberService $quoteNumberService,
     ) {}
 
     /**
@@ -26,7 +27,7 @@ class QuoteService
     {
         $query = Quote::query()
             ->where('workspace_id', $workspace->id)
-            ->with(['client:id,company_name', 'assignee:id,name']);
+            ->with(['client:id,company_name,email', 'assignee:id,name']);
 
         $search = trim((string) Arr::get($filters, 'search', ''));
 
@@ -67,35 +68,16 @@ class QuoteService
             $layoutSnapshot = Arr::pull($payload, 'layout_snapshot');
             $layout = Arr::pull($payload, 'layout');
             $templateId = Arr::get($payload, 'template_id');
-            $quoteSettings = $this->quoteSettings($workspace, lockForUpdate: true);
+            $quoteSettings = $this->quoteSettings($workspace);
 
             if (! is_array($layoutSnapshot) && is_array($layout)) {
                 $layoutSnapshot = $layout;
             }
 
-            $sequence = max(1, (int) Arr::get($quoteSettings, 'quote_number_sequence', 1));
             $number = trim((string) Arr::get($payload, 'number', ''));
-            $generatedNumber = false;
 
             if ($number === '') {
-                if ((bool) Arr::get($quoteSettings, 'quote_number_reset_yearly', true)) {
-                    $hasQuoteInCurrentYear = Quote::query()
-                        ->withTrashed()
-                        ->where('workspace_id', $workspace->id)
-                        ->whereYear('created_at', (int) now()->year)
-                        ->exists();
-
-                    if (! $hasQuoteInCurrentYear) {
-                        $sequence = 1;
-                    }
-                }
-
-                $payload['number'] = $this->formatQuoteNumber(
-                    (string) Arr::get($quoteSettings, 'quote_prefix', 'QS'),
-                    $sequence,
-                );
-
-                $generatedNumber = true;
+                $payload['number'] = $this->quoteNumberService->generate($workspace);
             }
 
             if (Arr::get($payload, 'valid_until') === null) {
@@ -119,10 +101,6 @@ class QuoteService
                 'layout_snapshot' => $layoutSnapshot,
             ]);
 
-            if ($generatedNumber) {
-                $this->updateQuoteSequence($workspace, $sequence + 1);
-            }
-
             $this->syncSections($quote, $sections);
 
             return $quote->refresh();
@@ -132,56 +110,21 @@ class QuoteService
     /**
      * @return array<string, mixed>
      */
-    private function quoteSettings(Workspace $workspace, bool $lockForUpdate = false): array
+    private function quoteSettings(Workspace $workspace): array
     {
         $query = WorkspaceSetting::query()
             ->where('workspace_id', $workspace->id)
             ->where('group', 'quotes')
             ->whereIn('key', [
-                'quote_prefix',
-                'quote_number_sequence',
-                'quote_number_reset_yearly',
                 'quote_validity_days',
             ]);
 
-        if ($lockForUpdate) {
-            $query->lockForUpdate();
-        }
-
         $settings = $query->get(['key', 'value', 'cast'])->keyBy('key');
-
-        $prefix = $this->decodeWorkspaceSetting($settings->get('quote_prefix')?->value, $settings->get('quote_prefix')?->cast, 'QS');
-        $sequence = $this->decodeWorkspaceSetting($settings->get('quote_number_sequence')?->value, $settings->get('quote_number_sequence')?->cast, 1);
-        $resetYearly = $this->decodeWorkspaceSetting($settings->get('quote_number_reset_yearly')?->value, $settings->get('quote_number_reset_yearly')?->cast, true);
         $validityDays = $this->decodeWorkspaceSetting($settings->get('quote_validity_days')?->value, $settings->get('quote_validity_days')?->cast, 30);
 
         return [
-            'quote_prefix' => is_string($prefix) && trim($prefix) !== '' ? trim($prefix) : 'QS',
-            'quote_number_sequence' => max(1, (int) $sequence),
-            'quote_number_reset_yearly' => (bool) $resetYearly,
             'quote_validity_days' => max(1, (int) $validityDays),
         ];
-    }
-
-    private function updateQuoteSequence(Workspace $workspace, int $nextSequence): void
-    {
-        WorkspaceSetting::query()->updateOrCreate(
-            [
-                'workspace_id' => $workspace->id,
-                'group' => 'quotes',
-                'key' => 'quote_number_sequence',
-            ],
-            [
-                'value' => (string) max(1, $nextSequence),
-                'cast' => 'integer',
-                'encrypted' => false,
-            ],
-        );
-    }
-
-    private function formatQuoteNumber(string $prefix, int $sequence): string
-    {
-        return sprintf('%s-%d-%03d', strtoupper($prefix), (int) now()->year, $sequence);
     }
 
     /**
@@ -244,6 +187,7 @@ class QuoteService
 
         return [
             'id' => $quote->id,
+            'quote_uuid' => $quote->quote_uuid,
             'number' => $quote->number,
             'title' => $quote->title,
             'status' => $quote->status,
@@ -255,6 +199,7 @@ class QuoteService
             'terms' => $quote->terms,
             'notes' => $quote->notes,
             'template_id' => $quote->template_id,
+            'quote_uuid' => $quote->quote_uuid,
             'layout_snapshot' => $quote->layout_snapshot,
             'requires_deposit' => (bool) $quote->requires_deposit,
             'deposit_amount' => $quote->deposit_amount,

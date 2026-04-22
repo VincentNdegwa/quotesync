@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Workspace;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\DatabaseNotification;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -64,7 +65,53 @@ class HandleInertiaRequests extends Middleware
                         ->values()
                     : [],
             ],
+            'notifications' => fn (): array => $user
+                ? [
+                    'unread_count' => $user->unreadNotifications()->count(),
+                    'items' => $user->notifications()
+                        ->latest()
+                        ->limit(10)
+                        ->get()
+                        ->map(fn (DatabaseNotification $notification): array => $this->notificationPayload($notification))
+                        ->values(),
+                ]
+                : [
+                    'unread_count' => 0,
+                    'items' => [],
+                ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function notificationPayload(DatabaseNotification $notification): array
+    {
+        $kind = (string) ($notification->data['kind'] ?? 'system');
+
+        return [
+            'id' => $notification->id,
+            'kind' => $kind,
+            'icon' => (string) ($notification->data['icon'] ?? $this->iconForKind($kind)),
+            'title' => (string) ($notification->data['title'] ?? __('Notification')),
+            'message' => (string) ($notification->data['message'] ?? ''),
+            'url' => (string) ($notification->data['url'] ?? route('dashboard')),
+            'is_read' => $notification->read_at !== null,
+            'created_at' => $notification->created_at?->toIso8601String(),
+            'time_ago' => $notification->created_at?->diffForHumans(),
+        ];
+    }
+
+    private function iconForKind(string $kind): string
+    {
+        return match ($kind) {
+            'quote.viewed' => 'eye',
+            'quote.accepted' => 'circle-check-big',
+            'quote.declined' => 'circle-x',
+            'quote.expired' => 'clock-3',
+            'quote.sent' => 'send',
+            default => 'bell',
+        };
     }
 }

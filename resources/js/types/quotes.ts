@@ -33,6 +33,7 @@ export type QuoteBuilderSection = {
 
 export type QuoteBuilderState = {
     id: number | null;
+    quote_uuid?: string | null;
     number: string | null;
     title: string;
     status: string;
@@ -62,6 +63,7 @@ export type QuoteBuilderState = {
 export type BuilderClientOption = {
     id: number;
     company_name: string;
+    email?: string | null;
     currency: string | null;
 };
 
@@ -107,6 +109,7 @@ export type BuilderBranding = {
 
 export type QuoteListRecord = {
     id: number;
+    quote_uuid: string | null;
     number: string | null;
     title: string;
     status: string;
@@ -114,7 +117,7 @@ export type QuoteListRecord = {
     currency: string | null;
     valid_until: string | null;
     created_at: string | null;
-    client: { id: number; company_name: string } | null;
+    client: { id: number; company_name: string; email?: string | null } | null;
     assignee: { id: number; name: string } | null;
 };
 

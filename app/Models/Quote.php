@@ -9,9 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 #[Fillable([
     'workspace_id',
+    'quote_uuid',
     'number',
     'title',
     'status',
@@ -50,6 +52,12 @@ class Quote extends Model
 
             if ($workspaceId !== null) {
                 $query->where('workspace_id', $workspaceId);
+            }
+        });
+
+        static::creating(function (self $quote): void {
+            if (! is_string($quote->quote_uuid) || trim($quote->quote_uuid) === '') {
+                $quote->quote_uuid = (string) Str::uuid();
             }
         });
     }
@@ -144,6 +152,8 @@ class Quote extends Model
             'viewed_at' => 'datetime',
             'accepted_at' => 'datetime',
             'declined_at' => 'datetime',
+            'view_count' => 'integer',
+            'time_spent_seconds' => 'integer',
             'deleted_at' => 'datetime',
         ];
     }
