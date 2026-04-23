@@ -2,8 +2,10 @@
 
 namespace App\Services\Quotes;
 
+use App\Enums\QuoteStatus;
 use App\Models\CatalogItem;
 use App\Models\Quote;
+use App\Models\QuoteActivity;
 use App\Models\QuoteTemplate;
 use App\Models\Workspace;
 use App\Models\WorkspaceSetting;
@@ -174,6 +176,128 @@ class QuoteService
     public function delete(Quote $quote): void
     {
         $quote->delete();
+    }
+
+    public function markAsWon(Quote $quote): Quote
+    {
+        return DB::transaction(function () use ($quote): Quote {
+            $quote->update([
+                'status' => QuoteStatus::Won->value,
+                'accepted_at' => now(),
+            ]);
+
+            QuoteActivity::query()->create([
+                'quote_id' => $quote->id,
+                'workspace_id' => $quote->workspace_id,
+                'user_id' => auth()->id(),
+                'type' => 'accepted',
+                'description' => 'Quote marked as won',
+                'metadata' => null,
+            ]);
+
+            return $quote->refresh();
+        });
+    }
+
+    public function markAsLost(Quote $quote, ?string $reason = null): Quote
+    {
+        return DB::transaction(function () use ($quote, $reason): Quote {
+            $quote->update([
+                'status' => QuoteStatus::Lost->value,
+                'declined_at' => now(),
+                'decline_reason' => $reason,
+            ]);
+
+            QuoteActivity::query()->create([
+                'quote_id' => $quote->id,
+                'workspace_id' => $quote->workspace_id,
+                'user_id' => auth()->id(),
+                'type' => 'declined',
+                'description' => $reason ? "Quote marked as lost: {$reason}" : 'Quote marked as lost',
+                'metadata' => ['reason' => $reason],
+            ]);
+
+            return $quote->refresh();
+        });
+    }
+
+    public function duplicate(Quote $quote): Quote
+    {
+        return DB::transaction(function () use ($quote): Quote {
+            $quote->load(['sections.lineItems.taxes', 'workspace']);
+
+            $workspace = $quote->workspace;
+
+            $newQuote = Quote::query()->create([
+                'workspace_id' => $quote->workspace_id,
+                'quote_uuid' => (string) \Illuminate\Support\Str::uuid(),
+                'number' => $this->quoteNumberService->generate($workspace),
+                'title' => "{$quote->title} (Copy)",
+                'status' => QuoteStatus::Draft->value,
+                'client_id' => $quote->client_id,
+                'assigned_to' => $quote->assigned_to,
+                'currency' => $quote->currency,
+                'cover_message' => $quote->cover_message,
+                'notes' => $quote->notes,
+                'terms' => $quote->terms,
+                'valid_until' => now()->addDays(30)->toDateString(),
+                'template_id' => $quote->template_id,
+                'layout_snapshot' => $quote->layout_snapshot,
+                'parent_quote_id' => $quote->id,
+                'subtotal' => $quote->subtotal,
+                'discount_amount' => $quote->discount_amount,
+                'tax_amount' => $quote->tax_amount,
+                'total' => $quote->total,
+                'requires_deposit' => $quote->requires_deposit,
+                'deposit_amount' => $quote->deposit_amount,
+                'created_by' => auth()->id(),
+            ]);
+
+            foreach ($quote->sections as $section) {
+                $newSection = $newQuote->sections()->create([
+                    'title' => $section->title,
+                    'sort_order' => $section->sort_order,
+                ]);
+
+                foreach ($section->lineItems as $lineItem) {
+                    $newLineItem = $newSection->lineItems()->create([
+                        'quote_id' => $newQuote->id,
+                        'catalog_item_id' => $lineItem->catalog_item_id,
+                        'name' => $lineItem->name,
+                        'description' => $lineItem->description,
+                        'quantity' => $lineItem->quantity,
+                        'unit' => $lineItem->unit,
+                        'unit_price' => $lineItem->unit_price,
+                        'discount_percent' => $lineItem->discount_percent,
+                        'subtotal' => $lineItem->subtotal,
+                        'tax_amount' => $lineItem->tax_amount,
+                        'total' => $lineItem->total,
+                        'is_optional' => $lineItem->is_optional,
+                        'notes' => $lineItem->notes,
+                        'sort_order' => $lineItem->sort_order,
+                    ]);
+
+                    foreach ($lineItem->taxes as $tax) {
+                        $newLineItem->taxes()->create([
+                            'tax_id' => $tax->tax_id,
+                            'tax_label' => $tax->tax_label,
+                            'tax_rate' => $tax->tax_rate,
+                        ]);
+                    }
+                }
+            }
+
+            QuoteActivity::query()->create([
+                'quote_id' => $newQuote->id,
+                'workspace_id' => $newQuote->workspace_id,
+                'user_id' => auth()->id(),
+                'type' => 'created',
+                'description' => "Quote duplicated from #{$quote->number}",
+                'metadata' => ['parent_quote_id' => $quote->id],
+            ]);
+
+            return $newQuote->refresh();
+        });
     }
 
     /**

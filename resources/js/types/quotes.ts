@@ -1,4 +1,4 @@
-import type { TemplateLayout } from './builder';
+import type { BrandingData, QuoteData, TemplateLayout } from './builder';
 
 export type TaxSnapshot = {
     tax_id: number | null;
@@ -158,9 +158,21 @@ export type QuoteActivity = {
     user: { id: number; name: string } | null;
 };
 
+export type GroupedActivity = {
+    id: string;
+    type: string;
+    description: string;
+    created_at: string | null;
+    user?: { name: string } | null;
+    isGroup?: boolean;
+    groupCount?: number;
+    groupItems?: QuoteActivity[];
+};
+
 export type Quote = {
     id: number;
     quote_uuid: string;
+    uuid: string;
     number: string | null;
     title: string;
     status: string;
@@ -182,4 +194,31 @@ export type Quote = {
     client: { id: number; company_name: string } | null;
     sections: QuoteSection[];
     activities: QuoteActivity[];
+    layout_snapshot: TemplateLayout | null;
+    branding: BrandingData | null;
+    version: number | null;
+    cover_message: string | null;
+    terms: string | null;
+};
+
+export type { BrandingData, QuoteData, TemplateLayout } from './builder';
+
+export type EnumOption<T = string> = {
+    value: T;
+    label: string;
+    color: string;
+};
+
+export type QuoteStatusEnum = {
+    value: 'draft' | 'sent' | 'viewed' | 'won' | 'lost' | 'expired';
+    label: string;
+    badgeColor: 'default' | 'secondary' | 'destructive' | 'outline';
+    cssColor: string;
+};
+
+export type QuoteActivityTypeEnum = EnumOption<'created' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'follow_up_sent' | 'scheduled'>;
+
+export type GlobalEnums = {
+    quoteStatus: QuoteStatusEnum[];
+    quoteActivityType: QuoteActivityTypeEnum[];
 };

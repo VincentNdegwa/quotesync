@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\QuoteActivityType;
+use App\Enums\QuoteStatus;
 use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
@@ -80,6 +82,10 @@ class HandleInertiaRequests extends Middleware
                     'items' => [],
                 ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'enums' => [
+                'quoteStatus' => QuoteStatus::all(),
+                'quoteActivityType' => QuoteActivityType::all(),
+            ],
         ];
     }
 

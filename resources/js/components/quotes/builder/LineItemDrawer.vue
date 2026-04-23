@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import type { BuilderCatalogItem, BuilderTaxOption, QuoteBuilderLineItem } from '@/types';
+import { useFormat } from '@/composables/useFormat';
 
 const props = defineProps<{
     open: boolean;
@@ -22,15 +23,7 @@ const emit = defineEmits<{
 }>();
 
 const currencyCode = computed(() => props.currency || 'USD');
-
-const fmt = (amount: number): string => {
-    return new Intl.NumberFormat(undefined, {
-        style: 'currency',
-        currency: currencyCode.value,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    }).format(amount);
-};
+const { formatCurrency: fmt } = useFormat();
 
 const lineTotal = computed(() => {
     if (!item.value) {
@@ -204,7 +197,7 @@ const toggleTax = (tax: BuilderTaxOption): void => {
                 <div class="space-y-1">
                     <Label class="text-xs text-muted-foreground">Line total</Label>
                     <div class="flex h-9 items-center justify-end rounded-md border px-3 text-sm font-semibold tabular-nums">
-                        {{ fmt(lineTotal) }}
+                        {{ fmt(lineTotal, currencyCode) }}
                     </div>
                 </div>
             </div>

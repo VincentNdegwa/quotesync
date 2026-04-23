@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreQuoteRequest;
 use App\Http\Requests\UpdateQuoteRequest;
+use App\Http\Requests\UpdateQuoteStatusRequest;
 use App\Models\CatalogItem;
 use App\Models\Client;
 use App\Models\Quote;
@@ -152,7 +153,7 @@ class QuoteController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, Quote $quote): Response
+    public function show(Request $request, Quote $quote, WorkspaceSettingsService $workspaceSettingsService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -166,6 +167,7 @@ class QuoteController extends Controller
 
         return Inertia::render('quotes/Show', [
             'quote' => $quote,
+            'branding' => $this->brandingPayload($workspace, $workspaceSettingsService),
         ]);
     }
 
@@ -308,5 +310,38 @@ class QuoteController extends Controller
             'company_address' => $brandFields->get('company_address')['value'] ?? null,
             'company_tagline' => $brandFields->get('company_tagline')['value'] ?? null,
         ];
+    }
+
+    public function updateStatus(UpdateQuoteStatusRequest $request, Quote $quote, QuoteService $quoteService): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+
+        $status = $request->string('status')->toString();
+
+        if ($status === 'won') {
+            $quoteService->markAsWon($quote);
+            Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote marked as won.')]);
+        } elseif ($status === 'lost') {
+            $reason = $request->string('reason')->toString();
+            $quoteService->markAsLost($quote, $reason ?: null);
+            Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote marked as lost.')]);
+        }
+
+        return to_route('quotes.show', $quote);
+    }
+
+    public function duplicate(Request $request, Quote $quote, QuoteService $quoteService): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+
+        $newQuote = $quoteService->duplicate($quote);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote duplicated successfully.')]);
+
+        return to_route('quotes.edit', $newQuote);
     }
 }

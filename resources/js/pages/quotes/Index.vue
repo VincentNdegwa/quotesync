@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -12,18 +10,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import type { Paginator, QuoteListRecord } from '@/types';
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import QuoteHeaderActions from '@/pages/quotes/components/QuoteHeaderActions.vue';
+import QuotesDataTable from '@/pages/quotes/components/QuotesDataTable.vue';
 
 type Filters = {
     search: string;
@@ -35,6 +27,9 @@ const props = defineProps<{
     filters: Filters;
     quotes: Paginator<QuoteListRecord>;
 }>();
+
+const page = usePage();
+const quoteStatuses = computed(() => (page.props.enums as any)?.quoteStatus ?? []);
 
 defineOptions({
     layout: {
@@ -82,22 +77,6 @@ watch(
     },
     { deep: true },
 );
-
-const statusVariant = (status: string): 'outline' | 'secondary' | 'destructive' | 'default' => {
-    if (status === 'won') {
-        return 'default';
-    }
-
-    if (status === 'lost' || status === 'expired') {
-        return 'destructive';
-    }
-
-    if (status === 'sent' || status === 'viewed') {
-        return 'secondary';
-    }
-
-    return 'outline';
-};
 
 const hasQuotes = computed(() => props.quotes.data.length > 0);
 
@@ -152,14 +131,7 @@ const executeSend = (): void => {
                 description="Create and manage reusable, trackable quotes from one dynamic builder."
             />
 
-            <div class="flex gap-2">
-                <Button as-child>
-                    <Link href="/quotes/create">New quote</Link>
-                </Button>
-                <Button variant="outline" as-child>
-                    <Link href="/configuration/templates">Templates</Link>
-                </Button>
-            </div>
+            <QuoteHeaderActions @open-create-quote="() => router.visit('/quotes/create')" />
         </div>
 
         <div class="rounded-lg border p-3">
@@ -195,45 +167,13 @@ const executeSend = (): void => {
             </div>
         </div>
 
-        <div class="rounded-lg border" v-if="hasQuotes">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Number</TableHead>
-                        <TableHead>Title</TableHead>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead class="text-right">Total</TableHead>
-                        <TableHead>Valid until</TableHead>
-                        <TableHead class="text-right">Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    <TableRow v-for="quote in quotes.data" :key="quote.id">
-                        <TableCell>{{ quote.number || '—' }}</TableCell>
-                        <TableCell class="font-medium">{{ quote.title }}</TableCell>
-                        <TableCell>{{ quote.client?.company_name || '—' }}</TableCell>
-                        <TableCell>
-                            <Badge :variant="statusVariant(quote.status)">
-                                {{ quote.status }}
-                            </Badge>
-                        </TableCell>
-                        <TableCell class="text-right">{{ quote.total.toFixed(2) }}</TableCell>
-                        <TableCell>{{ quote.valid_until || '—' }}</TableCell>
-                        <TableCell class="text-right space-x-2">
-                            <Button size="sm" @click="sendQuote(quote.id)">Send</Button>
-                            <Button size="sm">
-                                <Link :href="QuoteController.show(quote.id).url" >View</Link>
-                            </Button>
-                            <Button size="sm" variant="outline" as-child>
-                                <Link :href="QuoteController.edit(quote.id).url">Edit</Link>
-                            </Button>
-                            <Button size="sm" variant="destructive" @click="removeQuote(quote.id)">Delete</Button>
-                        </TableCell>
-                    </TableRow>
-                </TableBody>
-            </Table>
-        </div>
+        <QuotesDataTable
+            v-if="hasQuotes"
+            :data="quotes.data"
+            :quote-statuses="quoteStatuses"
+            @send="sendQuote"
+            @delete="removeQuote"
+        />
 
         <div v-else class="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
             No quotes yet. Create your first quote from scratch or from a template.

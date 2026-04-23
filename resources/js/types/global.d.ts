@@ -1,4 +1,5 @@
 import type { Auth } from '@/types/auth';
+import type { GlobalEnums } from '@/types/quotes';
 import type { NotificationSharedData } from '@/types/ui';
 
 // Extend ImportMeta interface for Vite...
@@ -21,6 +22,7 @@ declare module '@inertiajs/core' {
             auth: Auth;
             notifications: NotificationSharedData;
             sidebarOpen: boolean;
+            enums: GlobalEnums;
             [key: string]: unknown;
         };
     }
