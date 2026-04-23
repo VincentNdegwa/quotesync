@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Quote;
 use App\Models\QuoteActivity;
-use App\Models\User;
 use App\Models\Workspace;
 use App\Notifications\QuoteViewedNotification;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
@@ -35,6 +34,7 @@ class PublicQuoteController extends Controller
             ->firstOrFail();
 
         $quote->loadMissing(['client:id,company_name,contact_name,email', 'workspace:id,name,display_name']);
+        $quote->append('signature_url');
 
         $wasFirstView = $quote->viewed_at === null;
         $newStatus = $quote->status === 'sent' ? 'viewed' : $quote->status;
@@ -68,69 +68,13 @@ class PublicQuoteController extends Controller
         }
 
         return Inertia::render('public/QuoteView', [
-            'quote' => $this->quoteRendererPayload($quote),
+            'quote' => $quote->makeHidden(['internal_notes', 'profit_margin', 'deleted_at']),
             'quote_uuid' => $quote->quote_uuid,
             'layout' => $this->quoteLayoutPayload($quote),
             'branding' => $this->brandingPayload($quote->workspace, $workspaceSettingsService),
             'status' => $quote->status,
             'is_expired' => $quote->status === 'expired',
         ]);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function quoteRendererPayload(Quote $quote): array
-    {
-        return [
-            'id' => $quote->id,
-            'number' => $quote->number,
-            'title' => $quote->title,
-            'status' => $quote->status,
-            'signaturePath' => $quote->signature_path ? Storage::url($quote->signature_path) : null,
-            'signerName' => $quote->signer_name,
-            'acceptedAt' => $quote->accepted_at?->toISOString(),
-            'client' => [
-                'id' => $quote->client?->id,
-                'companyName' => $quote->client?->company_name,
-                'address' => $quote->client?->address,
-            ],
-            'createdAt' => $quote->created_at?->toISOString(),
-            'validUntil' => $quote->valid_until?->toDateString(),
-            'currency' => $quote->currency,
-            'coverMessage' => $quote->cover_message,
-            'terms' => $quote->terms,
-            'subtotal' => (float) $quote->subtotal,
-            'discountAmount' => (float) $quote->discount_amount,
-            'taxAmount' => (float) $quote->tax_amount,
-            'total' => (float) $quote->total,
-            'sections' => $quote->sections->map(function ($section): array {
-                return [
-                    'id' => $section->id,
-                    'title' => $section->title,
-                    'lineItems' => $section->lineItems->map(function ($lineItem): array {
-                        return [
-                            'id' => $lineItem->id,
-                            'name' => $lineItem->name,
-                            'description' => $lineItem->description,
-                            'quantity' => (float) $lineItem->quantity,
-                            'unit' => $lineItem->unit,
-                            'sku' => $lineItem->catalogItem?->sku,
-                            'taxes' => $lineItem->taxes->map(fn ($tax): array => [
-                                'taxId' => $tax->tax_id,
-                                'taxLabel' => $tax->tax_label,
-                                'taxRate' => (float) $tax->tax_rate,
-                            ])->values()->all(),
-                            'unitPrice' => (float) $lineItem->unit_price,
-                            'discountPercent' => (float) $lineItem->discount_percent,
-                            'taxAmount' => (float) $lineItem->tax_amount,
-                            'total' => (float) $lineItem->total,
-                            'isOptional' => (bool) $lineItem->is_optional,
-                        ];
-                    })->values()->all(),
-                ];
-            })->values()->all(),
-        ];
     }
 
     /**
@@ -156,14 +100,14 @@ class PublicQuoteController extends Controller
         $logoUrl = is_string($logoPath) && $logoPath !== '' ? Storage::url($logoPath) : null;
 
         return [
-            'companyName' => $brandFields->get('company_name')['value'] ?? $workspace->display_name ?? $workspace->name,
-            'logoUrl' => $logoUrl,
-            'primaryColor' => $brandFields->get('primary_color')['value'] ?? '#2563EB',
-            'accentColor' => $brandFields->get('accent_color')['value'] ?? '#F59E0B',
-            'companyEmail' => $brandFields->get('company_email')['value'] ?? null,
-            'companyPhone' => $brandFields->get('company_phone')['value'] ?? null,
-            'companyAddress' => $brandFields->get('company_address')['value'] ?? null,
-            'companyTagline' => $brandFields->get('company_tagline')['value'] ?? null,
+            'company_name' => $brandFields->get('company_name')['value'] ?? $workspace->display_name ?? $workspace->name,
+            'logo_url' => $logoUrl,
+            'primary_color' => $brandFields->get('primary_color')['value'] ?? '#2563EB',
+            'accent_color' => $brandFields->get('accent_color')['value'] ?? '#F59E0B',
+            'company_email' => $brandFields->get('company_email')['value'] ?? null,
+            'company_phone' => $brandFields->get('company_phone')['value'] ?? null,
+            'company_address' => $brandFields->get('company_address')['value'] ?? null,
+            'company_tagline' => $brandFields->get('company_tagline')['value'] ?? null,
         ];
     }
 

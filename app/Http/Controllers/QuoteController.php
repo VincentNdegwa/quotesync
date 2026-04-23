@@ -160,8 +160,13 @@ class QuoteController extends Controller
         abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
 
         $quote->loadMissing([
-            'client:id,company_name',
-            'sections.lineItems',
+            'client:id,company_name,address',
+            'workspace:id,name,display_name',
+            'template:id,name,layout',
+            'creator:id,name,email',
+            'assignee:id,name,email',
+            'sections.lineItems.catalogItem:id,sku',
+            'sections.lineItems.taxes',
             'activities.user:id,name',
         ]);
 

@@ -22,7 +22,7 @@ const fontClass: Record<CoverMessageBlockConfig['fontSize'], string> = {
     lg: 'text-lg leading-8 whitespace-pre-wrap text-gray-700',
 };
 
-const showBlock = computed(() => !!props.quote.coverMessage?.trim() || props.previewMode || props.editMode);
+const showBlock = computed(() => !!props.quote.cover_message?.trim() || props.previewMode || props.editMode);
 
 const borderLeftStyle = computed(() => {
     if (!props.config.borderLeft) {
@@ -30,7 +30,7 @@ const borderLeftStyle = computed(() => {
     }
 
     return {
-        borderLeft: `3px solid ${props.config.borderLeftColor ?? props.branding.primaryColor}`,
+        borderLeft: `3px solid ${props.config.borderLeftColor ?? props.branding.primary_color}`,
         paddingLeft: '16px',
     };
 });
@@ -57,7 +57,7 @@ const borderLeftStyle = computed(() => {
         />
 
         <InlineEditableText
-            :model-value="quote.coverMessage"
+            :model-value="quote.cover_message"
             :edit-mode="editMode"
             :rows="4"
             placeholder="Write a personal intro message for your client..."

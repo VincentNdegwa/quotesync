@@ -2,6 +2,7 @@ export * from './auth';
 export * from './builder';
 export * from './client-catalog';
 export * from './members';
+export * from './models';
 export * from './navigation';
 export * from './quotes';
 export * from './ui';

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 #[Fillable([
@@ -135,6 +136,14 @@ class Quote extends Model
     public function activities(): HasMany
     {
         return $this->hasMany(QuoteActivity::class)->latest();
+    }
+
+    /**
+     * @return string|null
+     */
+    protected function getSignatureUrlAttribute(): ?string
+    {
+        return $this->signature_path ? Storage::url($this->signature_path) : null;
     }
 
     /**

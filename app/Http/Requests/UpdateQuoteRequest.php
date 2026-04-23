@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\QuoteStatus;
 use App\Models\Workspace;
 use Illuminate\Validation\Rule;
 
@@ -39,11 +40,11 @@ class UpdateQuoteRequest extends FormRequest
         return [
             'number' => ['nullable', 'string', 'max:60'],
             'title' => ['required', 'string', 'max:255'],
-            'status' => ['nullable', Rule::in(['draft', 'sent', 'viewed', 'won', 'lost', 'expired'])],
+            'status' => ['nullable', Rule::in(array_column(QuoteStatus::cases(), 'value'))],
             'client_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('clients', 'id')->where(fn ($query) => $query
+                Rule::exists('clients', 'id')->where(fn($query) => $query
                     ->where('workspace_id', $workspace?->id)
                     ->whereNull('deleted_at')),
             ],
@@ -73,7 +74,7 @@ class UpdateQuoteRequest extends FormRequest
             'sections.*.line_items.*.catalog_item_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('catalog_items', 'id')->where(fn ($query) => $query
+                Rule::exists('catalog_items', 'id')->where(fn($query) => $query
                     ->where('workspace_id', $workspace?->id)
                     ->whereNull('deleted_at')),
             ],
@@ -93,7 +94,7 @@ class UpdateQuoteRequest extends FormRequest
             'sections.*.line_items.*.taxes.*.tax_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('taxes', 'id')->where(fn ($query) => $query
+                Rule::exists('taxes', 'id')->where(fn($query) => $query
                     ->where('workspace_id', $workspace?->id)
                     ->whereNull('deleted_at')),
             ],

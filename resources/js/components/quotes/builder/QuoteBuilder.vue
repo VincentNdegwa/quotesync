@@ -17,7 +17,6 @@ import type {
     BuilderCatalogItem,
     BuilderBranding,
     BuilderClientOption,
-    QuoteData,
     BuilderTaxOption,
     BuilderTemplateOption,
     CoverMessageBlockConfig,
@@ -391,120 +390,16 @@ const updateSignatureContent = (
     }
 };
 
-const toNumber = (value: number | string | null | undefined): number => {
-    const parsed = Number(value ?? 0);
-
-    return Number.isFinite(parsed) ? parsed : 0;
-};
-
-const computeLineItemTotals = (item: QuoteBuilderState['sections'][number]['line_items'][number]) => {
-    const quantity = Math.max(toNumber(item.quantity), 0);
-    const unitPrice = Math.max(toNumber(item.unit_price), 0);
-    const discountPercent = Math.min(Math.max(toNumber(item.discount_percent), 0), 100);
-
-    const subtotal = quantity * unitPrice * (1 - discountPercent / 100);
-    const taxAmount = item.taxes.reduce((sum, tax) => {
-        const rate = Math.max(toNumber(tax.tax_rate), 0);
-
-        return sum + (subtotal * rate) / 100;
-    }, 0);
-
-    return {
-        taxAmount,
-        total: subtotal + taxAmount,
-    };
-};
-
-const selectedClient = computed<BuilderClientOption | null>(() => {
-    if (!localState.value.client_id) {
-        return null;
-    }
-
-    return (props.clients ?? []).find((client) => client.id === localState.value.client_id) ?? null;
-});
-
-const quoteData = computed<QuoteData>(() => {
-    const sections = localState.value.sections.map((section) => ({
-        id: section.id,
-        title: section.title,
-        lineItems: section.line_items.map((item) => {
-            const computedTotals = computeLineItemTotals(item);
-
-            return {
-                id: item.id,
-                name: item.name,
-                description: item.description,
-                quantity: item.quantity,
-                unit: item.unit,
-                sku: null,
-                unitPrice: item.unit_price,
-                discountPercent: item.discount_percent,
-                taxes: item.taxes.map((tax) => ({
-                    taxId: tax.tax_id,
-                    taxLabel: tax.tax_label,
-                    taxRate: tax.tax_rate,
-                })),
-                taxAmount: computedTotals.taxAmount,
-                total: computedTotals.total,
-                isOptional: item.is_optional,
-            };
-        }),
-    }));
-
-    const subtotal = sections.reduce((sum, section) => {
-        return sum + section.lineItems.reduce((lineSum, item) => {
-            if (item.isOptional) {
-                return lineSum;
-            }
-
-            const quantity = Math.max(toNumber(item.quantity), 0);
-            const unitPrice = Math.max(toNumber(item.unitPrice), 0);
-            const discountPercent = Math.min(Math.max(toNumber(item.discountPercent), 0), 100);
-
-            return lineSum + quantity * unitPrice * (1 - discountPercent / 100);
-        }, 0);
-    }, 0);
-
-    const taxAmount = sections.reduce((sum, section) => {
-        return sum + section.lineItems.reduce((lineSum, item) => {
-            return item.isOptional ? lineSum : lineSum + toNumber(item.taxAmount);
-        }, 0);
-    }, 0);
-
-    const discountAmount = Math.max(toNumber(localState.value.discount_amount), 0);
-
-    return {
-        id: localState.value.id,
-        number: localState.value.number,
-        title: localState.value.title,
-        client: {
-            id: localState.value.client_id,
-            companyName: selectedClient.value?.company_name ?? null,
-            address: null,
-        },
-        createdAt: new Date().toISOString(),
-        validUntil: localState.value.valid_until,
-        currency: localState.value.currency,
-        coverMessage: localState.value.cover_message,
-        terms: localState.value.terms,
-        subtotal,
-        discountAmount,
-        taxAmount,
-        total: subtotal + taxAmount - discountAmount,
-        sections,
-    };
-});
-
 const brandingData = computed<BrandingData>(() => {
     return {
-        companyName: props.branding?.company_name ?? null,
-        logoUrl: props.branding?.logo_url ?? null,
-        primaryColor: props.branding?.primary_color ?? '#2563EB',
-        accentColor: props.branding?.accent_color ?? '#F59E0B',
-        companyEmail: props.branding?.company_email ?? null,
-        companyPhone: props.branding?.company_phone ?? null,
-        companyAddress: props.branding?.company_address ?? null,
-        companyTagline: props.branding?.company_tagline ?? null,
+        company_name: props.branding?.company_name ?? null,
+        logo_url: props.branding?.logo_url ?? null,
+        primary_color: props.branding?.primary_color ?? '#2563EB',
+        accent_color: props.branding?.accent_color ?? '#F59E0B',
+        company_email: props.branding?.company_email ?? null,
+        company_phone: props.branding?.company_phone ?? null,
+        company_address: props.branding?.company_address ?? null,
+        company_tagline: props.branding?.company_tagline ?? null,
     };
 });
 
@@ -617,7 +512,7 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
             <div class="min-w-0 flex-1 overflow-y-auto bg-muted/30 p-6">
                 <div class="mx-auto w-full max-w-4xl rounded-lg border bg-white p-6 shadow-sm">
                     <QuoteRenderer
-                        :quote="quoteData"
+                        :quote="localState"
                         :layout="currentLayout"
                         :branding="brandingData"
                         :preview-mode="canvasMode === 'preview'"

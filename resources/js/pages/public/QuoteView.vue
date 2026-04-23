@@ -67,7 +67,7 @@ function handleDecline() {
 
     <main class="min-h-screen bg-background px-4 py-8 text-foreground flex flex-col">
         <div class="mx-auto flex w-full max-w-6xl flex-col gap-6 flex-1">
-            
+
             <!-- Action Bar -->
             <div class="flex items-center justify-between rounded-lg bg-card p-4 shadow-sm ring-1 ring-border sticky top-4 z-10">
                 <div class="flex items-center gap-3">

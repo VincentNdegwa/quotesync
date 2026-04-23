@@ -6,7 +6,7 @@ import type { BrandingData, QuoteData, SignatureBlockConfig } from '@/types';
 
 const props = defineProps<{
     config: SignatureBlockConfig;
-    quote: QuoteData & { status?: string; signaturePath?: string | null; signerName?: string | null; acceptedAt?: string | null };
+    quote: QuoteData & { status?: string; signature_url?: string | null; signer_name?: string | null; accepted_at?: string | null };
     branding: BrandingData;
     previewMode: boolean;
     editMode?: boolean;
@@ -42,16 +42,16 @@ const formatDate = (dateString?: string | null) => {
 
 <template>
     <div
-        class="space-y-3 px-6"
+        class="px-6"
         :style="{
             backgroundColor: config.backgroundColor ?? 'transparent',
             paddingTop: config.paddingSize === 'sm' ? '12px' : config.paddingSize === 'lg' ? '28px' : '20px',
             paddingBottom: config.paddingSize === 'sm' ? '12px' : config.paddingSize === 'lg' ? '28px' : '20px',
         }"
     >
-        <div class="flex flex-wrap gap-2">
-            <template v-if="editMode">
-                <div class="min-w-[10rem] rounded-md px-3 py-2 text-sm font-medium text-primary-foreground" :style="{ backgroundColor: config.acceptButtonColor ?? undefined }">
+        <template v-if="editMode">
+            <div class="flex flex-wrap gap-3">
+                <div class="min-w-40 rounded-md px-4 py-2 text-sm font-medium text-primary-foreground" :style="{ backgroundColor: config.acceptButtonColor ?? undefined }">
                     <InlineEditableText
                         :model-value="config.acceptButtonText"
                         :edit-mode="editMode"
@@ -62,7 +62,7 @@ const formatDate = (dateString?: string | null) => {
                         @update:model-value="updateAcceptText"
                     />
                 </div>
-                <div class="min-w-[10rem] rounded-md px-3 py-2 text-sm font-medium text-primary-foreground">
+                <div class="min-w-40 rounded-md px-4 py-2 text-sm font-medium border border-border">
                     <InlineEditableText
                         :model-value="config.declineButtonText"
                         :edit-mode="editMode"
@@ -73,57 +73,44 @@ const formatDate = (dateString?: string | null) => {
                         @update:model-value="updateDeclineText"
                     />
                 </div>
-            </template>
+            </div>
+        </template>
 
-            <template v-else-if="quote.status === 'accepted'">
-                <div class="flex flex-col gap-3 rounded-lg border border-border bg-muted/30 p-6 w-full max-w-md">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium text-muted-foreground">E-Signature</span>
-                        <span class="text-xs text-muted-foreground bg-background px-2 py-0.5 rounded-full border border-border">Verified</span>
-                    </div>
-                    
-                    <div class="flex flex-col gap-1 items-center justify-center p-4 bg-background border border-border rounded-md shadow-sm">
-                        <img v-if="quote.signaturePath" :src="quote.signaturePath" alt="Signature" class="h-16 object-contain" />
-                        <span v-if="quote.signerName" class="text-sm font-medium mt-2" style="font-family: 'Dancing Script', cursive; font-size: 1.5rem; line-height: 1;">{{ quote.signerName }}</span>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-2 text-xs mt-2">
-                        <div>
-                            <p class="text-muted-foreground">Signed by</p>
-                            <p class="font-medium text-foreground">{{ quote.signerName || 'Client' }}</p>
-                        </div>
-                        <div>
-                            <p class="text-muted-foreground">Date</p>
-                            <p class="font-medium text-foreground">{{ formatDate(quote.acceptedAt) }}</p>
-                        </div>
-                    </div>
+        <template v-else-if="quote.status === 'accepted'">
+            <div class="flex items-center gap-6">
+                <div class="flex flex-col">
+                    <img v-if="quote.signature_url" :src="quote.signature_url" alt="Signature" class="h-20 w-auto object-contain" />
+                    <span v-if="quote.signer_name" class="mt-1 text-sm" style="font-family: 'Dancing Script', cursive; font-size: 1.25rem; line-height: 1;">{{ quote.signer_name }}</span>
                 </div>
-            </template>
-
-            <template v-else-if="quote.status === 'declined'">
-                <div class="rounded-md bg-destructive/10 px-4 py-3 text-destructive border border-destructive/20 w-full max-w-md">
-                    <p class="text-sm font-medium">This quote was declined.</p>
+                <div class="text-sm text-muted-foreground">
+                    <p>Signed on {{ formatDate(quote.accepted_at) }}</p>
                 </div>
-            </template>
+            </div>
+        </template>
 
-            <template v-else>
+        <template v-else-if="quote.status === 'declined'">
+            <p class="text-sm text-muted-foreground">This quote was declined.</p>
+        </template>
+
+        <template v-else>
+            <div class="flex flex-wrap gap-3">
                 <Button type="button" @click="openApproveModal" :style="{ backgroundColor: config.acceptButtonColor ?? undefined }" class="text-white">
                     {{ config.acceptButtonText || 'Accept & Sign' }}
                 </Button>
                 <Button type="button" @click="openDeclineModal" variant="outline">
                     {{ config.declineButtonText || 'Decline' }}
                 </Button>
-            </template>
-        </div>
+            </div>
+        </template>
 
         <InlineEditableText
             v-if="config.showLegalText || editMode"
             :model-value="config.legalText"
             :edit-mode="editMode"
-            :rows="3"
+            :rows="2"
             placeholder="By signing you agree to the terms listed above."
             empty-text="By signing you agree to the terms listed above."
-            display-class="text-xs text-muted-foreground whitespace-pre-wrap"
+            display-class="text-xs text-muted-foreground whitespace-pre-wrap mt-3"
             @update:model-value="updateLegalText"
         />
 

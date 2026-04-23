@@ -16,26 +16,26 @@ const formatCurrency = (value: number): string => {
     }).format(Number(value || 0));
 };
 
-const itemBaseSubtotal = (item: QuoteData['sections'][number]['lineItems'][number]): number => {
+const itemBaseSubtotal = (item: QuoteData['sections'][number]['line_items'][number]): number => {
     const quantity = Math.max(Number(item.quantity || 0), 0);
-    const unitPrice = Math.max(Number(item.unitPrice || 0), 0);
-    const discountPercent = Math.min(Math.max(Number(item.discountPercent || 0), 0), 100);
+    const unitPrice = Math.max(Number(item.unit_price || 0), 0);
+    const discountPercent = Math.min(Math.max(Number(item.discount_percent || 0), 0), 100);
 
     return quantity * unitPrice * (1 - discountPercent / 100);
 };
 
 const computedSubtotal = computed(() => {
     return props.quote.sections.reduce((sum, section) => {
-        return sum + section.lineItems.reduce((lineSum, item) => {
-            return item.isOptional ? lineSum : lineSum + itemBaseSubtotal(item);
+        return sum + section.line_items.reduce((lineSum, item) => {
+            return item.is_optional ? lineSum : lineSum + itemBaseSubtotal(item);
         }, 0);
     }, 0);
 });
 
 const computedTaxAmount = computed(() => {
     return props.quote.sections.reduce((sum, section) => {
-        return sum + section.lineItems.reduce((lineSum, item) => {
-            if (item.isOptional) {
+        return sum + section.line_items.reduce((lineSum, item) => {
+            if (item.is_optional) {
                 return lineSum;
             }
 
@@ -43,16 +43,16 @@ const computedTaxAmount = computed(() => {
                 const taxableSubtotal = itemBaseSubtotal(item);
 
                 return lineSum + item.taxes.reduce((taxSum, tax) => {
-                    return taxSum + taxableSubtotal * (Number(tax.taxRate || 0) / 100);
+                    return taxSum + taxableSubtotal * (Number(tax.tax_rate || 0) / 100);
                 }, 0);
             }
 
-            return lineSum + Number(item.taxAmount || 0);
+            return lineSum + Number(item.tax_amount || 0);
         }, 0);
     }, 0);
 });
 
-const computedDiscountAmount = computed(() => Math.max(Number(props.quote.discountAmount || 0), 0));
+const computedDiscountAmount = computed(() => Math.max(Number(props.quote.discount_amount || 0), 0));
 const computedTotal = computed(() => computedSubtotal.value + computedTaxAmount.value - computedDiscountAmount.value);
 
 const alignmentClass = computed(() => {
@@ -75,17 +75,17 @@ const taxLines = computed(() => {
     const breakdown = new Map<string, { label: string; amount: number }>();
 
     props.quote.sections.forEach((section) => {
-        section.lineItems
-            .filter((item) => !item.isOptional)
+        section.line_items
+            .filter((item) => !item.is_optional)
             .forEach((item) => {
                 const quantity = Number(item.quantity || 0);
-                const unitPrice = Number(item.unitPrice || 0);
-                const discountPercent = Math.min(Math.max(Number(item.discountPercent || 0), 0), 100);
+                const unitPrice = Number(item.unit_price || 0);
+                const discountPercent = Math.min(Math.max(Number(item.discount_percent || 0), 0), 100);
                 const taxableSubtotal = quantity * unitPrice * (1 - discountPercent / 100);
 
                 item.taxes.forEach((tax) => {
-                    const key = `${tax.taxLabel}-${tax.taxRate}`;
-                    const amount = taxableSubtotal * (Number(tax.taxRate || 0) / 100);
+                    const key = `${tax.tax_label}-${tax.tax_rate}`;
+                    const amount = taxableSubtotal * (Number(tax.tax_rate || 0) / 100);
                     const existing = breakdown.get(key);
 
                     if (existing) {
@@ -96,7 +96,7 @@ const taxLines = computed(() => {
 
                     breakdown.set(key, {
                         amount,
-                        label: `${tax.taxLabel} (${tax.taxRate}%)`,
+                        label: `${tax.tax_label} (${tax.tax_rate}%)`,
                     });
                 });
             });
@@ -162,7 +162,7 @@ const taxLines = computed(() => {
                 :class="config.highlightTotal ? 'text-base' : 'text-sm'
                 "
                 :style="{
-                    color: branding.primaryColor,
+                    color: branding.primary_color,
                     backgroundColor: config.totalRowColor ?? undefined,
                 }"
             >

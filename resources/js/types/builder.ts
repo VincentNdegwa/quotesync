@@ -1,3 +1,5 @@
+import type { QuoteModel } from './models';
+
 export type BlockType =
   | 'header'
   | 'from_to'
@@ -238,57 +240,17 @@ export type TemplateLayout = {
   blocks: Block[];
 };
 
-export type QuoteData = {
-  id: number | null;
-  number: string | null;
-  title: string;
-  client: {
-    id: number | null;
-    companyName: string | null;
-    address: string | null;
-  } | null;
-  createdAt: string | null;
-  validUntil: string | null;
-  currency: string | null;
-  coverMessage: string | null;
-  terms: string | null;
-  subtotal: number;
-  discountAmount: number;
-  taxAmount: number;
-  total: number;
-  sections: Array<{
-    id: number | null;
-    title: string;
-    lineItems: Array<{
-      id: number | null;
-      name: string;
-      description: string | null;
-      quantity: number;
-      unit: string | null;
-      sku: string | null;
-      taxes: Array<{
-        taxId: number | null;
-        taxLabel: string;
-        taxRate: number;
-      }>;
-      unitPrice: number;
-      discountPercent: number;
-      taxAmount: number;
-      total: number;
-      isOptional: boolean;
-    }>;
-  }>;
-};
+export type QuoteData = QuoteModel;
 
 export type BrandingData = {
-  companyName: string | null;
-  logoUrl: string | null;
-  primaryColor: string;
-  accentColor: string;
-  companyEmail: string | null;
-  companyPhone: string | null;
-  companyAddress: string | null;
-  companyTagline: string | null;
+  company_name: string | null;
+  logo_url: string | null;
+  primary_color: string;
+  accent_color: string;
+  company_email: string | null;
+  company_phone: string | null;
+  company_address: string | null;
+  company_tagline: string | null;
 };
 
 export const REQUIRED_BLOCK_TYPES: BlockType[] = ['header', 'line_items', 'totals', 'signature'];

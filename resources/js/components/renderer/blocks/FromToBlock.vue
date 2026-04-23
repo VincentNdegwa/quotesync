@@ -20,13 +20,13 @@ defineProps<{
     >
         <div>
             <p v-if="config.showLabels" class="text-xs uppercase tracking-wide text-muted-foreground">From</p>
-            <p class="font-semibold">{{ branding.companyName || 'Your company' }}</p>
-            <p v-if="config.showCompanyAddress && branding.companyAddress" class="text-muted-foreground">{{ branding.companyAddress }}</p>
-            <p v-if="branding.companyEmail" class="text-muted-foreground">{{ branding.companyEmail }}</p>
+            <p class="font-semibold">{{ branding.company_name || 'Your company' }}</p>
+            <p v-if="config.showCompanyAddress && branding.company_address" class="text-muted-foreground">{{ branding.company_address }}</p>
+            <p v-if="branding.company_email" class="text-muted-foreground">{{ branding.company_email }}</p>
         </div>
         <div :class="config.layout === 'split' ? 'text-right' : ''">
             <p v-if="config.showLabels" class="text-xs uppercase tracking-wide text-muted-foreground">To</p>
-            <p class="font-semibold">{{ quote.client?.companyName || 'Client' }}</p>
+            <p class="font-semibold">{{ quote.client?.company_name || 'Client' }}</p>
             <p v-if="config.showClientAddress" class="text-muted-foreground">
                 {{ quote.client?.address || 'No client address available' }}
             </p>

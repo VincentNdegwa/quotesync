@@ -25,7 +25,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-import type { BrandingData, Quote, QuoteData } from '@/types';
+import type { BrandingData, QuoteData } from '@/types';
 import { watchEffect } from 'vue';
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
@@ -35,7 +35,7 @@ import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
 
 const props = defineProps<{
-    quote: Quote;
+    quote: QuoteData;
     branding: BrandingData;
 }>();
 
@@ -84,44 +84,6 @@ const executeSend = (): void => {
         });
     }
 };
-
-const toQuoteData = (): QuoteData => ({
-    id: props.quote.id,
-    number: props.quote.number,
-    title: props.quote.title,
-    client: props.quote.client ? {
-        id: props.quote.client.id,
-        companyName: props.quote.client.company_name,
-        address: null,
-    } : null,
-    createdAt: props.quote.created_at,
-    validUntil: props.quote.valid_until,
-    currency: props.quote.currency,
-    coverMessage: props.quote.cover_message,
-    terms: props.quote.terms,
-    subtotal: Number(props.quote.subtotal),
-    discountAmount: Number(props.quote.discount_amount),
-    taxAmount: Number(props.quote.tax_amount),
-    total: Number(props.quote.total),
-    sections: props.quote.sections.map(section => ({
-        id: section.id,
-        title: section.title,
-        lineItems: section.line_items.map(item => ({
-            id: item.id,
-            name: item.name,
-            description: item.description,
-            quantity: Number(item.quantity),
-            unit: null,
-            sku: null,
-            taxes: [],
-            unitPrice: Number(item.unit_price),
-            discountPercent: 0,
-            taxAmount: 0,
-            total: Number(item.total),
-            isOptional: item.is_optional,
-        })),
-    })),
-});
 </script>
 
 <template>
@@ -249,7 +211,7 @@ const toQuoteData = (): QuoteData => ({
                 <div class="overflow-hidden rounded-xl border bg-white shadow-sm">
                     <QuoteRenderer
                         v-if="quote.layout_snapshot && branding"
-                        :quote="toQuoteData()"
+                        :quote="quote"
                         :layout="quote.layout_snapshot"
                         :branding="branding"
                         :preview-mode="true"

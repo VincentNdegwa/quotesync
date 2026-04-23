@@ -23,6 +23,7 @@ type Filters = {
     sort: string;
 };
 
+
 const props = defineProps<{
     filters: Filters;
     quotes: Paginator<QuoteListRecord>;
@@ -144,12 +145,14 @@ const executeSend = (): void => {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem :value="ALL">All statuses</SelectItem>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="sent">Sent</SelectItem>
-                        <SelectItem value="viewed">Viewed</SelectItem>
-                        <SelectItem value="won">Won</SelectItem>
-                        <SelectItem value="lost">Lost</SelectItem>
-                        <SelectItem value="expired">Expired</SelectItem>
+                        
+                        <SelectItem 
+                            v-for="status in quoteStatuses" 
+                            :key="status.value" 
+                            :value="status.value"
+                        >
+                            {{ status.label }}
+                        </SelectItem>
                     </SelectContent>
                 </Select>
 
