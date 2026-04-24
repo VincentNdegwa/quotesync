@@ -48,9 +48,9 @@ enum QuoteStatus: string
             self::Sent => 'border-primary text-primary',
             self::Viewed => 'border-secondary text-secondary',
             self::Accepted => 'border-primary text-primary',
-            self::Declined => 'border-destructive text-destructive',
+            self::Declined => 'border-destructive text-white',
             self::Won => 'bg-primary hover:bg-primary text-primary-foreground',
-            self::Lost => 'border-destructive text-destructive',
+            self::Lost => 'border-destructive text-white',
             self::Expired => 'border-muted text-muted-foreground',
         };
     }

@@ -132,26 +132,26 @@ const taxLines = computed(() => {
             ]"
         >
             <div v-if="config.showSubtotal" class="flex items-center justify-between">
-                <span class="text-muted">Subtotal</span>
+                <span>Subtotal</span>
                 <span class="tabular-nums">{{ formatCurrency(computedSubtotal) }}</span>
             </div>
 
             <div v-if="taxLines.length > 0" class="my-2 border-t" />
 
             <div v-if="config.showGlobalDiscount" class="flex items-center justify-between">
-                <span class="text-muted">Discount</span>
+                <span>Discount</span>
                 <span class="tabular-nums">-{{ formatCurrency(computedDiscountAmount) }}</span>
             </div>
 
             <div v-for="taxLine in taxLines" :key="taxLine.label" class="flex items-center justify-between">
-                <span class="text-muted">{{ taxLine.label }}</span>
+                <span>{{ taxLine.label }}</span>
                 <span class="tabular-nums">{{ formatCurrency(taxLine.amount) }}</span>
             </div>
 
             <div v-if="config.showTaxTotal && taxLines.length > 0" class="my-2 border-t" />
 
             <div v-if="config.showTaxTotal" class="flex items-center justify-between">
-                <span class="text-muted">Total tax</span>
+                <span>Total tax</span>
                 <span class="tabular-nums">{{ formatCurrency(computedTaxAmount) }}</span>
             </div>
 
