@@ -54,7 +54,7 @@ const updateCustomText = (value: string | null): void => {
             :multiline="false"
             placeholder="Payment terms"
             empty-text="Payment terms"
-            display-class="text-sm font-semibold"
+            display-class="mb-2 font-semibold text-base"
             @update:model-value="updateLabel"
         />
         <div v-if="config.showPaymentMethods && config.paymentMethods.length > 0" class="mt-2 flex flex-wrap gap-1.5">

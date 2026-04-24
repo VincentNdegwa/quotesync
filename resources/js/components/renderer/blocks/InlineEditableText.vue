@@ -1,6 +1,11 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onUnmounted } from 'vue';
 import { Input } from '@/components/ui/input';
+import { useEditor, EditorContent } from '@tiptap/vue-3';
+import Highlight from '@tiptap/extension-highlight'
+import Typography from '@tiptap/extension-typography'
+import StarterKit from '@tiptap/starter-kit'
+import { Button } from '@/components/ui/button';
 
 const props = withDefaults(
     defineProps<{
@@ -41,6 +46,28 @@ watch(
     { immediate: true },
 );
 
+const editor = useEditor({
+    content: '',
+    extensions: [StarterKit, Highlight, Typography],
+    editorProps: {
+        attributes: {
+            class: 'prose prose-sm max-w-none focus:outline-none min-h-[100px] p-2',
+        },
+    },
+    onUpdate: ({ editor }) => {
+        draft.value = editor.getHTML();
+    },
+});
+
+watch(
+    () => isEditing.value,
+    (editing) => {
+        if(props.multiline && editing && editor.value?.commands) {
+            editor.value.commands.setContent(draft.value || '<p></p>');
+        }
+    },
+);
+
 const startEditing = (): void => {
     if (!props.editMode) {
         return;
@@ -51,8 +78,13 @@ const startEditing = (): void => {
 };
 
 const save = (): void => {
-    const normalized = draft.value.trim();
-    emit('update:modelValue', normalized.length > 0 ? draft.value : null);
+    let content = draft.value;
+
+    if (props.multiline && editor.value) {
+        content = editor.value.getHTML();
+    }
+
+    emit('update:modelValue', content.length > 0 ? content : null);
     isEditing.value = false;
 };
 
@@ -79,27 +111,26 @@ const onKeydown = (event: KeyboardEvent): void => {
         save();
     }
 };
+
+onUnmounted(() => {
+    editor.value?.destroy();
+});
 </script>
 
 <template>
     <template v-if="editMode">
         <div v-if="!isEditing" class="cursor-pointer" @click="startEditing">
-            <p v-if="hasValue" :class="displayClass">
-                {{ modelValue }}
-            </p>
+            <div v-if="hasValue" :class="displayClass" v-html="modelValue" />
             <p v-else class="italic text-muted-foreground" :class="displayClass">
                 {{ emptyText || placeholder || 'Click to edit' }}
             </p>
         </div>
 
-        <div v-else class="border border-primary p-2">
-            <textarea
+        <div v-else class="border rounded-sm border-primary p-2">
+            <EditorContent
                 v-if="multiline"
-                v-model="draft"
-                :rows="rows"
-                :placeholder="placeholder"
-                class="w-full resize-none"
-                :class="displayClass"
+                :editor="editor"
+                class="w-full"
                 @keydown="onKeydown"
             />
             <Input
@@ -112,27 +143,23 @@ const onKeydown = (event: KeyboardEvent): void => {
             />
 
             <div class="mt-2 flex justify-end gap-2">
-                <button
-                    type="button"
-                    class="rounded px-3 py-1 text-sm hover:bg-muted"
+                <Button
+                    variant="secondary"
                     @click="cancel"
                 >
                     Cancel
-                </button>
-                <button
-                    type="button"
-                    class="rounded bg-primary px-3 py-1 text-sm text-primary-foreground hover:bg-primary/90"
+                </Button>
+                <Button
+                    variant="default"
                     @click="save"
                 >
                     Save
-                </button>
+                </Button>
             </div>
         </div>
     </template>
 
-    <p v-else-if="hasValue" :class="displayClass">
-        {{ modelValue }}
-    </p>
+    <div v-else-if="hasValue" :class="displayClass" v-html="modelValue" />
 
     <p v-else-if="emptyText" :class="displayClass">
         {{ emptyText }}

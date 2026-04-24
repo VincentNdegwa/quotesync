@@ -52,7 +52,7 @@ const borderLeftStyle = computed(() => {
             :multiline="false"
             placeholder="A note from us"
             empty-text="A note from us"
-            display-class="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+            display-class="mb-2 font-semibold text-base"
             @update:model-value="(value) => emit('update-cover-label', value)"
         />
 
