@@ -99,7 +99,6 @@ const stripeClass = (index: number): string => {
                     :model-value="section.title"
                     :edit-mode="editMode"
                     :multiline="false"
-                    wrapper-class="w-full max-w-[18rem]"
                     display-class="font-semibold tracking-tight text-sm"
                     placeholder="Section name"
                     empty-text="Section name"

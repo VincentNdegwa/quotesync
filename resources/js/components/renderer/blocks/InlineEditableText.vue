@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onUnmounted } from 'vue';
+import { computed, ref, watch, onUnmounted, nextTick } from 'vue';
 import { Input } from '@/components/ui/input';
 import { useEditor, EditorContent } from '@tiptap/vue-3';
 import Highlight from '@tiptap/extension-highlight'
@@ -33,6 +33,7 @@ const emit = defineEmits<{
 
 const isEditing = ref(false);
 const draft = ref('');
+const inputElRef = ref<HTMLInputElement | null>(null);
 
 const hasValue = computed(() => String(props.modelValue ?? '').trim().length > 0);
 
@@ -62,8 +63,20 @@ const editor = useEditor({
 watch(
     () => isEditing.value,
     (editing) => {
-        if(props.multiline && editing && editor.value?.commands) {
+        if (!editing) {
+            return;
+        }
+
+        if (props.multiline && editor.value?.commands) {
             editor.value.commands.setContent(draft.value || '<p></p>');
+            nextTick(() => {
+                editor.value?.commands.focus('end');
+            });
+        } else if (!props.multiline) {
+            nextTick(() => {
+                inputElRef.value?.focus();
+                inputElRef.value?.select();
+            });
         }
     },
 );
@@ -135,6 +148,7 @@ onUnmounted(() => {
             />
             <Input
                 v-else
+                ref="inputElRef"
                 v-model="draft"
                 :placeholder="placeholder"
                 class="w-full"

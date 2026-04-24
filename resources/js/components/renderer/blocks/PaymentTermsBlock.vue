@@ -74,7 +74,6 @@ const updateCustomText = (value: string | null): void => {
             placeholder="Add payment instructions"
             :empty-text="previewMode ? 'Add payment instructions in block settings.' : 'Click to add payment instructions.'"
             display-class="whitespace-pre-wrap text-sm text-gray-700"
-            wrapper-class="mt-2"
             @update:model-value="updateCustomText"
         />
     </div>
