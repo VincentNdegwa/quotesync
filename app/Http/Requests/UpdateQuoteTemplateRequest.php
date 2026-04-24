@@ -36,7 +36,7 @@ class UpdateQuoteTemplateRequest extends FormRequest
         $workspace = $this->user()?->currentWorkspace;
 
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:255'],
             'industry' => ['nullable', 'string', 'max:120'],
             'cover_message' => ['nullable', 'string'],
@@ -47,33 +47,28 @@ class UpdateQuoteTemplateRequest extends FormRequest
             'sections' => ['required', 'array', 'min:1'],
             'sections.*.title' => ['required', 'string', 'max:255'],
             'sections.*.sort_order' => ['nullable', 'integer', 'min:0'],
-            'sections.*.line_items' => ['required', 'array'],
-            'sections.*.line_items.*.catalog_item_id' => [
-                'nullable',
-                'integer',
-                Rule::exists('catalog_items', 'id')->where(fn ($query) => $query
-                    ->where('workspace_id', $workspace?->id)
-                    ->whereNull('deleted_at')),
-            ],
-            'sections.*.line_items.*.name' => ['required', 'string', 'max:255'],
-            'sections.*.line_items.*.description' => ['nullable', 'string'],
-            'sections.*.line_items.*.quantity' => ['required', 'numeric', 'min:0.01'],
-            'sections.*.line_items.*.unit' => ['nullable', 'string', 'max:30'],
-            'sections.*.line_items.*.unit_price' => ['required', 'numeric', 'min:0'],
-            'sections.*.line_items.*.discount_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'sections.*.line_items.*.is_optional' => ['nullable', 'boolean'],
-            'sections.*.line_items.*.notes' => ['nullable', 'string'],
-            'sections.*.line_items.*.sort_order' => ['nullable', 'integer', 'min:0'],
-            'sections.*.line_items.*.taxes' => ['nullable', 'array'],
-            'sections.*.line_items.*.taxes.*.tax_id' => [
-                'nullable',
-                'integer',
-                Rule::exists('taxes', 'id')->where(fn ($query) => $query
-                    ->where('workspace_id', $workspace?->id)
-                    ->whereNull('deleted_at')),
-            ],
-            'sections.*.line_items.*.taxes.*.tax_label' => ['required', 'string', 'max:120'],
-            'sections.*.line_items.*.taxes.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
+            'sections.*.line_items' => ['nullable', 'array'],
+        ];
+    }
+
+    /**
+     * Get validated data with field mapping from QuoteBuilderState to template fields.
+     */
+    public function validated($key = null, $default = null): array
+    {
+        $data = parent::validated($key, $default);
+
+        // Map QuoteBuilderState fields to template fields
+        return [
+            'name' => $data['title'] ?? null,
+            'description' => $data['description'] ?? null,
+            'industry' => $data['industry'] ?? null,
+            'cover_message' => $data['cover_message'] ?? null,
+            'terms' => $data['terms'] ?? null,
+            'notes' => $data['notes'] ?? null,
+            'layout' => $data['layout'] ?? null,
+            'is_active' => $data['is_active'] ?? true,
+            'sections' => $data['sections'] ?? [],
         ];
     }
 }

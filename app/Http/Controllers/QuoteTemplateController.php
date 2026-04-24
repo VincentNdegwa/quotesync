@@ -191,6 +191,20 @@ class QuoteTemplateController extends Controller
     }
 
     /**
+     * Get template layout.
+     */
+    public function getLayout(Request $request, QuoteTemplate $quoteTemplate): \Illuminate\Http\JsonResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace && $quoteTemplate->workspace_id === $workspace->id, 404);
+
+        return response()->json([
+            'layout' => $quoteTemplate->layout,
+        ]);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function builderLookups(Workspace $workspace, WorkspaceSettingsService $workspaceSettingsService): array

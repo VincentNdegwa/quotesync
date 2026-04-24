@@ -71,6 +71,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
         Route::resource('quote-templates', QuoteTemplateController::class);
+Route::get('quote-templates/{quote_template}/layout', [QuoteTemplateController::class, 'getLayout'])->name('quote-templates.layout');
 
         Route::get('catalog/import', [CatalogImportController::class, 'create'])->name('catalog.import.create');
         Route::post('catalog/import/preview', [CatalogImportController::class, 'preview'])->name('catalog.import.preview');

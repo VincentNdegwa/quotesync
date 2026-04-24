@@ -27,6 +27,7 @@ import type {
     TermsBlockConfig,
     TemplateLayout,
 } from '@/types';
+import { watch } from 'vue';
 
 const model = defineModel<QuoteBuilderState>({
     required: true,
@@ -61,6 +62,23 @@ const localState = model;
 const currentLayout = ref<TemplateLayout>(
     ensureTemplateLayout(localState.value.layout_snapshot ?? localState.value.layout ?? null),
 );
+
+watch(() => localState.value.template_id, async (newTemplateId) => {
+    if (!newTemplateId) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/quote-templates/${newTemplateId}/layout`);
+        const data = await response.json();
+        if (data.layout) {
+            localState.value.layout = data.layout;
+            currentLayout.value = ensureTemplateLayout(data.layout);
+        }
+    } catch (error) {
+        console.error('Failed to fetch template layout:', error);
+    }
+});
 
 const selectedBlockId = ref<string | null>(currentLayout.value.blocks[0]?.id ?? null);
 const canvasMode = ref<'edit' | 'preview'>('edit');
@@ -496,8 +514,8 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
             :system-locked="systemLocked"
         />
 
-        <div class="flex min-h-0 flex-1 overflow-hidden rounded-lg border bg-card">
-            <div v-if="blockListOpen" class="w-55 shrink-0 overflow-y-auto border-r p-3">
+        <div class="flex min-h-0 relative flex-1 overflow-hidden rounded-lg border bg-card">
+            <div v-if="blockListOpen" class="h-full w-55 shrink-0 border-r p-3 overflow-y-auto">
                 <BlockList
                     :blocks="currentLayout.blocks"
                     :selected-block-id="selectedBlockId"
@@ -542,7 +560,7 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                 </div>
             </div>
 
-            <div v-if="canvasMode === 'edit' && selectedBlockModel" class="w-[320px] shrink-0 overflow-y-auto border-l p-3">
+            <div v-if="canvasMode === 'edit' && selectedBlockModel" class="h-full w-[320px] shrink-0 overflow-y-auto border-l p-3">
                 <BlockConfigPanel
                     v-model:block="selectedBlockModel"
                     v-model:quote-state="localState"

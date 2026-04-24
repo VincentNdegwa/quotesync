@@ -57,7 +57,7 @@ const onDrop = (index: number): void => {
         >
             <span class="flex min-w-0 items-center gap-2">
                 <GripVertical class="size-4 text-muted-foreground" />
-                <span class="truncate">{{ block.label || displayName(block.type) }}</span>
+                <span class="truncate capitalize">{{ block.label || displayName(block.type) }}</span>
             </span>
             <span class="flex items-center gap-2">
                 <button
@@ -82,7 +82,7 @@ const onDrop = (index: number): void => {
                     type="button"
                     size="sm"
                     variant="outline"
-                    class="justify-start"
+                    class="justify-start truncate capitalize"
                     @click="emit('add', type)"
                 >
                     <Plus class="mr-1 size-3" />
