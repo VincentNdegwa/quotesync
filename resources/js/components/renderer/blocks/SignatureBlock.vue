@@ -4,7 +4,7 @@ import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.
 import { Button } from '@/components/ui/button';
 import type { BrandingData, QuoteData, SignatureBlockConfig } from '@/types';
 
-const props = defineProps<{
+defineProps<{
     config: SignatureBlockConfig;
     quote: QuoteData & { status?: string; signature_url?: string | null; signer_name?: string | null; accepted_at?: string | null };
     branding: BrandingData;
@@ -32,7 +32,10 @@ const updateLegalText = (value: string | null): void => {
 };
 
 const formatDate = (dateString?: string | null) => {
-    if (!dateString) return '';
+    if (!dateString) {
+return '';
+}
+
     return new Date(dateString).toLocaleString(undefined, { 
         year: 'numeric', month: 'long', day: 'numeric', 
         hour: '2-digit', minute: '2-digit' 

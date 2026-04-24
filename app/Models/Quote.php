@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\QuoteStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -138,9 +139,6 @@ class Quote extends Model
         return $this->hasMany(QuoteActivity::class)->latest();
     }
 
-    /**
-     * @return string|null
-     */
     protected function getSignatureUrlAttribute(): ?string
     {
         return $this->signature_path ? Storage::url($this->signature_path) : null;
@@ -152,6 +150,7 @@ class Quote extends Model
     protected function casts(): array
     {
         return [
+            'status' => QuoteStatus::class,
             'valid_until' => 'date',
             'layout_snapshot' => 'array',
             'subtotal' => 'decimal:2',

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
-import { Button } from '@/components/ui/button';
-import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
+import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
+import { Button } from '@/components/ui/button';
 import type {
     BuilderCatalogItem,
     BuilderBranding,

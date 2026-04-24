@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
+import { CheckCircle2, XCircle } from 'lucide-vue-next';
 import { computed, ref, provide } from 'vue';
+import { toast } from 'vue-sonner';
+import PublicQuoteController from '@/actions/App/Http/Controllers/PublicQuoteController';
 import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
-import { ensureTemplateLayout } from '@/types';
-import type { BrandingData, QuoteData, TemplateLayout } from '@/types';
-import SignaturePad from '@/components/ui/SignaturePad.vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import SignaturePad from '@/components/ui/SignaturePad.vue';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, XCircle } from 'lucide-vue-next';
-import { toast } from 'vue-sonner';
-import PublicQuoteController from '@/actions/App/Http/Controllers/PublicQuoteController';
+import { ensureTemplateLayout } from '@/types';
+import type { BrandingData, QuoteData, TemplateLayout } from '@/types';
 
 const props = defineProps<{
     quote: QuoteData;

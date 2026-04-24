@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
 import {
     Pencil,
     Send,
@@ -12,11 +11,12 @@ import {
     ChevronDown,
     ChevronUp,
 } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { GroupedActivity, QuoteActivity } from '@/types';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
+import type { GroupedActivity, QuoteActivity } from '@/types';
 
 const props = defineProps<{
     activities: QuoteActivity[];
@@ -35,6 +35,7 @@ const iconForType = (type: string) => {
         follow_up_sent: Clock,
         scheduled:      CalendarClock,
     };
+
     return map[type] ?? Activity;
 };
 
@@ -59,6 +60,7 @@ const grouped = computed((): GroupedActivity[] => {
     const sorted = [...props.activities].sort((a, b) => {
         const aT = a.created_at ? Date.parse(a.created_at) : 0;
         const bT = b.created_at ? Date.parse(b.created_at) : 0;
+
         return bT - aT; // newest first
     });
 

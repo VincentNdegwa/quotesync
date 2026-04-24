@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class QuoteService
 {
@@ -162,6 +163,22 @@ class QuoteService
                 $layoutSnapshot = $layout;
             }
 
+            // Validate status transition if status is being changed
+            if (isset($payload['status'])) {
+                $newStatus = QuoteStatus::from($payload['status']);
+                $currentStatus = $quote->status;
+
+                // Check if the transition is allowed
+                if (! $currentStatus->canBeChangedManually() && $newStatus !== $currentStatus) {
+                    throw new \InvalidArgumentException("Status cannot be changed manually from {$currentStatus->value}.");
+                }
+
+                $allowedTransitions = $currentStatus->allowedTransitions();
+                if (! in_array($newStatus, $allowedTransitions, true)) {
+                    throw new \InvalidArgumentException("Invalid status transition from {$currentStatus->value} to {$newStatus->value}.");
+                }
+            }
+
             $quote->fill([
                 ...$payload,
                 'layout_snapshot' => is_array($layoutSnapshot) ? $layoutSnapshot : null,
@@ -230,7 +247,7 @@ class QuoteService
 
             $newQuote = Quote::query()->create([
                 'workspace_id' => $quote->workspace_id,
-                'quote_uuid' => (string) \Illuminate\Support\Str::uuid(),
+                'quote_uuid' => (string) Str::uuid(),
                 'number' => $this->quoteNumberService->generate($workspace),
                 'title' => "{$quote->title} (Copy)",
                 'status' => QuoteStatus::Draft->value,
@@ -298,6 +315,126 @@ class QuoteService
 
             return $newQuote->refresh();
         });
+    }
+
+    public function revise(Quote $quote): Quote
+    {
+        abort_unless($quote->status->canBeRevised(), 403, 'This quote cannot be revised.');
+
+        return DB::transaction(function () use ($quote): Quote {
+            $quote->load(['sections.lineItems.taxes', 'workspace']);
+
+            $workspace = $quote->workspace;
+
+            $newQuote = Quote::query()->create([
+                'workspace_id' => $quote->workspace_id,
+                'quote_uuid' => (string) Str::uuid(),
+                'number' => $this->quoteNumberService->generate($workspace),
+                'title' => "{$quote->title} (Revision)",
+                'status' => QuoteStatus::Draft->value,
+                'client_id' => $quote->client_id,
+                'assigned_to' => $quote->assigned_to,
+                'currency' => $quote->currency,
+                'cover_message' => $quote->cover_message,
+                'notes' => $quote->notes,
+                'terms' => $quote->terms,
+                'valid_until' => now()->addDays(30)->toDateString(),
+                'template_id' => $quote->template_id,
+                'layout_snapshot' => $quote->layout_snapshot,
+                'parent_quote_id' => $quote->id,
+                'subtotal' => $quote->subtotal,
+                'discount_amount' => $quote->discount_amount,
+                'tax_amount' => $quote->tax_amount,
+                'total' => $quote->total,
+                'requires_deposit' => $quote->requires_deposit,
+                'deposit_amount' => $quote->deposit_amount,
+                'created_by' => auth()->id(),
+            ]);
+
+            foreach ($quote->sections as $section) {
+                $newSection = $newQuote->sections()->create([
+                    'title' => $section->title,
+                    'sort_order' => $section->sort_order,
+                ]);
+
+                foreach ($section->lineItems as $lineItem) {
+                    $newLineItem = $newSection->lineItems()->create([
+                        'quote_id' => $newQuote->id,
+                        'catalog_item_id' => $lineItem->catalog_item_id,
+                        'name' => $lineItem->name,
+                        'description' => $lineItem->description,
+                        'quantity' => $lineItem->quantity,
+                        'unit' => $lineItem->unit,
+                        'unit_price' => $lineItem->unit_price,
+                        'discount_percent' => $lineItem->discount_percent,
+                        'subtotal' => $lineItem->subtotal,
+                        'tax_amount' => $lineItem->tax_amount,
+                        'total' => $lineItem->total,
+                        'is_optional' => $lineItem->is_optional,
+                        'notes' => $lineItem->notes,
+                        'sort_order' => $lineItem->sort_order,
+                    ]);
+
+                    foreach ($lineItem->taxes as $tax) {
+                        $newLineItem->taxes()->create([
+                            'tax_id' => $tax->tax_id,
+                            'tax_label' => $tax->tax_label,
+                            'tax_rate' => $tax->tax_rate,
+                        ]);
+                    }
+                }
+            }
+
+            QuoteActivity::query()->create([
+                'quote_id' => $newQuote->id,
+                'workspace_id' => $newQuote->workspace_id,
+                'user_id' => auth()->id(),
+                'type' => 'created',
+                'description' => "Quote revised from #{$quote->number}",
+                'metadata' => ['parent_quote_id' => $quote->id],
+            ]);
+
+            return $newQuote->refresh();
+        });
+    }
+
+    public function reopen(Quote $quote, string $validUntil): Quote
+    {
+        abort_unless($quote->status->canBeReopened(), 403, 'This quote cannot be reopened.');
+
+        return DB::transaction(function () use ($quote, $validUntil): Quote {
+            $quote->update([
+                'status' => QuoteStatus::Draft->value,
+                'valid_until' => $validUntil,
+            ]);
+
+            QuoteActivity::query()->create([
+                'quote_id' => $quote->id,
+                'workspace_id' => $quote->workspace_id,
+                'user_id' => auth()->id(),
+                'type' => 'created',
+                'description' => 'Quote reopened',
+            ]);
+
+            return $quote->refresh();
+        });
+    }
+
+    public function archive(Quote $quote): void
+    {
+        abort_unless($quote->status->canBeArchived(), 403, 'This quote cannot be archived.');
+
+        $quote->update([
+            'archived_at' => now(),
+        ]);
+
+        QuoteActivity::query()->create([
+            'quote_id' => $quote->id,
+            'workspace_id' => $quote->workspace_id,
+            'user_id' => auth()->id(),
+            'type' => 'created',
+            'description' => 'Quote archived',
+        ]);
     }
 
     /**

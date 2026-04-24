@@ -1,4 +1,4 @@
-import type { BrandingData, QuoteData, TemplateLayout } from './builder';
+import type { BrandingData, TemplateLayout } from './builder';
 
 export type TaxSnapshot = {
     tax_id: number | null;
@@ -210,10 +210,11 @@ export type EnumOption<T = string> = {
 };
 
 export type QuoteStatusEnum = {
-    value: 'draft' | 'sent' | 'viewed' | 'won' | 'lost' | 'expired';
+    value: 'draft' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'won' | 'lost' | 'expired';
     label: string;
     badgeColor: 'default' | 'secondary' | 'destructive' | 'outline';
     cssColor: string;
+    availableActions: string[];
 };
 
 export type QuoteActivityTypeEnum = EnumOption<'created' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'follow_up_sent' | 'scheduled'>;

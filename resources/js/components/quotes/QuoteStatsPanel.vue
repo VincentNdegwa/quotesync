@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import {
     Eye,
     Clock,
@@ -10,11 +9,12 @@ import {
     Pencil,
     AlertCircle,
 } from 'lucide-vue-next';
+import { computed } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import type { Quote } from '@/types';
 import { useFormat } from '@/composables/useFormat';
+import type { Quote } from '@/types';
 
 const props = defineProps<{
     quote: Quote;
@@ -28,7 +28,11 @@ const readingMinutes = computed(() =>
 
 const readingLabel = computed(() => {
     const m = readingMinutes.value;
-    if (m === 0) return '< 1 min';
+
+    if (m === 0) {
+return '< 1 min';
+}
+
     return `${m} min`;
 });
 
@@ -37,17 +41,34 @@ const viewCount = computed(() => props.quote.view_count || 0);
 const isHotLead = computed(() => viewCount.value >= 3 && props.quote.status === 'viewed');
 
 const daysUntilExpiry = computed(() => {
-    if (!props.quote.valid_until) return null;
+    if (!props.quote.valid_until) {
+return null;
+}
+
     const diff = new Date(props.quote.valid_until).getTime() - Date.now();
+
     return Math.ceil(diff / 86400000);
 });
 
 const expiryWarning = computed(() => {
     const d = daysUntilExpiry.value;
-    if (d === null) return null;
-    if (d < 0) return { text: 'Expired', variant: 'destructive' as const };
-    if (d <= 3) return { text: `Expires in ${d}d`, variant: 'destructive' as const };
-    if (d <= 7) return { text: `Expires in ${d}d`, variant: 'secondary' as const };
+
+    if (d === null) {
+return null;
+}
+
+    if (d < 0) {
+return { text: 'Expired', variant: 'destructive' as const };
+}
+
+    if (d <= 3) {
+return { text: `Expires in ${d}d`, variant: 'destructive' as const };
+}
+
+    if (d <= 7) {
+return { text: `Expires in ${d}d`, variant: 'secondary' as const };
+}
+
     return null;
 });
 

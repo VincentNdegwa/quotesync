@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import type { BuilderCatalogItem, BuilderTaxOption, QuoteBuilderLineItem } from '@/types';
 import { useFormat } from '@/composables/useFormat';
+import type { BuilderCatalogItem, BuilderTaxOption, QuoteBuilderLineItem } from '@/types';
 
 const props = defineProps<{
     open: boolean;

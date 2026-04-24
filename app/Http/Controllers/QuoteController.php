@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\QuoteStatus;
 use App\Http\Requests\StoreQuoteRequest;
 use App\Http\Requests\UpdateQuoteRequest;
 use App\Http\Requests\UpdateQuoteStatusRequest;
@@ -173,6 +174,7 @@ class QuoteController extends Controller
         return Inertia::render('quotes/Show', [
             'quote' => $quote,
             'branding' => $this->brandingPayload($workspace, $workspaceSettingsService),
+            'quoteStatuses' => QuoteStatus::all(),
         ]);
     }
 
@@ -200,6 +202,8 @@ class QuoteController extends Controller
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+
+        abort_unless($quote->status->canBeEdited(), 403, 'Only draft quotes can be edited.');
 
         $quoteService->update($quote, $request->validated());
 
@@ -324,6 +328,13 @@ class QuoteController extends Controller
         abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
 
         $status = $request->string('status')->toString();
+        $newStatus = QuoteStatus::from($status);
+
+        // Validate status transition
+        $currentStatus = $quote->status;
+        if (! in_array($newStatus, $currentStatus->allowedTransitions(), true)) {
+            abort(403, "Invalid status transition from {$currentStatus->value} to {$newStatus->value}.");
+        }
 
         if ($status === 'won') {
             $quoteService->markAsWon($quote);
@@ -348,5 +359,46 @@ class QuoteController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote duplicated successfully.')]);
 
         return to_route('quotes.edit', $newQuote);
+    }
+
+    public function revise(Request $request, Quote $quote, QuoteService $quoteService): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+
+        $newQuote = $quoteService->revise($quote);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote revised successfully.')]);
+
+        return to_route('quotes.edit', $newQuote);
+    }
+
+    public function reopen(Request $request, Quote $quote, QuoteService $quoteService): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+
+        $validUntil = $request->string('valid_until')->toString() ?: now()->addDays(30)->toDateString();
+
+        $quoteService->reopen($quote, $validUntil);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote reopened successfully.')]);
+
+        return to_route('quotes.show', $quote);
+    }
+
+    public function archive(Request $request, Quote $quote, QuoteService $quoteService): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+
+        $quoteService->archive($quote);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote archived successfully.')]);
+
+        return to_route('quotes.index');
     }
 }

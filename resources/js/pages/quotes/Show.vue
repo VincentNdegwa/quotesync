@@ -1,46 +1,24 @@
 <script setup lang="ts">
-import { Head, Link, router, setLayoutProps } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
-import {
-    Send,
-    Pencil,
-    Copy,
-    Download,
-    CheckCircle2,
-    XCircle,
-    MoreHorizontal,
-    ExternalLink,
-} from 'lucide-vue-next';
+import { Head, setLayoutProps } from '@inertiajs/vue3';
+import { computed, watchEffect } from 'vue';
 import Heading from '@/components/Heading.vue';
 import QuoteActivityTimeline from '@/components/quotes/QuoteActivityTimeline.vue';
 import QuoteStatsPanel from '@/components/quotes/QuoteStatsPanel.vue';
 import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Separator } from '@/components/ui/separator';
-import type { BrandingData, QuoteData } from '@/types';
-import { watchEffect } from 'vue';
-import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
-import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
-import publicQuotesShow from '@/routes/public-quotes';
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
+import type { BrandingData, QuoteData, QuoteStatusEnum } from '@/types';
+import QuoteActions from './components/QuoteActions.vue';
 
 const props = defineProps<{
     quote: QuoteData;
     branding: BrandingData;
+    quoteStatuses: QuoteStatusEnum[];
 }>();
 
 const breadcrumbs = computed(() => [
-    { title: 'Quotes', href: QuoteController.index().url },
+    { title: 'Quotes', href: '/quotes' },
     { title: props.quote?.title ?? 'Quote details', href: '#' },
 ]);
 
@@ -52,50 +30,10 @@ watchEffect(() => {
 
 const { getQuoteStatus } = useEnums();
 const { formatCurrency: fmt, formatDate: fmtDate } = useFormat();
-
-const markWon = (): void => {
-    router.patch(QuoteController.updateStatus(props.quote.id).url, { status: 'won' });
-};
-
-const markLost = (): void => {
-    router.patch(QuoteController.updateStatus(props.quote.id).url, { status: 'lost' });
-};
-
-const duplicate = (): void => {
-    router.post(QuoteController.duplicate(props.quote.id).url);
-};
-
-const showSendDialog = ref(false);
-const quoteToSend = ref<number | null>(null);
-
-const openSendDialog = (): void => {
-    quoteToSend.value = props.quote.id;
-    showSendDialog.value = true;
-};
-
-const executeSend = (): void => {
-    if (quoteToSend.value) {
-        router.post(QuoteSendController.store(quoteToSend.value).url, {}, {
-            preserveScroll: true,
-            onSuccess: () => {
-                showSendDialog.value = false;
-                quoteToSend.value = null;
-            },
-        });
-    }
-};
 </script>
 
 <template>
     <Head :title="quote.title" />
-
-    <ConfirmDialog
-        v-model:open="showSendDialog"
-        title="Send quote"
-        description="Are you sure you want to send this quote to the client?"
-        confirm-text="Send"
-        @confirm="executeSend"
-    />
 
     <div class="space-y-6">
         <div class="flex flex-wrap items-start justify-between gap-4">
@@ -114,74 +52,12 @@ const executeSend = (): void => {
                     {{ getQuoteStatus(quote.status)?.label }}
                 </Badge>
 
-                <Button
-                    v-if="!quote.sent_at"
-                    size="sm"
-                    class="gap-1.5"
-                    @click="openSendDialog"
-                >
-                    <Send class="h-3.5 w-3.5" />
-                    Send quote
-                </Button>
-
-                <Button
-                    v-else-if="['sent', 'viewed'].includes(quote.status)"
-                    size="sm"
-                    variant="outline"
-                    class="gap-1.5"
-                    @click="openSendDialog"
-                >
-                    <Send class="h-3.5 w-3.5" />
-                    Resend
-                </Button>
-
-                <Button as-child size="sm" variant="outline" class="gap-1.5">
-                    <Link :href="QuoteController.edit(quote.id).url">
-                        <Pencil class="h-3.5 w-3.5" />
-                        Edit
-                    </Link>
-                </Button>
-
-                <DropdownMenu>
-                    <DropdownMenuTrigger as-child>
-                        <Button variant="outline" size="icon" class="h-8 w-8">
-                            <MoreHorizontal class="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" class="w-48">
-                        <DropdownMenuItem class="gap-2" @click="duplicate">
-                            <Copy class="h-4 w-4" />
-                            Duplicate quote
-                        </DropdownMenuItem>
-                        <DropdownMenuItem as-child class="gap-2">
-                            <a :href="publicQuotesShow.show(quote.quote_uuid).url" target="_blank">
-                                <ExternalLink class="h-4 w-4" />
-                                View as client
-                            </a>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem class="gap-2">
-                            <Download class="h-4 w-4" />
-                            Download PDF
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            v-if="!['won', 'lost'].includes(quote.status)"
-                            class="gap-2 text-primary focus:text-primary"
-                            @click="markWon"
-                        >
-                            <CheckCircle2 class="h-4 w-4" />
-                            Mark as won
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            v-if="!['won', 'lost'].includes(quote.status)"
-                            class="gap-2 text-destructive focus:text-destructive"
-                            @click="markLost"
-                        >
-                            <XCircle class="h-4 w-4" />
-                            Mark as lost
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <QuoteActions
+                    :quote="quote"
+                    :quote-statuses="quoteStatuses"
+                    variant="buttons"
+                    @success="() => {}"
+                />
             </div>
         </div>
 

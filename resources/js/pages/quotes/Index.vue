@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
+import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,12 +13,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import type { Paginator, QuoteListRecord } from '@/types';
-import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
-import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import QuoteHeaderActions from '@/pages/quotes/components/QuoteHeaderActions.vue';
 import QuotesDataTable from '@/pages/quotes/components/QuotesDataTable.vue';
+import type { Paginator, QuoteListRecord } from '@/types';
 
 type Filters = {
     search: string;

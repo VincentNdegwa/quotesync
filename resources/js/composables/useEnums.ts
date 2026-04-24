@@ -1,5 +1,5 @@
-import type { GlobalEnums, QuoteActivityTypeEnum, QuoteStatusEnum } from '@/types/quotes';
 import { usePage } from '@inertiajs/vue3';
+import type { GlobalEnums, QuoteActivityTypeEnum, QuoteStatusEnum } from '@/types/quotes';
 
 export function useEnums() {
     const page = usePage();

@@ -64,6 +64,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('quotes/{quote}/send', [QuoteSendController::class, 'store'])->name('quotes.send');
         Route::patch('quotes/{quote}/status', [QuoteController::class, 'updateStatus'])->name('quotes.status');
         Route::post('quotes/{quote}/duplicate', [QuoteController::class, 'duplicate'])->name('quotes.duplicate');
+        Route::post('quotes/{quote}/revise', [QuoteController::class, 'revise'])->name('quotes.revise');
+        Route::post('quotes/{quote}/reopen', [QuoteController::class, 'reopen'])->name('quotes.reopen');
+        Route::post('quotes/{quote}/archive', [QuoteController::class, 'archive'])->name('quotes.archive');
         Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
         Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 

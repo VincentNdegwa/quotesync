@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { Loader2 } from 'lucide-vue-next';
+import { ref } from 'vue';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -7,8 +10,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-vue-next';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface Props {
     open: boolean;
@@ -18,30 +21,38 @@ interface Props {
     cancelText?: string;
     variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
     processing?: boolean;
+    showInput?: boolean;
+    inputPlaceholder?: string;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
     title: 'Are you sure?',
     description: 'This action cannot be undone.',
     confirmText: 'Confirm',
     cancelText: 'Cancel',
     variant: 'default',
     processing: false,
+    showInput: false,
+    inputPlaceholder: '',
 });
 
 const emit = defineEmits<{
     (e: 'update:open', value: boolean): void;
-    (e: 'confirm'): void;
+    (e: 'confirm', value?: string): void;
     (e: 'cancel'): void;
 }>();
 
+const inputValue = ref('');
+
 const handleConfirm = () => {
-    emit('confirm');
+    emit('confirm', props.showInput ? inputValue.value : undefined);
+    inputValue.value = '';
 };
 
 const handleCancel = () => {
     emit('update:open', false);
     emit('cancel');
+    inputValue.value = '';
 };
 </script>
 
@@ -54,6 +65,15 @@ const handleCancel = () => {
                     {{ description }}
                 </DialogDescription>
             </DialogHeader>
+            <div v-if="showInput" class="py-4">
+                <Label for="input-value">Reason</Label>
+                <Input
+                    id="input-value"
+                    v-model="inputValue"
+                    :placeholder="inputPlaceholder"
+                    @keyup.enter="handleConfirm"
+                />
+            </div>
             <DialogFooter class="mt-4">
                 <Button variant="outline" @click="handleCancel" :disabled="processing">
                     {{ cancelText }}
