@@ -163,19 +163,21 @@ class QuoteService
                 $layoutSnapshot = $layout;
             }
 
-            // Validate status transition if status is being changed
             if (isset($payload['status'])) {
                 $newStatus = QuoteStatus::from($payload['status']);
                 $currentStatus = $quote->status;
 
-                // Check if the transition is allowed
-                if (! $currentStatus->canBeChangedManually() && $newStatus !== $currentStatus) {
-                    throw new \InvalidArgumentException("Status cannot be changed manually from {$currentStatus->value}.");
-                }
+                if ($newStatus === $currentStatus) {
+                    unset($payload['status']);
+                } else {
+                    if (! $currentStatus->canBeChangedManually() && $newStatus !== $currentStatus) {
+                        throw new \InvalidArgumentException("Status cannot be changed manually from {$currentStatus->value}.");
+                    }
 
-                $allowedTransitions = $currentStatus->allowedTransitions();
-                if (! in_array($newStatus, $allowedTransitions, true)) {
-                    throw new \InvalidArgumentException("Invalid status transition from {$currentStatus->value} to {$newStatus->value}.");
+                    $allowedTransitions = $currentStatus->allowedTransitions();
+                    if (! in_array($newStatus, $allowedTransitions, true)) {
+                        throw new \InvalidArgumentException("Invalid status transition from {$currentStatus->value} to {$newStatus->value}.");
+                    }
                 }
             }
 
