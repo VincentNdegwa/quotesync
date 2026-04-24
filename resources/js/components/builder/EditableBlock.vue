@@ -81,7 +81,11 @@ const isTypingTarget = (target: EventTarget | null): boolean => {
         || target.closest('[contenteditable="true"]') !== null;
 };
 
-const handleSelect = (): void => {
+const handleSelect = (event?: MouseEvent): void => {
+    if (event && isTypingTarget(event.target)) {
+        return;
+    }
+
     emit('select');
     rootRef.value?.focus();
 };
@@ -146,7 +150,7 @@ const handleDragStart = (event: DragEvent): void => {
         @drop.prevent="emit('drop', block.id)"
         @mouseenter="isHovered = true"
         @mouseleave="isHovered = false"
-        @click.stop="handleSelect"
+        @click.stop="handleSelect($event)"
     >
         <div
             v-if="showActions"
