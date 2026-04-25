@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\QuoteStatus;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
 use App\Models\Workspace;
 use App\Notifications\QuoteViewedNotification;
+use App\Services\Quotes\QuoteShortCodeService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,8 +20,17 @@ use Inertia\Response;
 
 class PublicQuoteController extends Controller
 {
-    public function show(string $quoteUuid, Request $request, WorkspaceSettingsService $workspaceSettingsService): Response
+    public function show(
+        string $quoteUuid,
+        Request $request,
+        WorkspaceSettingsService $workspaceSettingsService,
+        QuoteShortCodeService $quoteShortCodeService,
+    ): Response
     {
+        $resolvedQuote = $quoteShortCodeService->resolveQuoteByIdentifier($quoteUuid);
+
+        abort_unless($resolvedQuote instanceof Quote, 404);
+
         $quote = Quote::query()
             ->with([
                 'client',
@@ -30,14 +41,14 @@ class PublicQuoteController extends Controller
                 'sections.lineItems.catalogItem',
                 'sections.lineItems.taxes',
             ])
-            ->where('quote_uuid', $quoteUuid)
+            ->whereKey($resolvedQuote->id)
             ->firstOrFail();
 
         $quote->loadMissing(['client:id,company_name,contact_name,email', 'workspace:id,name,display_name']);
         $quote->append('signature_url');
 
         $wasFirstView = $quote->viewed_at === null;
-        $newStatus = $quote->status === 'sent' ? 'viewed' : $quote->status;
+        $newStatus = $quote->status === QuoteStatus::Sent ? QuoteStatus::Viewed->value : $quote->status->value;
 
         $quote->forceFill([
             'status' => $newStatus,
@@ -72,8 +83,8 @@ class PublicQuoteController extends Controller
             'quote_uuid' => $quote->quote_uuid,
             'layout' => $this->quoteLayoutPayload($quote),
             'branding' => $this->brandingPayload($quote->workspace, $workspaceSettingsService),
-            'status' => $quote->status,
-            'is_expired' => $quote->status === 'expired',
+            'status' => $quote->status->value,
+            'is_expired' => $quote->status === QuoteStatus::Expired,
         ]);
     }
 
@@ -122,11 +133,13 @@ class PublicQuoteController extends Controller
             ->values();
     }
 
-    public function accept(string $quoteUuid, Request $request): RedirectResponse
+    public function accept(string $quoteUuid, Request $request, QuoteShortCodeService $quoteShortCodeService): RedirectResponse
     {
-        $quote = Quote::query()->where('quote_uuid', $quoteUuid)->firstOrFail();
+        $quote = $quoteShortCodeService->resolveQuoteByIdentifier($quoteUuid);
 
-        if (in_array($quote->status, ['accepted', 'declined', 'expired'])) {
+        abort_unless($quote instanceof Quote, 404);
+
+        if (in_array($quote->status, [QuoteStatus::Accepted, QuoteStatus::Declined, QuoteStatus::Expired], true)) {
             return back()->with('error', 'This quote cannot be accepted.');
         }
 
@@ -164,11 +177,13 @@ class PublicQuoteController extends Controller
         return back()->with('success', 'Quote has been successfully accepted.');
     }
 
-    public function decline(string $quoteUuid, Request $request): RedirectResponse
+    public function decline(string $quoteUuid, Request $request, QuoteShortCodeService $quoteShortCodeService): RedirectResponse
     {
-        $quote = Quote::query()->where('quote_uuid', $quoteUuid)->firstOrFail();
+        $quote = $quoteShortCodeService->resolveQuoteByIdentifier($quoteUuid);
 
-        if (in_array($quote->status, ['accepted', 'declined', 'expired'])) {
+        abort_unless($quote instanceof Quote, 404);
+
+        if (in_array($quote->status, [QuoteStatus::Accepted, QuoteStatus::Declined, QuoteStatus::Expired], true)) {
             return back()->with('error', 'This quote cannot be declined.');
         }
 

@@ -7,10 +7,11 @@ use App\Models\Quote;
 use App\Models\QuoteActivity;
 use App\Models\Workspace;
 use App\Notifications\QuoteSentInternalNotification;
+use App\Services\Quotes\QuoteFollowUpSchedulerService;
+use App\Services\Quotes\QuoteShortCodeService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -21,6 +22,8 @@ class QuoteSendController extends Controller
         Request $request,
         Quote $quote,
         WorkspaceSettingsService $workspaceSettingsService,
+        QuoteShortCodeService $quoteShortCodeService,
+        QuoteFollowUpSchedulerService $quoteFollowUpSchedulerService,
     ): RedirectResponse {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -63,8 +66,23 @@ class QuoteSendController extends Controller
         $messageBody = strtr($bodyTemplate, $merge);
 
         $sendAt = now();
-        $viewUrl = route('public-quotes.show', ['quoteUuid' => $quote->quote_uuid]);
+        $shortCode = $quoteShortCodeService->getOrCreateCode($quote);
+        $viewUrl = route('public-quotes.show', ['quoteUuid' => $shortCode]);
         $unsubscribeUrl = url('/unsubscribe?email='.urlencode($to));
+
+        $attachPdf = $request->boolean('attach_pdf', false);
+        $pdfPath = null;
+
+        if ($attachPdf) {
+            if (!$quote->pdf_path) {
+                $pdfService = app(\App\Services\Pdf\QuotePdfService::class);
+                $pdfPath = $pdfService->generate($quote);
+                $quote->pdf_path = $pdfPath;
+                $quote->save();
+            } else {
+                $pdfPath = $quote->pdf_path;
+            }
+        }
 
         SendQuoteEmailJob::dispatch(
             quoteId: $quote->id,
@@ -76,12 +94,15 @@ class QuoteSendController extends Controller
             logoUrl: $logoUrl,
             viewUrl: $viewUrl,
             unsubscribeUrl: $unsubscribeUrl,
+            pdfPath: $pdfPath,
         )->delay($sendAt);
 
         $quote->forceFill([
             'status' => 'sent',
             'sent_at' => $sendAt,
         ])->save();
+
+        $quoteFollowUpSchedulerService->scheduleDefaultSequence($quote, $workspace, $sendAt);
 
         QuoteActivity::query()->create([
             'quote_id' => $quote->id,

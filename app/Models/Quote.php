@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -27,6 +28,7 @@ use Illuminate\Support\Str;
     'terms',
     'valid_until',
     'version',
+    'pdf_path',
     'template_id',
     'layout_snapshot',
     'parent_quote_id',
@@ -137,6 +139,30 @@ class Quote extends Model
     public function activities(): HasMany
     {
         return $this->hasMany(QuoteActivity::class)->latest();
+    }
+
+    /**
+     * @return HasOne<QuoteShortCode, $this>
+     */
+    public function shortCode(): HasOne
+    {
+        return $this->hasOne(QuoteShortCode::class);
+    }
+
+    /**
+     * @return HasMany<QuoteFollowUp, $this>
+     */
+    public function quoteFollowUps(): HasMany
+    {
+        return $this->hasMany(QuoteFollowUp::class)->orderBy('scheduled_at');
+    }
+
+    /**
+     * @return HasMany<QuoteTrackingEvent, $this>
+     */
+    public function trackingEvents(): HasMany
+    {
+        return $this->hasMany(QuoteTrackingEvent::class)->orderByDesc('occurred_at');
     }
 
     protected function getSignatureUrlAttribute(): ?string

@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\Client;
+use App\Enums\QuoteStatus;
 use App\Models\Quote;
+use App\Models\QuoteShortCode;
 use App\Models\User;
 use App\Notifications\QuoteViewedNotification;
 use Illuminate\Notifications\DatabaseNotification;
@@ -48,7 +50,7 @@ test('public quote page renders the quote and throttles view notifications', fun
 
     $quote->refresh();
 
-    expect($quote->status)->toBe('viewed');
+    expect($quote->status)->toBe(QuoteStatus::Viewed);
     expect($quote->view_count)->toBe(1);
     expect($quote->viewed_at)->not->toBeNull();
     expect(
@@ -70,4 +72,47 @@ test('public quote page renders the quote and throttles view notifications', fun
             ->where('data->quote_id', $quote->id)
             ->count(),
     )->toBe(1);
+});
+
+test('public quote page resolves quote by short code', function () {
+    $user = User::factory()->create();
+    $workspace = $user->currentWorkspace;
+
+    $client = Client::query()->create([
+        'workspace_id' => $workspace->id,
+        'company_name' => 'Acme Client',
+        'contact_name' => 'Alice Client',
+        'email' => 'client@example.com',
+        'created_by' => $user->id,
+    ]);
+
+    $quote = Quote::query()->create([
+        'workspace_id' => $workspace->id,
+        'quote_uuid' => (string) Str::uuid(),
+        'number' => 'QS-2026-009',
+        'title' => 'Short code quote',
+        'status' => 'sent',
+        'client_id' => $client->id,
+        'assigned_to' => $user->id,
+        'currency' => 'USD',
+        'subtotal' => 250,
+        'discount_amount' => 0,
+        'tax_amount' => 0,
+        'total' => 250,
+        'valid_until' => now()->addDays(7)->toDateString(),
+        'created_by' => $user->id,
+    ]);
+
+    $shortCode = QuoteShortCode::query()->create([
+        'quote_id' => $quote->id,
+        'code' => 'ABC123',
+    ]);
+
+    $this->get(route('public-quotes.show', ['quoteUuid' => $shortCode->code]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('public/QuoteView')
+            ->where('quote.id', $quote->id)
+            ->where('quote.title', 'Short code quote')
+        );
 });

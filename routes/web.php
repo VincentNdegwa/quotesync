@@ -10,13 +10,26 @@ use App\Http\Controllers\ConfigurationTagController;
 use App\Http\Controllers\ConfigurationUnitController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\InvoiceSendController;
+use App\Http\Controllers\MembersController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicQuoteController;
+use App\Http\Controllers\QuoteBulkExportController;
 use App\Http\Controllers\QuoteController;
+use App\Http\Controllers\QuotePdfController;
 use App\Http\Controllers\QuoteSendController;
 use App\Http\Controllers\QuoteTemplateController;
-use App\Http\Controllers\Settings\MembersController;
+use App\Http\Controllers\QuoteTrackingController;
+use App\Http\Controllers\SecurityController;
+use App\Http\Controllers\Configuration\FollowUpSequenceController as ConfigFollowUpSequenceController;
+use App\Http\Controllers\Settings\FollowUpSettingsController;
+use App\Http\Controllers\Settings\ProfileUpdateTest;
+use App\Http\Controllers\Settings\WorkspaceOnboardingTest;
+use App\Http\Controllers\Settings\WorkspaceSettingsController;
 use App\Http\Controllers\TaxController;
+use App\Http\Controllers\WorkspaceInvitationController;
 use App\Http\Controllers\WorkspaceSwitchController;
 use App\Http\Middleware\EnsureWorkspaceSettingsOnboarded;
 use Illuminate\Support\Facades\Route;
@@ -40,6 +53,8 @@ Route::post('q/{quoteUuid}/accept', [PublicQuoteController::class, 'accept'])
     ->name('public-quotes.accept');
 Route::post('q/{quoteUuid}/decline', [PublicQuoteController::class, 'decline'])
     ->name('public-quotes.decline');
+Route::post('q/{quoteUuid}/tracking', [QuoteTrackingController::class, 'store'])
+    ->name('public-quotes.tracking');
 
 Route::middleware(['auth'])->group(function () {
     Route::post('workspaces/{workspace}/switch', WorkspaceSwitchController::class)
@@ -62,8 +77,16 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('quotes/kanban', [QuoteController::class, 'kanban'])->name('quotes.kanban');
         Route::resource('quotes', QuoteController::class);
+        Route::get('quotes/{quote}/analytics', [QuoteController::class, 'analytics'])->name('quotes.analytics');
         Route::post('quotes/{quote}/send', [QuoteSendController::class, 'store'])->name('quotes.send');
+        Route::post('quotes/{quote}/convert-to-invoice', [InvoiceController::class, 'convertFromQuote'])->name('quotes.convert-to-invoice');
+        Route::post('quotes/{quote}/pdf', [QuotePdfController::class, 'generate'])->name('quotes.pdf.generate');
+        Route::get('quotes/{quote}/pdf/download', [QuotePdfController::class, 'download'])->name('quotes.pdf.download');
+        Route::post('quotes/bulk-export', [QuoteBulkExportController::class, 'export'])->name('quotes.bulk-export');
         Route::patch('quotes/{quote}/status', [QuoteController::class, 'updateStatus'])->name('quotes.status');
+
+        Route::resource('invoices', InvoiceController::class);
+        Route::post('invoices/{invoice}/send', [InvoiceSendController::class, 'store'])->name('invoices.send');
         Route::post('quotes/{quote}/duplicate', [QuoteController::class, 'duplicate'])->name('quotes.duplicate');
         Route::post('quotes/{quote}/revise', [QuoteController::class, 'revise'])->name('quotes.revise');
         Route::post('quotes/{quote}/reopen', [QuoteController::class, 'reopen'])->name('quotes.reopen');
@@ -73,6 +96,8 @@ Route::middleware(['auth'])->group(function () {
 
         Route::resource('quote-templates', QuoteTemplateController::class);
 Route::get('quote-templates/{quote_template}/layout', [QuoteTemplateController::class, 'getLayout'])->name('quote-templates.layout');
+
+        Route::resource('invoices', InvoiceController::class);
 
         Route::get('catalog/import', [CatalogImportController::class, 'create'])->name('catalog.import.create');
         Route::post('catalog/import/preview', [CatalogImportController::class, 'preview'])->name('catalog.import.preview');
@@ -99,6 +124,11 @@ Route::get('quote-templates/{quote_template}/layout', [QuoteTemplateController::
         Route::post('configuration/units', [ConfigurationUnitController::class, 'store'])->name('configuration.units.store');
         Route::put('configuration/units/{unit}', [ConfigurationUnitController::class, 'update'])->name('configuration.units.update');
         Route::delete('configuration/units/{unit}', [ConfigurationUnitController::class, 'destroy'])->name('configuration.units.destroy');
+
+        Route::get('configuration/follow-ups', [ConfigurationController::class, 'followUps'])->name('configuration.follow-ups');
+        Route::post('configuration/follow-ups', [ConfigFollowUpSequenceController::class, 'store'])->name('configuration.follow-ups.store');
+        Route::put('configuration/follow-ups/{followUpSequence}', [ConfigFollowUpSequenceController::class, 'update'])->name('configuration.follow-ups.update');
+        Route::delete('configuration/follow-ups/{followUpSequence}', [ConfigFollowUpSequenceController::class, 'destroy'])->name('configuration.follow-ups.destroy');
 
         Route::get('configuration/templates', [QuoteTemplateController::class, 'index'])->name('configuration.templates');
 

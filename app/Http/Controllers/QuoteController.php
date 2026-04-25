@@ -12,6 +12,7 @@ use App\Models\Quote;
 use App\Models\QuoteTemplate;
 use App\Models\Tax;
 use App\Models\Workspace;
+use App\Services\Quotes\QuoteAnalyticsService;
 use App\Services\Quotes\QuoteService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\RedirectResponse;
@@ -175,6 +176,18 @@ class QuoteController extends Controller
             'quote' => $quote,
             'branding' => $this->brandingPayload($workspace, $workspaceSettingsService),
             'quoteStatuses' => QuoteStatus::all(),
+        ]);
+    }
+
+    public function analytics(Request $request, Quote $quote, QuoteAnalyticsService $analyticsService): Response
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+
+        return Inertia::render('quotes/Analytics', [
+            'quote' => $quote->only('id', 'number', 'title', 'status'),
+            'analytics' => $analyticsService->getAnalytics($quote),
         ]);
     }
 

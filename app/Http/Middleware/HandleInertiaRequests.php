@@ -2,8 +2,12 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\FollowUpChannel;
+use App\Enums\InvoiceStatus;
 use App\Enums\QuoteActivityType;
+use App\Enums\QuoteFollowUpStatus;
 use App\Enums\QuoteStatus;
+use App\Enums\TrackingEventType;
 use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
@@ -85,6 +89,10 @@ class HandleInertiaRequests extends Middleware
             'enums' => [
                 'quoteStatus' => QuoteStatus::all(),
                 'quoteActivityType' => QuoteActivityType::all(),
+                'followUpChannel' => FollowUpChannel::all(),
+                'quoteFollowUpStatus' => QuoteFollowUpStatus::all(),
+                'trackingEventType' => TrackingEventType::all(),
+                'invoiceStatus' => InvoiceStatus::all(),
             ],
         ];
     }

@@ -2,6 +2,7 @@
 import { Link, router } from '@inertiajs/vue3';
 import {
     Archive,
+    BarChart3,
     CheckCircle2,
     Copy,
     Download,
@@ -27,7 +28,9 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import publicQuotesShow from '@/routes/public-quotes';
+import { analytics as quotesAnalytics } from '@/routes/quotes';
 import type { QuoteListRecord, QuoteStatusEnum } from '@/types';
+import InvoiceController from '@/actions/App/Http/Controllers/InvoiceController';
 
 const props = defineProps<{
     quote: QuoteListRecord;
@@ -150,17 +153,29 @@ const executeDelete = (): void => {
 };
 
 const viewAsClient = (): void => {
-    window.open(publicQuotesShow.show(props.quote?.quote_uuid).url, '_blank');
+    if (props.quote?.quote_uuid) {
+        window.open(publicQuotesShow.show(props.quote.quote_uuid).url, '_blank');
+    }
 };
 
-const downloadPDF = (): void => {
-    // TODO: Implement PDF download
-    console.log('Download PDF');
+const downloadPDF = async (): Promise<void> => {
+    try {
+        const response = await router.post(`/quotes/${props.quote.id}/pdf`, {}, {
+            onSuccess: (page) => {
+                if (page.props.url) {
+                    window.open(String(page.props.url), '_blank');
+                }
+            },
+        });
+    } catch (error) {
+        console.error('Failed to generate PDF:', error);
+    }
 };
 
 const convertToInvoice = (): void => {
-    // TODO: Implement convert to invoice
-    console.log('Convert to invoice');
+    router.post(InvoiceController.convertFromQuote(props.quote.id).url, {}, {
+        onSuccess: () => emit('success'),
+    });
 };
 </script>
 
@@ -312,6 +327,13 @@ const convertToInvoice = (): void => {
                     <span>View as client</span>
                 </DropdownMenuItem>
 
+                <DropdownMenuItem :as-child="true" class="gap-2">
+                    <Link :href="quotesAnalytics.url({ quote: quote.id })" class="flex w-full items-center gap-2">
+                        <BarChart3 class="h-4 w-4" />
+                        <span>Analytics</span>
+                    </Link>
+                </DropdownMenuItem>
+
                 <DropdownMenuItem
                     v-if="canPreview"
                     class="gap-2"
@@ -390,6 +412,13 @@ const convertToInvoice = (): void => {
                     <span>View as client</span>
                 </DropdownMenuItem>
 
+                <DropdownMenuItem :as-child="true" class="gap-2">
+                    <Link :href="quotesAnalytics.url({ quote: quote.id })" class="flex w-full items-center gap-2">
+                        <BarChart3 class="h-4 w-4" />
+                        <span>Analytics</span>
+                    </Link>
+                </DropdownMenuItem>
+
                 <DropdownMenuItem
                     v-if="canPreview"
                     class="gap-2"
@@ -449,7 +478,6 @@ const convertToInvoice = (): void => {
                 <DropdownMenuItem
                     v-if="canConvertToInvoice"
                     class="gap-2"
-                    @select="convertToInvoice"
                 >
                     <Edit3 class="h-4 w-4" />
                     <span>Convert to invoice</span>

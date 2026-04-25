@@ -26,6 +26,7 @@ class SendQuoteEmailJob implements ShouldQueue
         public ?string $logoUrl,
         public string $viewUrl,
         public ?string $unsubscribeUrl,
+        public ?string $pdfPath = null,
     ) {}
 
     /**
@@ -64,6 +65,7 @@ class SendQuoteEmailJob implements ShouldQueue
             lineItems: $lineItems,
             viewUrl: $this->viewUrl,
             unsubscribeUrl: $this->unsubscribeUrl,
+            pdfPath: $this->pdfPath,
         );
 
         $mailer = Mail::to($this->to);

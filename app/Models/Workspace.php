@@ -55,6 +55,14 @@ class Workspace extends LaratrustTeam
     }
 
     /**
+     * @return HasMany<FollowUpSequence, $this>
+     */
+    public function followUpSequences(): HasMany
+    {
+        return $this->hasMany(FollowUpSequence::class);
+    }
+
+    /**
      * Route notifications to the workspace owner by default.
      */
     public function routeNotificationForMail(Notification $notification): array|string|null

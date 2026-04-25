@@ -69,6 +69,33 @@ class ConfigurationController extends Controller
         ]);
     }
 
+    public function followUps(Request $request): Response
+    {
+        $workspace = $this->workspaceFromRequest($request);
+
+        return Inertia::render('configuration/follow-ups/Index', [
+            'sequences' => $workspace->followUpSequences()
+                ->with(['steps' => fn ($query) => $query->orderBy('sort_order')])
+                ->orderByDesc('is_default')
+                ->orderBy('name')
+                ->get()
+                ->map(fn ($sequence): array => [
+                    'id' => $sequence->id,
+                    'name' => $sequence->name,
+                    'is_default' => $sequence->is_default,
+                    'steps' => $sequence->steps->map(fn ($step): array => [
+                        'id' => $step->id,
+                        'day_offset' => $step->day_offset,
+                        'channel' => $step->channel->value,
+                        'subject' => $step->subject,
+                        'message_template' => $step->message_template,
+                        'sort_order' => $step->sort_order,
+                    ])->all(),
+                ])->all(),
+            'placeholders' => \App\Services\Quotes\QuotePlaceholderService::getPlaceholderDescriptions(),
+        ]);
+    }
+
     private function workspaceFromRequest(Request $request): Workspace
     {
         $workspace = $request->user()?->currentWorkspace;

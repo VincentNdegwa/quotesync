@@ -272,7 +272,7 @@ const formatDate = (date: string | null): string => {
         />
     </div>
 
-    <div v-else class="w-full overflow-x-auto pb-4">
+    <div v-else class="w-full overflow-x-auto custom-scrollbar pb-4">
         <div class="flex min-w-max gap-3 px-0.5 pt-0.5">
             <div
                 v-for="col in columns"

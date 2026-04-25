@@ -219,7 +219,31 @@ export type QuoteStatusEnum = {
 
 export type QuoteActivityTypeEnum = EnumOption<'created' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'follow_up_sent' | 'scheduled'>;
 
+export type FollowUpChannelEnum = {
+    value: 'email' | 'whatsapp' | 'sms';
+    label: string;
+};
+
+export type QuoteFollowUpStatusEnum = {
+    value: 'pending' | 'sent' | 'cancelled';
+    label: string;
+};
+
+export type TrackingEventTypeEnum = {
+    value: 'view' | 'section_visible' | 'scroll_depth' | 'time_spent' | 'link_click';
+    label: string;
+};
+
+export type InvoiceStatusEnum = {
+    value: 'draft' | 'sent' | 'viewed' | 'partial' | 'paid' | 'overdue' | 'void';
+    label: string;
+};
+
 export type GlobalEnums = {
     quoteStatus: QuoteStatusEnum[];
     quoteActivityType: QuoteActivityTypeEnum[];
+    followUpChannel: FollowUpChannelEnum[];
+    quoteFollowUpStatus: QuoteFollowUpStatusEnum[];
+    trackingEventType: TrackingEventTypeEnum[];
+    invoiceStatus: InvoiceStatusEnum[];
 };

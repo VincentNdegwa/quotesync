@@ -172,6 +172,19 @@ return [
                 'stop_on_decline' => ['label' => 'Stop on decline', 'type' => 'boolean', 'required' => false, 'default' => true],
             ],
         ],
+        'invoices' => [
+            'label' => 'Invoices',
+            'description' => 'Defaults used when creating and formatting invoices.',
+            'visible' => true,
+            'onboarding' => false,
+            'fields' => [
+                'invoice_prefix' => ['label' => 'Invoice prefix', 'type' => 'string', 'required' => true, 'default' => 'INV', 'max' => 20],
+                'invoice_number_sequence' => ['label' => 'Invoice sequence', 'type' => 'integer', 'required' => true, 'default' => 1, 'min' => 1],
+                'invoice_number_reset_yearly' => ['label' => 'Reset sequence yearly', 'type' => 'boolean', 'required' => false, 'default' => true],
+                'default_invoice_terms' => ['label' => 'Default invoice terms', 'type' => 'text', 'required' => false, 'default' => null],
+                'default_payment_terms' => ['label' => 'Default payment terms', 'type' => 'string', 'required' => false, 'default' => 'Net 30', 'max' => 100],
+            ],
+        ],
         'pdf' => [
             'label' => 'PDF',
             'description' => 'Rendering options for generated PDF documents.',
