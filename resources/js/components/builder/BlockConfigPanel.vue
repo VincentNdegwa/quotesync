@@ -43,7 +43,7 @@ function configOf<T extends BlockType>(b: Block): BlockConfigMap[T] {
 </script>
 
 <template>
-    <div class="h-full min-h-0 rounded-lg border bg-card">
+    <div class="h-full min-h-0 rounded-lg bg-card">
         <div v-if="block" class="border-b px-4 py-3">
             <div class="flex items-center justify-between">
                 <Label class="text-xs uppercase tracking-wide text-muted-foreground">Block visibility</Label>
