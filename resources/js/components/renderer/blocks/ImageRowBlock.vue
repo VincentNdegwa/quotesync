@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { blockBaseStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
 import type { BrandingData, ImageRowBlockConfig, QuoteData } from '@/types';
 
-defineProps<{
+const props = defineProps<{
     config: ImageRowBlockConfig;
     quote: QuoteData;
     branding: BrandingData;
@@ -16,14 +17,13 @@ const colsMap: Record<ImageRowBlockConfig['columns'], string> = {
 
 <template>
     <div
-        class="grid px-6 py-4"
-        :class="colsMap[config.columns]"
-        :style="{ gap: config.gap === 'sm' ? '8px' : config.gap === 'lg' ? '24px' : '16px' }"
+        class="grid"
+        :class="[colsMap[config.columns], blockFontSizeClass(config.fontSize), config.border.radius !== 'none' ? 'overflow-hidden' : '']"
+        :style="{ ...blockBaseStyle(config), gap: config.gap === 'sm' ? '8px' : config.gap === 'lg' ? '24px' : '16px' }"
     >
         <div v-for="(image, index) in config.images" :key="`image-${index}`" class="space-y-2">
             <div
                 class="flex items-center justify-center border border-dashed text-xs text-muted-foreground"
-                :class="config.borderRadius === 'none' ? '' : config.borderRadius === 'sm' ? 'rounded-sm' : config.borderRadius === 'lg' ? 'rounded-lg' : 'rounded-md'"
                 :style="{
                     height: config.aspectRatio === 'square' ? '140px' : config.aspectRatio === '16:9' ? '120px' : config.aspectRatio === '4:3' ? '128px' : '96px',
                 }"

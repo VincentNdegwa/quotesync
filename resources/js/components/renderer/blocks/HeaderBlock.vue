@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { blockBaseStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
 import type { BrandingData, HeaderBlockConfig, QuoteData } from '@/types';
 
 const props = defineProps<{
@@ -8,12 +9,6 @@ const props = defineProps<{
     branding: BrandingData;
     previewMode: boolean;
 }>();
-
-const paddingMap: Record<HeaderBlockConfig['paddingSize'], string> = {
-    sm: '12px 16px',
-    md: '20px 24px',
-    lg: '32px 40px',
-};
 
 const daysLeft = computed(() => {
     if (!props.quote.valid_until) {
@@ -39,15 +34,7 @@ const formatDate = (dateStr: string | null): string => {
 </script>
 
 <template>
-    <div
-        class="header-block"
-        :style="{
-            backgroundColor: config.backgroundColor ?? 'transparent',
-            color: config.textColor ?? '#111827',
-            padding: paddingMap[config.paddingSize],
-            borderBottom: config.borderBottom ? '1px solid #e5e7eb' : 'none',
-        }"
-    >
+    <div class="header-block" :style="blockBaseStyle(config)" :class="blockFontSizeClass(config.fontSize)">
         <div v-if="config.layout === 'logo-left-details-right'" class="flex items-start justify-between gap-6">
             <div class="flex flex-col gap-2">
                 <img

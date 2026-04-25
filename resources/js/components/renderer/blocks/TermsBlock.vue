@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { blockContentStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
 import type { BrandingData, QuoteData, TermsBlockConfig } from '@/types';
 
@@ -15,22 +16,13 @@ const emit = defineEmits<{
     (e: 'update-terms', value: string | null): void;
 }>();
 
-const textSizeClass: Record<TermsBlockConfig['fontSize'], string> = {
-    sm: 'text-sm whitespace-pre-wrap text-gray-700',
-    md: 'text-base whitespace-pre-wrap text-gray-700',
-    lg: 'text-lg whitespace-pre-wrap text-gray-700',
+const textSizeClass = (fontSize: string | null | undefined): string => {
+    return { sm: 'text-sm', md: 'text-base', lg: 'text-lg' }[fontSize ?? 'md'] ?? 'text-base';
 };
 </script>
 
 <template>
-    <div
-        class="px-6 py-4"
-        :class="config.showBorder ? (config.borderStyle === 'left' ? 'border-l-2' : config.borderStyle === 'full' ? 'border' : 'border-t') : ''"
-        :style="{
-            backgroundColor: config.backgroundColor ?? 'transparent',
-            padding: config.paddingSize === 'sm' ? '12px 16px' : config.paddingSize === 'lg' ? '28px 30px' : '20px 24px',
-        }"
-    >
+    <div :style="blockContentStyle(config)" :class="blockFontSizeClass(config.fontSize)">
         <InlineEditableText
             :model-value="config.label"
             :edit-mode="editMode"
@@ -47,7 +39,7 @@ const textSizeClass: Record<TermsBlockConfig['fontSize'], string> = {
             :rows="8"
             placeholder="Enter terms and conditions"
             :empty-text="previewMode ? 'Add terms and conditions in block settings.' : 'No terms provided.'"
-            :display-class="textSizeClass[config.fontSize]"
+            :display-class="`whitespace-pre-wrap text-gray-700 ${textSizeClass(config.fontSize)}`"
             @update:model-value="(value) => emit('update-terms', value)"
         />
     </div>

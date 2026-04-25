@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { MousePointerClick } from 'lucide-vue-next';
+import BaseConfigPanel from '@/components/builder/BaseConfigPanel.vue';
+import ContentConfigSection from '@/components/builder/ContentConfigSection.vue';
 import CoverMessageConfig from '@/components/builder/config-panels/CoverMessageConfig.vue';
-import DividerConfig from '@/components/builder/config-panels/DividerConfig.vue';
 import FromToConfig from '@/components/builder/config-panels/FromToConfig.vue';
 import HeaderConfig from '@/components/builder/config-panels/HeaderConfig.vue';
 import ImageConfig from '@/components/builder/config-panels/ImageConfig.vue';
@@ -16,7 +17,14 @@ import TimelineConfig from '@/components/builder/config-panels/TimelineConfig.vu
 import TotalsConfig from '@/components/builder/config-panels/TotalsConfig.vue';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import type { Block, BuilderCatalogItem, BuilderTaxOption } from '@/types';
+import type {
+    Block,
+    BlockConfigMap,
+    BlockType,
+    BuilderCatalogItem,
+    BuilderTaxOption,
+    LayoutBlock,
+} from '@/types';
 
 const block = defineModel<Block | null>('block', { required: true });
 
@@ -24,10 +32,18 @@ defineProps<{
     catalogItems: BuilderCatalogItem[];
     taxes: BuilderTaxOption[];
 }>();
+
+function blockAs<T extends BlockType>(b: Block): LayoutBlock<T> {
+    return b as LayoutBlock<T>;
+}
+
+function configOf<T extends BlockType>(b: Block): BlockConfigMap[T] {
+    return b.config as BlockConfigMap[T];
+}
 </script>
 
 <template>
-    <div class="flex h-full min-h-0 flex-col rounded-lg border bg-card">
+    <div class="h-full min-h-0 rounded-lg border bg-card">
         <div v-if="block" class="border-b px-4 py-3">
             <div class="flex items-center justify-between">
                 <Label class="text-xs uppercase tracking-wide text-muted-foreground">Block visibility</Label>
@@ -45,23 +61,28 @@ defineProps<{
             <p class="text-sm">Select a block to configure it.</p>
         </div>
 
-        <HeaderConfig v-else-if="block.type === 'header'" v-model="block.config" />
-        <FromToConfig v-else-if="block?.type === 'from_to'" v-model="block.config" />
-        <CoverMessageConfig v-else-if="block?.type === 'cover_message'" v-model="block.config" />
-        <LineItemsConfig
-            v-else-if="block?.type === 'line_items'"
-            v-model="block.config"
-        />
-        <TotalsConfig v-else-if="block?.type === 'totals'" v-model="block.config" />
-        <RichTextConfig v-else-if="block?.type === 'rich_text'" v-model="block.config" />
-        <ImageConfig v-else-if="block?.type === 'image'" v-model="block.config" />
-        <ImageRowConfig v-else-if="block?.type === 'image_row'" v-model="block.config" />
-        <PaymentTermsConfig v-else-if="block?.type === 'payment_terms'" v-model="block.config" />
-        <TimelineConfig v-else-if="block?.type === 'timeline'" v-model="block.config" />
-        <TermsConfig v-else-if="block?.type === 'terms'" v-model="block.config" />
-        <SignatureConfig v-else-if="block?.type === 'signature'" v-model="block.config" />
-        <DividerConfig v-else-if="block?.type === 'divider'" v-model="block.config" />
-        <SpacerConfig v-else-if="block?.type === 'spacer'" v-model="block.config" />
-        <div v-else class="p-4 text-sm text-muted-foreground">Select a block from the list.</div>
+        <template v-else>
+            <div class="flex-1 overflow-y-auto divide-y">
+                <HeaderConfig v-if="block.type === 'header'" v-model="blockAs<'header'>(block).config" />
+                <FromToConfig v-else-if="block.type === 'from_to'" v-model="blockAs<'from_to'>(block).config" />
+                <CoverMessageConfig v-else-if="block.type === 'cover_message'" v-model="blockAs<'cover_message'>(block).config" />
+                <LineItemsConfig v-else-if="block.type === 'line_items'" v-model="blockAs<'line_items'>(block).config" />
+                <TotalsConfig v-else-if="block.type === 'totals'" v-model="blockAs<'totals'>(block).config" />
+                <RichTextConfig v-else-if="block.type === 'rich_text'" v-model="blockAs<'rich_text'>(block).config" />
+                <ImageConfig v-else-if="block.type === 'image'" v-model="blockAs<'image'>(block).config" />
+                <ImageRowConfig v-else-if="block.type === 'image_row'" v-model="blockAs<'image_row'>(block).config" />
+                <PaymentTermsConfig v-else-if="block.type === 'payment_terms'" v-model="blockAs<'payment_terms'>(block).config" />
+                <TimelineConfig v-else-if="block.type === 'timeline'" v-model="blockAs<'timeline'>(block).config" />
+                <TermsConfig v-else-if="block.type === 'terms'" v-model="blockAs<'terms'>(block).config" />
+                <SignatureConfig v-else-if="block.type === 'signature'" v-model="blockAs<'signature'>(block).config" />
+                <SpacerConfig v-else-if="block.type === 'spacer'" v-model="blockAs<'spacer'>(block).config" />
+
+                <ContentConfigSection
+                    v-if="['cover_message','rich_text','terms','payment_terms'].includes(block.type)"
+                    v-model="block"
+                />
+                <BaseConfigPanel v-model="block" />
+            </div>
+        </template>
     </div>
 </template>

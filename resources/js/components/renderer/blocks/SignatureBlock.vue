@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { inject } from 'vue';
+import { blockBaseStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
 import { Button } from '@/components/ui/button';
 import type { BrandingData, QuoteData, SignatureBlockConfig } from '@/types';
@@ -44,14 +45,7 @@ return '';
 </script>
 
 <template>
-    <div
-        class="px-6"
-        :style="{
-            backgroundColor: config.backgroundColor ?? 'transparent',
-            paddingTop: config.paddingSize === 'sm' ? '12px' : config.paddingSize === 'lg' ? '28px' : '20px',
-            paddingBottom: config.paddingSize === 'sm' ? '12px' : config.paddingSize === 'lg' ? '28px' : '20px',
-        }"
-    >
+    <div :style="blockBaseStyle(config)" :class="blockFontSizeClass(config.fontSize)">
         <template v-if="editMode">
             <div class="flex flex-wrap gap-3">
                 <div class="min-w-40 rounded-md px-4 py-2 text-sm font-medium text-primary-foreground" :style="{ backgroundColor: config.acceptButtonColor ?? undefined }">

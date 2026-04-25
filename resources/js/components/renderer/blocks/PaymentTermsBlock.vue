@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { blockContentStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
 import type { BrandingData, PaymentTermsBlockConfig, QuoteData } from '@/types';
 
@@ -44,9 +45,8 @@ const updateCustomText = (value: string | null): void => {
 <template>
     <div
         v-if="hasEditableContent"
-        class="px-6 py-4"
-        :class="config.style === 'card' ? 'rounded-md border' : config.style === 'highlighted' ? 'rounded-md bg-muted/40' : ''"
-        :style="{ backgroundColor: config.backgroundColor ?? undefined }"
+        :class="[config.style === 'card' ? 'rounded-md border' : config.style === 'highlighted' ? 'rounded-md bg-muted/40' : '', blockFontSizeClass(config.fontSize)]"
+        :style="blockContentStyle(config)"
     >
         <InlineEditableText
             :model-value="config.label"

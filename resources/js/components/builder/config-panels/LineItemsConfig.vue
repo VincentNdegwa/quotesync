@@ -52,12 +52,6 @@ const OPTIONAL_STYLES = [
     },
 ] as const;
 
-const FONT_SIZES = [
-    { value: 'sm', label: 'S' },
-    { value: 'md', label: 'M' },
-    { value: 'lg', label: 'L' },
-] as const;
-
 const isColumnStyle = computed(() => ['default', 'bordered', 'striped'].includes(config.value.tableStyle));
 
 const visibleColumns = computed(() => {
@@ -219,22 +213,6 @@ const setTableStyle = (style: LineItemsBlockConfig['tableStyle']): void => {
         <section class="space-y-3 px-4 py-4">
             <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Appearance</p>
             <div class="flex items-center justify-between">
-                <Label class="text-sm text-muted-foreground">Font size</Label>
-                <div class="flex gap-1">
-                    <button
-                        v-for="size in FONT_SIZES"
-                        :key="size.value"
-                        type="button"
-                        class="h-7 w-8 rounded border text-xs font-semibold"
-                        :class="config.fontSize === size.value ? 'border-primary bg-primary/10 text-primary' : 'text-muted-foreground hover:border-muted-foreground/50'"
-                        @click="config.fontSize = size.value"
-                    >
-                        {{ size.label }}
-                    </button>
-                </div>
-            </div>
-
-            <div class="flex items-center justify-between">
                 <Label class="text-sm text-muted-foreground">Alternate rows</Label>
                 <Switch
                     :disabled="config.tableStyle !== 'striped'"
@@ -248,30 +226,16 @@ const setTableStyle = (style: LineItemsBlockConfig['tableStyle']): void => {
                 <div class="flex items-center gap-2">
                     <input
                         type="color"
-                        :value="config.headerBackgroundColor ?? '#f3f4f6'"
+                        :value="config.headerBackground ?? '#f3f4f6'"
                         class="h-8 w-10 rounded border bg-transparent p-1"
-                        @input="(event) => (config.headerBackgroundColor = (event.target as HTMLInputElement).value)"
+                        @input="(event) => (config.headerBackground = (event.target as HTMLInputElement).value)"
                     >
-                    <button type="button" class="rounded border px-2 py-1 text-xs text-muted-foreground" @click="config.headerBackgroundColor = null">
+                    <button type="button" class="rounded border px-2 py-1 text-xs text-muted-foreground" @click="config.headerBackground = null">
                         Reset
                     </button>
                 </div>
             </div>
 
-            <div class="space-y-1">
-                <Label class="text-xs text-muted-foreground">Border color</Label>
-                <div class="flex items-center gap-2">
-                    <input
-                        type="color"
-                        :value="config.borderColor ?? '#e5e7eb'"
-                        class="h-8 w-10 rounded border bg-transparent p-1"
-                        @input="(event) => (config.borderColor = (event.target as HTMLInputElement).value)"
-                    >
-                    <button type="button" class="rounded border px-2 py-1 text-xs text-muted-foreground" @click="config.borderColor = null">
-                        Reset
-                    </button>
-                </div>
-            </div>
         </section>
 
         <section v-if="isColumnStyle" class="px-4 py-4">

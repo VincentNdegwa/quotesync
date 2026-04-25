@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { blockBaseStyle } from '@/composables/useBlockStyles';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { BrandingData, LineItemsBlockConfig, QuoteData } from '@/types';
@@ -20,7 +21,7 @@ const emit = defineEmits<{
     (e: 'update-section-title', payload: { sectionIndex: number; title: string }): void;
 }>();
 
-const fmt = (value: number): string => {
+const fmt = (value: number | string): string => {
     return new Intl.NumberFormat(undefined, {
         style: 'currency',
         currency: props.quote.currency || 'USD',
@@ -32,9 +33,9 @@ const fmt = (value: number): string => {
 type LineItem = QuoteData['sections'][number]['line_items'][number];
 type Section = QuoteData['sections'][number];
 
-const fontClass = computed(() => ({ sm: 'text-xs', md: 'text-sm', lg: 'text-base' })[props.config.fontSize]);
-const titleClass = computed(() => ({ sm: 'text-sm', md: 'text-base', lg: 'text-lg' })[props.config.fontSize]);
-const cellPad = computed(() => ({ sm: 'px-2 py-1.5', md: 'px-3 py-2.5', lg: 'px-4 py-3.5' })[props.config.fontSize]);
+const fontClass = computed(() => ({ sm: 'text-xs', md: 'text-sm', lg: 'text-base' })[props.config.fontSize ?? 'md'] ?? 'text-sm');
+const titleClass = computed(() => ({ sm: 'text-sm', md: 'text-base', lg: 'text-lg' })[props.config.fontSize ?? 'md'] ?? 'text-base');
+const cellPad = computed(() => ({ sm: 'px-2 py-1.5', md: 'px-3 py-2.5', lg: 'px-4 py-3.5' })[props.config.fontSize ?? 'md'] ?? 'px-3 py-2.5');
 
 const isColumnLayout = computed(() => ['default', 'bordered', 'striped'].includes(props.config.tableStyle));
 const isMinimal = computed(() => props.config.tableStyle === 'minimal');
@@ -87,7 +88,7 @@ const stripeClass = (index: number): string => {
 </script>
 
 <template>
-    <div class="px-6 py-4" :class="fontClass">
+    <div :style="blockBaseStyle(config)" :class="fontClass">
         <div v-if="quote.sections.length === 0 && previewMode" class="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
             No line items yet.
         </div>
@@ -128,7 +129,7 @@ const stripeClass = (index: number): string => {
             </div>
 
             <template v-if="isColumnLayout">
-                <div class="overflow-hidden rounded-sm border" :style="{ borderColor: config.borderColor ?? undefined }">
+                <div class="overflow-hidden rounded-sm border" :style="{ borderColor: config.border.color ?? undefined }">
                     <Table class="table-fixed">
                         <colgroup>
                             <col>
@@ -140,13 +141,13 @@ const stripeClass = (index: number): string => {
                         </colgroup>
 
                         <TableHeader>
-                            <TableRow :style="{ backgroundColor: config.headerBackgroundColor ?? undefined, borderColor: config.borderColor ?? undefined }">
-                                <TableHead class="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground" :class="[cellPad, borderedCellClass]" :style="{ borderColor: config.borderColor ?? undefined }">Item</TableHead>
+                            <TableRow :style="{ backgroundColor: config.headerBackground ?? undefined, borderColor: config.border.color ?? undefined }">
+                                <TableHead class="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground" :class="[cellPad, borderedCellClass]" :style="{ borderColor: config.border.color ?? undefined }">Item</TableHead>
                                 <TableHead
                                     v-if="config.showQuantity"
                                     class="text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
                                     :class="[cellPad, borderedCellClass]"
-                                    :style="{ borderColor: config.borderColor ?? undefined }"
+                                    :style="{ borderColor: config.border.color ?? undefined }"
                                 >
                                     Qty
                                 </TableHead>
@@ -154,7 +155,7 @@ const stripeClass = (index: number): string => {
                                     v-if="config.showUnitPrice"
                                     class="text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
                                     :class="[cellPad, borderedCellClass]"
-                                    :style="{ borderColor: config.borderColor ?? undefined }"
+                                    :style="{ borderColor: config.border.color ?? undefined }"
                                 >
                                     Unit
                                 </TableHead>
@@ -162,7 +163,7 @@ const stripeClass = (index: number): string => {
                                     v-if="config.showDiscount"
                                     class="text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
                                     :class="[cellPad, borderedCellClass]"
-                                    :style="{ borderColor: config.borderColor ?? undefined }"
+                                    :style="{ borderColor: config.border.color ?? undefined }"
                                 >
                                     Disc
                                 </TableHead>
@@ -170,7 +171,7 @@ const stripeClass = (index: number): string => {
                                     v-if="config.showTax"
                                     class="text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
                                     :class="[cellPad, borderedCellClass]"
-                                    :style="{ borderColor: config.borderColor ?? undefined }"
+                                    :style="{ borderColor: config.border.color ?? undefined }"
                                 >
                                     Tax
                                 </TableHead>
@@ -178,7 +179,7 @@ const stripeClass = (index: number): string => {
                                     v-if="config.showLineTotal"
                                     class="text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
                                     :class="[cellPad, borderedCellClass]"
-                                    :style="{ borderColor: config.borderColor ?? undefined }"
+                                    :style="{ borderColor: config.border.color ?? undefined }"
                                 >
                                     Total
                                 </TableHead>
@@ -189,26 +190,26 @@ const stripeClass = (index: number): string => {
                             <template v-for="(item, lineItemIndex) in section.line_items" :key="`item-${item.id ?? lineItemIndex}`">
                                 <TableRow
                                     :class="[stripeClass(lineItemIndex), editMode ? 'cursor-pointer hover:bg-primary/5' : '']"
-                                    :style="{ borderColor: config.borderColor ?? undefined }"
+                                    :style="{ borderColor: config.border.color ?? undefined }"
                                     @click="editMode && emit('edit-line-item', { sectionIndex, lineItemIndex })"
                                 >
-                                    <TableCell class="pr-4 align-top" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.borderColor ?? undefined }">
+                                    <TableCell class="pr-4 align-top" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">
                                         <div class="flex flex-wrap items-center gap-2">
                                             <span class="font-medium" :class="titleClass">{{ item.name || 'Line item' }}</span>
                                             <span v-if="showBadge(item)" class="rounded-full border px-1.5 py-px text-[10px] uppercase tracking-wide text-muted-foreground">Optional</span>
                                         </div>
                                         <p v-if="config.showItemDescription && item.description" class="mt-0.5 text-xs text-muted-foreground">{{ item.description }}</p>
-                                        <p v-if="config.showSku && item.sku" class="mt-0.5 text-[10px] text-muted-foreground/70">SKU {{ item.sku }}</p>
+                                        <p v-if="config.showSku && item.catalog_item?.sku" class="mt-0.5 text-[10px] text-muted-foreground/70">SKU {{ item.catalog_item?.sku }}</p>
                                     </TableCell>
-                                    <TableCell v-if="config.showQuantity" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.borderColor ?? undefined }">{{ item.quantity }}</TableCell>
-                                    <TableCell v-if="config.showUnitPrice" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.borderColor ?? undefined }">{{ fmt(item.unit_price) }}</TableCell>
-                                    <TableCell v-if="config.showDiscount" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.borderColor ?? undefined }">{{ item.discount_percent || 0 }}%</TableCell>
-                                    <TableCell v-if="config.showTax" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.borderColor ?? undefined }">{{ fmt(item.tax_amount) }}</TableCell>
-                                    <TableCell v-if="config.showLineTotal" class="text-right font-semibold tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.borderColor ?? undefined }">{{ fmt(item.total) }}</TableCell>
+                                    <TableCell v-if="config.showQuantity" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">{{ item.quantity }}</TableCell>
+                                    <TableCell v-if="config.showUnitPrice" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">{{ fmt(item.unit_price) }}</TableCell>
+                                    <TableCell v-if="config.showDiscount" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">{{ item.discount_percent || 0 }}%</TableCell>
+                                    <TableCell v-if="config.showTax" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">{{ fmt(item.tax_amount) }}</TableCell>
+                                    <TableCell v-if="config.showLineTotal" class="text-right font-semibold tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">{{ fmt(item.total) }}</TableCell>
                                 </TableRow>
 
-                                <TableRow v-if="showCheckbox(item)" :style="{ borderColor: config.borderColor ?? undefined }">
-                                    <TableCell :colspan="columnCount" class="border-t border-dashed px-3 py-2 text-xs text-muted-foreground" :style="{ borderColor: config.borderColor ?? undefined }">
+                                <TableRow v-if="showCheckbox(item)" :style="{ borderColor: config.border.color ?? undefined }">
+                                    <TableCell :colspan="columnCount" class="border-t border-dashed px-3 py-2 text-xs text-muted-foreground" :style="{ borderColor: config.border.color ?? undefined }">
                                         <label class="inline-flex items-center gap-2">
                                             <input type="checkbox" class="h-3.5 w-3.5 rounded accent-primary" :disabled="previewMode" />
                                             <span>Include this item</span>
@@ -219,7 +220,7 @@ const stripeClass = (index: number): string => {
                         </TableBody>
                     </Table>
 
-                    <div v-if="config.showSectionSubtotals" class="flex justify-end border-t px-3 py-2" :style="{ borderColor: config.borderColor ?? undefined }">
+                    <div v-if="config.showSectionSubtotals" class="flex justify-end border-t px-3 py-2" :style="{ borderColor: config.border.color ?? undefined }">
                         <span class="text-xs text-muted-foreground">Section subtotal&nbsp;</span>
                         <span class="font-semibold">{{ fmt(sectionSubtotal(section)) }}</span>
                     </div>
@@ -236,7 +237,7 @@ const stripeClass = (index: number): string => {
                             isGreyed(item) ? 'opacity-50' : '',
                             editMode ? 'cursor-pointer hover:bg-primary/5' : '',
                         ]"
-                        :style="isCards ? { borderColor: config.borderColor ?? undefined } : undefined"
+                        :style="isCards ? { borderColor: config.border.color ?? undefined } : undefined"
                         @click="editMode && emit('edit-line-item', { sectionIndex, lineItemIndex })"
                     >
                         <div class="flex items-start justify-between gap-4">

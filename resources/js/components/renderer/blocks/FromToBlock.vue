@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { blockBaseStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
 import type { BrandingData, FromToBlockConfig, QuoteData } from '@/types';
 
 defineProps<{
@@ -11,12 +12,8 @@ defineProps<{
 
 <template>
     <div
-        :class="config.layout === 'split' ? 'grid grid-cols-2 gap-6' : 'space-y-4'"
-        class="text-sm"
-        :style="{
-            backgroundColor: config.backgroundColor ?? 'transparent',
-            padding: config.paddingSize === 'sm' ? '12px 16px' : config.paddingSize === 'lg' ? '28px 30px' : '20px 24px',
-        }"
+        :class="[config.layout === 'split' ? 'grid grid-cols-2 gap-6' : 'space-y-4', blockFontSizeClass(config.fontSize)]"
+        :style="blockBaseStyle(config)"
     >
         <div>
             <p v-if="config.showLabels" class="text-xs uppercase tracking-wide text-muted-foreground">From</p>

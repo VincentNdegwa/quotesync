@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { blockBaseStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
 import type { BrandingData, QuoteData, TotalsBlockConfig } from '@/types';
 
 const props = defineProps<{
@@ -119,13 +120,13 @@ const taxLines = computed(() => {
 </script>
 
 <template>
-    <div class="px-6 py-4" :style="{ backgroundColor: config.backgroundColor ?? 'transparent' }">
+    <div :style="blockBaseStyle(config)" :class="blockFontSizeClass(config.fontSize)">
         <div
             class="w-full"
             :class="[
                 config.alignment === 'full-width' ? 'max-w-none' : 'max-w-sm',
                 alignmentClass,
-                config.fontSize === 'sm' ? 'text-xs' : config.fontSize === 'lg' ? 'text-base' : 'text-sm',
+                (config.fontSize ?? 'md') === 'sm' ? 'text-xs' : (config.fontSize ?? 'md') === 'lg' ? 'text-base' : 'text-sm',
                 config.style === 'card' ? 'rounded-md border p-3' : '',
                 config.style === 'bordered' ? 'border-t pt-3' : '',
                 config.style === 'highlighted' ? 'rounded-sm bg-muted/10 p-3' : '',
@@ -163,7 +164,7 @@ const taxLines = computed(() => {
                 "
                 :style="{
                     color: branding.primary_color,
-                    backgroundColor: config.totalRowColor ?? undefined,
+                    backgroundColor: config.totalRowBackground ?? undefined,
                 }"
             >
                 <span>{{ config.totalLabel }}</span>
