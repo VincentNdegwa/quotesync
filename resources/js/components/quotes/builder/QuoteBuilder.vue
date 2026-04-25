@@ -25,6 +25,7 @@ import type {
     BuilderTemplateOption,
     CoverMessageBlockConfig,
     QuoteBuilderLineItem,
+    QuoteBuilderSection,
     QuoteBuilderState,
     PaymentTermsBlockConfig,
     SignatureBlockConfig,
@@ -69,6 +70,41 @@ const currentLayout = ref<TemplateLayout>(
     ),
 );
 
+const isRealItem = (item: QuoteBuilderLineItem): boolean =>
+    item.name.trim() !== '' || item.unit_price !== 0;
+
+const applyTemplateSections = (templateSections: QuoteBuilderSection[]): void => {
+    const ui = localState.value.sections;
+
+    templateSections.forEach((tplSection, i) => {
+        if (i < ui.length) {
+            const uiSection = ui[i];
+
+            uiSection.title = tplSection.title;
+
+            const realCount = uiSection.line_items.filter(isRealItem).length;
+
+            if (realCount === 0) {
+                uiSection.line_items = tplSection.line_items.length > 0
+                    ? tplSection.line_items
+                    : [createEmptyLineItem(1)];
+            } else if (tplSection.line_items.length > uiSection.line_items.length) {
+                const extras = tplSection.line_items.slice(uiSection.line_items.length);
+                uiSection.line_items.push(...extras);
+            }
+        } else {
+            localState.value.sections.push({
+                id: null,
+                title: tplSection.title,
+                sort_order: i,
+                line_items: tplSection.line_items.length > 0
+                    ? tplSection.line_items
+                    : [createEmptyLineItem(1)],
+            });
+        }
+    });
+};
+
 watch(
     () => localState.value.template_id,
     async (newTemplateId) => {
@@ -81,9 +117,14 @@ watch(
                 `/quote-templates/${newTemplateId}/layout`,
             );
             const data = await response.json();
+
             if (data.layout) {
                 localState.value.layout = data.layout;
                 currentLayout.value = ensureTemplateLayout(data.layout);
+            }
+
+            if (Array.isArray(data.sections) && data.sections.length > 0) {
+                applyTemplateSections(data.sections as QuoteBuilderSection[]);
             }
         } catch (error) {
             console.error('Failed to fetch template layout:', error);
@@ -402,7 +443,7 @@ const updateSectionTitle = (sectionIndex: number, title: string): void => {
 
 const updatePaymentTermsContent = (
     blockId: string,
-    payload: { label: string; customText: string | null },
+    payload: { labelText: string; contextText: string | null },
 ): void => {
     const block = currentLayout.value.blocks.find(
         (entry) => entry.id === blockId && entry.type === 'payment_terms',
@@ -414,8 +455,36 @@ const updatePaymentTermsContent = (
 
     const config = block.config as PaymentTermsBlockConfig;
 
-    config.label = payload.label;
-    config.customText = payload.customText;
+    config.labelText = payload.labelText;
+    config.contextText = payload.contextText;
+};
+
+const updateCoverMessageContent = (blockId: string, value: string | null): void => {
+    const block = currentLayout.value.blocks.find(
+        (entry) => entry.id === blockId && entry.type === 'cover_message',
+    );
+
+    if (!block || block.type !== 'cover_message') {
+        return;
+    }
+
+    const config = block.config as CoverMessageBlockConfig;
+
+    config.contextText = value;
+};
+
+const updateTermsContent = (blockId: string, value: string | null): void => {
+    const block = currentLayout.value.blocks.find(
+        (entry) => entry.id === blockId && entry.type === 'terms',
+    );
+
+    if (!block || block.type !== 'terms') {
+        return;
+    }
+
+    const config = block.config as TermsBlockConfig;
+
+    config.contextText = value;
 };
 
 const updateCoverLabel = (blockId: string, value: string | null): void => {
@@ -443,7 +512,7 @@ const updateTermsLabel = (blockId: string, value: string | null): void => {
 
     const config = block.config as TermsBlockConfig;
 
-    config.label = (value ?? '').trim() || 'Terms & Conditions';
+    config.labelText = (value ?? '').trim() || 'Terms & Conditions';
 };
 
 const updateSignatureContent = (
@@ -451,7 +520,7 @@ const updateSignatureContent = (
     payload: {
         acceptButtonText?: string | null;
         declineButtonText?: string | null;
-        legalText?: string | null;
+        contextText?: string | null;
     },
 ): void => {
     const block = currentLayout.value.blocks.find(
@@ -474,9 +543,9 @@ const updateSignatureContent = (
             (payload.declineButtonText ?? '').trim() || 'Decline';
     }
 
-    if (payload.legalText !== undefined) {
-        config.legalText =
-            (payload.legalText ?? '').trim() ||
+    if (payload.contextText !== undefined) {
+        config.contextText =
+            (payload.contextText ?? '').trim() ||
             'By signing you agree to the terms listed above.';
     }
 };
@@ -697,7 +766,10 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                             "
                             @update-cover-message="
                                 (payload) =>
-                                    (localState.cover_message = payload.value)
+                                    updateCoverMessageContent(
+                                        payload.blockId,
+                                        payload.value,
+                                    )
                             "
                             @update-cover-label="
                                 (payload) =>
@@ -707,7 +779,11 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                                     )
                             "
                             @update-terms="
-                                (payload) => (localState.terms = payload.value)
+                                (payload) =>
+                                    updateTermsContent(
+                                        payload.blockId,
+                                        payload.value,
+                                    )
                             "
                             @update-terms-label="
                                 (payload) =>
@@ -719,8 +795,8 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                             @update-payment-terms="
                                 (payload) =>
                                     updatePaymentTermsContent(payload.blockId, {
-                                        label: payload.label,
-                                        customText: payload.customText,
+                                        labelText: payload.labelText,
+                                        contextText: payload.contextText,
                                     })
                             "
                             @update-signature-content="

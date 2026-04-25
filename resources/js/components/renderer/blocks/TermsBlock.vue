@@ -16,15 +16,12 @@ const emit = defineEmits<{
     (e: 'update-terms', value: string | null): void;
 }>();
 
-const textSizeClass = (fontSize: string | null | undefined): string => {
-    return { sm: 'text-sm', md: 'text-base', lg: 'text-lg' }[fontSize ?? 'md'] ?? 'text-base';
-};
 </script>
 
 <template>
     <div :style="blockContentStyle(config)" :class="blockFontSizeClass(config.fontSize)">
         <InlineEditableText
-            :model-value="config.label"
+            :model-value="config.labelText"
             :edit-mode="editMode"
             :multiline="false"
             placeholder="Terms"
@@ -34,12 +31,12 @@ const textSizeClass = (fontSize: string | null | undefined): string => {
         />
 
         <InlineEditableText
-            :model-value="quote.terms"
+            :model-value="config.contextText"
             :edit-mode="editMode"
             :rows="8"
             placeholder="Enter terms and conditions"
             :empty-text="previewMode ? 'Add terms and conditions in block settings.' : 'No terms provided.'"
-            :display-class="`whitespace-pre-wrap text-gray-700 ${textSizeClass(config.fontSize)}`"
+            display-class="whitespace-pre-wrap text-gray-700"
             @update:model-value="(value) => emit('update-terms', value)"
         />
     </div>

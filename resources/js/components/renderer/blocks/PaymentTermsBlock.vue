@@ -13,7 +13,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-    (e: 'update-payment-terms', payload: { label: string; customText: string | null }): void;
+    (e: 'update-payment-terms', payload: { labelText: string; contextText: string | null }): void;
 }>();
 
 const methodLabelMap: Record<PaymentTermsBlockConfig['paymentMethods'][number], string> = {
@@ -24,21 +24,21 @@ const methodLabelMap: Record<PaymentTermsBlockConfig['paymentMethods'][number], 
     cheque: 'Cheque',
 };
 
-const hasEditableContent = computed(() => !!props.config.customText || !!props.editMode || !!props.previewMode);
+const hasEditableContent = computed(() => !!props.config.contextText || !!props.editMode || !!props.previewMode);
 
-const emitUpdate = (label: string | null, customText: string | null): void => {
+const emitUpdate = (labelText: string | null, contextText: string | null): void => {
     emit('update-payment-terms', {
-        label: (label ?? '').trim() || 'Payment Terms',
-        customText,
+        labelText: (labelText ?? '').trim() || 'Payment Terms',
+        contextText,
     });
 };
 
 const updateLabel = (value: string | null): void => {
-    emitUpdate(value, props.config.customText);
+    emitUpdate(value, props.config.contextText);
 };
 
-const updateCustomText = (value: string | null): void => {
-    emitUpdate(props.config.label, value);
+const updateContextText = (value: string | null): void => {
+    emitUpdate(props.config.labelText, value);
 };
 </script>
 
@@ -49,7 +49,7 @@ const updateCustomText = (value: string | null): void => {
         :style="blockContentStyle(config)"
     >
         <InlineEditableText
-            :model-value="config.label"
+            :model-value="config.labelText"
             :edit-mode="editMode"
             :multiline="false"
             placeholder="Payment terms"
@@ -68,13 +68,13 @@ const updateCustomText = (value: string | null): void => {
         </div>
 
         <InlineEditableText
-            :model-value="config.customText"
+            :model-value="config.contextText"
             :edit-mode="editMode"
             :rows="6"
             placeholder="Add payment instructions"
             :empty-text="previewMode ? 'Add payment instructions in block settings.' : 'Click to add payment instructions.'"
             display-class="whitespace-pre-wrap text-sm text-gray-700"
-            @update:model-value="updateCustomText"
+            @update:model-value="updateContextText"
         />
     </div>
 </template>

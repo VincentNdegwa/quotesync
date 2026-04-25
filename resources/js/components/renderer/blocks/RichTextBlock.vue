@@ -15,8 +15,8 @@ defineProps<{
         :class="[config.columns === 2 ? 'grid grid-cols-2' : '', blockFontSizeClass(config.fontSize)]"
         :style="{ ...blockContentStyle(config), gap: config.columnGap === 'sm' ? '8px' : config.columnGap === 'lg' ? '24px' : '16px' }"
     >
-        <div class="col-span-full" v-if="config.label">
-            <p class="mb-2 font-semibold">{{ config.label }}</p>
+        <div class="col-span-full" v-if="config.labelText">
+            <p class="mb-2 font-semibold">{{ config.labelText }}</p>
         </div>
         <div
             class="text-gray-700"

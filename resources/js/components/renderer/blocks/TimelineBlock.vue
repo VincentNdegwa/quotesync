@@ -12,7 +12,7 @@ defineProps<{
 
 <template>
     <div :style="blockBaseStyle(config)" :class="blockFontSizeClass(config.fontSize)">
-        <h4 class="text-sm font-semibold">{{ config.label }}</h4>
+        <h4 class="text-sm font-semibold">{{ config.labelText }}</h4>
         <p class="text-sm text-muted-foreground">
             {{ config.compact ? 'Compact timeline layout enabled.' : 'Add timeline milestones in block settings.' }}
         </p>

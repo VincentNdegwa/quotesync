@@ -17,7 +17,7 @@ const updateAcceptButtonColor = (value: unknown): void => {
         <div class="border-b px-4 py-3">
             <p class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Display</p>
             <div class="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                <label class="flex cursor-pointer items-center justify-between rounded border px-2.5 py-1.5 text-sm hover:bg-muted/40"><span>Show legal text</span><Switch v-model="config.showLegalText" class="scale-75" /></label>
+                <label class="flex cursor-pointer items-center justify-between rounded border px-2.5 py-1.5 text-sm hover:bg-muted/40"><span>Show legal text</span><Switch v-model="config.showContextText" class="scale-75" /></label>
                 <label class="flex cursor-pointer items-center justify-between rounded border px-2.5 py-1.5 text-sm hover:bg-muted/40"><span>Require typed name</span><Switch v-model="config.requireNameTyped" class="scale-75" /></label>
                 <label class="flex cursor-pointer items-center justify-between rounded border px-2.5 py-1.5 text-sm hover:bg-muted/40"><span>Allow draw signature</span><Switch v-model="config.allowDrawSignature" class="scale-75" /></label>
                 <label class="flex cursor-pointer items-center justify-between rounded border px-2.5 py-1.5 text-sm hover:bg-muted/40"><span>Show timestamp</span><Switch v-model="config.showTimestamp" class="scale-75" /></label>

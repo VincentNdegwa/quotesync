@@ -50,8 +50,8 @@ const emit = defineEmits<{
     (e: 'update-cover-label', payload: { blockId: string; value: string | null }): void;
     (e: 'update-terms', payload: { blockId: string; value: string | null }): void;
     (e: 'update-terms-label', payload: { blockId: string; value: string | null }): void;
-    (e: 'update-payment-terms', payload: { blockId: string; label: string; customText: string | null }): void;
-    (e: 'update-signature-content', payload: { blockId: string; acceptButtonText?: string | null; declineButtonText?: string | null; legalText?: string | null }): void;
+    (e: 'update-payment-terms', payload: { blockId: string; labelText: string; contextText: string | null }): void;
+    (e: 'update-signature-content', payload: { blockId: string; acceptButtonText?: string | null; declineButtonText?: string | null; contextText?: string | null }): void;
     (e: 'toggle-visible', blockId: string): void;
     (e: 'duplicate-block', blockId: string): void;
     (e: 'delete-block', blockId: string): void;
@@ -136,11 +136,11 @@ const handleUpdateSectionTitle = (blockId: string, payload: { sectionIndex: numb
     });
 };
 
-const handleUpdatePaymentTerms = (blockId: string, payload: { label: string; customText: string | null }): void => {
+const handleUpdatePaymentTerms = (blockId: string, payload: { labelText: string; contextText: string | null }): void => {
     emit('update-payment-terms', {
         blockId,
-        label: payload.label,
-        customText: payload.customText,
+        labelText: payload.labelText,
+        contextText: payload.contextText,
     });
 };
 
@@ -166,7 +166,7 @@ const handleUpdateTermsLabel = (blockId: string, value: string | null): void => 
 
 const handleUpdateSignatureContent = (
     blockId: string,
-    payload: { acceptButtonText?: string | null; declineButtonText?: string | null; legalText?: string | null },
+    payload: { acceptButtonText?: string | null; declineButtonText?: string | null; contextText?: string | null },
 ): void => {
     emit('update-signature-content', { blockId, ...payload });
 };

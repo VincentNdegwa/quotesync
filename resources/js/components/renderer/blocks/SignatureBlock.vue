@@ -14,7 +14,7 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-    (e: 'update-signature-content', payload: { acceptButtonText?: string | null; declineButtonText?: string | null; legalText?: string | null }): void;
+    (e: 'update-signature-content', payload: { acceptButtonText?: string | null; declineButtonText?: string | null; contextText?: string | null }): void;
 }>();
 
 const openApproveModal = inject('openApproveModal', () => {});
@@ -28,8 +28,8 @@ const updateDeclineText = (value: string | null): void => {
     emit('update-signature-content', { declineButtonText: value });
 };
 
-const updateLegalText = (value: string | null): void => {
-    emit('update-signature-content', { legalText: value });
+const updateContextText = (value: string | null): void => {
+    emit('update-signature-content', { contextText: value });
 };
 
 const formatDate = (dateString?: string | null) => {
@@ -101,14 +101,14 @@ return '';
         </template>
 
         <InlineEditableText
-            v-if="config.showLegalText || editMode"
-            :model-value="config.legalText"
+            v-if="config.showContextText || editMode"
+            :model-value="config.contextText"
             :edit-mode="editMode"
             :rows="2"
             placeholder="By signing you agree to the terms listed above."
             empty-text="By signing you agree to the terms listed above."
             display-class="text-xs text-muted-foreground whitespace-pre-wrap mt-3"
-            @update:model-value="updateLegalText"
+            @update:model-value="updateContextText"
         />
 
     </div>

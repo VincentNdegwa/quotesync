@@ -22,7 +22,7 @@ const fontSizeClass = computed(() => {
     return { sm: 'text-sm leading-6', md: 'text-base leading-7', lg: 'text-lg leading-8' }[size] ?? 'text-base leading-7';
 });
 
-const showBlock = computed(() => !!props.quote.cover_message?.trim() || props.previewMode || props.editMode);
+const showBlock = computed(() => !!props.config.contextText?.trim() || props.previewMode || props.editMode);
 </script>
 
 <template>
@@ -43,7 +43,7 @@ const showBlock = computed(() => !!props.quote.cover_message?.trim() || props.pr
         />
 
         <InlineEditableText
-            :model-value="quote.cover_message"
+            :model-value="config.contextText"
             :edit-mode="editMode"
             :rows="4"
             placeholder="Write a personal intro message for your client..."

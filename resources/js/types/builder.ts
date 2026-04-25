@@ -120,10 +120,11 @@ export type FromToBlockConfig = BaseBlockConfig & {
 };
 
 // cover_message
-// Content block — editable rich text. Data source: quote.cover_message.
+// Content block — editable rich text. Stored in layout JSON as contextText.
 export type CoverMessageBlockConfig = ContentBlockConfig & {
     showLabel: boolean;
     labelText: string;
+    contextText: string | null;
 };
 
 // line_items
@@ -153,6 +154,7 @@ export type LineItemsBlockConfig = BaseBlockConfig & {
         tax: number;
         total: number;
     };
+    labelText: string;
 };
 
 // totals
@@ -175,7 +177,7 @@ export type TotalsBlockConfig = BaseBlockConfig & {
 // columns: 1 is single column, 2 splits into two side-by-side areas.
 export type RichTextBlockConfig = ContentBlockConfig & {
     content: string;                   // Tiptap JSON string
-    label: string | null;
+    labelText: string | null;
     labelSize: 'h2' | 'h3' | 'h4';
     columns: 1 | 2;
     columnGap: Spacing;
@@ -212,18 +214,18 @@ export type ImageRowBlockConfig = BaseBlockConfig & {
 // Content block — editable rich text + auto deposit info.
 // style controls the visual treatment of the whole block.
 export type PaymentTermsBlockConfig = ContentBlockConfig & {
-    label: string;
+    labelText: string;
     showDepositInfo: boolean;          // pulls from quote.requires_deposit automatically
     showPaymentMethods: boolean;
     paymentMethods: Array<'bank_transfer' | 'card' | 'mobile_money' | 'cash' | 'cheque'>;
-    customText: string | null;         // Tiptap HTML
+    contextText: string | null;        // Tiptap HTML, stored in layout JSON
     style: 'default' | 'card' | 'highlighted';
 };
 
 // timeline
 // Content block — user-defined project milestones table.
 export type TimelineBlockConfig = BaseBlockConfig & {
-    label: string;
+    labelText: string;
     showDates: boolean;
     compact: boolean;
     rows: Array<{
@@ -236,9 +238,10 @@ export type TimelineBlockConfig = BaseBlockConfig & {
 };
 
 // terms
-// Content block — editable rich text. Data source: quote.terms.
+// Content block — editable rich text. Stored in layout JSON as contextText.
 export type TermsBlockConfig = ContentBlockConfig & {
-    label: string;
+    labelText: string;
+    contextText: string | null;        // Tiptap HTML, stored in layout JSON
     defaultCollapsed: boolean;         // client view: collapsed with expand link
 };
 
@@ -248,8 +251,8 @@ export type SignatureBlockConfig = BaseBlockConfig & {
     acceptButtonText: string;
     declineButtonText: string;
     acceptButtonColor: string | null;  // null = use theme primaryColor
-    showLegalText: boolean;
-    legalText: string;
+    showContextText: boolean;
+    contextText: string;
     requireNameTyped: boolean;
     allowDrawSignature: boolean;
     showTimestamp: boolean;
@@ -500,6 +503,7 @@ const DEFAULT_BLOCK_CONFIGS: BlockConfigMap = {
         ...defaultContentConfig(),
         showLabel: false,
         labelText: 'A note from us',
+        contextText: null,
     },
 
     line_items: {
@@ -527,6 +531,7 @@ const DEFAULT_BLOCK_CONFIGS: BlockConfigMap = {
             tax: 10,
             total: 14,
         },
+        labelText: 'Services',
     },
 
     totals: {
@@ -545,7 +550,7 @@ const DEFAULT_BLOCK_CONFIGS: BlockConfigMap = {
     rich_text: {
         ...defaultContentConfig(),
         content: '',
-        label: null,
+        labelText: null,
         labelSize: 'h3',
         columns: 1,
         columnGap: 'md',
@@ -577,17 +582,17 @@ const DEFAULT_BLOCK_CONFIGS: BlockConfigMap = {
 
     payment_terms: {
         ...defaultContentConfig(),
-        label: 'Payment Terms',
+        labelText: 'Payment Terms',
         showDepositInfo: true,
         showPaymentMethods: false,
         paymentMethods: [],
-        customText: null,
+        contextText: null,
         style: 'default',
     },
 
     timeline: {
         ...defaultBaseConfig(),
-        label: 'Project Timeline',
+        labelText: 'Project Timeline',
         showDates: true,
         compact: false,
         rows: [],
@@ -595,7 +600,8 @@ const DEFAULT_BLOCK_CONFIGS: BlockConfigMap = {
 
     terms: {
         ...defaultContentConfig(),
-        label: 'Terms & Conditions',
+        labelText: 'Terms & Conditions',
+        contextText: null,
         defaultCollapsed: true,
     },
 
@@ -604,8 +610,8 @@ const DEFAULT_BLOCK_CONFIGS: BlockConfigMap = {
         acceptButtonText: 'Accept & Sign',
         declineButtonText: 'Decline',
         acceptButtonColor: null,
-        showLegalText: true,
-        legalText: 'By signing, you agree to the terms and conditions above.',
+        showContextText: true,
+        contextText: 'By signing, you agree to the terms and conditions above.',
         requireNameTyped: true,
         allowDrawSignature: true,
         showTimestamp: true,
@@ -699,11 +705,13 @@ const ensureBaseConfig = (config: Record<string, unknown>): Record<string, unkno
             sides:  config.borderLeft ? 'left' : 'none',
             radius: 'none',
         },
-        // spread remaining block-specific fields
+        // spread remaining block-specific fields, migrating old field names
+        contextText: config.contextText ?? config.customText ?? config.coverMessageText ?? null,
         ...Object.fromEntries(
             Object.entries(config).filter(([key]) =>
                 !['backgroundColor', 'paddingSize', 'borderLeft', 'borderLeftColor',
-                  'background', 'padding', 'fontSize', 'textColor', 'border'].includes(key),
+                  'background', 'padding', 'fontSize', 'textColor', 'border',
+                  'contextText', 'customText', 'coverMessageText'].includes(key),
             ),
         ),
     };
