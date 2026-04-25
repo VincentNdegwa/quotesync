@@ -4,6 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { useEnums } from '@/composables/useEnums';
 import type { QuoteListRecord, QuoteStatusEnum } from '@/types';
 import QuoteTableRowActions from './QuoteTableRowActions.vue';
+import { Button } from '@/components/ui/button';
+import { ArrowUpDown } from 'lucide-vue-next';
 
 type QuoteColumnOptions = {
     quoteStatuses: QuoteStatusEnum[];
@@ -11,21 +13,25 @@ type QuoteColumnOptions = {
     onDelete: (quoteId: number) => void;
 };
 
-const sortableHeader = (title: string, column: any, align: 'left' | 'center' | 'right' = 'left') => {
-    const isSorted = column.getIsSorted();
+const sortableHeader = (
+    label: string,
+    column: { getIsSorted: () => false | 'asc' | 'desc'; toggleSorting: (desc?: boolean) => void },
+    align: 'left' | 'right' = 'left',
+) => h(
+    Button,
+    {
+        variant: 'ghost',
+        class: align === 'right'
+            ? 'h-8 w-full justify-center px-0 text-right'
+            : 'h-8 justify-center px-0 text-left',
+        onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+    },
+    () => [
+        label,
+        h(ArrowUpDown, { class: 'ml-2 h-4 w-4' }),
+    ],
+);
 
-    return h('div', { class: `flex items-center gap-2 ${align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : ''}` }, [
-        title,
-        isSorted ? (
-            isSorted === 'asc' ? '↑' : '↓'
-        ) : (
-            h('button', {
-                onClick: () => column.toggleSorting(),
-                class: 'opacity-50 hover:opacity-100',
-            }, '↕')
-        ),
-    ]);
-};
 
 export const getQuoteColumns = (options: QuoteColumnOptions): ColumnDef<QuoteListRecord>[] => {
     const { getQuoteStatus } = useEnums();
