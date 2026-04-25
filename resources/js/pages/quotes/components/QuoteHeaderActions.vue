@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { FolderOpen, MoreHorizontal, Plus } from 'lucide-vue-next';
+import { FolderOpen, KanbanSquare, LayoutList, MoreHorizontal, Plus } from 'lucide-vue-next';
+import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -11,9 +12,22 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+const props = defineProps<{
+    viewMode?: 'table' | 'kanban';
+}>();
+
 const emit = defineEmits<{
     (e: 'open-create-quote'): void;
+    (e: 'toggle-view'): void;
 }>();
+
+const viewToggleTitle = computed(() =>
+    props.viewMode === 'kanban' ? 'Switch to table view' : 'Switch to kanban view',
+);
+
+const viewIcon = computed(() =>
+    props.viewMode === 'kanban' ? LayoutList : KanbanSquare,
+);
 </script>
 
 <template>
@@ -31,6 +45,16 @@ const emit = defineEmits<{
             aria-label="New quote"
         >
             <Plus class="h-4 w-4" />
+        </Button>
+
+        <Button
+            variant="outline"
+            size="icon"
+            :title="viewToggleTitle"
+            :aria-label="viewToggleTitle"
+            @click="emit('toggle-view')"
+        >
+            <component :is="viewIcon" class="h-4 w-4" />
         </Button>
 
         <DropdownMenu>

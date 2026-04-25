@@ -321,6 +321,15 @@ class QuoteController extends Controller
         ];
     }
 
+    public function kanban(Request $request, QuoteService $quoteService): \Illuminate\Http\JsonResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace, 404);
+
+        return response()->json($quoteService->allForKanban($workspace));
+    }
+
     public function updateStatus(UpdateQuoteStatusRequest $request, Quote $quote, QuoteService $quoteService): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
@@ -343,9 +352,12 @@ class QuoteController extends Controller
             $reason = $request->string('reason')->toString();
             $quoteService->markAsLost($quote, $reason ?: null);
             Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote marked as lost.')]);
+        } else {
+            $quote->update(['status' => $newStatus->value]);
+            Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote status updated.')]);
         }
 
-        return to_route('quotes.show', $quote);
+        return back();
     }
 
     public function duplicate(Request $request, Quote $quote, QuoteService $quoteService): RedirectResponse

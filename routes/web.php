@@ -60,6 +60,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::post('catalog/bulk-action', [CatalogItemController::class, 'bulkAction'])->name('catalog.bulk-action');
 
+        Route::get('quotes/kanban', [QuoteController::class, 'kanban'])->name('quotes.kanban');
         Route::resource('quotes', QuoteController::class);
         Route::post('quotes/{quote}/send', [QuoteSendController::class, 'store'])->name('quotes.send');
         Route::patch('quotes/{quote}/status', [QuoteController::class, 'updateStatus'])->name('quotes.status');

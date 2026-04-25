@@ -60,6 +60,43 @@ class QuoteService
     }
 
     /**
+     * Returns all non-archived quotes for the kanban board (no pagination).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function allForKanban(Workspace $workspace, int $limit = 500): array
+    {
+        return Quote::query()
+            ->where('workspace_id', $workspace->id)
+            ->with(['client:id,company_name,email'])
+            ->latest('created_at')
+            ->limit($limit)
+            ->get([
+                'id', 'quote_uuid', 'number', 'title', 'status',
+                'total', 'currency', 'valid_until', 'created_at', 'client_id',
+            ])
+            ->map(fn (Quote $quote): array => [
+                'id'          => $quote->id,
+                'quote_uuid'  => $quote->quote_uuid,
+                'number'      => $quote->number,
+                'title'       => $quote->title,
+                'status'      => $quote->status->value,
+                'total'       => (float) $quote->total,
+                'currency'    => $quote->currency,
+                'valid_until' => $quote->valid_until?->toDateString(),
+                'created_at'  => $quote->created_at?->toISOString(),
+                'client'      => $quote->client ? [
+                    'id'           => $quote->client->id,
+                    'company_name' => $quote->client->company_name,
+                    'email'        => $quote->client->email,
+                ] : null,
+                'assignee'    => null,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
      * @param  array<string, mixed>  $payload
      */
     public function create(Workspace $workspace, array $payload): Quote
