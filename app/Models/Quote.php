@@ -165,6 +165,14 @@ class Quote extends Model
         return $this->hasMany(QuoteTrackingEvent::class)->orderByDesc('occurred_at');
     }
 
+    /**
+     * @return HasMany<QuoteMessage, $this>
+     */
+    public function messages(): HasMany
+    {
+        return $this->hasMany(QuoteMessage::class);
+    }
+
     protected function getSignatureUrlAttribute(): ?string
     {
         return $this->signature_path ? Storage::url($this->signature_path) : null;

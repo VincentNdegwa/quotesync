@@ -227,6 +227,12 @@ const formatDate = (date: string | null): string => {
     if (!date) return '—';
     return useFormat().formatDate(date);
 };
+
+const getWinProbabilityBgColor = (probability: number) => {
+    if (probability >= 70) return 'bg-green-500';
+    if (probability >= 40) return 'bg-yellow-500';
+    return 'bg-red-500';
+};
 </script>
 
 <template>
@@ -372,6 +378,16 @@ const formatDate = (date: string | null): string => {
                         <p class="mb-2 line-clamp-2 text-sm font-medium leading-snug text-foreground">
                             {{ quote.title }}
                         </p>
+
+                        <div v-if="quote.win_probability !== null && quote.win_probability !== undefined" class="mb-1.5">
+                            <div class="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
+                                <div
+                                    class="h-full rounded-full"
+                                    :class="getWinProbabilityBgColor(quote.win_probability)"
+                                    :style="{ width: `${quote.win_probability}%` }"
+                                />
+                            </div>
+                        </div>
 
                         <div v-if="quote.client" class="mb-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                             <User class="h-3 w-3 shrink-0" />

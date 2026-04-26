@@ -84,7 +84,7 @@ const taxLines = computed(() => {
                 const discountPercent = Math.min(Math.max(Number(item.discount_percent || 0), 0), 100);
                 const taxableSubtotal = quantity * unitPrice * (1 - discountPercent / 100);
 
-                item.taxes.forEach((tax) => {
+                (item.taxes || []).forEach((tax) => {
                     const key = `${tax.tax_label}-${tax.tax_rate}`;
                     const amount = taxableSubtotal * (Number(tax.tax_rate || 0) / 100);
                     const existing = breakdown.get(key);

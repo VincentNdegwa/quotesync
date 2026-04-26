@@ -23,11 +23,14 @@ import { quotesDataTableTheme } from './theme';
 const props = defineProps<{
     data: QuoteListRecord[];
     quoteStatuses: QuoteStatusEnum[];
+    isClient?: boolean;
 }>();
 
 const emit = defineEmits<{
     send: [quoteId: number];
     delete: [quoteId: number];
+    approve: [quoteId: number];
+    reject: [quoteId: number];
 }>();
 
 const sorting = ref<SortingState>([]);
@@ -35,7 +38,10 @@ const sorting = ref<SortingState>([]);
 const columns = computed(() => getQuoteColumns({
     onSend: (quoteId) => emit('send', quoteId),
     onDelete: (quoteId) => emit('delete', quoteId),
+    onApprove: (quoteId) => emit('approve', quoteId),
+    onReject: (quoteId) => emit('reject', quoteId),
     quoteStatuses: props.quoteStatuses,
+    isClient: props.isClient ?? false,
 }));
 
 const table = useVueTable({

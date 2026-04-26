@@ -2,10 +2,13 @@
 
 namespace App\Providers;
 
+use App\Events\QuoteViewed;
+use App\Listeners\UpdateWinProbabilityOnView;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
@@ -24,6 +27,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        Event::listen(
+            QuoteViewed::class,
+            UpdateWinProbabilityOnView::class,
+        );
     }
 
     /**

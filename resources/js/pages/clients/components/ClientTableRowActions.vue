@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { Eye, MoreHorizontal, Pencil } from 'lucide-vue-next';
+import { ref } from 'vue';
+import { Eye, MoreHorizontal, Pencil, Mail } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -8,15 +9,18 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import InvitePortalDialog from './InvitePortalDialog.vue';
 import type { ClientRecord } from '@/types';
 
-defineProps<{
+const props = defineProps<{
     client: ClientRecord;
 }>();
 
 const emit = defineEmits<{
     edit: [client: ClientRecord];
 }>();
+
+const inviteDialogOpen = ref(false);
 </script>
 
 <template>
@@ -46,7 +50,14 @@ const emit = defineEmits<{
                     <Pencil class="h-4 w-4" />
                     <span>Edit</span>
                 </DropdownMenuItem>
+
+                <DropdownMenuItem class="flex items-center gap-2" @select="inviteDialogOpen = true">
+                    <Mail class="h-4 w-4" />
+                    <span>Invite to Portal</span>
+                </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
+
+        <InvitePortalDialog v-model:open="inviteDialogOpen" :client="client" />
     </div>
 </template>

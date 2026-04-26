@@ -9,12 +9,18 @@ use App\Enums\QuoteFollowUpStatus;
 use App\Enums\QuoteStatus;
 use App\Enums\TrackingEventType;
 use App\Models\Workspace;
+use App\Services\WhiteLabelService;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
+    public function __construct(
+        private WhiteLabelService $whiteLabelService
+    ) {}
+
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -57,32 +63,78 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+        $whiteLabel = $this->whiteLabelService->getBrandingForRequest($request);
+
+        // Check if user is authenticated via portal guard
+        $portalUser = Auth::guard('portal')->user();
+        $isPortalUser = $portalUser !== null;
+
+        // Use portal user if authenticated via portal guard
+        if ($isPortalUser) {
+            $user = $portalUser;
+        }
 
         return [
             ...parent::share($request),
-            'name' => config('app.name'),
+            'name' => $whiteLabel['enabled'] ? $whiteLabel['company_name'] : config('app.name'),
             'brand' => config('app.brand'),
+            'whiteLabel' => $whiteLabel,
             'auth' => [
                 'user' => $user,
-                'currentWorkspace' => $user?->currentWorkspace
-                    ? [
-                        'id' => $user->currentWorkspace->id,
-                        'name' => $user->currentWorkspace->name,
-                        'display_name' => $user->currentWorkspace->display_name,
-                    ]
-                    : null,
-                'workspaces' => $user
-                    ? $user->workspaces()
-                        ->orderByRaw('LOWER(workspaces.name)')
-                        ->get(['workspaces.id', 'workspaces.name', 'workspaces.display_name', 'workspaces.owner_id'])
-                        ->map(fn (Workspace $workspace): array => [
+                'portal_user' => $isPortalUser ? $user : null,
+                'currentWorkspace' => $isPortalUser && $user
+                    ? (function () use ($request, $user) {
+                        $sessionWorkspaceId = $request->session()->get('portal_current_workspace_id');
+                        $workspaceId = $sessionWorkspaceId ?? $user->workspace_id;
+                        $workspace = \App\Models\Workspace::find($workspaceId);
+                        
+                        if (!$workspace) {
+                            $workspace = $user->workspace;
+                        }
+                        
+                        return $workspace ? [
                             'id' => $workspace->id,
                             'name' => $workspace->name,
                             'display_name' => $workspace->display_name,
-                            'is_owner' => $workspace->owner_id === $user->id,
-                        ])
-                        ->values()
-                    : [],
+                        ] : null;
+                    })()
+                    : (!$isPortalUser && $user?->currentWorkspace
+                        ? [
+                            'id' => $user->currentWorkspace->id,
+                            'name' => $user->currentWorkspace->name,
+                            'display_name' => $user->currentWorkspace->display_name,
+                        ]
+                        : null),
+                'workspaces' => $isPortalUser
+                    ? ($user
+                        ? \App\Models\PortalInvitation::where('email', $user->email)
+                            ->whereNotNull('accepted_at')
+                            ->with('workspace')
+                            ->get()
+                            ->pluck('workspace')
+                            ->unique('id')
+                            ->sortBy('name')
+                            ->map(fn (\App\Models\Workspace $workspace): array => [
+                                'id' => $workspace->id,
+                                'name' => $workspace->name,
+                                'display_name' => $workspace->display_name,
+                                'logo' => $workspace->white_label_enabled ? $workspace->white_label_logo : null,
+                                'company_name' => $workspace->white_label_enabled ? $workspace->white_label_company_name : $workspace->name,
+                            ])
+                            ->values()
+                        : [])
+                    : ($user
+                        ? $user->workspaces()
+                            ->orderByRaw('LOWER(workspaces.name)')
+                            ->get(['workspaces.id', 'workspaces.name', 'workspaces.display_name', 'workspaces.owner_id'])
+                            ->map(fn (Workspace $workspace): array => [
+                                'id' => $workspace->id,
+                                'name' => $workspace->name,
+                                'display_name' => $workspace->display_name,
+                                'is_owner' => $workspace->owner_id === $user->id,
+                            ])
+                            ->values()
+                        : []),
             ],
             'notifications' => fn (): array => $user
                 ? [

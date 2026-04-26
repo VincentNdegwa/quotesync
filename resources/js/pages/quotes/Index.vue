@@ -195,6 +195,7 @@ const executeSend = (): void => {
                 v-if="hasQuotes"
                 :data="quotes.data"
                 :quote-statuses="quoteStatuses"
+                :is-client="false"
                 @send="sendQuote"
                 @delete="removeQuote"
             />

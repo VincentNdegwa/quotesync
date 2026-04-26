@@ -60,6 +60,8 @@ const props = withDefaults(
 
 const emit = defineEmits<{
     (e: 'save'): void;
+    (e: 'apply-ai-generation', data: any): void;
+    (e: 'apply-ai-template', data: any): void;
 }>();
 
 const localState = model;
@@ -136,6 +138,115 @@ const selectedBlockId = ref<string | null>(
     currentLayout.value.blocks[0]?.id ?? null,
 );
 const canvasMode = ref<'edit' | 'preview'>('edit');
+const aiGeneratorOpen = ref(false);
+const aiTemplateOpen = ref(false);
+
+const applyAiGeneration = (data: any) => {
+    // Apply sections to quote state
+    if (data.sections && data.sections.length > 0) {
+        const newSections = data.sections.map((section: any, index: number) => ({
+            id: null,
+            title: section.title,
+            sort_order: index,
+            line_items: section.line_items.map((item: any) => ({
+                id: null,
+                catalog_item_id: item.catalog_item_id,
+                name: item.name,
+                description: item.description,
+                quantity: item.quantity,
+                unit: item.unit,
+                unit_price: item.unit_price,
+                discount_percent: 0,
+                subtotal: item.quantity * item.unit_price,
+                tax_amount: 0,
+                total: item.quantity * item.unit_price,
+                is_optional: item.is_optional,
+                notes: null,
+                sort_order: 0,
+                taxes: [],
+            })),
+        }));
+
+        localState.value.sections = newSections;
+    }
+
+    // Apply cover message
+    if (data.cover_message) {
+        const coverBlock = currentLayout.value.blocks.find(b => b.type === 'cover_message');
+        if (coverBlock) {
+            const config = coverBlock.config as CoverMessageBlockConfig;
+            if (data.cover_message.label_text) config.labelText = data.cover_message.label_text;
+            if (data.cover_message.context_text) config.contextText = data.cover_message.context_text;
+        }
+    }
+
+    // Apply payment terms
+    if (data.payment_terms) {
+        const paymentBlock = currentLayout.value.blocks.find(b => b.type === 'payment_terms');
+        if (paymentBlock) {
+            const config = paymentBlock.config as PaymentTermsBlockConfig;
+            if (data.payment_terms.label_text) config.labelText = data.payment_terms.label_text;
+            if (data.payment_terms.context_text) config.contextText = data.payment_terms.context_text;
+        }
+    }
+
+    // Apply terms
+    if (data.terms) {
+        const termsBlock = currentLayout.value.blocks.find(b => b.type === 'terms');
+        if (termsBlock) {
+            const config = termsBlock.config as TermsBlockConfig;
+            if (data.terms.label_text) config.labelText = data.terms.label_text;
+            if (data.terms.context_text) config.contextText = data.terms.context_text;
+        }
+    }
+
+    // Apply timeline if generated
+    if (data.timeline && data.timeline.rows && data.timeline.rows.length > 0) {
+        const timelineBlock = currentLayout.value.blocks.find(b => b.type === 'timeline');
+        const timelineRows = data.timeline.rows.map((row: any) => ({
+            id: crypto.randomUUID(),
+            phase: row.phase,
+            description: row.description,
+            startDate: row.start_date,
+            endDate: row.end_date,
+        }));
+
+        if (timelineBlock) {
+            const config = timelineBlock.config as any;
+            if (data.timeline.label_text) config.labelText = data.timeline.label_text;
+            config.rows = timelineRows;
+        } else {
+            // Add timeline block if it doesn't exist
+            const newTimelineBlock = createBlock('timeline');
+            const config = newTimelineBlock.config as any;
+            if (data.timeline.label_text) config.labelText = data.timeline.label_text;
+            config.rows = timelineRows;
+            currentLayout.value.blocks.push(newTimelineBlock);
+        }
+    }
+};
+
+const applyAiTemplate = (data: any) => {
+    if (data.layout) {
+        const validatedLayout = ensureTemplateLayout(data.layout);
+        currentLayout.value = validatedLayout;
+        localState.value.layout = validatedLayout;
+        localState.value.layout_snapshot = validatedLayout;
+    }
+
+    if (data.template_name) {
+        localState.value.title = data.template_name;
+    }
+
+    if (data.template_description) {
+        localState.value.description = data.template_description;
+    }
+
+    if (data.industry) {
+        localState.value.industry = data.industry;
+    }
+};
+
 const blockListOpen = ref(false);
 const editingLineItem = ref<{
     sectionIndex: number;
@@ -648,6 +759,8 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
         <div class="shrink-0">
             <BuilderHeader
                 v-model:title="builderTitle"
+                v-model:ai-generator-open="aiGeneratorOpen"
+                v-model:ai-template-open="aiTemplateOpen"
                 :mode="mode"
                 :canvas-mode="canvasMode"
                 :block-list-open="blockListOpen"
@@ -656,6 +769,8 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                 @set-canvas-mode="(nextMode) => (canvasMode = nextMode)"
                 @toggle-block-list="blockListOpen = !blockListOpen"
                 @save="onSave"
+                @apply-ai-generation="applyAiGeneration"
+                @apply-ai-template="applyAiTemplate"
             />
         </div>
 

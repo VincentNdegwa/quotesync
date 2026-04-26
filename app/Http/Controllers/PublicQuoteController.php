@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\QuoteFollowUpStatus;
 use App\Enums\QuoteStatus;
+use App\Events\QuoteViewed;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
 use App\Models\Workspace;
@@ -56,6 +57,8 @@ class PublicQuoteController extends Controller
             'viewed_at' => $quote->viewed_at ?? now(),
             'view_count' => max(0, (int) $quote->view_count) + 1,
         ])->save();
+
+        QuoteViewed::dispatch($quote);
 
         QuoteActivity::query()->create([
             'quote_id' => $quote->id,

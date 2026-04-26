@@ -3,6 +3,16 @@ import { Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { dashboard } from '@/routes';
+import AnalyticsStatsCard from '@/components/analytics/AnalyticsStatsCard.vue';
+import { VisAxis, VisLine, VisXYContainer, VisGroupedBar } from '@unovis/vue';
+import type { ChartConfig } from '@/components/ui/chart';
+import {
+  ChartContainer,
+  ChartCrosshair,
+  ChartTooltip,
+  ChartTooltipContent,
+  componentToString,
+} from '@/components/ui/chart';
 
 const props = defineProps<{
     metrics: {
@@ -35,6 +45,16 @@ const props = defineProps<{
         quoted_amount: number;
         accepted_amount: number;
     }>;
+    hotLeads?: Array<{
+        id: number;
+        number: string | null;
+        title: string;
+        client_name: string;
+        total: number;
+        win_probability: number;
+        status: string;
+        sent_at: string | null;
+    }>;
     generatedAt: string;
 }>();
 
@@ -55,6 +75,50 @@ const acceptanceRate = computed<number>(() => {
 });
 
 const weeklyTrend = computed(() => props.trend.slice(-7));
+
+// Chart data for 7-day quote momentum
+const momentumChartData = computed(() => {
+  return weeklyTrend.value.map(item => ({
+    date: item.date,
+    quotes: item.quotes_count,
+    amount: item.total_amount,
+  }));
+});
+
+type MomentumData = typeof momentumChartData.value[number];
+
+const momentumChartConfig: ChartConfig = {
+  quotes: {
+    label: 'Quotes',
+    color: 'var(--chart-1)',
+  },
+  amount: {
+    label: 'Amount',
+    color: 'var(--chart-2)',
+  },
+};
+
+// Chart data for top clients
+const topClientsChartData = computed(() => {
+  return props.topClients.map(client => ({
+    name: client.client_name,
+    quoted: client.quoted_amount,
+    won: client.accepted_amount,
+  }));
+});
+
+type ClientData = typeof topClientsChartData.value[number];
+
+const clientsChartConfig: ChartConfig = {
+  quoted: {
+    label: 'Quoted',
+    color: 'var(--chart-1)',
+  },
+  won: {
+    label: 'Won',
+    color: 'var(--chart-2)',
+  },
+};
 
 const formatMoney = (value: number): string => currencyFormatter.format(value);
 
@@ -101,34 +165,26 @@ defineOptions({
 
     <div class="space-y-4">
         <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <div class="rounded-xl border border-sidebar-border/70 p-4">
-                <p class="text-xs uppercase tracking-wide text-muted-foreground">Total quotes</p>
-                <p class="mt-2 text-2xl font-semibold">{{ metrics.total_quotes }}</p>
-                <div class="mt-3 flex items-center gap-2 text-xs">
-                    <Badge :variant="statusTone(metrics.draft_quotes)">Draft {{ metrics.draft_quotes }}</Badge>
-                    <Badge :variant="statusTone(metrics.sent_quotes)">Sent {{ metrics.sent_quotes }}</Badge>
-                </div>
-            </div>
-
-            <div class="rounded-xl border border-sidebar-border/70 p-4">
-                <p class="text-xs uppercase tracking-wide text-muted-foreground">Acceptance</p>
-                <p class="mt-2 text-2xl font-semibold">{{ acceptanceRate }}%</p>
-                <p class="mt-2 text-xs text-muted-foreground">
-                    {{ metrics.accepted_quotes }} accepted / {{ metrics.declined_quotes }} declined
-                </p>
-            </div>
-
-            <div class="rounded-xl border border-sidebar-border/70 p-4">
-                <p class="text-xs uppercase tracking-wide text-muted-foreground">Open pipeline</p>
-                <p class="mt-2 text-2xl font-semibold">{{ formatMoney(metrics.open_pipeline) }}</p>
-                <p class="mt-2 text-xs text-muted-foreground">Draft + sent value still in play</p>
-            </div>
-
-            <div class="rounded-xl border border-sidebar-border/70 p-4">
-                <p class="text-xs uppercase tracking-wide text-muted-foreground">Won revenue</p>
-                <p class="mt-2 text-2xl font-semibold">{{ formatMoney(metrics.accepted_revenue) }}</p>
-                <p class="mt-2 text-xs text-muted-foreground">Avg quote {{ formatMoney(metrics.average_quote) }}</p>
-            </div>
+            <AnalyticsStatsCard
+                title="Total Quotes"
+                :value="metrics.total_quotes"
+                format="number"
+            />
+            <AnalyticsStatsCard
+                title="Acceptance Rate"
+                :value="acceptanceRate"
+                format="percent"
+            />
+            <AnalyticsStatsCard
+                title="Open Pipeline"
+                :value="metrics.open_pipeline"
+                format="currency"
+            />
+            <AnalyticsStatsCard
+                title="Won Revenue"
+                :value="metrics.accepted_revenue"
+                format="currency"
+            />
         </section>
 
         <section class="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
@@ -138,24 +194,41 @@ defineOptions({
                     <span class="text-xs text-muted-foreground">Last refreshed {{ formatTimestamp(generatedAt) }}</span>
                 </div>
 
-                <div class="overflow-hidden rounded-lg border">
-                    <table class="w-full text-sm">
-                        <thead class="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                            <tr>
-                                <th class="px-3 py-2 text-left">Date</th>
-                                <th class="px-3 py-2 text-right">Quotes</th>
-                                <th class="px-3 py-2 text-right">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="point in weeklyTrend" :key="point.date" class="border-t">
-                                <td class="px-3 py-2">{{ point.date }}</td>
-                                <td class="px-3 py-2 text-right">{{ point.quotes_count }}</td>
-                                <td class="px-3 py-2 text-right font-medium">{{ formatMoney(point.total_amount) }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div v-if="weeklyTrend.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                    No trend data yet.
                 </div>
+                <ChartContainer v-else :config="momentumChartConfig" class="aspect-auto h-[250px] w-full">
+                    <VisXYContainer :data="momentumChartData" :margin="{ left: -24 }">
+                        <VisLine
+                            :x="(d: MomentumData) => d.date"
+                            :y="(d: MomentumData) => d.quotes"
+                            :color="momentumChartConfig.quotes.color"
+                        />
+                        <VisAxis
+                            type="x"
+                            :x="(d: MomentumData) => d.date"
+                            :tick-line="false"
+                            :domain-line="false"
+                            :grid-line="false"
+                            :num-ticks="7"
+                        />
+                        <VisAxis
+                            type="y"
+                            :num-ticks="5"
+                            :tick-line="false"
+                            :domain-line="false"
+                        />
+                        <ChartTooltip />
+                        <ChartCrosshair
+                            :template="componentToString(momentumChartConfig, ChartTooltipContent, {
+                                labelKey: 'date',
+                                nameKey: 'quotes',
+                                labelFormatter: (d) => d,
+                            })"
+                            :color="momentumChartConfig.quotes.color"
+                        />
+                    </VisXYContainer>
+                </ChartContainer>
             </div>
 
             <div class="rounded-xl border border-sidebar-border/70 p-4">
@@ -164,23 +237,88 @@ defineOptions({
                 <div v-if="topClients.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
                     No client quote data yet.
                 </div>
+                <ChartContainer v-else :config="clientsChartConfig" class="aspect-auto h-[250px] w-full">
+                    <VisXYContainer :data="topClientsChartData" :margin="{ left: -24 }">
+                        <VisGroupedBar
+                            :x="(d: ClientData) => d.name"
+                            :y="[(d: ClientData) => d.quoted / 1000, (d: ClientData) => d.won / 1000]"
+                            :color="[clientsChartConfig.quoted.color, clientsChartConfig.won.color]"
+                            :bar-padding="0.1"
+                        />
+                        <VisAxis
+                            type="x"
+                            :x="(d: ClientData) => d.name"
+                            :tick-line="false"
+                            :domain-line="false"
+                            :grid-line="false"
+                        />
+                        <VisAxis
+                            type="y"
+                            :num-ticks="5"
+                            :tick-line="false"
+                            :domain-line="false"
+                            :tick-format="(d: number) => `$${d}k`"
+                        />
+                        <ChartTooltip />
+                        <ChartCrosshair
+                            :template="componentToString(clientsChartConfig, ChartTooltipContent, {
+                                labelKey: 'name',
+                            })"
+                            :color="[clientsChartConfig.quoted.color, clientsChartConfig.won.color]"
+                        />
+                    </VisXYContainer>
+                </ChartContainer>
+            </div>
+        </section>
 
-                <ul v-else class="space-y-3">
-                    <li v-for="client in topClients" :key="client.client_id" class="rounded-lg border p-3">
-                        <p class="text-sm font-semibold">{{ client.client_name }}</p>
-                        <p class="mt-1 text-xs text-muted-foreground">
-                            {{ client.quotes_count }} quote{{ client.quotes_count === 1 ? '' : 's' }}
-                        </p>
-                        <div class="mt-2 flex items-center justify-between text-xs">
-                            <span class="text-muted-foreground">Quoted</span>
-                            <span class="font-medium">{{ formatMoney(client.quoted_amount) }}</span>
-                        </div>
-                        <div class="mt-1 flex items-center justify-between text-xs">
-                            <span class="text-muted-foreground">Won</span>
-                            <span class="font-medium">{{ formatMoney(client.accepted_amount) }}</span>
-                        </div>
-                    </li>
-                </ul>
+        <section class="rounded-xl border border-sidebar-border/70 p-4">
+            <h2 class="mb-3 text-sm font-semibold">Hot Leads (Sorted by Win Probability)</h2>
+
+            <div v-if="!hotLeads || hotLeads.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                No hot leads yet. Send quotes to see win probability predictions.
+            </div>
+
+            <div v-else class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                        <tr>
+                            <th class="px-3 py-2 text-left">Quote</th>
+                            <th class="px-3 py-2 text-left">Client</th>
+                            <th class="px-3 py-2 text-right">Value</th>
+                            <th class="px-3 py-2 text-center">Win Probability</th>
+                            <th class="px-3 py-2 text-left">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="lead in hotLeads" :key="lead.id" class="border-t">
+                            <td class="px-3 py-2">
+                                <p class="font-medium">{{ lead.title }}</p>
+                                <p class="text-xs text-muted-foreground">{{ lead.number || '#' + lead.id }}</p>
+                            </td>
+                            <td class="px-3 py-2">{{ lead.client_name }}</td>
+                            <td class="px-3 py-2 text-right font-medium">{{ formatMoney(lead.total) }}</td>
+                            <td class="px-3 py-2">
+                                <div class="flex items-center justify-center gap-2">
+                                    <div class="w-16 h-2 rounded-full bg-gray-200 overflow-hidden">
+                                        <div
+                                            class="h-full rounded-full"
+                                            :style="{ 
+                                                width: `${lead.win_probability}%`, 
+                                                backgroundColor: lead.win_probability >= 70 ? '#22c55e' : lead.win_probability >= 40 ? '#eab308' : '#ef4444' 
+                                            }"
+                                        />
+                                    </div>
+                                    <span class="text-xs font-bold tabular-nums" :class="lead.win_probability >= 70 ? 'text-green-600' : lead.win_probability >= 40 ? 'text-yellow-600' : 'text-red-600'">
+                                        {{ Math.round(lead.win_probability) }}%
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="px-3 py-2">
+                                <Badge variant="outline">{{ lead.status }}</Badge>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </section>
 

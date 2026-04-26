@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router, setLayoutProps, useForm } from '@inertiajs/vue3';
-import { computed, watchEffect } from 'vue';
+import { computed, watchEffect, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
 import CountryCombobox from '@/components/location/CountryCombobox.vue';
 import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
@@ -31,6 +31,7 @@ import {
     TabsList,
     TabsTrigger,
 } from '@/components/ui/tabs';
+import InvitePortalDialog from './components/InvitePortalDialog.vue';
 import type { ClientRecord, ClientStats } from '@/types';
 
 const props = defineProps<{
@@ -38,6 +39,8 @@ const props = defineProps<{
     stats: ClientStats;
     availableTags: Array<{ id: number; name: string }>;
 }>();
+
+const inviteDialogOpen = ref(false);
 
 const breadcrumbs = computed(() => [
     { title: 'Clients', href: '/clients' },
@@ -127,6 +130,7 @@ const deleteClient = (): void => {
                 <Button as-child>
                     <Link :href="`/quotes/create?client_id=${client.id}`">New quote</Link>
                 </Button>
+                <Button variant="outline" @click="inviteDialogOpen = true">Invite to Portal</Button>
                 <Button variant="destructive" @click="deleteClient">Delete</Button>
             </div>
         </div>
@@ -247,5 +251,7 @@ const deleteClient = (): void => {
                 </Table>
             </TabsContent>
         </Tabs>
+
+        <InvitePortalDialog v-model:open="inviteDialogOpen" :client="client" />
     </div>
 </template>

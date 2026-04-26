@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { Eye, List } from 'lucide-vue-next';
+import { Eye, List, Sparkles, Palette } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import AiQuoteGenerator from '@/components/quotes/AiQuoteGenerator.vue';
+import AiTemplateGenerator from '@/components/quotes/AiTemplateGenerator.vue';
 
 defineProps<{
     mode: 'quote' | 'template';
@@ -15,11 +17,24 @@ const emit = defineEmits<{
     (e: 'set-canvas-mode', mode: 'edit' | 'preview'): void;
     (e: 'toggle-block-list'): void;
     (e: 'save'): void;
+    (e: 'apply-ai-generation', data: any): void;
+    (e: 'apply-ai-template', data: any): void;
 }>();
 
 const title = defineModel<string>('title', {
     required: true,
 });
+
+const aiGeneratorOpen = defineModel<boolean>('aiGeneratorOpen', { default: false });
+const aiTemplateOpen = defineModel<boolean>('aiTemplateOpen', { default: false });
+
+const handleAiApply = (data: any) => {
+    emit('apply-ai-generation', data);
+};
+
+const handleAiTemplateApply = (data: any) => {
+    emit('apply-ai-template', data);
+};
 </script>
 
 <template>
@@ -34,6 +49,16 @@ const title = defineModel<string>('title', {
             />
 
             <div class="flex items-center gap-2">
+                <Button v-if="mode === 'quote'" variant="outline" :disabled="processing" @click="aiGeneratorOpen = true">
+                    <Sparkles class="mr-2 size-4" />
+                    Generate with AI
+                </Button>
+
+                <Button v-if="mode === 'template'" variant="outline" :disabled="processing" @click="aiTemplateOpen = true">
+                    <Palette class="mr-2 size-4" />
+                    Design with AI
+                </Button>
+
                 <Button variant="outline" :disabled="processing" @click="emit('toggle-block-list')">
                     <List class="mr-2 size-4" />
                     {{ blockListOpen ? 'Hide blocks' : 'Blocks' }}
@@ -65,4 +90,7 @@ const title = defineModel<string>('title', {
             </div>
         </div>
     </div>
+
+    <AiQuoteGenerator v-model:open="aiGeneratorOpen" @apply="handleAiApply" />
+    <AiTemplateGenerator v-model:open="aiTemplateOpen" @apply="handleAiTemplateApply" />
 </template>

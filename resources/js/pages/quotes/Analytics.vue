@@ -4,10 +4,18 @@ import { computed } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
-import { BarChart, Eye, Timer, Users } from 'lucide-vue-next';
+import AnalyticsStatsCard from '@/components/analytics/AnalyticsStatsCard.vue';
+import { VisAxis, VisLine, VisXYContainer, VisGroupedBar } from '@unovis/vue';
+import type { ChartConfig } from '@/components/ui/chart';
+import {
+  ChartContainer,
+  ChartCrosshair,
+  ChartTooltip,
+  ChartTooltipContent,
+  componentToString,
+} from '@/components/ui/chart';
 
 type AnalyticsData = {
     total_views: number;
@@ -43,6 +51,56 @@ const formatTime = (seconds: number): string => {
 const maxHeatmapCount = computed(() => {
     return Math.max(...props.analytics.scroll_heatmap.map((h) => h.count), 1);
 });
+
+const scrollHeatmapChartData = computed(() => {
+    return props.analytics.scroll_heatmap.map(item => ({
+        depth: item.depth,
+        count: item.count,
+    }));
+});
+
+type ScrollHeatmapData = typeof scrollHeatmapChartData.value[number];
+
+const scrollHeatmapChartConfig: ChartConfig = {
+    count: {
+        label: 'Views',
+        color: 'var(--chart-1',
+    },
+};
+
+// Chart data for section views
+const sectionViewsChartData = computed(() => {
+    return props.analytics.section_views.map(item => ({
+        section: item.section,
+        count: item.count,
+    }));
+});
+
+type SectionViewsData = typeof sectionViewsChartData.value[number];
+
+const sectionViewsChartConfig: ChartConfig = {
+    count: {
+        label: 'Views',
+        color: 'var(--chart-1',
+    },
+};
+
+// Chart data for timeline
+const timelineChartData = computed(() => {
+    return props.analytics.timeline.map(item => ({
+        date: item.date,
+        views: item.views,
+    }));
+});
+
+type TimelineData = typeof timelineChartData.value[number];
+
+const timelineChartConfig: ChartConfig = {
+    views: {
+        label: 'Views',
+        color: 'var(--chart-1',
+    },
+};
 </script>
 
 <template>
@@ -68,122 +126,147 @@ const maxHeatmapCount = computed(() => {
         </div>
 
         <!-- Summary cards -->
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-                <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle class="text-sm font-medium">Total Views</CardTitle>
-                    <Eye class="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div class="text-2xl font-bold">{{ analytics.total_views }}</div>
-                    <p class="text-xs text-muted-foreground">Page loads</p>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle class="text-sm font-medium">Unique Visitors</CardTitle>
-                    <Users class="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div class="text-2xl font-bold">{{ analytics.unique_visitors }}</div>
-                    <p class="text-xs text-muted-foreground">Distinct IPs</p>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle class="text-sm font-medium">Avg Time Spent</CardTitle>
-                    <Timer class="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div class="text-2xl font-bold">{{ formatTime(Math.round(analytics.avg_time_spent_seconds)) }}</div>
-                    <p class="text-xs text-muted-foreground">Per session</p>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle class="text-sm font-medium">Max Scroll Depth</CardTitle>
-                    <BarChart class="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div class="text-2xl font-bold">{{ analytics.max_scroll_depth_percent }}%</div>
-                    <p class="text-xs text-muted-foreground">Deepest point</p>
-                </CardContent>
-            </Card>
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <AnalyticsStatsCard
+                title="Total Views"
+                :value="analytics.total_views"
+                format="number"
+            />
+            <AnalyticsStatsCard
+                title="Unique Visitors"
+                :value="analytics.unique_visitors"
+                format="number"
+            />
+            <AnalyticsStatsCard
+                title="Avg Time Spent"
+                :value="formatTime(Math.round(analytics.avg_time_spent_seconds))"
+                format="number"
+            />
+            <AnalyticsStatsCard
+                title="Max Scroll Depth"
+                :value="analytics.max_scroll_depth_percent"
+                format="percent"
+            />
         </div>
 
         <!-- Scroll heatmap -->
-        <Card>
-            <CardHeader>
-                <CardTitle>Scroll Heatmap</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div class="space-y-2">
-                    <div
-                        v-for="bucket in analytics.scroll_heatmap"
-                        :key="bucket.depth"
-                        class="flex items-center gap-2"
-                    >
-                        <span class="w-12 text-xs text-muted-foreground">{{ bucket.depth }}%</span>
-                        <div class="flex-1 h-4 rounded-md bg-muted overflow-hidden">
-                            <div
-                                class="h-full bg-primary transition-all"
-                                :style="{ width: `${(bucket.count / maxHeatmapCount) * 100}%` }"
-                            />
-                        </div>
-                        <span class="w-8 text-xs text-right">{{ bucket.count }}</span>
-                    </div>
-                </div>
-                <p v-if="analytics.scroll_heatmap.length === 0" class="text-sm text-muted-foreground">
-                    No scroll data available
-                </p>
-            </CardContent>
-        </Card>
+        <div class="rounded-xl border border-sidebar-border/70 p-4">
+            <h2 class="mb-3 text-sm font-semibold">Scroll Heatmap</h2>
+            <div v-if="analytics.scroll_heatmap.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                No scroll data available
+            </div>
+            <ChartContainer v-else :config="scrollHeatmapChartConfig" class="aspect-auto h-[200px] w-full">
+                <VisXYContainer :data="scrollHeatmapChartData" :margin="{ left: -24 }">
+                    <VisGroupedBar
+                        :x="(d: ScrollHeatmapData) => d.depth"
+                        :y="(d: ScrollHeatmapData) => d.count"
+                        :color="scrollHeatmapChartConfig.count.color"
+                        :bar-padding="0.1"
+                    />
+                    <VisAxis
+                        type="x"
+                        :x="(d: ScrollHeatmapData) => d.depth"
+                        :tick-line="false"
+                        :domain-line="false"
+                        :grid-line="false"
+                        :tick-format="(d: number) => `${d}%`"
+                    />
+                    <VisAxis
+                        type="y"
+                        :num-ticks="5"
+                        :tick-line="false"
+                        :domain-line="false"
+                    />
+                    <ChartTooltip />
+                    <ChartCrosshair
+                        :template="componentToString(scrollHeatmapChartConfig, ChartTooltipContent, {
+                            labelKey: 'depth',
+                            nameKey: 'count',
+                            labelFormatter: (d) => `${d}%`,
+                        })"
+                        :color="scrollHeatmapChartConfig.count.color"
+                    />
+                </VisXYContainer>
+            </ChartContainer>
+        </div>
 
         <!-- Section views -->
-        <Card>
-            <CardHeader>
-                <CardTitle>Section Views</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div class="space-y-2">
-                    <div
-                        v-for="section in analytics.section_views"
-                        :key="section.section"
-                        class="flex items-center justify-between rounded-md border p-3"
-                    >
-                        <span class="text-sm font-medium">{{ section.section }}</span>
-                        <Badge variant="secondary">{{ section.count }}</Badge>
-                    </div>
-                </div>
-                <p v-if="analytics.section_views.length === 0" class="text-sm text-muted-foreground">
-                    No section data available
-                </p>
-            </CardContent>
-        </Card>
+        <div class="rounded-xl border border-sidebar-border/70 p-4">
+            <h2 class="mb-3 text-sm font-semibold">Section Views</h2>
+            <div v-if="analytics.section_views.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                No section data available
+            </div>
+            <ChartContainer v-else :config="sectionViewsChartConfig" class="aspect-auto h-[200px] w-full">
+                <VisXYContainer :data="sectionViewsChartData" :margin="{ left: -24 }">
+                    <VisGroupedBar
+                        :x="(d: SectionViewsData) => d.section"
+                        :y="(d: SectionViewsData) => d.count"
+                        :color="sectionViewsChartConfig.count.color"
+                        :bar-padding="0.1"
+                    />
+                    <VisAxis
+                        type="x"
+                        :x="(d: SectionViewsData) => d.section"
+                        :tick-line="false"
+                        :domain-line="false"
+                        :grid-line="false"
+                    />
+                    <VisAxis
+                        type="y"
+                        :num-ticks="5"
+                        :tick-line="false"
+                        :domain-line="false"
+                    />
+                    <ChartTooltip />
+                    <ChartCrosshair
+                        :template="componentToString(sectionViewsChartConfig, ChartTooltipContent, {
+                            labelKey: 'section',
+                            nameKey: 'count',
+                        })"
+                        :color="sectionViewsChartConfig.count.color"
+                    />
+                </VisXYContainer>
+            </ChartContainer>
+        </div>
 
         <!-- Timeline -->
-        <Card>
-            <CardHeader>
-                <CardTitle>View Timeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div class="space-y-2">
-                    <div
-                        v-for="entry in analytics.timeline"
-                        :key="entry.date"
-                        class="flex items-center justify-between rounded-md border p-3"
-                    >
-                        <span class="text-sm">{{ fmtDate(entry.date) }}</span>
-                        <Badge variant="outline">{{ entry.views }} view{{ entry.views !== 1 ? 's' : '' }}</Badge>
-                    </div>
-                </div>
-                <p v-if="analytics.timeline.length === 0" class="text-sm text-muted-foreground">
-                    No timeline data available
-                </p>
-            </CardContent>
-        </Card>
+        <div class="rounded-xl border border-sidebar-border/70 p-4">
+            <h2 class="mb-3 text-sm font-semibold">View Timeline</h2>
+            <div v-if="analytics.timeline.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                No timeline data available
+            </div>
+            <ChartContainer v-else :config="timelineChartConfig" class="aspect-auto h-[200px] w-full">
+                <VisXYContainer :data="timelineChartData" :margin="{ left: -24 }">
+                    <VisLine
+                        :x="(d: TimelineData) => d.date"
+                        :y="(d: TimelineData) => d.views"
+                        :color="timelineChartConfig.views.color"
+                    />
+                    <VisAxis
+                        type="x"
+                        :x="(d: TimelineData) => d.date"
+                        :tick-line="false"
+                        :domain-line="false"
+                        :grid-line="false"
+                        :num-ticks="6"
+                    />
+                    <VisAxis
+                        type="y"
+                        :num-ticks="5"
+                        :tick-line="false"
+                        :domain-line="false"
+                    />
+                    <ChartTooltip />
+                    <ChartCrosshair
+                        :template="componentToString(timelineChartConfig, ChartTooltipContent, {
+                            labelKey: 'date',
+                            nameKey: 'views',
+                            labelFormatter: (d) => fmtDate(String(d)),
+                        })"
+                        :color="timelineChartConfig.views.color"
+                    />
+                </VisXYContainer>
+            </ChartContainer>
+        </div>
     </div>
 </template>

@@ -33,6 +33,14 @@ use App\Http\Controllers\Settings\WorkspaceSettingsController;
 use App\Http\Controllers\TaxController;
 use App\Http\Controllers\WorkspaceInvitationController;
 use App\Http\Controllers\WorkspaceSwitchController;
+use App\Http\Controllers\AiQuoteController;
+use App\Http\Controllers\AiTemplateController;
+use App\Http\Controllers\AiWritingController;
+use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\ApprovalController;
+use App\Http\Controllers\QuoteMessageController;
+use App\Http\Controllers\PortalInvitationController;
+use App\Http\Controllers\CustomDomainController;
 use App\Http\Middleware\EnsureWorkspaceSettingsOnboarded;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
@@ -44,6 +52,21 @@ Route::inertia('/', 'Welcome', [
 Route::get('dashboard', DashboardController::class)
     ->middleware(['auth', 'verified', EnsureWorkspaceSettingsOnboarded::class])
     ->name('dashboard');
+
+Route::get('analytics', [AnalyticsController::class, 'index'])
+    ->middleware(['auth', 'verified', EnsureWorkspaceSettingsOnboarded::class])
+    ->name('analytics');
+
+Route::get('approvals', [ApprovalController::class, 'index'])
+    ->middleware(['auth', 'verified', EnsureWorkspaceSettingsOnboarded::class])
+    ->name('approvals.index');
+
+Route::middleware(['auth', 'verified', EnsureWorkspaceSettingsOnboarded::class])->group(function () {
+    Route::post('approvals/rules', [ApprovalController::class, 'storeRule'])->name('approvals.rules.store');
+    Route::post('approvals/{approval}/approve', [ApprovalController::class, 'approve'])->name('approvals.approve');
+    Route::post('approvals/{approval}/reject', [ApprovalController::class, 'reject'])->name('approvals.reject');
+    Route::delete('approvals/rules/{rule}', [ApprovalController::class, 'destroyRule'])->name('approvals.rules.destroy');
+});
 
 Route::get('invitations/{invitation}/accept', [InvitationController::class, 'accept'])
     ->middleware('signed:relative')
@@ -74,6 +97,9 @@ Route::middleware(['auth'])->group(function () {
         ->name('catalog.import.template');
 
     Route::middleware(['verified', EnsureWorkspaceSettingsOnboarded::class])->group(function () {
+        Route::post('ai/quote/generate', [AiQuoteController::class, 'generate'])->name('ai.quote.generate');
+        Route::post('ai/template/generate', [AiTemplateController::class, 'generate'])->name('ai.template.generate');
+        Route::post('ai/writing/improve', [AiWritingController::class, 'improve'])->name('ai.writing.improve');
         Route::post('clients/bulk-delete', [ClientController::class, 'bulkDestroy'])->name('clients.bulk-delete');
         Route::get('clients/export/csv', [ClientController::class, 'exportCsv'])->name('clients.export.csv');
         Route::get('clients/export', [ClientExportController::class, 'export'])->name('clients.export');
@@ -83,6 +109,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('clients/import/preview', [ClientImportController::class, 'preview'])->name('clients.import.preview');
         Route::post('clients/import/confirm', [ClientImportController::class, 'store'])->name('clients.import.store');
         Route::resource('clients', ClientController::class)->except(['create', 'edit']);
+        Route::post('clients/{client}/invite-portal', [PortalInvitationController::class, 'send'])->name('clients.invite-portal');
 
         Route::post('catalog/bulk-action', [CatalogItemController::class, 'bulkAction'])->name('catalog.bulk-action');
 
@@ -104,6 +131,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('quotes/{quote}/archive', [QuoteController::class, 'archive'])->name('quotes.archive');
         Route::post('quotes/{quote}/follow-ups/{quoteFollowUp}/cancel', [QuoteController::class, 'cancelFollowUp'])->name('quotes.follow-ups.cancel');
         Route::post('quotes/{quote}/follow-ups/{quoteFollowUp}/send-now', [QuoteController::class, 'sendFollowUpNow'])->name('quotes.follow-ups.send-now');
+        Route::get('quotes/{quote}/messages', [QuoteMessageController::class, 'index'])->name('quotes.messages.index');
+        Route::post('quotes/{quote}/messages', [QuoteMessageController::class, 'store'])->name('quotes.messages.store');
         Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
         Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
@@ -157,6 +186,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('catalog-categories', [CatalogCategoryController::class, 'store'])->name('catalog-categories.store');
         Route::put('catalog-categories/{category}', [CatalogCategoryController::class, 'update'])->name('catalog-categories.update');
         Route::delete('catalog-categories/{category}', [CatalogCategoryController::class, 'destroy'])->name('catalog-categories.destroy');
+
+        Route::get('custom-domains', [CustomDomainController::class, 'index'])->name('custom-domains.index');
+        Route::post('custom-domains', [CustomDomainController::class, 'store'])->name('custom-domains.store');
+        Route::post('custom-domains/{domain}/verify', [CustomDomainController::class, 'verify'])->name('custom-domains.verify');
+        Route::post('custom-domains/{domain}/set-primary', [CustomDomainController::class, 'setPrimary'])->name('custom-domains.set-primary');
+        Route::delete('custom-domains/{domain}', [CustomDomainController::class, 'destroy'])->name('custom-domains.destroy');
     });
 });
 

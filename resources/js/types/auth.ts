@@ -9,15 +9,29 @@ export type User = {
     [key: string]: unknown;
 };
 
+export type PortalUser = {
+    id: number;
+    name: string;
+    email: string;
+    workspace_id: number;
+    client_id: number;
+    created_at: string;
+    updated_at: string;
+    [key: string]: unknown;
+};
+
 export type WorkspaceSummary = {
     id: number;
     name: string;
     display_name: string | null;
-    is_owner: boolean;
+    is_owner?: boolean;
+    logo?: string | null;
+    company_name?: string | null;
 };
 
 export type Auth = {
-    user: User;
+    user: User | null;
+    portal_user: PortalUser | null;
     currentWorkspace: WorkspaceSummary | null;
     workspaces: WorkspaceSummary[];
 };
