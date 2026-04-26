@@ -102,6 +102,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('quotes/{quote}/revise', [QuoteController::class, 'revise'])->name('quotes.revise');
         Route::post('quotes/{quote}/reopen', [QuoteController::class, 'reopen'])->name('quotes.reopen');
         Route::post('quotes/{quote}/archive', [QuoteController::class, 'archive'])->name('quotes.archive');
+        Route::post('quotes/{quote}/follow-ups/{quoteFollowUp}/cancel', [QuoteController::class, 'cancelFollowUp'])->name('quotes.follow-ups.cancel');
+        Route::post('quotes/{quote}/follow-ups/{quoteFollowUp}/send-now', [QuoteController::class, 'sendFollowUpNow'])->name('quotes.follow-ups.send-now');
         Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
         Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 

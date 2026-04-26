@@ -2,10 +2,12 @@
 
 namespace App\Services\Quotes;
 
+use App\Enums\QuoteFollowUpStatus;
 use App\Enums\QuoteStatus;
 use App\Models\CatalogItem;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
+use App\Models\QuoteFollowUp;
 use App\Models\QuoteTemplate;
 use App\Models\Workspace;
 use App\Models\WorkspaceSetting;
@@ -251,6 +253,13 @@ class QuoteService
                 'metadata' => null,
             ]);
 
+            $quote->quoteFollowUps()
+                ->where('status', QuoteFollowUpStatus::Pending->value)
+                ->update([
+                    'status' => QuoteFollowUpStatus::Cancelled->value,
+                    'cancelled_at' => now(),
+                ]);
+
             return $quote->refresh();
         });
     }
@@ -272,6 +281,13 @@ class QuoteService
                 'description' => $reason ? "Quote marked as lost: {$reason}" : 'Quote marked as lost',
                 'metadata' => ['reason' => $reason],
             ]);
+
+            $quote->quoteFollowUps()
+                ->where('status', QuoteFollowUpStatus::Pending->value)
+                ->update([
+                    'status' => QuoteFollowUpStatus::Cancelled->value,
+                    'cancelled_at' => now(),
+                ]);
 
             return $quote->refresh();
         });

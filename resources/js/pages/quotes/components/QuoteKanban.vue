@@ -60,12 +60,12 @@ type ColStyle = {
 
 const COLUMN_STYLES: Record<StatusKey, ColStyle> = {
     draft:    { topBar: 'bg-slate-400',   countBg: 'bg-slate-100',   countText: 'text-slate-600',   dropActive: 'ring-2 ring-slate-400 bg-slate-50',        dot: 'bg-slate-400',   badge: 'bg-slate-100',   badgeText: 'text-slate-600' },
-    sent:     { topBar: 'bg-blue-500',    countBg: 'bg-blue-50',     countText: 'text-blue-700',    dropActive: 'ring-2 ring-blue-400 bg-blue-50/60',       dot: 'bg-blue-500',    badge: 'bg-blue-50',     badgeText: 'text-blue-700' },
-    viewed:   { topBar: 'bg-violet-500',  countBg: 'bg-violet-50',   countText: 'text-violet-700',  dropActive: 'ring-2 ring-violet-400 bg-violet-50/60',   dot: 'bg-violet-500',  badge: 'bg-violet-50',   badgeText: 'text-violet-700' },
-    accepted: { topBar: 'bg-cyan-500',    countBg: 'bg-cyan-50',     countText: 'text-cyan-700',    dropActive: 'ring-2 ring-cyan-400 bg-cyan-50/60',       dot: 'bg-cyan-500',    badge: 'bg-cyan-50',     badgeText: 'text-cyan-700' },
-    declined: { topBar: 'bg-orange-500',  countBg: 'bg-orange-50',   countText: 'text-orange-700',  dropActive: 'ring-2 ring-orange-400 bg-orange-50/60',   dot: 'bg-orange-500',  badge: 'bg-orange-50',   badgeText: 'text-orange-700' },
+    sent:     { topBar: 'bg-blue-500',    countBg: 'bg-blue-50',     countText: 'text-blue-600',    dropActive: 'ring-2 ring-blue-400 bg-blue-50/60',       dot: 'bg-blue-500',    badge: 'bg-blue-50',     badgeText: 'text-blue-600' },
+    viewed:   { topBar: 'bg-cyan-500',    countBg: 'bg-cyan-50',     countText: 'text-cyan-600',    dropActive: 'ring-2 ring-cyan-400 bg-cyan-50/60',       dot: 'bg-cyan-500',    badge: 'bg-cyan-50',     badgeText: 'text-cyan-600' },
+    accepted: { topBar: 'bg-emerald-500',  countBg: 'bg-emerald-50',  countText: 'text-emerald-600', dropActive: 'ring-2 ring-emerald-400 bg-emerald-50/60', dot: 'bg-emerald-500', badge: 'bg-emerald-50',  badgeText: 'text-emerald-600' },
+    declined: { topBar: 'bg-rose-500',    countBg: 'bg-rose-50',     countText: 'text-rose-600',    dropActive: 'ring-2 ring-rose-400 bg-rose-50/60',       dot: 'bg-rose-500',    badge: 'bg-rose-50',     badgeText: 'text-rose-600' },
     won:      { topBar: 'bg-emerald-500', countBg: 'bg-emerald-50',  countText: 'text-emerald-700', dropActive: 'ring-2 ring-emerald-400 bg-emerald-50/60', dot: 'bg-emerald-500', badge: 'bg-emerald-50',  badgeText: 'text-emerald-700' },
-    lost:     { topBar: 'bg-rose-500',    countBg: 'bg-rose-50',     countText: 'text-rose-700',    dropActive: 'ring-2 ring-rose-400 bg-rose-50/60',       dot: 'bg-rose-500',    badge: 'bg-rose-50',     badgeText: 'text-rose-700' },
+    lost:     { topBar: 'bg-orange-500',  countBg: 'bg-orange-50',   countText: 'text-orange-600',  dropActive: 'ring-2 ring-orange-400 bg-orange-50/60',   dot: 'bg-orange-500',  badge: 'bg-orange-50',   badgeText: 'text-orange-600' },
     expired:  { topBar: 'bg-amber-400',   countBg: 'bg-amber-50',    countText: 'text-amber-700',   dropActive: 'ring-2 ring-amber-400 bg-amber-50/60',     dot: 'bg-amber-400',   badge: 'bg-amber-50',    badgeText: 'text-amber-700' },
 };
 

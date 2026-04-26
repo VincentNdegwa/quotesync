@@ -44,14 +44,17 @@ enum QuoteStatus: string
     public function cssColor(): string
     {
         return match ($this) {
-            self::Draft => '',
-            self::Sent => 'border-primary text-primary',
-            self::Viewed => 'border-secondary text-secondary',
-            self::Accepted => 'border-primary text-primary',
-            self::Declined => 'border-destructive text-white',
-            self::Won => 'bg-primary hover:bg-primary text-primary-foreground',
-            self::Lost => 'border-destructive text-white',
-            self::Expired => 'border-muted text-muted-foreground',
+            self::Draft => 'border-slate-400 text-slate-600',
+            self::Sent => 'border-blue-500 text-blue-600',
+            self::Viewed => 'border-cyan-500 text-cyan-600',
+            
+            self::Accepted => 'border-emerald-500 text-emerald-600',
+            self::Won => 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600',
+            
+            self::Declined => 'border-rose-500 text-rose-600',
+            self::Lost => 'border-orange-500 text-orange-600',
+            
+            self::Expired => 'border-amber-400 text-amber-700',
         };
     }
 

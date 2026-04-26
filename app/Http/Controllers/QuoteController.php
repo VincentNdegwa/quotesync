@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\QuoteFollowUpStatus;
 use App\Enums\QuoteStatus;
 use App\Http\Requests\StoreQuoteRequest;
 use App\Http\Requests\UpdateQuoteRequest;
 use App\Http\Requests\UpdateQuoteStatusRequest;
+use App\Jobs\SendFollowUpJob;
 use App\Models\CatalogItem;
 use App\Models\Client;
 use App\Models\Quote;
+use App\Models\QuoteFollowUp;
 use App\Models\QuoteTemplate;
 use App\Models\Tax;
 use App\Models\Workspace;
@@ -426,5 +429,34 @@ class QuoteController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote archived successfully.')]);
 
         return to_route('quotes.index');
+    }
+
+    public function cancelFollowUp(Request $request, Quote $quote, QuoteFollowUp $quoteFollowUp): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+        abort_unless($quoteFollowUp->quote_id === $quote->id, 404);
+        abort_unless($quoteFollowUp->status === QuoteFollowUpStatus::Pending, 403);
+
+        $quoteFollowUp->update([
+            'status' => QuoteFollowUpStatus::Cancelled->value,
+            'cancelled_at' => now(),
+        ]);
+
+        return back()->with('toast', ['type' => 'success', 'message' => __('Follow-up cancelled successfully.')]);
+    }
+
+    public function sendFollowUpNow(Request $request, Quote $quote, QuoteFollowUp $quoteFollowUp): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+        abort_unless($quoteFollowUp->quote_id === $quote->id, 404);
+        abort_unless($quoteFollowUp->status === QuoteFollowUpStatus::Pending, 403);
+
+        SendFollowUpJob::dispatch($quoteFollowUp->id);
+
+        return back()->with('toast', ['type' => 'success', 'message' => __('Follow-up will be sent shortly.')]);
     }
 }

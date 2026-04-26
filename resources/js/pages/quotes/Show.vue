@@ -52,7 +52,7 @@ const { formatCurrency: fmt, formatDate: fmtDate } = useFormat();
                 >
                     {{ getQuoteStatus(quote.status)?.label }}
                 </Badge>
-                <QuoteFollowUps v-if="quote.quote_follow_ups" :follow-ups="quote.quote_follow_ups" />
+                <QuoteFollowUps v-if="quote.quote_follow_ups" :quote-id="quote.id" :follow-ups="quote.quote_follow_ups" />
 
                 <QuoteActions
                     :quote="quote"

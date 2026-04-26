@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { router } from '@inertiajs/vue3';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,10 +13,12 @@ import {
     DrawerTitle,
     DrawerTrigger,
 } from '@/components/ui/drawer';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { useFormat } from '@/composables/useFormat';
 import { Calendar, Clock, Send, X, List } from 'lucide-vue-next';
 
 const props = defineProps<{
+    quoteId: number;
     followUps: Array<{
         id: number;
         scheduled_at: string;
@@ -32,6 +35,11 @@ const props = defineProps<{
 }>();
 
 const { formatDate: fmtDate } = useFormat();
+
+const cancelDialogOpen = ref(false);
+const sendNowDialogOpen = ref(false);
+const selectedFollowUpId = ref<number | null>(null);
+const processing = ref(false);
 
 const pendingFollowUps = computed(() => 
     props.followUps.filter(f => f.status === 'pending')
@@ -59,11 +67,39 @@ const getStatusBadge = (status: string) => {
 };
 
 const handleCancel = (id: number) => {
-    console.log('Cancel follow-up:', id);
+    selectedFollowUpId.value = id;
+    cancelDialogOpen.value = true;
 };
 
 const handleSendNow = (id: number) => {
-    console.log('Send follow-up now:', id);
+    selectedFollowUpId.value = id;
+    sendNowDialogOpen.value = true;
+};
+
+const confirmCancel = () => {
+    if (!selectedFollowUpId.value) return;
+    processing.value = true;
+    router.post(`/quotes/${props.quoteId}/follow-ups/${selectedFollowUpId.value}/cancel`, {}, {
+        preserveScroll: true,
+        onFinish: () => {
+            processing.value = false;
+            cancelDialogOpen.value = false;
+            selectedFollowUpId.value = null;
+        },
+    });
+};
+
+const confirmSendNow = () => {
+    if (!selectedFollowUpId.value) return;
+    processing.value = true;
+    router.post(`/quotes/${props.quoteId}/follow-ups/${selectedFollowUpId.value}/send-now`, {}, {
+        preserveScroll: true,
+        onFinish: () => {
+            processing.value = false;
+            sendNowDialogOpen.value = false;
+            selectedFollowUpId.value = null;
+        },
+    });
 };
 </script>
 
@@ -176,4 +212,26 @@ const handleSendNow = (id: number) => {
             </DrawerFooter>
         </DrawerContent>
     </Drawer>
+
+    <ConfirmDialog
+        v-model:open="cancelDialogOpen"
+        title="Cancel follow-up?"
+        description="This action cannot be undone. The follow-up will be cancelled and will not be sent."
+        confirm-text="Cancel follow-up"
+        cancel-text="Keep scheduled"
+        variant="destructive"
+        :processing="processing"
+        @confirm="confirmCancel"
+    />
+
+    <ConfirmDialog
+        v-model:open="sendNowDialogOpen"
+        title="Send follow-up now?"
+        description="This will send the follow-up email immediately instead of waiting for the scheduled time."
+        confirm-text="Send now"
+        cancel-text="Cancel"
+        variant="default"
+        :processing="processing"
+        @confirm="confirmSendNow"
+    />
 </template>
