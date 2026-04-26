@@ -5,13 +5,16 @@ namespace App\Http\Controllers;
 use App\Jobs\SendQuoteEmailJob;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
+use App\Enums\QuoteStatus;
 use App\Models\Workspace;
 use App\Notifications\QuoteSentInternalNotification;
 use App\Services\Quotes\QuoteFollowUpSchedulerService;
+use App\Services\Quotes\QuotePlaceholderService;
 use App\Services\Quotes\QuoteShortCodeService;
+use App\Services\Pdf\QuotePdfService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -52,23 +55,25 @@ class QuoteSendController extends Controller
         $subjectTemplate = $emailFields->get('quote_email_subject')['value'] ?? 'Your Quote {quote_number} from {company_name}';
         $bodyTemplate = $emailFields->get('quote_email_template')['value'] ?? "Hi {client_name},\n\nPlease review quote {quote_number} totaling {quote_total}.";
 
-        $merge = [
-            '{client_name}' => (string) ($quote->client?->contact_name ?: $quote->client?->company_name ?: 'Client'),
-            '{quote_number}' => (string) ($quote->number ?? 'Draft'),
-            '{quote_total}' => number_format((float) $quote->total, 2).' '.($quote->currency ?? ''),
-            '{valid_until}' => (string) ($quote->valid_until?->toDateString() ?? 'N/A'),
-            '{company_name}' => $companyName,
-            '{number}' => (string) ($quote->number ?? 'Draft'),
-            '{company}' => $companyName,
-        ];
-
-        $subjectLine = strtr($subjectTemplate, $merge);
-        $messageBody = strtr($bodyTemplate, $merge);
-
         $sendAt = now();
         $shortCode = $quoteShortCodeService->getOrCreateCode($quote);
         $viewUrl = route('public-quotes.show', ['quoteUuid' => $shortCode]);
         $unsubscribeUrl = url('/unsubscribe?email='.urlencode($to));
+
+        $subjectLine = QuotePlaceholderService::replacePlaceholdersFromQuote(
+            $subjectTemplate,
+            $quote,
+            $workspace,
+            $request->user(),
+            $viewUrl
+        );
+        $messageBody = QuotePlaceholderService::replacePlaceholdersFromQuote(
+            $bodyTemplate,
+            $quote,
+            $workspace,
+            $request->user(),
+            $viewUrl
+        );
 
         $attachPdf = $request->boolean('attach_pdf', false);
         $pdfPath = null;

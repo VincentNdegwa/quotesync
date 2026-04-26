@@ -104,3 +104,31 @@ test('tracking endpoint resolves short code identifier', function () {
     $response->assertOk();
     expect(QuoteTrackingEvent::query()->where('quote_id', $quote->id)->count())->toBe(1);
 });
+
+test('tracking endpoint handles FormData (sendBeacon format)', function () {
+    $user = User::factory()->create();
+    $workspace = $user->currentWorkspace;
+    $client = Client::factory()->for($workspace, 'workspace')->create();
+
+    $quote = Quote::query()->create([
+        'workspace_id' => $workspace->id,
+        'title' => 'FormData Quote',
+        'status' => 'sent',
+        'client_id' => $client->id,
+        'currency' => 'USD',
+        'total' => 500,
+    ]);
+
+    $eventsJson = json_encode([
+        ['event_type' => 'view'],
+        ['event_type' => 'scroll_depth', 'scroll_depth_percent' => 50],
+    ]);
+
+    $response = $this->postJson("/q/{$quote->quote_uuid}/tracking", [
+        'events' => $eventsJson,
+    ]);
+
+    $response->assertOk();
+    $response->assertJson(['stored' => 2]);
+    expect(QuoteTrackingEvent::query()->where('quote_id', $quote->id)->count())->toBe(2);
+});

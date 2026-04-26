@@ -222,6 +222,7 @@ export type QuoteActivityTypeEnum = EnumOption<'created' | 'sent' | 'viewed' | '
 export type FollowUpChannelEnum = {
     value: 'email' | 'whatsapp' | 'sms';
     label: string;
+    color: string;
 };
 
 export type QuoteFollowUpStatusEnum = {

@@ -35,6 +35,19 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
+     * Determines if the request should be handled by Inertia.
+     */
+    public function handle(Request $request, \Closure $next)
+    {
+        // Exclude tracking endpoint from Inertia
+        if ($request->is('q/*/tracking')) {
+            return $next($request);
+        }
+
+        return parent::handle($request, $next);
+    }
+
+    /**
      * Define the props that are shared by default.
      *
      * @see https://inertiajs.com/shared-data

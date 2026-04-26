@@ -36,7 +36,9 @@ export function useQuoteTracking(options: TrackingOptions) {
         const payload = JSON.stringify({ events: batch });
 
         if (navigator.sendBeacon) {
-            navigator.sendBeacon(options.endpoint, payload);
+            const formData = new FormData();
+            formData.append('events', JSON.stringify(batch));
+            navigator.sendBeacon(options.endpoint, formData);
         } else {
             fetch(options.endpoint, {
                 method: 'POST',

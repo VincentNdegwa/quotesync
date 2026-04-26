@@ -106,7 +106,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
         Route::resource('quote-templates', QuoteTemplateController::class);
-Route::get('quote-templates/{quote_template}/layout', [QuoteTemplateController::class, 'getLayout'])->name('quote-templates.layout');
+        Route::get('quote-templates/{quote_template}/layout', [QuoteTemplateController::class, 'getLayout'])->name('quote-templates.layout');
 
         Route::resource('invoices', InvoiceController::class);
 
@@ -158,4 +158,4 @@ Route::get('quote-templates/{quote_template}/layout', [QuoteTemplateController::
     });
 });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';

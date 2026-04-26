@@ -10,6 +10,7 @@ import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
 import type { BrandingData, QuoteData, QuoteStatusEnum } from '@/types';
 import QuoteActions from './components/QuoteActions.vue';
+import QuoteFollowUps from '@/components/quotes/QuoteFollowUps.vue';
 
 const props = defineProps<{
     quote: QuoteData;
@@ -51,6 +52,7 @@ const { formatCurrency: fmt, formatDate: fmtDate } = useFormat();
                 >
                     {{ getQuoteStatus(quote.status)?.label }}
                 </Badge>
+                <QuoteFollowUps v-if="quote.quote_follow_ups" :follow-ups="quote.quote_follow_ups" />
 
                 <QuoteActions
                     :quote="quote"

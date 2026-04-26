@@ -170,6 +170,7 @@ class QuoteController extends Controller
             'sections.lineItems.catalogItem:id,sku',
             'sections.lineItems.taxes',
             'activities.user:id,name',
+            'quoteFollowUps.step:id,follow_up_sequence_id,channel,subject,message_template,day_offset',
         ]);
 
         return Inertia::render('quotes/Show', [

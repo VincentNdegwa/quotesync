@@ -15,6 +15,7 @@ import SheetOverlay from "./SheetOverlay.vue"
 interface SheetContentProps extends DialogContentProps {
   class?: HTMLAttributes["class"]
   side?: "top" | "right" | "bottom" | "left"
+  customWidth?: string
 }
 
 defineOptions({
@@ -26,7 +27,7 @@ const props = withDefaults(defineProps<SheetContentProps>(), {
 })
 const emits = defineEmits<DialogContentEmits>()
 
-const delegatedProps = reactiveOmit(props, "class", "side")
+const delegatedProps = reactiveOmit(props, "class", "side", "customWidth")
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits)
 </script>
@@ -47,6 +48,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
         side === 'bottom'
           && 'data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-0 bottom-0 h-auto border-t',
         props.class)"
+      :style="customWidth ? { width: customWidth, maxWidth: customWidth } : undefined"
       v-bind="{ ...$attrs, ...forwarded }"
     >
       <slot />

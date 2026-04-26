@@ -61,6 +61,7 @@ This document tracks what is missing for **Phase 2 — Delivery, Automation & Tr
 - ~~Missing `quote_tracking_events` table~~ ✅
 - ~~Missing ingest endpoint `POST /q/{uuid}/tracking`~~ ✅
 - ~~Missing JS tracking collector (`IntersectionObserver` + `sendBeacon`)~~ ✅
+- ~~Missing integration of tracking composable into public quote view~~ ✅
 - ~~Missing internal heatmap visualization and analytics summary~~ ✅
 
 #### 2.6 Invoice Generation

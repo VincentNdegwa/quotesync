@@ -106,6 +106,28 @@ export type QuoteActivityModel = {
   user: Pick<UserModel, 'id' | 'name'> | null;
 };
 
+export type QuoteFollowUpStepModel = {
+  id: number;
+  follow_up_sequence_id: number;
+  channel: string;
+  subject: string;
+  message_template: string;
+  day_offset: number;
+};
+
+export type QuoteFollowUpModel = {
+  id: number;
+  quote_id: number;
+  follow_up_step_id: number;
+  scheduled_at: string;
+  status: string;
+  sent_at: string | null;
+  cancelled_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  step: QuoteFollowUpStepModel;
+};
+
 export type QuoteTemplateModel = {
   id: number;
   workspace_id: number;
@@ -165,4 +187,5 @@ export type QuoteModel = {
   template: Pick<QuoteTemplateModel, 'id' | 'name' | 'layout'> | null;
   sections: QuoteSectionModel[];
   activities: QuoteActivityModel[];
+  quote_follow_ups: QuoteFollowUpModel[];
 };

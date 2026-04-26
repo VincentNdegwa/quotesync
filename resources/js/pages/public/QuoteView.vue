@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
 import { CheckCircle2, XCircle } from 'lucide-vue-next';
-import { computed, ref, provide } from 'vue';
+import { computed, onMounted, onUnmounted, ref, provide } from 'vue';
 import { toast } from 'vue-sonner';
 import PublicQuoteController from '@/actions/App/Http/Controllers/PublicQuoteController';
 import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
@@ -13,6 +13,7 @@ import SignaturePad from '@/components/ui/SignaturePad.vue';
 import { Textarea } from '@/components/ui/textarea';
 import { ensureTemplateLayout } from '@/types';
 import type { BrandingData, QuoteData, TemplateLayout } from '@/types';
+import { useQuoteTracking } from '@/composables/useQuoteTracking';
 
 const props = defineProps<{
     quote: QuoteData;
@@ -24,6 +25,14 @@ const props = defineProps<{
 }>();
 
 const renderedLayout = computed(() => ensureTemplateLayout(props.layout));
+
+const tracking = useQuoteTracking({
+    quoteUuid: props.quote_uuid,
+    endpoint: `/q/${props.quote_uuid}/tracking`,
+    flushInterval: 5000,
+});
+
+let scrollHandler: (() => void) | null = null;
 
 const showApproveModal = ref(false);
 const showDeclineModal = ref(false);
@@ -60,6 +69,26 @@ function handleDecline() {
         },
     });
 }
+
+onMounted(() => {
+    tracking.start();
+
+    scrollHandler = (): void => {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const scrollPercent = docHeight > 0 ? Math.round((scrollTop / docHeight) * 100) : 0;
+        tracking.trackScrollDepth(scrollPercent);
+    };
+
+    window.addEventListener('scroll', scrollHandler, { passive: true });
+});
+
+onUnmounted(() => {
+    if (scrollHandler) {
+        window.removeEventListener('scroll', scrollHandler);
+    }
+    tracking.stop();
+});
 </script>
 
 <template>

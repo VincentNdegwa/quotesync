@@ -8,6 +8,7 @@ use App\Enums\QuoteStatus;
 use App\Mail\QuoteFollowUpMail;
 use App\Models\QuoteActivity;
 use App\Models\QuoteFollowUp;
+use App\Services\Quotes\QuotePlaceholderService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Mail;
@@ -68,20 +69,25 @@ class SendFollowUpJob implements ShouldQueue
         $viewIdentifier = $quote->shortCode?->code ?: $quote->quote_uuid;
         $viewUrl = route('public-quotes.show', ['quoteUuid' => $viewIdentifier]);
 
-        $merge = [
-            '{client_name}' => (string) ($quote->client?->contact_name ?: $quote->client?->company_name ?: 'Client'),
-            '{quote_number}' => (string) ($quote->number ?? 'Draft'),
-            '{quote_total}' => number_format((float) $quote->total, 2).' '.($quote->currency ?? ''),
-            '{valid_until}' => (string) ($quote->valid_until?->toDateString() ?? 'N/A'),
-            '{quote_link}' => $viewUrl,
-        ];
-
-        $subject = strtr((string) ($step->subject ?: 'Follow-up for quote {quote_number}'), $merge);
-        $message = strtr($step->message_template, $merge);
-
         $workspace = $quote->workspace;
         $companyName = (string) ($workspace?->display_name ?: $workspace?->name ?: config('app.name'));
         $logoUrl = $workspace?->logo_path ? \Illuminate\Support\Facades\Storage::url($workspace->logo_path) : null;
+
+        $subject = QuotePlaceholderService::replacePlaceholdersFromQuote(
+            (string) ($step->subject ?: 'Follow-up for quote {quote_number}'),
+            $quote,
+            $workspace,
+            null,
+            $viewUrl
+        );
+        $message = QuotePlaceholderService::replacePlaceholdersFromQuote(
+            $step->message_template,
+            $quote,
+            $workspace,
+            null,
+            $viewUrl
+        );
+
         $unsubscribeUrl = null;
 
         Mail::to($to)->send(new QuoteFollowUpMail(

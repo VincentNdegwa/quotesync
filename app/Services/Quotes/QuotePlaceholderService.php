@@ -2,6 +2,10 @@
 
 namespace App\Services\Quotes;
 
+use App\Models\Quote;
+use App\Models\User;
+use App\Models\Workspace;
+
 class QuotePlaceholderService
 {
     /**
@@ -61,17 +65,59 @@ class QuotePlaceholderService
     }
 
     /**
+     * Build placeholder data array from quote and context.
+     */
+    public static function buildPlaceholderData(
+        Quote $quote,
+        ?Workspace $workspace = null,
+        ?User $user = null,
+        ?string $quoteLink = null
+    ): array {
+        $companyName = (string) ($workspace?->display_name ?: $workspace?->name ?: config('app.name'));
+
+        return [
+            'quote_number' => (string) ($quote->number ?? 'Draft'),
+            'quote_title' => (string) $quote->title,
+            'quote_link' => $quoteLink ?? '',
+            'client_name' => (string) ($quote->client?->contact_name ?: $quote->client?->company_name ?: 'Client'),
+            'client_contact' => (string) ($quote->client?->contact_name ?? ''),
+            'client_email' => (string) ($quote->client?->email ?? ''),
+            'total' => number_format((float) $quote->total, 2).' '.($quote->currency ?? ''),
+            'currency' => (string) ($quote->currency ?? ''),
+            'valid_until' => (string) ($quote->valid_until?->toDateString() ?? 'N/A'),
+            'issue_date' => (string) ($quote->created_at?->toDateString() ?? 'N/A'),
+            'company_name' => $companyName,
+            'user_name' => (string) ($user?->name ?? ''),
+            'user_email' => (string) ($user?->email ?? ''),
+        ];
+    }
+
+    /**
      * Replace placeholders with actual quote data.
      */
     public static function replacePlaceholders(string $template, array $data): string
     {
         $placeholders = self::getAvailablePlaceholders();
-        
+
         foreach ($placeholders as $key => $description) {
             $value = $data[$key] ?? '';
             $template = str_replace('{' . $key . '}', $value, $template);
         }
 
         return $template;
+    }
+
+    /**
+     * Replace placeholders using quote and context directly.
+     */
+    public static function replacePlaceholdersFromQuote(
+        string $template,
+        Quote $quote,
+        ?Workspace $workspace = null,
+        ?User $user = null,
+        ?string $quoteLink = null
+    ): string {
+        $data = self::buildPlaceholderData($quote, $workspace, $user, $quoteLink);
+        return self::replacePlaceholders($template, $data);
     }
 }
