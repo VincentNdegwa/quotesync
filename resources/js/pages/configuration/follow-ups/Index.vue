@@ -60,6 +60,8 @@ const { enums, getFollowUpChannelIcon, getFollowUpChannelColor } = useEnums();
 const drawerOpen = ref(false);
 const editingSequence = ref<Sequence | null>(null);
 const activeStepIndex = ref<number | null>(null);
+const subjectInputRef = ref<InstanceType<typeof Input> | null>(null);
+const tiptapEditorRef = ref<{ insertText: (text: string) => void } | null>(null);
 
 const emptyStep = (sortOrder = 0): Step => ({
     day_offset: sortOrder === 0 ? 2 : (sortOrder + 1) * 3,
@@ -122,7 +124,27 @@ const removeStep = (index: number): void => {
 const insertPlaceholder = (key: string): void => {
     if (activeStepIndex.value === null) return;
     const token = `{${key}}`;
-    form.steps[activeStepIndex.value].message_template += token;
+
+    // Check if subject input is currently focused (use $el to get native DOM element from component)
+    const inputEl = subjectInputRef.value?.$el as HTMLInputElement | null;
+    if (inputEl && document.activeElement === inputEl) {
+        const start = inputEl.selectionStart ?? 0;
+        const end = inputEl.selectionEnd ?? 0;
+        const currentValue = form.steps[activeStepIndex.value].subject;
+        form.steps[activeStepIndex.value].subject = currentValue.slice(0, start) + token + currentValue.slice(end);
+        setTimeout(() => {
+            inputEl.setSelectionRange(start + token.length, start + token.length);
+            inputEl.focus();
+        }, 0);
+    }
+    // Otherwise insert into Tiptap editor at cursor position
+    else if (tiptapEditorRef.value) {
+        tiptapEditorRef.value.insertText(token);
+    }
+    // Fallback: append to message template
+    else {
+        form.steps[activeStepIndex.value].message_template += token;
+    }
 };
 
 const submit = (): void => {
@@ -532,6 +554,7 @@ const placeholderGroups = computed(() => ({
                                 Email subject
                             </Label>
                             <Input
+                                ref="subjectInputRef"
                                 v-model="form.steps[activeStepIndex].subject"
                                 placeholder="Following up on {quote_title} — {quote_number}"
                                 class="h-9"
@@ -545,6 +568,7 @@ const placeholderGroups = computed(() => ({
                                 Message
                             </Label>
                             <TiptapEditor
+                                ref="tiptapEditorRef"
                                 v-model="form.steps[activeStepIndex].message_template"
                                 placeholder="Write your follow-up message here. Use placeholders below to personalise it."
                             />
@@ -582,6 +606,7 @@ const placeholderGroups = computed(() => ({
                                         type="button"
                                         class="inline-flex items-center rounded-md border bg-background px-2 py-1 font-mono text-[11px] text-foreground transition-colors hover:border-primary hover:bg-primary/5 hover:text-primary"
                                         :title="placeholders[key]"
+                                        @mousedown.prevent
                                         @click="insertPlaceholder(key)"
                                     >
                                         {{ '{' }}{{ key }}{{ '}' }}

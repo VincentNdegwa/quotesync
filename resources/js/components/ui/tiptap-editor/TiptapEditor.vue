@@ -20,6 +20,14 @@ const emit = defineEmits<{
     'update:modelValue': [value: string];
 }>();
 
+defineExpose({
+    insertText: (text: string) => {
+        if (editor.value) {
+            editor.value.chain().focus().insertContent(text).run();
+        }
+    },
+});
+
 const editor = useEditor({
     content: props.modelValue,
     extensions: [
