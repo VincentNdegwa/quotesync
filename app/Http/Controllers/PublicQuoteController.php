@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\QuoteFollowUpStatus;
 use App\Enums\QuoteStatus;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
@@ -150,17 +151,12 @@ class PublicQuoteController extends Controller
 
         $signatureData = substr($validated['signature'], strpos($validated['signature'], ',') + 1);
         $signatureData = base64_decode($signatureData);
-        $fileName = 'signatures/'.$quote->id.'_'.time().'.png';
-        Storage::disk('public')->put($fileName, $signatureData);
-
-        $signerName = $validated['signer_name'] ?? 'Client';
 
         $quote->forceFill([
             'status' => 'accepted',
             'accepted_at' => now(),
-            'signature_path' => $fileName,
+            'signature' => $signatureData,
             'signer_name' => $validated['signer_name'] ?? null,
-            'signer_ip' => $request->ip(),
         ])->save();
 
         QuoteActivity::query()->create([
@@ -168,11 +164,18 @@ class PublicQuoteController extends Controller
             'workspace_id' => $quote->workspace_id,
             'user_id' => null,
             'type' => 'status_changed',
-            'description' => 'Quote was accepted and signed by '.$signerName.'.',
+            'description' => 'Quote was accepted and signed by '.$validated['signer_name'].'.',
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'metadata' => ['status' => 'accepted', 'signer_name' => $validated['signer_name'] ?? null],
         ]);
+
+        $quote->quoteFollowUps()
+            ->where('status', QuoteFollowUpStatus::Pending->value)
+            ->update([
+                'status' => QuoteFollowUpStatus::Cancelled->value,
+                'cancelled_at' => now(),
+            ]);
 
         return back()->with('success', 'Quote has been successfully accepted.');
     }
@@ -207,6 +210,13 @@ class PublicQuoteController extends Controller
             'user_agent' => $request->userAgent(),
             'metadata' => ['status' => 'declined', 'reason' => $validated['decline_reason'] ?? null],
         ]);
+
+        $quote->quoteFollowUps()
+            ->where('status', QuoteFollowUpStatus::Pending->value)
+            ->update([
+                'status' => QuoteFollowUpStatus::Cancelled->value,
+                'cancelled_at' => now(),
+            ]);
 
         return back()->with('success', 'Quote has been declined.');
     }
