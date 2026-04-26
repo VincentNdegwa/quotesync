@@ -4,13 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Jobs\ImportCatalogItemsJob;
 use App\Models\CatalogItem;
+use App\Models\ImportHistory;
 use App\Models\Workspace;
+use App\Services\Import\CatalogImportValidator;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CatalogImportController extends Controller
 {
@@ -19,7 +23,25 @@ class CatalogImportController extends Controller
         return Inertia::render('catalog/Import');
     }
 
-    public function preview(Request $request): Response|RedirectResponse
+    public function template(): StreamedResponse
+    {
+        $headers = ['name', 'sku', 'unit', 'unit_price', 'cost_price'];
+        $rows = [
+            ['Web Design Package', 'WEB-001', 'hr', 100.00, 50.00],
+            ['Logo Design', 'LOGO-001', 'unit', 500.00, 100.00],
+        ];
+
+        return response()->streamDownload(function () use ($headers, $rows) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $headers);
+            foreach ($rows as $row) {
+                fputcsv($file, $row);
+            }
+            fclose($file);
+        }, 'catalog-template.csv');
+    }
+
+    public function preview(Request $request): JsonResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -47,14 +69,29 @@ class CatalogImportController extends Controller
             ->filter(fn (array $row): bool => $row['name'] !== '')
             ->values();
 
+        $validator = new CatalogImportValidator();
+        $validatedRows = $mapped->map(function ($row, $index) use ($validator) {
+            return $validator->validate($row, $index + 2);
+        });
+
+        $errorCount = $validatedRows->where('valid', false)->count();
+
+        $detectedColumns = $header;
+        $requiredColumns = ['name', 'sku', 'unit', 'unit_price', 'cost_price'];
+        $optionalColumns = [];
+
         $token = Str::uuid()->toString();
 
         Cache::put("catalog_import:{$workspace->id}:{$token}", $mapped->all(), now()->addMinutes(30));
 
-        return Inertia::render('catalog/Import', [
-            'previewRows' => $mapped->take(20)->all(),
+        return response()->json([
+            'detectedColumns' => $detectedColumns,
+            'requiredColumns' => $requiredColumns,
+            'optionalColumns' => $optionalColumns,
+            'previewRows' => $validatedRows->take(20)->all(),
             'importToken' => $token,
-            'totalRows' => $mapped->count(),
+            'totalRows' => $validatedRows->count(),
+            'errorCount' => $errorCount,
         ]);
     }
 
@@ -66,9 +103,11 @@ class CatalogImportController extends Controller
 
         $validated = $request->validate([
             'import_token' => ['required', 'string'],
+            'column_mapping' => ['array'],
         ]);
 
         $token = $validated['import_token'];
+        $columnMapping = $validated['column_mapping'] ?? [];
         $rows = collect(Cache::pull("catalog_import:{$workspace->id}:{$token}", []));
 
         if ($rows->isEmpty()) {
@@ -77,8 +116,28 @@ class CatalogImportController extends Controller
             return back();
         }
 
+        if ($columnMapping) {
+            $rows = $rows->map(function ($row) use ($columnMapping) {
+                $mapped = [];
+                foreach ($columnMapping as $targetField => $sourceColumn) {
+                    if ($sourceColumn && $sourceColumn !== '__skip__' && isset($row[$sourceColumn])) {
+                        $mapped[$targetField] = $row[$sourceColumn];
+                    }
+                }
+                return $mapped;
+            });
+        }
+
         if ($rows->count() > 100) {
-            ImportCatalogItemsJob::dispatch($workspace->id, $request->user()?->id, $rows->all());
+            $importHistory = ImportHistory::create([
+                'workspace_id' => $workspace->id,
+                'user_id' => $request->user()?->id,
+                'type' => 'catalog',
+                'status' => 'pending',
+                'total_rows' => $rows->count(),
+            ]);
+
+            ImportCatalogItemsJob::dispatch($workspace->id, $request->user()?->id, $rows->all(), $importHistory->id);
 
             Inertia::flash('toast', ['type' => 'success', 'message' => __('Catalog import queued.')]);
 
@@ -89,14 +148,13 @@ class CatalogImportController extends Controller
             ->where('workspace_id', $workspace->id)
             ->whereIn('sku', $rows->pluck('sku')->filter()->all())
             ->pluck('sku')
-            ->map(fn (string $sku): string => Str::lower($sku))
             ->all();
 
         $imported = 0;
         $skipped = 0;
 
         foreach ($rows as $row) {
-            $sku = Str::lower((string) ($row['sku'] ?? ''));
+            $sku = trim((string) ($row['sku'] ?? ''));
 
             if ($sku !== '' && in_array($sku, $existingSkus, true)) {
                 $skipped++;

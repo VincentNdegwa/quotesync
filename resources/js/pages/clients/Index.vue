@@ -194,7 +194,19 @@ const exportSelected = (): void => {
         return;
     }
 
-    window.location.href = `/clients/export/csv?ids=${selectedIds.value.join(',')}`;
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/clients/export/selected';
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'ids';
+    input.value = JSON.stringify(selectedIds.value);
+
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
 };
 </script>
 

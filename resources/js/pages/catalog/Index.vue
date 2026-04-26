@@ -176,6 +176,26 @@ const runBulkAction = (action: 'activate' | 'deactivate' | 'delete' | 'change_ca
     });
 };
 
+const exportSelected = (): void => {
+    if (selectedIds.value.length === 0) {
+        return;
+    }
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/catalog/export/selected';
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'ids';
+    input.value = JSON.stringify(selectedIds.value);
+
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+};
+
 const profitPerUnit = (item: CatalogItemRecord): number => Number(item.unit_price) - Number(item.cost_price);
 const marginPercent = (item: CatalogItemRecord): number => {
     const unitPrice = Number(item.unit_price);
@@ -238,10 +258,10 @@ const marginPercent = (item: CatalogItemRecord): number => {
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
+            <Button v-if="selectedIds.length > 0" variant="outline" @click="exportSelected">Export selected</Button>
             <Button v-if="selectedIds.length > 0" variant="outline" @click="runBulkAction('activate')">Activate</Button>
             <Button v-if="selectedIds.length > 0" variant="outline" @click="runBulkAction('deactivate')">Deactivate</Button>
             <Button v-if="selectedIds.length > 0" variant="destructive" @click="runBulkAction('delete')">Delete</Button>
-
         </div>
 
         <CatalogDataTable

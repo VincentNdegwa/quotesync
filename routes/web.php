@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\CatalogCategoryController;
+use App\Http\Controllers\CatalogExportController;
 use App\Http\Controllers\CatalogImportController;
 use App\Http\Controllers\CatalogItemController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ClientExportController;
 use App\Http\Controllers\ClientImportController;
 use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\ConfigurationTagController;
@@ -64,9 +66,18 @@ Route::middleware(['auth'])->group(function () {
         ->middleware(['verified', EnsureWorkspaceSettingsOnboarded::class])
         ->name('teams.index');
 
+    Route::get('clients/import/template', [ClientImportController::class, 'template'])
+        ->middleware(['verified', EnsureWorkspaceSettingsOnboarded::class])
+        ->name('clients.import.template');
+    Route::get('catalog/import/template', [CatalogImportController::class, 'template'])
+        ->middleware(['verified', EnsureWorkspaceSettingsOnboarded::class])
+        ->name('catalog.import.template');
+
     Route::middleware(['verified', EnsureWorkspaceSettingsOnboarded::class])->group(function () {
         Route::post('clients/bulk-delete', [ClientController::class, 'bulkDestroy'])->name('clients.bulk-delete');
         Route::get('clients/export/csv', [ClientController::class, 'exportCsv'])->name('clients.export.csv');
+        Route::get('clients/export', [ClientExportController::class, 'export'])->name('clients.export');
+        Route::post('clients/export/selected', [ClientExportController::class, 'exportSelected'])->name('clients.export.selected');
 
         Route::get('clients/import', [ClientImportController::class, 'create'])->name('clients.import.create');
         Route::post('clients/import/preview', [ClientImportController::class, 'preview'])->name('clients.import.preview');
@@ -100,8 +111,11 @@ Route::get('quote-templates/{quote_template}/layout', [QuoteTemplateController::
         Route::resource('invoices', InvoiceController::class);
 
         Route::get('catalog/import', [CatalogImportController::class, 'create'])->name('catalog.import.create');
+        Route::get('catalog/import/template', [CatalogImportController::class, 'template'])->name('catalog.import.template');
         Route::post('catalog/import/preview', [CatalogImportController::class, 'preview'])->name('catalog.import.preview');
         Route::post('catalog/import/confirm', [CatalogImportController::class, 'store'])->name('catalog.import.store');
+        Route::get('catalog/export', [CatalogExportController::class, 'export'])->name('catalog.export');
+        Route::post('catalog/export/selected', [CatalogExportController::class, 'exportSelected'])->name('catalog.export.selected');
         Route::resource('catalog', CatalogItemController::class)->except(['create', 'edit']);
 
         Route::get('configuration', [ConfigurationController::class, 'index'])->name('configuration.index');
