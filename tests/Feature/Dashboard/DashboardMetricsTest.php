@@ -81,18 +81,27 @@ test('dashboard renders workspace-scoped quote metrics and activity', function (
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard')
-            ->where('metrics.total_quotes', 4)
-            ->where('metrics.draft_quotes', 1)
-            ->where('metrics.sent_quotes', 1)
-            ->where('metrics.accepted_quotes', 1)
-            ->where('metrics.declined_quotes', 1)
-            ->where('metrics.accepted_revenue', 300)
-            ->where('metrics.open_pipeline', 300)
-            ->has('trend', 30)
-            ->has('recentActivity', 1)
-            ->where('recentActivity.0.description', 'Draft quote updated.')
-            ->has('topClients', 1)
-            ->where('topClients.0.client_name', $client->company_name),
+            ->has('stats', fn (Assert $stats) => $stats
+                ->where('pipeline_value', 200)
+                ->where('pipeline_trend', 0)
+                ->where('won_this_month', 300)
+                ->where('won_trend', 0)
+                ->where('win_rate', 100)
+                ->where('win_rate_trend', 0)
+                ->where('quotes_expiring', 0)
+            )
+            ->has('revenue_trend', 6)
+            ->where('quote_activity.sent', 1)
+            ->where('quote_activity.accepted', 1)
+            ->where('quote_activity.declined', 1)
+            ->where('quote_activity.draft', 1)
+            ->has('needs_attention.hot_leads', 0)
+            ->has('needs_attention.follow_up_due', 0)
+            ->has('needs_attention.expiring_soon', 0)
+            ->has('recent_activity', 1)
+            ->where('recent_activity.0.description', 'Draft quote updated.')
+            ->has('team_performance', 0)
+            ->whereType('generated_at', 'string'),
         );
 });
 

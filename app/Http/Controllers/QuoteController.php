@@ -189,9 +189,36 @@ class QuoteController extends Controller
 
         abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
 
+        $quote->loadMissing([
+            'client:id,company_name,email',
+            'assignee:id,name',
+            'trackingEvents',
+            'quoteFollowUps.step',
+        ]);
+
         return Inertia::render('quotes/Analytics', [
-            'quote' => $quote->only('id', 'number', 'title', 'status'),
+            'quote' => [
+                'id' => $quote->id,
+                'quote_uuid' => $quote->quote_uuid,
+                'number' => $quote->number,
+                'title' => $quote->title,
+                'status' => $quote->status instanceof QuoteStatus ? $quote->status->value : (string) $quote->status,
+                'total' => (float) $quote->total,
+                'currency' => $quote->currency,
+                'valid_until' => $quote->valid_until?->toIso8601String(),
+                'created_at' => $quote->created_at?->toIso8601String(),
+                'client' => $quote->client ? [
+                    'id' => $quote->client->id,
+                    'company_name' => $quote->client->company_name,
+                    'email' => $quote->client->email,
+                ] : null,
+                'assignee' => $quote->assignee ? [
+                    'id' => $quote->assignee->id,
+                    'name' => $quote->assignee->name,
+                ] : null,
+            ],
             'analytics' => $analyticsService->getAnalytics($quote),
+            'quoteStatuses' => QuoteStatus::all(),
         ]);
     }
 

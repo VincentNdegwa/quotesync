@@ -1,350 +1,545 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
-import { computed } from 'vue';
-import { Badge } from '@/components/ui/badge';
-import { dashboard } from '@/routes';
-import AnalyticsStatsCard from '@/components/analytics/AnalyticsStatsCard.vue';
-import { VisAxis, VisLine, VisXYContainer, VisGroupedBar } from '@unovis/vue';
+import { Head, Link } from '@inertiajs/vue3';
+import { computed, type Component } from 'vue';
+import { CurveType, Orientation } from '@unovis/ts';
+import { VisArea, VisAxis, VisGroupedBar, VisLine, VisXYContainer } from '@unovis/vue';
 import type { ChartConfig } from '@/components/ui/chart';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   ChartContainer,
   ChartCrosshair,
+  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
   componentToString,
 } from '@/components/ui/chart';
+import { Button } from '@/components/ui/button';
+import { useFormat } from '@/composables/useFormat';
+import {
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Eye,
+  Flame,
+  Mail,
+  Send,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-vue-next';
+import { dashboard } from '@/routes';
 
 const props = defineProps<{
-    metrics: {
-        total_quotes: number;
-        draft_quotes: number;
-        sent_quotes: number;
-        accepted_quotes: number;
-        declined_quotes: number;
-        accepted_revenue: number;
-        open_pipeline: number;
-        average_quote: number;
-    };
-    trend: Array<{
-        date: string;
-        quotes_count: number;
-        total_amount: number;
+  stats: {
+    pipeline_value: number;
+    pipeline_trend: number;
+    won_this_month: number;
+    won_trend: number;
+    win_rate: number;
+    win_rate_trend: number;
+    quotes_expiring: number;
+  };
+  revenue_trend: Array<{
+    month: string;
+    won: number;
+    pipeline: number;
+  }>;
+  quote_activity: Record<string, number>;
+  needs_attention: {
+    hot_leads: Array<{
+      id: number;
+      number: string | null;
+      title: string;
+      client_name: string;
+      view_count: number;
+      last_viewed_at: string | null;
     }>;
-    recentActivity: Array<{
-        id: number;
-        type: string;
-        description: string;
-        created_at: string | null;
-        quote: { id: number; number: string | null; title: string } | null;
-        user: { id: number; name: string } | null;
+    follow_up_due: Array<{
+      id: number;
+      number: string | null;
+      title: string;
+      client_name: string;
+      sent_at: string | null;
+      days_since_sent: number;
     }>;
-    topClients: Array<{
-        client_id: number;
-        client_name: string;
-        quotes_count: number;
-        quoted_amount: number;
-        accepted_amount: number;
+    expiring_soon: Array<{
+      id: number;
+      number: string | null;
+      title: string;
+      client_name: string;
+      valid_until: string | null;
+      days_until_expiry: number;
     }>;
-    hotLeads?: Array<{
-        id: number;
-        number: string | null;
-        title: string;
-        client_name: string;
-        total: number;
-        win_probability: number;
-        status: string;
-        sent_at: string | null;
-    }>;
-    generatedAt: string;
+  };
+  recent_activity: Array<{
+    id: number;
+    type: string;
+    description: string;
+    created_at: string | null;
+    quote: { id: number; number: string | null; title: string } | null;
+    user: { id: number; name: string } | null;
+  }>;
+  team_performance: Array<{
+    user_id: number;
+    user_name: string;
+    sent_count: number;
+    won_count: number;
+    win_rate: number;
+    total_value: number;
+  }> | null;
+  generated_at: string;
 }>();
 
-const currencyFormatter = new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 2,
-});
+const { formatCurrency, formatRelativeTime } = useFormat();
 
-const acceptanceRate = computed<number>(() => {
-    const denominator = props.metrics.accepted_quotes + props.metrics.declined_quotes;
+const formatNumber = (value: number): string => new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(value);
+const formatPercent = (value: number): string => `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(value)}%`;
+const formatTrendValue = (value: number): string => new Intl.NumberFormat(undefined, { maximumFractionDigits: Math.abs(value) < 10 ? 1 : 0 }).format(value);
 
-    if (denominator === 0) {
-        return 0;
-    }
+type StatCard = {
+  key: string;
+  title: string;
+  value: string;
+  trend: number | null;
+  trendText: string;
+  note?: string;
+};
 
-    return Math.round((props.metrics.accepted_quotes / denominator) * 1000) / 10;
-});
+const statCards = computed<StatCard[]>(() => [
+  {
+    key: 'pipeline',
+    title: 'Pipeline Value',
+    value: formatCurrency(props.stats.pipeline_value),
+    trend: props.stats.pipeline_trend ?? 0,
+    trendText: 'vs last month',
+  },
+  {
+    key: 'won',
+    title: 'Won This Month',
+    value: formatCurrency(props.stats.won_this_month),
+    trend: props.stats.won_trend ?? 0,
+    trendText: 'vs last month',
+  },
+  {
+    key: 'win_rate',
+    title: 'Win Rate',
+    value: formatPercent(props.stats.win_rate),
+    trend: props.stats.win_rate_trend ?? 0,
+    trendText: 'vs last month',
+  },
+  {
+    key: 'expiring',
+    title: 'Quotes Expiring',
+    value: formatNumber(props.stats.quotes_expiring),
+    trend: null,
+    trendText: '',
+    note: 'in next 7 days',
+  },
+]);
 
-const weeklyTrend = computed(() => props.trend.slice(-7));
+const revenueChartData = computed(() => props.revenue_trend);
+type RevenueData = typeof revenueChartData.value[number];
 
-// Chart data for 7-day quote momentum
-const momentumChartData = computed(() => {
-  return weeklyTrend.value.map(item => ({
-    date: item.date,
-    quotes: item.quotes_count,
-    amount: item.total_amount,
+const revenueChartConfig: ChartConfig = {
+  won: {
+    label: 'Won Revenue',
+    color: 'var(--chart-1)',
+    icon: TrendingUp,
+  },
+  pipeline: {
+    label: 'Pipeline (Unresolved)',
+    color: 'var(--chart-2)',
+    icon: TrendingDown,
+  },
+};
+
+const statusLabels: Record<string, string> = {
+  sent: 'Sent',
+  viewed: 'Viewed',
+  accepted: 'Won',
+  declined: 'Lost',
+  expired: 'Expired',
+};
+
+const statusPalette: Record<string, string> = {
+  sent: 'var(--chart-1)',
+  viewed: 'var(--chart-2)',
+  accepted: 'var(--chart-3)',
+  declined: 'var(--chart-4)',
+  expired: 'var(--chart-5)',
+};
+
+const toStatusLabel = (status: string): string => {
+  if (statusLabels[status]) {
+    return statusLabels[status];
+  }
+  return status
+    .split('_')
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ');
+};
+
+type QuoteActivityDatum = {
+  status: string;
+  label: string;
+  count: number;
+  color: string;
+};
+
+const quoteActivityData = computed<QuoteActivityDatum[]>(() => {
+  const entries = Object.entries(props.quote_activity ?? {}).map(([status, count]) => ({
+    status,
+    label: toStatusLabel(status),
+    count: Number(count),
+    color: statusPalette[status] ?? 'var(--chart-6)',
   }));
+
+  return entries.sort((a, b) => b.count - a.count);
 });
 
-type MomentumData = typeof momentumChartData.value[number];
-
-const momentumChartConfig: ChartConfig = {
-  quotes: {
+const quoteActivityChartConfig: ChartConfig = {
+  count: {
     label: 'Quotes',
     color: 'var(--chart-1)',
   },
-  amount: {
-    label: 'Amount',
-    color: 'var(--chart-2)',
-  },
 };
 
-// Chart data for top clients
-const topClientsChartData = computed(() => {
-  return props.topClients.map(client => ({
-    name: client.client_name,
-    quoted: client.quoted_amount,
-    won: client.accepted_amount,
-  }));
-});
+const totalQuoteActivityCount = computed(() =>
+  quoteActivityData.value.reduce((total, item) => total + item.count, 0),
+);
 
-type ClientData = typeof topClientsChartData.value[number];
+const topQuoteActivity = computed(() => quoteActivityData.value[0] ?? null);
 
-const clientsChartConfig: ChartConfig = {
-  quoted: {
-    label: 'Quoted',
-    color: 'var(--chart-1)',
-  },
-  won: {
-    label: 'Won',
-    color: 'var(--chart-2)',
-  },
+const activityIconMap: Record<string, Component> = {
+  view: Eye,
+  accepted: CheckCircle,
+  sent: Send,
+  follow_up: Mail,
 };
 
-const formatMoney = (value: number): string => currencyFormatter.format(value);
-
-const formatTimestamp = (value: string | null): string => {
-    if (value === null) {
-        return 'Unknown';
-    }
-
-    const parsed = new Date(value);
-
-    if (Number.isNaN(parsed.getTime())) {
-        return value;
-    }
-
-    return parsed.toLocaleString();
+type TimelineItem = {
+  id: number;
+  description: string;
+  meta: string | null;
+  relativeTime: string;
+  icon: Component;
 };
 
-const statusTone = (value: number): 'outline' | 'secondary' | 'default' => {
-    if (value <= 0) {
-        return 'outline';
+const timelineEvents = computed<TimelineItem[]>(() =>
+  props.recent_activity.slice(0, 6).map((activity) => {
+    const icon = activityIconMap[activity.type] ?? Mail;
+    const parts: string[] = [];
+
+    if (activity.user?.name) {
+      parts.push(activity.user.name);
     }
 
-    if (value < 3) {
-        return 'secondary';
+    if (activity.quote) {
+      const reference = activity.quote.number || `#${activity.quote.id}`;
+      parts.push(`${reference} ${activity.quote.title}`);
     }
 
-    return 'default';
-};
+    return {
+      id: activity.id,
+      description: activity.description,
+      meta: parts.length ? parts.join(' • ') : null,
+      relativeTime: formatRelativeTime(activity.created_at),
+      icon,
+    };
+  }),
+);
+
+const generatedAtRelative = computed(() => formatRelativeTime(props.generated_at));
+
+const teamPerformance = computed(() => props.team_performance ?? []);
 
 defineOptions({
-    layout: () => ({
-        breadcrumbs: [
-            {
-                title: 'Dashboard',
-                href: dashboard(),
-            },
-        ],
-    }),
+  layout: () => ({
+    breadcrumbs: [
+      {
+        title: 'Dashboard',
+        href: dashboard(),
+      },
+    ],
+  }),
 });
 </script>
 
 <template>
-    <Head title="Dashboard" />
+  <Head title="Dashboard" />
 
-    <div class="space-y-4">
-        <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <AnalyticsStatsCard
-                title="Total Quotes"
-                :value="metrics.total_quotes"
-                format="number"
-            />
-            <AnalyticsStatsCard
-                title="Acceptance Rate"
-                :value="acceptanceRate"
-                format="percent"
-            />
-            <AnalyticsStatsCard
-                title="Open Pipeline"
-                :value="metrics.open_pipeline"
-                format="currency"
-            />
-            <AnalyticsStatsCard
-                title="Won Revenue"
-                :value="metrics.accepted_revenue"
-                format="currency"
-            />
-        </section>
-
-        <section class="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-            <div class="rounded-xl border border-sidebar-border/70 p-4">
-                <div class="mb-3 flex items-center justify-between">
-                    <h2 class="text-sm font-semibold">7-day quote momentum</h2>
-                    <span class="text-xs text-muted-foreground">Last refreshed {{ formatTimestamp(generatedAt) }}</span>
-                </div>
-
-                <div v-if="weeklyTrend.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                    No trend data yet.
-                </div>
-                <ChartContainer v-else :config="momentumChartConfig" class="aspect-auto h-[250px] w-full">
-                    <VisXYContainer :data="momentumChartData" :margin="{ left: -24 }">
-                        <VisLine
-                            :x="(d: MomentumData) => d.date"
-                            :y="(d: MomentumData) => d.quotes"
-                            :color="momentumChartConfig.quotes.color"
-                        />
-                        <VisAxis
-                            type="x"
-                            :x="(d: MomentumData) => d.date"
-                            :tick-line="false"
-                            :domain-line="false"
-                            :grid-line="false"
-                            :num-ticks="7"
-                        />
-                        <VisAxis
-                            type="y"
-                            :num-ticks="5"
-                            :tick-line="false"
-                            :domain-line="false"
-                        />
-                        <ChartTooltip />
-                        <ChartCrosshair
-                            :template="componentToString(momentumChartConfig, ChartTooltipContent, {
-                                labelKey: 'date',
-                                nameKey: 'quotes',
-                                labelFormatter: (d) => d,
-                            })"
-                            :color="momentumChartConfig.quotes.color"
-                        />
-                    </VisXYContainer>
-                </ChartContainer>
-            </div>
-
-            <div class="rounded-xl border border-sidebar-border/70 p-4">
-                <h2 class="mb-3 text-sm font-semibold">Top clients by quoted value</h2>
-
-                <div v-if="topClients.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                    No client quote data yet.
-                </div>
-                <ChartContainer v-else :config="clientsChartConfig" class="aspect-auto h-[250px] w-full">
-                    <VisXYContainer :data="topClientsChartData" :margin="{ left: -24 }">
-                        <VisGroupedBar
-                            :x="(d: ClientData) => d.name"
-                            :y="[(d: ClientData) => d.quoted / 1000, (d: ClientData) => d.won / 1000]"
-                            :color="[clientsChartConfig.quoted.color, clientsChartConfig.won.color]"
-                            :bar-padding="0.1"
-                        />
-                        <VisAxis
-                            type="x"
-                            :x="(d: ClientData) => d.name"
-                            :tick-line="false"
-                            :domain-line="false"
-                            :grid-line="false"
-                        />
-                        <VisAxis
-                            type="y"
-                            :num-ticks="5"
-                            :tick-line="false"
-                            :domain-line="false"
-                            :tick-format="(d: number) => `$${d}k`"
-                        />
-                        <ChartTooltip />
-                        <ChartCrosshair
-                            :template="componentToString(clientsChartConfig, ChartTooltipContent, {
-                                labelKey: 'name',
-                            })"
-                            :color="[clientsChartConfig.quoted.color, clientsChartConfig.won.color]"
-                        />
-                    </VisXYContainer>
-                </ChartContainer>
-            </div>
-        </section>
-
-        <section class="rounded-xl border border-sidebar-border/70 p-4">
-            <h2 class="mb-3 text-sm font-semibold">Hot Leads (Sorted by Win Probability)</h2>
-
-            <div v-if="!hotLeads || hotLeads.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                No hot leads yet. Send quotes to see win probability predictions.
-            </div>
-
-            <div v-else class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                        <tr>
-                            <th class="px-3 py-2 text-left">Quote</th>
-                            <th class="px-3 py-2 text-left">Client</th>
-                            <th class="px-3 py-2 text-right">Value</th>
-                            <th class="px-3 py-2 text-center">Win Probability</th>
-                            <th class="px-3 py-2 text-left">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="lead in hotLeads" :key="lead.id" class="border-t">
-                            <td class="px-3 py-2">
-                                <p class="font-medium">{{ lead.title }}</p>
-                                <p class="text-xs text-muted-foreground">{{ lead.number || '#' + lead.id }}</p>
-                            </td>
-                            <td class="px-3 py-2">{{ lead.client_name }}</td>
-                            <td class="px-3 py-2 text-right font-medium">{{ formatMoney(lead.total) }}</td>
-                            <td class="px-3 py-2">
-                                <div class="flex items-center justify-center gap-2">
-                                    <div class="w-16 h-2 rounded-full bg-gray-200 overflow-hidden">
-                                        <div
-                                            class="h-full rounded-full"
-                                            :style="{ 
-                                                width: `${lead.win_probability}%`, 
-                                                backgroundColor: lead.win_probability >= 70 ? '#22c55e' : lead.win_probability >= 40 ? '#eab308' : '#ef4444' 
-                                            }"
-                                        />
-                                    </div>
-                                    <span class="text-xs font-bold tabular-nums" :class="lead.win_probability >= 70 ? 'text-green-600' : lead.win_probability >= 40 ? 'text-yellow-600' : 'text-red-600'">
-                                        {{ Math.round(lead.win_probability) }}%
-                                    </span>
-                                </div>
-                            </td>
-                            <td class="px-3 py-2">
-                                <Badge variant="outline">{{ lead.status }}</Badge>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <section class="rounded-xl border border-sidebar-border/70 p-4">
-            <h2 class="mb-3 text-sm font-semibold">Recent quote activity</h2>
-
-            <div v-if="recentActivity.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                Activity will appear here as your team sends and updates quotes.
-            </div>
-
-            <ul v-else class="space-y-3">
-                <li
-                    v-for="activity in recentActivity"
-                    :key="activity.id"
-                    class="flex items-start justify-between gap-3 rounded-lg border p-3"
-                >
-                    <div>
-                        <p class="text-sm font-medium">{{ activity.description }}</p>
-                        <p class="mt-1 text-xs text-muted-foreground">
-                            {{ activity.user?.name || 'System' }}
-                            <span v-if="activity.quote"> • {{ activity.quote.number || '#' + activity.quote.id }} {{ activity.quote.title }}</span>
-                        </p>
-                    </div>
-                    <span class="whitespace-nowrap text-xs text-muted-foreground">{{ formatTimestamp(activity.created_at) }}</span>
-                </li>
-            </ul>
-        </section>
+  <div class="space-y-6">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h1 class="text-2xl font-semibold tracking-tight">Dashboard</h1>
+        <p class="text-sm text-muted-foreground">Updated {{ generatedAtRelative }}</p>
+      </div>
+      <Link href="/analytics" class="text-sm font-medium text-primary hover:underline">Open full analytics →</Link>
     </div>
+
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <Card v-for="stat in statCards" :key="stat.key" class="border border-sidebar-border/70">
+        <CardHeader class="space-y-2 pb-2">
+          <CardDescription class="text-xs uppercase tracking-wide text-muted-foreground">{{ stat.title }}</CardDescription>
+          <div class="flex items-end justify-between gap-4">
+            <CardTitle class="text-3xl font-semibold tracking-tight">{{ stat.value }}</CardTitle>
+            <div v-if="stat.trend !== null" class="flex items-center gap-1 text-xs">
+              <span :class="stat.trend >= 0 ? 'text-emerald-600' : 'text-rose-600'" class="flex items-center gap-1 font-semibold">
+                <span>{{ stat.trend >= 0 ? '↑' : '↓' }}</span>
+                <span>{{ formatTrendValue(stat.trend) }}%</span>
+              </span>
+            </div>
+          </div>
+        </CardHeader>
+        <CardFooter v-if="stat.trend !== null || stat.note" class="pt-0">
+          <div class="flex items-center gap-2 text-xs text-muted-foreground">
+            <span v-if="stat.trend !== null">{{ stat.trendText }}</span>
+            <span v-if="stat.note">{{ stat.note }}</span>
+          </div>
+        </CardFooter>
+      </Card>
+    </section>
+
+    <section class="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
+      <Card class="h-full border border-sidebar-border/70">
+        <CardHeader class="pb-0">
+          <div class="flex items-start justify-between">
+            <div>
+              <CardTitle class="text-base font-semibold">Revenue (last 6 months)</CardTitle>
+              <CardDescription>Won revenue vs live pipeline momentum</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent class="h-[320px]">
+          <ChartContainer :config="revenueChartConfig" cursor class="h-full">
+            <VisXYContainer :data="revenueChartData" :margin="{ left: 28, right: 12, top: 12, bottom: 32 }">
+              <VisArea
+                :x="(d: RevenueData) => d.month"
+                :y="(d: RevenueData) => d.pipeline"
+                :color="revenueChartConfig.pipeline.color"
+                :opacity="0.25"
+                :curve-type="CurveType.MonotoneX"
+              />
+              <VisLine
+                :x="(d: RevenueData) => d.month"
+                :y="(d: RevenueData) => d.won"
+                :color="revenueChartConfig.won.color"
+                :curve-type="CurveType.MonotoneX"
+                :line-width="2"
+              />
+              <VisAxis
+                type="x"
+                :x="(d: RevenueData) => d.month"
+                :tick-line="false"
+                :domain-line="false"
+                :grid-line="false"
+                :num-ticks="6"
+              />
+              <VisAxis
+                type="y"
+                :num-ticks="4"
+                :tick-line="false"
+                :domain-line="false"
+                :tick-format="(d: number) => formatCurrency(d)"
+              />
+              <ChartTooltip />
+              <ChartCrosshair
+                :template="componentToString(revenueChartConfig, ChartTooltipContent, { labelKey: 'month' })"
+                :color="[revenueChartConfig.won.color, revenueChartConfig.pipeline.color]"
+              />
+            </VisXYContainer>
+            <ChartLegendContent class="mt-4 justify-start" />
+          </ChartContainer>
+        </CardContent>
+        <CardFooter class="justify-between text-xs text-muted-foreground">
+          <span>Won revenue vs unresolved pipeline</span>
+          <span>Last six months</span>
+        </CardFooter>
+      </Card>
+
+      <Card class="h-full border border-sidebar-border/70">
+        <CardHeader class="pb-0">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <CardTitle class="text-base font-semibold">Quote Activity</CardTitle>
+              <CardDescription>This month by status</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent class="h-[320px]">
+          <div v-if="quoteActivityData.length === 0" class="flex h-full items-center justify-center rounded-xl border border-dashed text-sm text-muted-foreground">
+            No quote activity yet.
+          </div>
+          <ChartContainer v-else :config="quoteActivityChartConfig" cursor class="h-full">
+            <VisXYContainer :data="quoteActivityData" :margin="{ top: 12, bottom: 12, left: 12, right: 12 }">
+              <VisGroupedBar
+                :x="(d: QuoteActivityDatum) => d.count"
+                :y="(d: QuoteActivityDatum) => d.label"
+                :color="quoteActivityChartConfig.count.color"
+                :rounded-corners="5"
+                :orientation="Orientation.Horizontal"
+                bar-padding="0.3"
+              />
+              <VisAxis
+                type="y"
+                :tick-line="false"
+                :domain-line="false"
+                :grid-line="false"
+              />
+              <VisAxis
+                type="x"
+                :num-ticks="4"
+                :tick-line="false"
+                :domain-line="false"
+              />
+              <ChartTooltip />
+              <ChartCrosshair
+                :template="componentToString(quoteActivityChartConfig, ChartTooltipContent, { labelKey: 'label', indicator: 'line' })"
+                :color="[quoteActivityChartConfig.count.color]"
+              />
+            </VisXYContainer>
+          </ChartContainer>
+        </CardContent>
+        <CardFooter class="flex items-center justify-between text-xs text-muted-foreground">
+          <span>Ranked by volume</span>
+          <span>{{ totalQuoteActivityCount }} total</span>
+        </CardFooter>
+      </Card>
+    </section>
+
+    <section class="grid gap-4 lg:grid-cols-3">
+      <Card class="border border-sidebar-border/70">
+        <CardHeader class="flex flex-row items-center gap-2 pb-3">
+          <Flame class="h-4 w-4 text-orange-500" />
+          <div>
+            <CardTitle class="text-base font-semibold">Hot Leads</CardTitle>
+            <CardDescription>Viewed 3+ times and still open</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div v-if="needs_attention.hot_leads.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+            No hot leads right now.
+          </div>
+          <div v-else class="space-y-4">
+            <div v-for="lead in needs_attention.hot_leads" :key="lead.id" class="rounded-lg border p-3">
+              <p class="text-sm font-semibold">{{ lead.client_name }}</p>
+              <p class="text-xs text-muted-foreground">{{ lead.number || '#' + lead.id }}</p>
+              <p class="mt-2 text-xs text-muted-foreground">Opened {{ lead.view_count }}× • {{ formatRelativeTime(lead.last_viewed_at) }}</p>
+              <Button variant="ghost" size="sm" class="mt-3 h-8 text-xs">Follow up</Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card class="border border-sidebar-border/70">
+        <CardHeader class="flex flex-row items-center gap-2 pb-3">
+          <Clock class="h-4 w-4 text-blue-500" />
+          <div>
+            <CardTitle class="text-base font-semibold">Follow-up Due</CardTitle>
+            <CardDescription>Sent 4+ days ago with no response</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div v-if="needs_attention.follow_up_due.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+            Nothing to follow up.
+          </div>
+          <div v-else class="space-y-4">
+            <div v-for="item in needs_attention.follow_up_due" :key="item.id" class="rounded-lg border p-3">
+              <p class="text-sm font-semibold">{{ item.client_name }}</p>
+              <p class="text-xs text-muted-foreground">{{ item.number || '#' + item.id }}</p>
+              <p class="mt-2 text-xs text-muted-foreground">No response in {{ item.days_since_sent }} days</p>
+              <Button variant="ghost" size="sm" class="mt-3 h-8 text-xs">Send reminder</Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card class="border border-sidebar-border/70">
+        <CardHeader class="flex flex-row items-center gap-2 pb-3">
+          <AlertTriangle class="h-4 w-4 text-red-500" />
+          <div>
+            <CardTitle class="text-base font-semibold">Expiring Soon</CardTitle>
+            <CardDescription>Valid for less than seven days</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div v-if="needs_attention.expiring_soon.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+            No expiring quotes.
+          </div>
+          <div v-else class="space-y-4">
+            <div v-for="item in needs_attention.expiring_soon" :key="item.id" class="rounded-lg border p-3">
+              <p class="text-sm font-semibold">{{ item.client_name }}</p>
+              <p class="text-xs text-muted-foreground">{{ item.number || '#' + item.id }}</p>
+              <p class="mt-2 text-xs text-muted-foreground">Expires in {{ item.days_until_expiry }} days</p>
+              <Button variant="ghost" size="sm" class="mt-3 h-8 text-xs">Resend quote</Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </section>
+
+    <section class="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+      <Card class="border border-sidebar-border/70">
+        <CardHeader class="pb-3">
+          <CardTitle class="text-base font-semibold">Recent Activity</CardTitle>
+          <CardDescription>Latest six events across your workspace</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div v-if="timelineEvents.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+            Activity will appear as your team works quotes.
+          </div>
+          <ul v-else class="space-y-4">
+            <li v-for="event in timelineEvents" :key="event.id" class="relative pl-10">
+              <div class="absolute left-0 top-2 flex h-full w-5 justify-center">
+                <div class="h-full w-px bg-border"></div>
+              </div>
+              <div class="absolute -left-1 top-1 flex h-6 w-6 items-center justify-center rounded-full border bg-background">
+                <component :is="event.icon" class="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
+              <p class="text-sm font-medium">{{ event.description }}</p>
+              <p v-if="event.meta" class="text-xs text-muted-foreground">{{ event.meta }}</p>
+              <p class="text-xs text-muted-foreground">{{ event.relativeTime }}</p>
+            </li>
+          </ul>
+        </CardContent>
+        <CardFooter class="justify-between text-xs text-muted-foreground">
+          <span>Showing last 6 updates</span>
+          <Link href="/activity" class="text-primary hover:underline">See all activity</Link>
+        </CardFooter>
+      </Card>
+
+      <Card v-if="team_performance" class="border border-sidebar-border/70">
+        <CardHeader class="pb-3">
+          <CardTitle class="text-base font-semibold">Team Performance</CardTitle>
+          <CardDescription>This month’s quote velocity</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div v-if="teamPerformance.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+            No team performance data.
+          </div>
+          <div v-else class="space-y-4">
+            <div v-for="member in teamPerformance" :key="member.user_id" class="space-y-2">
+              <div class="flex items-center justify-between text-sm">
+                <span class="font-medium">{{ member.user_name }}</span>
+                <div class="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span>{{ member.sent_count }} sent</span>
+                  <span>{{ member.won_count }} won</span>
+                  <span :class="member.win_rate >= 50 ? 'text-emerald-600' : member.win_rate >= 30 ? 'text-amber-500' : 'text-rose-500'">{{ member.win_rate.toFixed(0) }}%</span>
+                </div>
+              </div>
+              <div class="h-2 w-full rounded-full bg-muted">
+                <div class="h-2 rounded-full bg-primary" :style="{ width: `${Math.min(member.win_rate, 100)}%` }" />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </section>
+  </div>
 </template>

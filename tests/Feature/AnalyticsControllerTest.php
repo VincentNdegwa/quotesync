@@ -18,37 +18,43 @@ beforeEach(function () {
     ]);
 });
 
-test('analytics page renders with correct stats and chart data', function () {
-    // Create quotes with different statuses within the date range
-    // Use Carbon to ensure dates are correct
-    $oneMonthAgo = now()->subMonth();
-    
+test('analytics page renders the strategic reporting payload', function () {
     Quote::query()->create([
         'workspace_id' => $this->workspace->id,
         'client_id' => $this->client->id,
         'title' => 'Won Quote 1',
-        'status' => QuoteStatus::Won->value,
+        'status' => QuoteStatus::Accepted->value,
         'total' => 1000,
-        'created_at' => $oneMonthAgo,
+        'subtotal' => 1000,
+        'discount_amount' => 0,
+        'created_at' => now()->subDays(20),
+        'sent_at' => now()->subDays(10),
+        'accepted_at' => now()->subDays(5),
     ]);
 
     Quote::query()->create([
         'workspace_id' => $this->workspace->id,
         'client_id' => $this->client->id,
         'title' => 'Won Quote 2',
-        'status' => QuoteStatus::Won->value,
-        'total' => 2000,
-        'created_at' => $oneMonthAgo,
+        'status' => QuoteStatus::Accepted->value,
+        'total' => 1000,
+        'subtotal' => 1000,
+        'discount_amount' => 100,
+        'created_at' => now()->subDays(18),
+        'sent_at' => now()->subDays(12),
+        'accepted_at' => now()->subDays(10),
     ]);
 
     Quote::query()->create([
         'workspace_id' => $this->workspace->id,
         'client_id' => $this->client->id,
         'title' => 'Lost Quote 1',
-        'status' => QuoteStatus::Lost->value,
-        'total' => 500,
+        'status' => QuoteStatus::Declined->value,
+        'total' => 1000,
         'decline_reason' => 'Price too high',
-        'created_at' => $oneMonthAgo,
+        'created_at' => now()->subDays(15),
+        'sent_at' => now()->subDays(12),
+        'declined_at' => now()->subDays(11),
     ]);
 
     Quote::query()->create([
@@ -56,8 +62,9 @@ test('analytics page renders with correct stats and chart data', function () {
         'client_id' => $this->client->id,
         'title' => 'Sent Quote',
         'status' => QuoteStatus::Sent->value,
-        'total' => 1500,
-        'created_at' => $oneMonthAgo,
+        'total' => 1000,
+        'created_at' => now()->subDays(8),
+        'sent_at' => now()->subDays(8),
     ]);
 
     Quote::query()->create([
@@ -65,51 +72,45 @@ test('analytics page renders with correct stats and chart data', function () {
         'client_id' => $this->client->id,
         'title' => 'Viewed Quote',
         'status' => QuoteStatus::Viewed->value,
-        'total' => 800,
-        'created_at' => $oneMonthAgo,
+        'total' => 1000,
+        'created_at' => now()->subDays(6),
+        'sent_at' => now()->subDays(6),
+        'viewed_at' => now()->subDays(5),
     ]);
 
-    // Use the default date range (3 months)
     $response = $this->actingAs($this->user)
         ->get(route('analytics'))
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page) => $page
             ->component('analytics/Index')
-            ->where('stats.total_revenue', 3000)
-            ->where('stats.pipeline_value', 2300)
-            ->where('stats.quotes_sent', 5)
-            ->where('stats.quotes_won', 2)
-            ->where('stats.quotes_lost', 1)
-            ->where('stats.win_rate', 40)
-            ->has('stats.trends')
-            ->has('charts.win_rate_by_month')
-            ->has('charts.decline_reasons')
-            ->has('charts.top_templates')
-            ->has('charts.win_rate_by_team_member')
-            ->has('charts.loss_by_value_range')
-            ->has('charts.average_days')
+            ->where('revenue_intelligence.won_revenue', 2000)
+            ->where('revenue_intelligence.lost_revenue', 1000)
+            ->where('revenue_intelligence.still_open', 2000)
+            ->where('revenue_intelligence.won_per_100', 40)
+            ->has('revenue_intelligence.revenue_trend', 12)
+            ->has('win_loss_analysis.decline_reasons')
+            ->has('win_loss_analysis.time_to_win')
+            ->has('win_loss_analysis.loss_reasons')
+            ->has('quote_performance.by_template')
+            ->has('quote_performance.by_deal_size')
+            ->has('quote_performance.by_discount')
+            ->has('client_intelligence')
+            ->has('currency_breakdown')
+            ->where('forecast.open_pipeline', 2000)
+            ->where('forecast.win_rate_90_days', 40)
+            ->where('forecast.expected_to_close', 800)
+            ->where('filters.team_member_id', null)
         );
 
-    // Check win rate by month data structure
     $page = $response->inertiaPage();
-    $winRateByMonth = $page['props']['charts']['win_rate_by_month'];
-    
-    expect($winRateByMonth)->toBeArray();
-    expect($winRateByMonth)->not->toBeEmpty();
-    expect($winRateByMonth[0])->toHaveKeys(['month', 'rate']);
 
-    // Check decline reasons data structure
-    $declineReasons = $page['props']['charts']['decline_reasons'];
-    expect($declineReasons)->toBeArray();
-    expect($declineReasons)->not->toBeEmpty();
-    expect($declineReasons[0])->toHaveKeys(['decline_reason', 'count']);
-    expect($declineReasons[0]['decline_reason'])->toBe('Price too high');
-    expect($declineReasons[0]['count'])->toBe(1);
+    expect($page['props']['win_loss_analysis']['decline_reasons'][0]['decline_reason'])->toBe('Price too high');
+    expect($page['props']['client_intelligence'][0]['quotes_count'])->toBe(5);
+    expect($page['props']['currency_breakdown'][0]['quotes_sent'])->toBe(5);
 });
 
 
 test('analytics isolates data by workspace', function () {
-    // Create other workspace
     $otherUser = User::factory()->create();
     $otherWorkspace = $otherUser->currentWorkspace;
     $otherClient = Client::factory()->create([
@@ -117,31 +118,33 @@ test('analytics isolates data by workspace', function () {
         'created_by' => $otherUser->id,
     ]);
 
-    // Create quotes in other workspace
     Quote::query()->create([
         'workspace_id' => $otherWorkspace->id,
         'client_id' => $otherClient->id,
         'title' => 'Other Workspace Quote',
-        'status' => QuoteStatus::Won->value,
+        'status' => QuoteStatus::Accepted->value,
         'total' => 10000,
         'created_at' => now()->subMonth(),
+        'sent_at' => now()->subMonth()->subDays(3),
+        'accepted_at' => now()->subMonth(),
     ]);
 
-    // Create quote in current workspace
     Quote::query()->create([
         'workspace_id' => $this->workspace->id,
         'client_id' => $this->client->id,
         'title' => 'Current Workspace Quote',
-        'status' => QuoteStatus::Won->value,
+        'status' => QuoteStatus::Accepted->value,
         'total' => 1000,
         'created_at' => now()->subMonth(),
+        'sent_at' => now()->subMonth()->subDays(2),
+        'accepted_at' => now()->subMonth(),
     ]);
 
     $this->actingAs($this->user)
         ->get(route('analytics'))
         ->assertInertia(fn (Assert $page) => $page
-            ->where('stats.total_revenue', 1000) // Only current workspace
-            ->where('stats.quotes_sent', 1)
+            ->where('revenue_intelligence.won_revenue', 1000)
+            ->where('forecast.open_pipeline', 0)
         );
 });
 
@@ -150,15 +153,22 @@ test('analytics handles empty data gracefully', function () {
         ->get(route('analytics'))
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page) => $page
-            ->where('stats.total_revenue', 0)
-            ->where('stats.pipeline_value', 0)
-            ->where('stats.quotes_sent', 0)
-            ->where('stats.quotes_won', 0)
-            ->where('stats.quotes_lost', 0)
-            ->where('stats.win_rate', 0)
-            ->where('charts.win_rate_by_month', [])
-            ->where('charts.decline_reasons', [])
-            ->where('charts.top_templates', [])
+            ->where('revenue_intelligence.won_revenue', 0)
+            ->where('revenue_intelligence.lost_revenue', 0)
+            ->where('revenue_intelligence.still_open', 0)
+            ->where('revenue_intelligence.won_per_100', 0)
+            ->has('revenue_intelligence.revenue_trend', 12)
+            ->where('win_loss_analysis.decline_reasons', [])
+            ->where('win_loss_analysis.time_to_win', [])
+            ->where('win_loss_analysis.loss_reasons', [])
+            ->where('quote_performance.by_template', [])
+            ->has('quote_performance.by_deal_size', 4)
+            ->has('quote_performance.by_discount', 4)
+            ->where('client_intelligence', [])
+            ->where('currency_breakdown', [])
+            ->where('forecast.open_pipeline', 0)
+            ->where('forecast.win_rate_90_days', 0)
+            ->where('forecast.expected_to_close', 0)
         );
 });
 
@@ -167,33 +177,39 @@ test('analytics requires authentication', function () {
         ->assertRedirect(route('login'));
 });
 
-test('win rate by month groups data correctly', function () {
-    // Create quotes in different months - use dates within 3-month range
+test('revenue trend returns twelve months of data', function () {
     Quote::query()->create([
         'workspace_id' => $this->workspace->id,
         'client_id' => $this->client->id,
         'title' => 'Month 1 Won',
-        'status' => QuoteStatus::Won->value,
+        'status' => QuoteStatus::Accepted->value,
         'total' => 1000,
         'created_at' => now()->subMonth(),
+        'sent_at' => now()->subMonth()->subDays(2),
+        'accepted_at' => now()->subMonth(),
     ]);
 
     Quote::query()->create([
         'workspace_id' => $this->workspace->id,
         'client_id' => $this->client->id,
-        'title' => 'Month 1 Lost',
-        'status' => QuoteStatus::Lost->value,
+        'title' => 'Month 1 Declined',
+        'status' => QuoteStatus::Declined->value,
         'total' => 500,
+        'decline_reason' => 'Price too high',
         'created_at' => now()->subMonth(),
+        'sent_at' => now()->subMonth()->subDays(3),
+        'declined_at' => now()->subMonth(),
     ]);
 
     Quote::query()->create([
         'workspace_id' => $this->workspace->id,
         'client_id' => $this->client->id,
         'title' => 'Month 2 Won',
-        'status' => QuoteStatus::Won->value,
+        'status' => QuoteStatus::Accepted->value,
         'total' => 2000,
         'created_at' => now()->subMonths(2),
+        'sent_at' => now()->subMonths(2)->subDays(4),
+        'accepted_at' => now()->subMonths(2),
     ]);
 
     $response = $this->actingAs($this->user)
@@ -201,42 +217,48 @@ test('win rate by month groups data correctly', function () {
         ->assertSuccessful();
 
     $page = $response->inertiaPage();
-    $winRateByMonth = $page['props']['charts']['win_rate_by_month'];
-    
-    // At least 1 month should have data
-    expect($winRateByMonth)->toBeArray();
-    expect($winRateByMonth)->not->toBeEmpty();
-    
-    // Verify data structure
-    expect($winRateByMonth[0])->toHaveKeys(['month', 'rate']);
+    $revenueTrend = $page['props']['revenue_intelligence']['revenue_trend'];
+
+    expect($revenueTrend)->toBeArray();
+    expect($revenueTrend)->toHaveCount(12);
+    expect($revenueTrend[0])->toHaveKeys(['month', 'won', 'average']);
 });
 
-test('decline reasons aggregates correctly', function () {
+test('decline reasons aggregate correctly', function () {
     Quote::query()->create([
         'workspace_id' => $this->workspace->id,
         'client_id' => $this->client->id,
         'title' => 'Lost 1',
-        'status' => QuoteStatus::Lost->value,
+        'status' => QuoteStatus::Declined->value,
         'decline_reason' => 'Price too high',
+        'total' => 500,
         'created_at' => now()->subMonth(),
+        'sent_at' => now()->subMonth()->subDays(3),
+        'declined_at' => now()->subMonth(),
     ]);
 
     Quote::query()->create([
         'workspace_id' => $this->workspace->id,
         'client_id' => $this->client->id,
         'title' => 'Lost 2',
-        'status' => QuoteStatus::Lost->value,
+        'status' => QuoteStatus::Declined->value,
         'decline_reason' => 'Price too high',
+        'total' => 750,
         'created_at' => now()->subMonth(),
+        'sent_at' => now()->subMonth()->subDays(2),
+        'declined_at' => now()->subMonth(),
     ]);
 
     Quote::query()->create([
         'workspace_id' => $this->workspace->id,
         'client_id' => $this->client->id,
         'title' => 'Lost 3',
-        'status' => QuoteStatus::Lost->value,
+        'status' => QuoteStatus::Declined->value,
         'decline_reason' => 'Competitor',
+        'total' => 1000,
         'created_at' => now()->subMonth(),
+        'sent_at' => now()->subMonth()->subDays(4),
+        'declined_at' => now()->subMonth(),
     ]);
 
     $response = $this->actingAs($this->user)
@@ -244,13 +266,15 @@ test('decline reasons aggregates correctly', function () {
         ->assertSuccessful();
 
     $page = $response->inertiaPage();
-    $declineReasons = $page['props']['charts']['decline_reasons'];
-    
+    $declineReasons = $page['props']['win_loss_analysis']['decline_reasons'];
+    $lossReasons = $page['props']['win_loss_analysis']['loss_reasons'];
+
     expect($declineReasons)->toHaveCount(2);
-    
+    expect($lossReasons)->toHaveCount(2);
+
     $priceTooHigh = collect($declineReasons)->firstWhere('decline_reason', 'Price too high');
     expect($priceTooHigh['count'])->toBe(2);
-    
-    $competitor = collect($declineReasons)->firstWhere('decline_reason', 'Competitor');
-    expect($competitor['count'])->toBe(1);
+
+    $reasonLoss = collect($lossReasons)->firstWhere('reason', 'Price too high');
+    expect($reasonLoss['count'])->toBe(2);
 });

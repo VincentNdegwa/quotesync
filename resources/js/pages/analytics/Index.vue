@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
 import { Head } from '@inertiajs/vue3';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { VisAxis, VisGroupedBar, VisLine, VisXYContainer, VisDonut, VisSingleContainer } from '@unovis/vue';
+import { computed, ref } from 'vue';
+import { CurveType, Orientation } from '@unovis/ts';
+import { VisAxis, VisLine, VisXYContainer, VisDonut, VisSingleContainer, VisGroupedBar } from '@unovis/vue';
 import type { ChartConfig } from '@/components/ui/chart';
 import {
   ChartContainer,
@@ -13,38 +12,66 @@ import {
   ChartTooltipContent,
   componentToString,
 } from '@/components/ui/chart';
-import AnalyticsStatsCard from '@/components/analytics/AnalyticsStatsCard.vue';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { BarChart3, CalendarClock, Flame, Globe, TrendingDown, TrendingUp, Users } from 'lucide-vue-next';
 import { useFormat } from '@/composables/useFormat';
 
 const props = defineProps<{
-    stats: {
-        total_revenue: number;
-        pipeline_value: number;
-        quotes_sent: number;
-        quotes_won: number;
-        quotes_lost: number;
-        win_rate: number;
-        trends: {
-            total_revenue: number | null;
-            pipeline_value: number | null;
-            quotes_sent: number | null;
-            quotes_won: number | null;
-            quotes_lost: number | null;
-            win_rate: number | null;
-        };
-    };
-    charts: {
-        win_rate_by_month: Array<{ month: string; rate: number }>;
-        decline_reasons: Array<{ decline_reason: string; count: number }>;
-        top_templates: Array<any>;
-        win_rate_by_team_member: Array<{ user_name: string; win_rate: number; total_quotes: number }>;
-        loss_by_value_range: Array<{ range: string; count: number; total_value: number }>;
-        average_days: { days_to_win: number; days_to_lose: number };
-    };
-    filters: {
-        start_date: string;
-        end_date: string;
-    };
+  revenue_intelligence: {
+    won_revenue: number;
+    lost_revenue: number;
+    still_open: number;
+    won_per_100: number;
+    revenue_trend: Array<{ month: string; won: number; average: number }>;
+  };
+  win_loss_analysis: {
+    decline_reasons: Array<{ decline_reason: string; count: number }>;
+    time_to_win: Array<{ range: string; count: number }>;
+    loss_reasons: Array<{ reason: string; count: number; total_value: number }>;
+  };
+  quote_performance: {
+    by_template: Array<{ template_name: string; win_rate: number; total_quotes: number; avg_value: number }>;
+    by_deal_size: Array<{ range: string; win_rate: number }>;
+    by_discount: Array<{ range: string; win_rate: number }>;
+  };
+  client_intelligence: Array<{
+    client_id: number;
+    client_name: string;
+    quotes_count: number;
+    won_count: number;
+    win_rate: number;
+    total_won: number;
+    avg_response_days: number;
+  }>;
+  currency_breakdown: Array<{
+    currency: string;
+    quotes_sent: number;
+    won_revenue: number;
+    pipeline: number;
+    avg_rate: number;
+  }>;
+  forecast: {
+    open_pipeline: number;
+    win_rate_90_days: number;
+    expected_to_close: number;
+    best_case: number;
+    worst_case: number;
+  };
+  filters: {
+    start_date: string;
+    end_date: string;
+    team_member_id: string | null;
+  };
 }>();
 
 const startDate = ref(props.filters.start_date);
@@ -52,283 +79,530 @@ const endDate = ref(props.filters.end_date);
 
 const { formatCurrency } = useFormat();
 
-// Win rate by month chart data
-const winRateChartData = computed(() => {
-  return props.charts.win_rate_by_month.map(item => ({
-    month: item.month,
-    rate: item.rate,
-  }));
-});
-
-type WinRateData = typeof winRateChartData.value[number];
-
-const winRateChartConfig: ChartConfig = {
-  rate: {
-    label: 'Win Rate',
-    color: 'var(--chart-1)',
-  },
-};
-
-// Decline reasons chart data
-const declineReasonsChartData = computed(() => {
-  return props.charts.decline_reasons.map(item => ({
-    reason: item.decline_reason,
-    count: item.count,
-    fill: 'var(--chart-1)',
-  }));
-});
-
-type DeclineData = typeof declineReasonsChartData.value[number];
-
-const declineChartConfig = computed(() => {
-  const config: ChartConfig = {
-    count: {
-      label: 'Count',
-      color: undefined,
-    },
-  };
-  props.charts.decline_reasons.forEach((item, index) => {
-    config[item.decline_reason] = {
-      label: item.decline_reason,
-      color: `var(--chart-1)`,
-    };
-  });
-  return config;
-});
-
-// Loss by value range chart data
-const lossByValueChartData = computed(() => {
-  return props.charts.loss_by_value_range.map(item => ({
-    range: item.range,
-    count: item.count,
-    value: item.total_value,
-  }));
-});
-
-type LossData = typeof lossByValueChartData.value[number];
-
-const lossChartConfig: ChartConfig = {
-  count: {
-    label: 'Lost Quotes',
-    color: 'var(--chart-1)',
-  },
-  value: {
-    label: 'Total Value',
-    color: 'var(--chart-2)',
-  },
-};
+const formatNumber = (value: number): string => new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(value);
+const formatPercent = (value: number): string => `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(value)}%`;
+const formatTrendValue = (value: number): string => new Intl.NumberFormat(undefined, {
+  maximumFractionDigits: Math.abs(value) < 10 ? 1 : 0,
+}).format(value);
 
 const applyFilters = () => {
-    window.location.href = `/analytics?start_date=${startDate.value}&end_date=${endDate.value}`;
+  window.location.href = `/analytics?start_date=${startDate.value}&end_date=${endDate.value}`;
 };
+
+const revenueChartData = computed(() => props.revenue_intelligence.revenue_trend);
+type RevenueData = typeof revenueChartData.value[number];
+
+const revenueTrendChange = computed(() => {
+  const data = revenueChartData.value;
+  if (data.length < 2) {
+    return null;
+  }
+
+  const latest = data[data.length - 1]?.won ?? 0;
+  const previous = data[data.length - 2]?.won ?? 0;
+  if (previous === 0) {
+    return latest > 0 ? 100 : null;
+  }
+
+  return ((latest - previous) / previous) * 100;
+});
+
+const statCards = computed(() => [
+  {
+    key: 'won',
+    title: 'Won revenue',
+    value: formatCurrency(props.revenue_intelligence.won_revenue),
+    trend: revenueTrendChange.value,
+    trendText: 'vs last month',
+  },
+  {
+    key: 'lost',
+    title: 'Lost revenue',
+    value: formatCurrency(props.revenue_intelligence.lost_revenue),
+    trend: null,
+    trendText: '',
+  },
+  {
+    key: 'open',
+    title: 'Still open',
+    value: formatCurrency(props.revenue_intelligence.still_open),
+    trend: null,
+    trendText: 'Active pipeline',
+  },
+  {
+    key: 'conversion',
+    title: 'Won per 100',
+    value: formatPercent(props.revenue_intelligence.won_per_100),
+    trend: null,
+    trendText: 'Conversion ratio',
+  },
+]);
+
+const revenueChartConfig: ChartConfig = {
+  won: {
+    label: 'Won revenue',
+    color: 'var(--chart-1)',
+    icon: TrendingUp,
+  },
+  average: {
+    label: '3-month average',
+    color: 'var(--chart-2)',
+    icon: TrendingDown,
+  },
+};
+
+const revenueTimeline = computed(() => {
+  return revenueChartData.value
+    .slice(-6)
+    .map((entry, index, arr) => {
+      const previous = arr[index - 1]?.won ?? null;
+      const delta = previous !== null && previous > 0 ? ((entry.won - previous) / previous) * 100 : null;
+
+      return {
+        id: `${entry.month}-${index}`,
+        label: entry.month,
+        value: formatCurrency(entry.won),
+        delta,
+        average: formatCurrency(entry.average),
+      };
+    })
+    .reverse();
+});
+
+const declineReasonsChartData = computed(() =>
+  props.win_loss_analysis.decline_reasons.map(item => ({
+    reason: item.decline_reason,
+    count: item.count,
+  })),
+);
+type DeclineData = typeof declineReasonsChartData.value[number];
+
+const declineTimeline = computed(() =>
+  props.win_loss_analysis.loss_reasons.map((item, index) => ({
+    id: `${item.reason}-${index}`,
+    label: item.reason,
+    count: item.count,
+    value: formatCurrency(item.total_value),
+  })),
+);
+
+const declineChartConfig: ChartConfig = {
+  count: {
+    label: 'Declines',
+    color: 'var(--chart-1)',
+    icon: Flame,
+  },
+};
+
+const timeToWinChartData = computed(() => props.win_loss_analysis.time_to_win);
+type TimeToWinData = typeof timeToWinChartData.value[number];
+
+const timeToWinChartConfig: ChartConfig = {
+  count: {
+    label: 'Quotes',
+    color: 'var(--chart-3)',
+    icon: CalendarClock,
+  },
+};
+
+const timeToWinSummary = computed(() =>
+  timeToWinChartData.value.map(item => ({
+    id: item.range,
+    label: item.range,
+    count: item.count,
+  })),
+);
+
+const templatePerformance = computed(() => props.quote_performance.by_template.slice(0, 4));
+const dealSizePerformance = computed(() => props.quote_performance.by_deal_size);
+const discountPerformance = computed(() => props.quote_performance.by_discount);
+
+const topClients = computed(() => props.client_intelligence.slice(0, 5));
+const currencyLeaders = computed(() => props.currency_breakdown.slice(0, 4));
+const maxCurrencyPipeline = computed(() =>
+  currencyLeaders.value.length > 0
+    ? Math.max(...currencyLeaders.value.map(currency => currency.pipeline))
+    : 0,
+);
+const currencyTimeline = computed(() =>
+  currencyLeaders.value.map((currency, index) => ({
+    id: `${currency.currency}-${index}`,
+    label: currency.currency,
+    quotes: formatNumber(currency.quotes_sent),
+    pipeline: formatCurrency(currency.pipeline),
+    pipelineRaw: currency.pipeline,
+    won: formatCurrency(currency.won_revenue),
+  })),
+);
+
+const forecastCards = computed(() => [
+  {
+    key: 'expected',
+    title: 'Expected to close',
+    value: formatCurrency(props.forecast.expected_to_close),
+    note: `Based on ${props.forecast.win_rate_90_days}% win rate (90 days)`,
+  },
+  {
+    key: 'best',
+    title: 'Best case',
+    value: formatCurrency(props.forecast.best_case),
+    note: '80% of open pipeline',
+  },
+  {
+    key: 'worst',
+    title: 'Worst case',
+    value: formatCurrency(props.forecast.worst_case),
+    note: '30% of open pipeline',
+  },
+]);
 </script>
 
 <template>
-    <Head title="Analytics" />
+  <Head title="Analytics" />
 
-    <div class="space-y-6">
-        <div class="flex items-center justify-between">
-            <h1 class="text-2xl font-bold">Analytics</h1>
-            <div class="flex items-center gap-2">
-                <Input v-model="startDate" type="date" class="w-auto" />
-                <Input v-model="endDate" type="date" class="w-auto" />
-                <Button @click="applyFilters">Apply</Button>
-            </div>
+  <div class="space-y-6">
+    <Card class="border border-sidebar-border/70">
+      <CardHeader class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div class="space-y-2">
+          <div class="inline-flex items-center gap-2 rounded-full border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
+            <BarChart3 class="h-3.5 w-3.5" />
+            Analytics overview
+          </div>
+          <CardTitle class="text-2xl font-semibold tracking-tight">Workspace analytics</CardTitle>
+          <CardDescription>Compare revenue momentum, loss drivers, and performance signals in one place.</CardDescription>
         </div>
-
-        <!-- Stats Cards -->
-        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-            <AnalyticsStatsCard
-                title="Total Revenue"
-                :value="stats.total_revenue"
-                :trend="stats.trends.total_revenue"
-                format="currency"
-            />
-            <AnalyticsStatsCard
-                title="Pipeline Value"
-                :value="stats.pipeline_value"
-                :trend="stats.trends.pipeline_value"
-                format="currency"
-            />
-            <AnalyticsStatsCard
-                title="Win Rate"
-                :value="stats.win_rate.toFixed(1)"
-                :trend="stats.trends.win_rate"
-                format="percent"
-            />
-            <AnalyticsStatsCard
-                title="Quotes Sent"
-                :value="stats.quotes_sent"
-                :trend="stats.trends.quotes_sent"
-                format="number"
-            />
-            <AnalyticsStatsCard
-                title="Quotes Won"
-                :value="stats.quotes_won"
-                :trend="stats.trends.quotes_won"
-                format="number"
-            />
-            <AnalyticsStatsCard
-                title="Quotes Lost"
-                :value="stats.quotes_lost"
-                :trend="stats.trends.quotes_lost"
-                format="number"
-            />
+        <div class="flex flex-wrap items-center gap-3">
+          <Input v-model="startDate" type="date" class="w-auto" />
+          <Input v-model="endDate" type="date" class="w-auto" />
+          <Button @click="applyFilters">Apply filters</Button>
         </div>
+      </CardHeader>
+      <CardFooter class="justify-between text-xs text-muted-foreground">
+        <span>Window: {{ startDate }} → {{ endDate }}</span>
+        <span>Open pipeline: {{ formatCurrency(forecast.open_pipeline) }}</span>
+      </CardFooter>
+    </Card>
 
-        <!-- Charts Section -->
-        <div class="grid gap-4 md:grid-cols-2">
-            <!-- Win Rate Chart -->
-            <div class="rounded-xl border border-sidebar-border/70 p-4">
-                <h2 class="mb-3 text-sm font-semibold">Win Rate Trend</h2>
-                <div v-if="charts.win_rate_by_month.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                    No data available
-                </div>
-                <ChartContainer v-else :config="winRateChartConfig" class="aspect-auto h-[300px] w-full">
-                    <VisXYContainer :data="winRateChartData" :margin="{ left: -24 }" :y-domain="[0, 100]">
-                        <VisLine
-                            :x="(d: WinRateData) => d.month"
-                            :y="(d: WinRateData) => d.rate"
-                            :color="winRateChartConfig.rate.color"
-                        />
-                        <VisAxis
-                            type="x"
-                            :x="(d: WinRateData) => d.month"
-                            :tick-line="false"
-                            :domain-line="false"
-                            :grid-line="false"
-                            :num-ticks="6"
-                        />
-                        <VisAxis
-                            type="y"
-                            :num-ticks="5"
-                            :tick-line="false"
-                            :domain-line="false"
-                            :tick-format="(d: number) => `${d}%`"
-                        />
-                        <ChartTooltip />
-                        <ChartCrosshair
-                            :template="componentToString(winRateChartConfig, ChartTooltipContent, {
-                                labelKey: 'month',
-                                nameKey: 'rate',
-                                labelFormatter: (d) => d,
-                            })"
-                            :color="winRateChartConfig.rate.color"
-                        />
-                    </VisXYContainer>
-                </ChartContainer>
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <Card v-for="stat in statCards" :key="stat.key" class="border border-sidebar-border/70">
+        <CardHeader class="space-y-2 pb-2">
+          <CardDescription class="text-xs uppercase tracking-wide text-muted-foreground">{{ stat.title }}</CardDescription>
+          <div class="flex items-end justify-between gap-4">
+            <CardTitle class="text-3xl font-semibold tracking-tight">{{ stat.value }}</CardTitle>
+            <div v-if="stat.trend !== null" class="flex items-center gap-1 text-xs">
+              <span :class="stat.trend >= 0 ? 'text-emerald-600' : 'text-rose-600'" class="flex items-center gap-1 font-semibold">
+                <span>{{ stat.trend >= 0 ? '↑' : '↓' }}</span>
+                <span>{{ formatTrendValue(stat.trend) }}%</span>
+              </span>
             </div>
+          </div>
+        </CardHeader>
+        <CardFooter class="pt-0 text-xs text-muted-foreground">
+          <span>{{ stat.trendText }}</span>
+        </CardFooter>
+      </Card>
+    </section>
 
-            <!-- Decline Reasons -->
-            <div class="rounded-xl border border-sidebar-border/70 p-4">
-                <h2 class="mb-3 text-sm font-semibold">Decline Reasons</h2>
-                <div v-if="charts.decline_reasons.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                    No data available
-                </div>
-                <ChartContainer v-else :config="declineChartConfig" class="mx-auto aspect-square max-h-[300px]">
-                    <VisSingleContainer :data="declineReasonsChartData" :margin="{ top: 30, bottom: 30 }">
-                        <VisDonut
-                            :value="(d: DeclineData) => d.count"
-                            :color="(d: DeclineData, i: number) => `var(--chart-${(i % 5) + 1})`"
-                            :arc-width="30"
-                        />
-                        <ChartTooltip />
-                    </VisSingleContainer>
-                </ChartContainer>
-                <div v-if="charts.decline_reasons.length > 0" class="mt-4 flex flex-wrap justify-center gap-4">
-                    <div v-for="(item, index) in charts.decline_reasons" :key="item.decline_reason" class="flex items-center gap-2 text-sm">
-                        <div class="h-3 w-3 rounded-full" :style="{ backgroundColor: `var(--chart-${(index % 5) + 1})` }" />
-                        <span class="font-medium">{{ item.decline_reason }}</span>
-                        <span class="text-muted-foreground">{{ item.count }}</span>
-                    </div>
-                </div>
-            </div>
+    <section class="grid gap-4 xl:grid-cols-[1.7fr_1fr]">
+      <Card class="border border-sidebar-border/70">
+        <CardHeader class="pb-0">
+          <CardTitle class="text-base font-semibold">Revenue (last 12 months)</CardTitle>
+          <CardDescription>Track how won revenue compares to the rolling three-month average.</CardDescription>
+        </CardHeader>
+        <CardContent class="h-[320px]">
+          <ChartContainer :config="revenueChartConfig" cursor class="h-full">
+            <VisXYContainer :data="revenueChartData" :margin="{ left: 32, right: 16, top: 16, bottom: 32 }">
+              <VisArea
+                :x="(d: RevenueData) => d.month"
+                :y="(d: RevenueData) => d.average"
+                :color="revenueChartConfig.average.color"
+                :opacity="0.18"
+                :curve-type="CurveType.MonotoneX"
+              />
+              <VisLine
+                :x="(d: RevenueData) => d.month"
+                :y="(d: RevenueData) => d.won"
+                :color="revenueChartConfig.won.color"
+                :curve-type="CurveType.MonotoneX"
+                :line-width="2"
+              />
+              <VisAxis
+                type="x"
+                :x="(d: RevenueData) => d.month"
+                :tick-line="false"
+                :domain-line="false"
+                :grid-line="false"
+                :num-ticks="6"
+              />
+              <VisAxis
+                type="y"
+                :num-ticks="4"
+                :tick-line="false"
+                :domain-line="false"
+                :tick-format="(d: number) => formatCurrency(d)"
+              />
+              <ChartTooltip />
+              <ChartCrosshair
+                :template="componentToString(revenueChartConfig, ChartTooltipContent, { labelKey: 'month' })"
+                :color="[revenueChartConfig.won.color, revenueChartConfig.average.color]"
+              />
+            </VisXYContainer>
+            <ChartLegendContent class="mt-4 justify-start" />
+          </ChartContainer>
+        </CardContent>
+        <CardFooter class="justify-between text-xs text-muted-foreground">
+          <span>Won revenue vs rolling average</span>
+          <span>12-month window</span>
+        </CardFooter>
+      </Card>
 
-            <!-- Loss by Value Range -->
-            <div class="rounded-xl border border-sidebar-border/70 p-4 md:col-span-2">
-                <h2 class="mb-3 text-sm font-semibold">Loss by Value Range</h2>
-                <div v-if="charts.loss_by_value_range.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                    No data available
-                </div>
-                <ChartContainer v-else :config="lossChartConfig" class="aspect-auto h-[300px] w-full">
-                    <VisXYContainer :data="lossByValueChartData" :margin="{ left: -24 }">
-                        <VisGroupedBar
-                            :x="(d: LossData) => d.range"
-                            :y="[(d: LossData) => d.count, (d: LossData) => d.value / 1000]"
-                            :color="[lossChartConfig.count.color, lossChartConfig.value.color]"
-                            :bar-padding="0.1"
-                        />
-                        <VisAxis
-                            type="x"
-                            :x="(d: LossData) => d.range"
-                            :tick-line="false"
-                            :domain-line="false"
-                            :grid-line="false"
-                        />
-                        <VisAxis
-                            type="y"
-                            :num-ticks="5"
-                            :tick-line="false"
-                            :domain-line="false"
-                        />
-                        <ChartTooltip />
-                        <ChartCrosshair
-                            :template="componentToString(lossChartConfig, ChartTooltipContent, {
-                                labelKey: 'range',
-                            })"
-                            :color="[lossChartConfig.count.color, lossChartConfig.value.color]"
-                        />
-                    </VisXYContainer>
-                </ChartContainer>
-                <ChartLegendContent v-if="charts.loss_by_value_range.length > 0" class="mt-4" />
+      <Card class="border border-sidebar-border/70">
+        <CardHeader class="pb-3">
+          <CardTitle class="text-base font-semibold">Revenue highlights</CardTitle>
+          <CardDescription>Recent monthly performance and average movement.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div v-if="revenueTimeline.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+            Revenue analytics will appear here once you send quotes.
+          </div>
+          <ul v-else class="space-y-4">
+            <li v-for="entry in revenueTimeline" :key="entry.id" class="relative pl-10">
+              <div class="absolute left-0 top-2 flex h-full w-5 justify-center">
+                <div class="h-full w-px bg-border"></div>
+              </div>
+              <div class="absolute -left-1 top-1 flex h-6 w-6 items-center justify-center rounded-full border bg-background">
+                <TrendingUp class="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
+              <p class="text-sm font-medium">{{ entry.label }}</p>
+              <p class="text-xs text-muted-foreground">Won {{ entry.value }} • Avg {{ entry.average }}</p>
+              <p v-if="entry.delta !== null" class="text-xs" :class="entry.delta >= 0 ? 'text-emerald-600' : 'text-rose-600'">
+                {{ entry.delta >= 0 ? '↑' : '↓' }} {{ formatTrendValue(entry.delta) }}% vs prior month
+              </p>
+            </li>
+          </ul>
+        </CardContent>
+      </Card>
+    </section>
+
+    <section class="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
+      <Card class="border border-sidebar-border/70">
+        <CardHeader class="pb-0">
+          <CardTitle class="text-base font-semibold">Time to win</CardTitle>
+          <CardDescription>Speed buckets for deals that moved to a closed outcome.</CardDescription>
+        </CardHeader>
+        <CardContent class="h-[320px]">
+          <div v-if="timeToWinChartData.length === 0" class="flex h-full items-center justify-center rounded-xl border border-dashed text-sm text-muted-foreground">
+            No closed deals in this period.
+          </div>
+          <ChartContainer v-else :config="timeToWinChartConfig" cursor class="h-full">
+            <VisXYContainer :data="timeToWinChartData" :margin="{ left: 32, right: 16, top: 16, bottom: 24 }">
+              <VisGroupedBar
+                :x="(d: TimeToWinData) => d.count"
+                :y="(d: TimeToWinData) => d.range"
+                :color="timeToWinChartConfig.count.color"
+                :orientation="Orientation.Horizontal"
+                :rounded-corners="6"
+                bar-padding="0.25"
+              />
+              <VisAxis
+                type="y"
+                :tick-line="false"
+                :domain-line="false"
+                :grid-line="false"
+              />
+              <VisAxis
+                type="x"
+                :num-ticks="4"
+                :tick-line="false"
+                :domain-line="false"
+              />
+              <ChartTooltip />
+              <ChartCrosshair
+                :template="componentToString(timeToWinChartConfig, ChartTooltipContent, { labelKey: 'range', indicator: 'line' })"
+                :color="[timeToWinChartConfig.count.color]"
+              />
+            </VisXYContainer>
+            <ChartLegendContent class="mt-4 justify-start" />
+          </ChartContainer>
+        </CardContent>
+        <CardFooter class="justify-between text-xs text-muted-foreground">
+          <span>Includes won, lost, and expired quotes</span>
+          <span>Measured in days</span>
+        </CardFooter>
+      </Card>
+
+      <Card class="border border-sidebar-border/70">
+        <CardHeader class="pb-3">
+          <CardTitle class="text-base font-semibold">Loss signals</CardTitle>
+          <CardDescription>Where deals fell through and impacted revenue.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div v-if="declineTimeline.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+            No decline reasons captured during this window.
+          </div>
+          <ul v-else class="space-y-4">
+            <li v-for="item in declineTimeline" :key="item.id" class="relative pl-10">
+              <div class="absolute left-0 top-2 flex h-full w-5 justify-center">
+                <div class="h-full w-px bg-border"></div>
+              </div>
+              <div class="absolute -left-1 top-1 flex h-6 w-6 items-center justify-center rounded-full border bg-background">
+                <Flame class="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
+              <p class="text-sm font-medium">{{ item.label }}</p>
+              <p class="text-xs text-muted-foreground">{{ item.count }} deals • {{ item.value }} at risk</p>
+            </li>
+          </ul>
+        </CardContent>
+      </Card>
+    </section>
+
+    <section class="grid gap-4 lg:grid-cols-3">
+      <Card class="border border-sidebar-border/70">
+        <CardHeader class="pb-3">
+          <CardTitle class="text-base font-semibold">Template performance</CardTitle>
+          <CardDescription>Top templates ranked by win rate.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div v-if="templatePerformance.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+            Templates will appear once quotes are sent from them.
+          </div>
+          <div v-else class="space-y-3">
+            <div v-for="template in templatePerformance" :key="template.template_name" class="space-y-1">
+              <div class="flex items-center justify-between text-sm">
+                <span class="truncate text-muted-foreground">{{ template.template_name }}</span>
+                <span class="font-medium">{{ formatPercent(template.win_rate) }}</span>
+              </div>
+              <div class="h-2 w-full rounded-full bg-muted">
+                <div class="h-2 rounded-full bg-primary" :style="{ width: `${template.win_rate}%` }" />
+              </div>
+              <p class="text-xs text-muted-foreground">{{ template.total_quotes }} quotes • Avg {{ formatCurrency(template.avg_value) }}</p>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card class="border border-sidebar-border/70">
+        <CardHeader class="pb-3">
+          <CardTitle class="text-base font-semibold">Deal size response</CardTitle>
+          <CardDescription>Win rate based on invoice value buckets.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div v-if="dealSizePerformance.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+            Deals are still being categorized.
+          </div>
+          <div v-else class="space-y-3">
+            <div v-for="bucket in dealSizePerformance" :key="bucket.range" class="space-y-1">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-muted-foreground">{{ bucket.range }}</span>
+                <span class="font-medium">{{ formatPercent(bucket.win_rate) }}</span>
+              </div>
+              <div class="h-2 w-full rounded-full bg-muted">
+                <div class="h-2 rounded-full bg-primary" :style="{ width: `${bucket.win_rate}%` }" />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card class="border border-sidebar-border/70">
+        <CardHeader class="pb-3">
+          <CardTitle class="text-base font-semibold">Discount impact</CardTitle>
+          <CardDescription>How price adjustments influence wins.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div v-if="discountPerformance.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+            Discount data will surface once quotes include discounts.
+          </div>
+          <div v-else class="space-y-3">
+            <div v-for="bucket in discountPerformance" :key="bucket.range" class="space-y-1">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-muted-foreground">{{ bucket.range }}</span>
+                <span class="font-medium">{{ formatPercent(bucket.win_rate) }}</span>
+              </div>
+              <div class="h-2 w-full rounded-full bg-muted">
+                <div class="h-2 rounded-full bg-primary" :style="{ width: `${bucket.win_rate}%` }" />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </section>
+
+    <section class="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
+      <Card class="border border-sidebar-border/70">
+        <CardHeader class="pb-3">
+          <CardTitle class="text-base font-semibold">Top clients</CardTitle>
+          <CardDescription>Clients ranked by total won revenue and responsiveness.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div v-if="topClients.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+            Client performance will populate as deals close.
+          </div>
+          <div v-else class="space-y-3">
+            <div v-for="client in topClients" :key="client.client_id" class="flex flex-col gap-2 rounded-lg border p-3">
+              <div class="flex items-center justify-between text-sm">
+                <span class="font-medium">{{ client.client_name }}</span>
+                <Badge variant="outline">{{ formatPercent(client.win_rate) }} win</Badge>
+              </div>
+              <div class="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                <span>{{ client.quotes_count }} quotes</span>
+                <span>{{ client.won_count }} won</span>
+                <span>Avg response {{ client.avg_response_days }}d</span>
+                <span class="font-medium text-foreground">{{ formatCurrency(client.total_won) }}</span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card class="border border-sidebar-border/70">
+        <CardHeader class="pb-3">
+          <CardTitle class="text-base font-semibold">Currencies in play</CardTitle>
+          <CardDescription>Where pipeline is accumulating by billing currency.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div v-if="currencyLeaders.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+            All quotes are currently in a single currency.
+          </div>
+          <ul v-else class="space-y-4">
+            <li v-for="currency in currencyTimeline" :key="currency.id" class="relative pl-10">
+              <div class="absolute left-0 top-2 flex h-full w-5 justify-center">
+                <div class="h-full w-px bg-border" />
+              </div>
+              <div class="absolute -left-1 top-1 flex h-6 w-6 items-center justify-center rounded-full border bg-background">
+                <Globe class="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
+              <div class="flex items-center justify-between">
+                <p class="text-sm font-medium">{{ currency.label }}</p>
+                <Badge variant="outline">{{ currency.quotes }} quotes</Badge>
+              </div>
+              <p class="text-xs text-muted-foreground">Pipeline {{ currency.pipeline }} • Won {{ currency.won }}</p>
+              <div class="mt-2 h-2 w-full rounded-full bg-muted">
+                <div
+                  class="h-2 rounded-full bg-primary"
+                  :style="{ width: maxCurrencyPipeline > 0 ? `${Math.max(4, (currency.pipelineRaw / maxCurrencyPipeline) * 100)}%` : '4%' }"
+                />
+              </div>
+            </li>
+          </ul>
+        </CardContent>
+      </Card>
+    </section>
+
+    <Card class="border border-sidebar-border/70">
+      <CardHeader class="pb-3">
+        <CardTitle class="text-base font-semibold">Forecast outlook</CardTitle>
+        <CardDescription>Projected revenue scenarios from the current pipeline.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div class="grid gap-4 md:grid-cols-3">
+          <div v-for="card in forecastCards" :key="card.key" class="space-y-2 rounded-lg border p-4">
+            <p class="text-xs uppercase tracking-wide text-muted-foreground">{{ card.title }}</p>
+            <p class="text-2xl font-semibold leading-tight">{{ card.value }}</p>
+            <p class="text-xs text-muted-foreground">{{ card.note }}</p>
+          </div>
         </div>
-
-        <!-- Additional Metrics -->
-        <div class="grid gap-4 md:grid-cols-2">
-            <!-- Average Days -->
-            <div class="rounded-xl border border-sidebar-border/70 p-4">
-                <h2 class="mb-3 text-sm font-semibold">Average Time to Close</h2>
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div>
-                        <p class="text-xs text-muted-foreground mb-1">To Win</p>
-                        <p class="text-2xl font-semibold">{{ charts.average_days.days_to_win.toFixed(1) }} days</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-muted-foreground mb-1">To Lose</p>
-                        <p class="text-2xl font-semibold">{{ charts.average_days.days_to_lose.toFixed(1) }} days</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Top Templates -->
-            <div class="rounded-xl border border-sidebar-border/70 p-4">
-                <h2 class="mb-3 text-sm font-semibold">Top Templates</h2>
-                <div v-if="charts.top_templates.length === 0" class="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                    No data available
-                </div>
-                <div v-else class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead class="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                            <tr>
-                                <th class="px-3 py-2 text-left">Template</th>
-                                <th class="px-3 py-2 text-right">Total</th>
-                                <th class="px-3 py-2 text-right">Won</th>
-                                <th class="px-3 py-2 text-right">Avg Value</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="template in charts.top_templates" :key="template.template_id" class="border-t">
-                                <td class="px-3 py-2">{{ template.template?.name || 'Unknown' }}</td>
-                                <td class="px-3 py-2 text-right">{{ template.total_quotes }}</td>
-                                <td class="px-3 py-2 text-right">{{ template.won_quotes }}</td>
-                                <td class="px-3 py-2 text-right font-medium">{{ formatCurrency(template.avg_value) }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+      </CardContent>
+    </Card>
+  </div>
 </template>
-
