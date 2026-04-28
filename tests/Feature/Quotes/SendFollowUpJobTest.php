@@ -12,10 +12,13 @@ use App\Models\Quote;
 use App\Models\QuoteFollowUp;
 use App\Models\QuoteShortCode;
 use App\Models\User;
+use App\Notifications\QuoteFollowUpSentNotification;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 
 test('send follow-up job sends email and marks follow-up as sent', function () {
     Mail::fake();
+    Notification::fake();
 
     $user = User::factory()->create();
     $workspace = $user->currentWorkspace;
@@ -32,6 +35,8 @@ test('send follow-up job sends email and marks follow-up as sent', function () {
         'currency' => 'USD',
         'total' => 1000,
         'valid_until' => now()->addDays(7)->toDateString(),
+        'created_by' => $user->id,
+        'assigned_to' => $user->id,
     ]);
 
     QuoteShortCode::query()->create([
@@ -76,4 +81,6 @@ test('send follow-up job sends email and marks follow-up as sent', function () {
         'quote_id' => $quoteFollowUp->quote_id,
         'type' => 'follow_up_sent',
     ]);
+
+    Notification::assertSentTo($user, QuoteFollowUpSentNotification::class);
 });

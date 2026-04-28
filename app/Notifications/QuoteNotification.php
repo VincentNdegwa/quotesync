@@ -4,11 +4,13 @@ namespace App\Notifications;
 
 use App\Models\Quote;
 use Illuminate\Bus\Queueable;
+use Illuminate\Queue\SerializesModels;
 use Illuminate\Notifications\Notification;
 
 abstract class QuoteNotification extends Notification
 {
     use Queueable;
+    use SerializesModels;
 
     public function __construct(public readonly Quote $quote) {}
 

@@ -14,6 +14,7 @@ use App\Models\QuoteShortCode;
 use App\Models\QuoteActivity;
 use App\Models\User;
 use App\Notifications\QuoteSentInternalNotification;
+use App\Notifications\QuoteApprovalRequestedNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 
@@ -111,7 +112,7 @@ test('sending a quote that requires approval creates pending requests instead of
     ]);
 
     Queue::assertNotPushed(SendQuoteEmailJob::class);
-    Notification::assertNothingSent();
+    Notification::assertSentTo($user, QuoteApprovalRequestedNotification::class);
 
     expect(QuoteShortCode::query()->where('quote_id', $quote->id)->exists())->toBeFalse();
 

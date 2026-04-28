@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\QuoteActivityType;
 use App\Enums\QuoteFollowUpStatus;
 use App\Enums\QuoteStatus;
 use App\Events\QuoteViewed;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
 use App\Models\Workspace;
+use App\Notifications\QuoteAcceptedNotification;
+use App\Notifications\QuoteDeclinedNotification;
 use App\Notifications\QuoteViewedNotification;
 use App\Services\Quotes\QuoteShortCodeService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
@@ -66,7 +69,7 @@ class PublicQuoteController extends Controller
             'quote_id' => $quote->id,
             'workspace_id' => $quote->workspace_id,
             'user_id' => null,
-            'type' => 'viewed',
+            'type' => QuoteActivityType::Viewed->value,
             'description' => $wasFirstView ? 'Quote viewed for the first time.' : 'Quote viewed again by client.',
             'metadata' => [
                 'first_view' => $wasFirstView,
@@ -183,7 +186,7 @@ class PublicQuoteController extends Controller
             'quote_id' => $quote->id,
             'workspace_id' => $quote->workspace_id,
             'user_id' => null,
-            'type' => 'status_changed',
+            'type' => QuoteActivityType::Accepted->value,
             'description' => $validated['signer_name']
                 ? 'Quote was accepted and signed by '.$validated['signer_name'].'.'
                 : 'Quote was accepted and signed by the client.',
@@ -195,6 +198,11 @@ class PublicQuoteController extends Controller
                 'signature_path' => $signaturePath,
             ],
         ]);
+
+        Notification::send(
+            $this->quoteRecipients($quote),
+            new QuoteAcceptedNotification($quote),
+        );
 
         $quote->quoteFollowUps()
             ->where('status', QuoteFollowUpStatus::Pending->value)
@@ -221,7 +229,7 @@ class PublicQuoteController extends Controller
         ]);
 
         $quote->forceFill([
-            'status' => 'declined',
+            'status' => QuoteStatus::Declined->value,
             'declined_at' => now(),
             'decline_reason' => $validated['decline_reason'] ?? null,
         ])->save();
@@ -230,12 +238,20 @@ class PublicQuoteController extends Controller
             'quote_id' => $quote->id,
             'workspace_id' => $quote->workspace_id,
             'user_id' => null,
-            'type' => 'status_changed',
+            'type' => QuoteActivityType::Declined->value,
             'description' => 'Quote was declined by the client.',
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'metadata' => ['status' => 'declined', 'reason' => $validated['decline_reason'] ?? null],
         ]);
+
+        Notification::send(
+            $this->quoteRecipients($quote),
+            new QuoteDeclinedNotification(
+                quote: $quote,
+                reason: $validated['decline_reason'] ?? null,
+            ),
+        );
 
         $quote->quoteFollowUps()
             ->where('status', QuoteFollowUpStatus::Pending->value)

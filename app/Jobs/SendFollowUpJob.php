@@ -3,15 +3,18 @@
 namespace App\Jobs;
 
 use App\Enums\FollowUpChannel;
+use App\Enums\QuoteActivityType;
 use App\Enums\QuoteFollowUpStatus;
 use App\Enums\QuoteStatus;
 use App\Mail\QuoteFollowUpMail;
 use App\Models\QuoteActivity;
 use App\Models\QuoteFollowUp;
 use App\Services\Quotes\QuotePlaceholderService;
+use App\Notifications\QuoteFollowUpSentNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 
 class SendFollowUpJob implements ShouldQueue
 {
@@ -23,7 +26,7 @@ class SendFollowUpJob implements ShouldQueue
     {
         $quoteFollowUp = QuoteFollowUp::query()
             ->with([
-                'quote:id,workspace_id,quote_uuid,number,title,status,client_id,total,currency,valid_until',
+                'quote:id,workspace_id,quote_uuid,number,title,status,client_id,total,currency,valid_until,created_by,assigned_to',
                 'quote.client:id,email,contact_name,company_name',
                 'quote.shortCode:id,quote_id,code',
                 'quote.workspace:id,name,display_name,logo_path',
@@ -109,7 +112,7 @@ class SendFollowUpJob implements ShouldQueue
             'quote_id' => $quote->id,
             'workspace_id' => $quote->workspace_id,
             'user_id' => null,
-            'type' => 'follow_up_sent',
+            'type' => QuoteActivityType::FollowUpSent->value,
             'description' => 'Automated follow-up sent to client.',
             'metadata' => [
                 'quote_follow_up_id' => $quoteFollowUp->id,
@@ -119,5 +122,14 @@ class SendFollowUpJob implements ShouldQueue
             'ip_address' => null,
             'user_agent' => 'queue',
         ]);
+
+        $recipients = collect([$quote->creator, $quote->assignee])
+            ->filter()
+            ->unique('id')
+            ->values();
+
+        if ($recipients->isNotEmpty()) {
+            Notification::send($recipients, new QuoteFollowUpSentNotification($quoteFollowUp));
+        }
     }
 }

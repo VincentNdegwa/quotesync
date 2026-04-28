@@ -9,7 +9,13 @@ use App\Models\ApprovalRule;
 use App\Models\Quote;
 use App\Models\QuoteApproval;
 use App\Models\QuoteActivity;
+use App\Notifications\QuoteApprovalApprovedNotification;
+use App\Notifications\QuoteApprovalGrantedNotification;
+use App\Notifications\QuoteApprovalRejectedNotification;
+use App\Notifications\QuoteApprovalRequestedNotification;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 class ApprovalService
 {
@@ -34,7 +40,9 @@ class ApprovalService
             return;
         }
 
-        DB::transaction(function () use ($quote, $matchingRules, $requestedBy): void {
+        $approvalsToNotify = [];
+
+        DB::transaction(function () use ($quote, $matchingRules, $requestedBy, &$approvalsToNotify): void {
             $approvalIds = [];
 
             foreach ($matchingRules as $rule) {
@@ -45,6 +53,7 @@ class ApprovalService
                     'status' => QuoteApprovalStatus::Pending->value,
                 ]);
                 $approvalIds[] = $approval->id;
+                $approvalsToNotify[] = $approval->load('approver');
             }
 
             $quote->update([
@@ -66,11 +75,23 @@ class ApprovalService
                 ],
             ]);
         });
+
+        if (! empty($approvalsToNotify)) {
+            DB::afterCommit(function () use ($approvalsToNotify): void {
+                foreach ($approvalsToNotify as $approval) {
+                    if ($approval->approver) {
+                        Notification::send($approval->approver, new QuoteApprovalRequestedNotification($approval));
+                    }
+                }
+            });
+        }
     }
 
     public function approveQuote(Quote $quote, int $userId, ?string $comment = null): void
     {
-        DB::transaction(function () use ($quote, $userId, $comment) {
+        $approvalsNotified = collect();
+
+        DB::transaction(function () use ($quote, $userId, $comment, &$approvalsNotified) {
             $approvals = $quote->quoteApprovals()
                 ->where('approver_id', $userId)
                 ->where('status', QuoteApprovalStatus::Pending->value)
@@ -81,6 +102,7 @@ class ApprovalService
             }
 
             if ($approvals->isNotEmpty()) {
+                $approvalsNotified = $approvals->load('approver');
                 $metadata = array_filter([
                     'comment' => $comment,
                     'approval_ids' => $approvals->pluck('id')->all(),
@@ -98,11 +120,25 @@ class ApprovalService
 
             $this->checkAllApprovalsCompleted($quote, $userId);
         });
+
+        if ($approvalsNotified instanceof Collection && $approvalsNotified->isNotEmpty()) {
+            $recipients = $this->quoteStakeholders($quote);
+
+            if ($recipients->isNotEmpty()) {
+                DB::afterCommit(function () use ($recipients, $approvalsNotified): void {
+                    foreach ($approvalsNotified as $approval) {
+                        Notification::send($recipients, new QuoteApprovalApprovedNotification($approval));
+                    }
+                });
+            }
+        }
     }
 
     public function rejectQuote(Quote $quote, int $userId, ?string $comment = null): void
     {
-        DB::transaction(function () use ($quote, $userId, $comment) {
+        $rejectedApprovals = collect();
+
+        DB::transaction(function () use ($quote, $userId, $comment, &$rejectedApprovals) {
             $approvals = $quote->quoteApprovals()
                 ->where('approver_id', $userId)
                 ->where('status', QuoteApprovalStatus::Pending->value)
@@ -119,6 +155,7 @@ class ApprovalService
             ]);
 
             if ($approvals->isNotEmpty()) {
+                $rejectedApprovals = $approvals->load('approver');
                 $metadata = array_filter([
                     'comment' => $comment,
                     'approval_ids' => $approvals->pluck('id')->all(),
@@ -134,6 +171,18 @@ class ApprovalService
                 ]);
             }
         });
+
+        if ($rejectedApprovals instanceof Collection && $rejectedApprovals->isNotEmpty()) {
+            $recipients = $this->quoteStakeholders($quote);
+
+            if ($recipients->isNotEmpty()) {
+                DB::afterCommit(function () use ($recipients, $rejectedApprovals): void {
+                    foreach ($rejectedApprovals as $approval) {
+                        Notification::send($recipients, new QuoteApprovalRejectedNotification($approval));
+                    }
+                });
+            }
+        }
     }
 
     private function checkAllApprovalsCompleted(Quote $quote, ?int $actedBy = null): void
@@ -171,6 +220,38 @@ class ApprovalService
                     'approval_granted_at' => $grantedAt->toIso8601String(),
                 ],
             ]);
+
+            $recipients = $this->quoteStakeholders($quote);
+
+            if ($recipients->isNotEmpty()) {
+                DB::afterCommit(function () use ($recipients, $quote, $actedBy, $grantedAt): void {
+                    $grantedByName = null;
+
+                    if ($actedBy !== null) {
+                        $grantedByName = optional($quote->quoteApprovals()->where('approver_id', $actedBy)->first()?->approver)->name;
+                    }
+
+                    Notification::send(
+                        $recipients,
+                        new QuoteApprovalGrantedNotification(
+                            $quote,
+                            $grantedByName,
+                            $grantedAt,
+                        ),
+                    );
+                });
+            }
         }
+    }
+
+    /**
+     * @return Collection<int, \App\Models\User>
+     */
+    private function quoteStakeholders(Quote $quote): Collection
+    {
+        return collect([$quote->creator, $quote->assignee])
+            ->filter()
+            ->unique('id')
+            ->values();
     }
 }
