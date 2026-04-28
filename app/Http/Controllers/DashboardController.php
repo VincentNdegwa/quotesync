@@ -17,6 +17,17 @@ class DashboardController extends Controller
 {
     private Workspace $workspace;
 
+    private array $pipelineStatuses;
+    private array $sentStatuses;
+    private array $wonStatuses;
+
+    public function __construct()
+    {
+        $this->pipelineStatuses = QuoteStatus::pipelineStatuses();
+        $this->sentStatuses     = QuoteStatus::sentStatuses();
+        $this->wonStatuses      = QuoteStatus::closedWonStatuses();
+    }
+
     public function __invoke(Request $request): Response
     {
         $workspace = $request->user()?->currentWorkspace;
@@ -48,40 +59,43 @@ class DashboardController extends Controller
         $lastMonthStart = $now->copy()->subMonth()->startOfMonth();
         $lastMonthEnd   = $now->copy()->subMonth()->endOfMonth();
 
-        $pipelineStatuses = QuoteStatus::pipelineStatuses();
-        $sentStatuses     = QuoteStatus::sentStatuses();
+        $pipelineValueThisMonth = (float) $this->baseQuery()
+            ->whereIn('status', $this->pipelineStatuses)
+            ->whereBetween('created_at', $thisMonth)
+            ->sum('total');
 
-        $pipelineValue = (float) $this->baseQuery()
-            ->whereIn('status', $pipelineStatuses)
+        $pipelineValueLastMonth = (float) $this->baseQuery()
+            ->whereIn('status', $this->pipelineStatuses)
+            ->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])
             ->sum('total');
 
         $wonThisMonth = (float) $this->baseQuery()
-            ->whereIn('status', QuoteStatus::closedWonStatuses())
+            ->whereIn('status', $this->wonStatuses)
             ->whereBetween('created_at', $thisMonth)
             ->sum('total');
 
         $wonLastMonth = (float) $this->baseQuery()
-            ->whereIn('status', QuoteStatus::closedWonStatuses())
+            ->whereIn('status', $this->wonStatuses)
             ->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])
             ->sum('total');
 
         $sentThisMonthCount = (int) $this->baseQuery()
-            ->whereIn('status', $sentStatuses)
+            ->whereIn('status', $this->sentStatuses)
             ->whereBetween('sent_at', $thisMonth)
             ->count();
 
         $wonThisMonthCount = (int) $this->baseQuery()
-            ->whereIn('status', QuoteStatus::closedWonStatuses())
+            ->whereIn('status', $this->wonStatuses)
             ->whereBetween('created_at', $thisMonth)
             ->count();
 
         $sentLastMonthCount = (int) $this->baseQuery()
-            ->whereIn('status', $sentStatuses)
+            ->whereIn('status', $this->sentStatuses)
             ->whereBetween('sent_at', [$lastMonthStart, $lastMonthEnd])
             ->count();
 
         $wonLastMonthCount = (int) $this->baseQuery()
-            ->whereIn('status', QuoteStatus::closedWonStatuses())
+            ->whereIn('status', $this->wonStatuses)
             ->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])
             ->count();
 
@@ -94,7 +108,7 @@ class DashboardController extends Controller
             : 0.0;
 
         $quotesExpiring = (int) $this->baseQuery()
-            ->whereIn('status', QuoteStatus::pipelineStatuses())
+            ->whereIn('status', $this->pipelineStatuses)
             ->whereNotNull('valid_until')
             ->whereBetween('valid_until', [
                 $now->copy()->startOfDay(),
@@ -103,12 +117,18 @@ class DashboardController extends Controller
             ->count();
 
         return [
-            'pipeline_value'   => $pipelineValue,
-            'pipeline_trend'   => null,
+            'pipeline_value'   => $pipelineValueThisMonth,
+            'pipeline_trend'   => $this->percentageTrend($pipelineValueThisMonth, $pipelineValueLastMonth),
             'won_this_month'   => $wonThisMonth,
             'won_trend'        => $this->percentageTrend($wonThisMonth, $wonLastMonth),
             'win_rate'         => $winRateThisMonth,
-            'win_rate_trend'   => round($winRateThisMonth - $winRateLastMonth, 1),
+            'win_rate_trend'   => $this->percentageTrend($winRateThisMonth, $winRateLastMonth),
+            'win'              => [
+                'rate' => $winRateThisMonth,
+                'win_count' => $wonThisMonthCount,
+                'sent_count' => $sentThisMonthCount,
+                'trend'      => $this->percentageTrend($winRateThisMonth, $winRateLastMonth),
+            ],
             'quotes_expiring'  => $quotesExpiring,
         ];
     }
@@ -122,26 +142,19 @@ class DashboardController extends Controller
                 $end   = $date->copy()->endOfMonth();
 
                 $wonRevenue = (float) $this->baseQuery()
-                    ->whereIn('status', QuoteStatus::closedWonStatuses())
+                    ->whereIn('status', $this->wonStatuses)
                     ->whereBetween('created_at', [$start, $end])
                     ->sum('total');
 
-                $sentCount = (int) $this->baseQuery()
+                $pipelineValue = (float) $this->baseQuery()
+                    ->whereIn('status', $this->pipelineStatuses)
                     ->whereBetween('sent_at', [$start, $end])
-                    ->whereIn('status', QuoteStatus::sentStatuses())
-                    ->count();
-
-                $wonCount = (int) $this->baseQuery()
-                    ->whereIn('status', QuoteStatus::closedWonStatuses())
-                    ->whereBetween('created_at', [$start, $end])
-                    ->count();
+                    ->sum('total');
 
                 return [
                     'month'      => $date->format('M'),
                     'won'        => $wonRevenue,
-                    'win_rate'   => $sentCount > 0 ? round(($wonCount / $sentCount) * 100, 1) : 0,
-                    'sent_count' => $sentCount,
-                    'won_count'  => $wonCount,
+                    'pipeline'   => $pipelineValue,
                 ];
             })
             ->values();
@@ -336,7 +349,7 @@ class DashboardController extends Controller
     private function percentageTrend(float $current, float $previous): float|null
     {
         if ($previous <= 0) {
-            return null;
+            return 100.0;
         }
 
         return round((($current - $previous) / $previous) * 100, 1);

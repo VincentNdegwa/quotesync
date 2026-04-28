@@ -47,9 +47,13 @@ const props = defineProps<{
         pipeline_trend: number;
         won_this_month: number;
         won_trend: number;
-        win_rate: number;
-        win_rate_trend: number;
         quotes_expiring: number;
+        win: {
+            rate: number;
+            win_count: number;
+            sent_count: number;
+            trend: number;
+        };
     };
     revenue_trend: Array<{
         month: string;
@@ -128,6 +132,7 @@ type StatCard = {
     trend: number | null;
     trendText: string;
     note?: string;
+    valueText?: string;
 };
 
 const statCards = computed<StatCard[]>(() => [
@@ -148,9 +153,10 @@ const statCards = computed<StatCard[]>(() => [
     {
         key: 'win_rate',
         title: 'Win Rate',
-        value: formatPercent(props.stats.win_rate),
-        trend: props.stats.win_rate_trend ?? 0,
+        value: formatPercent(props.stats.win.rate),
+        trend: props.stats.win.trend ?? 0,
         trendText: 'vs last month',
+        valueText: `${props.stats.win.win_count} / ${props.stats.win.sent_count} quotes`,
     },
     {
         key: 'expiring',
@@ -190,6 +196,17 @@ const revenueChartConfig: ChartConfig = {
         icon: TrendingDown,
     },
 };
+
+const revenueSvgDefs = `
+  <linearGradient id="fillWon" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="5%" stop-color="var(--color-won)" stop-opacity="0.8" />
+    <stop offset="95%" stop-color="var(--color-won)" stop-opacity="0.1" />
+  </linearGradient>
+  <linearGradient id="fillPipeline" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="5%" stop-color="var(--color-pipeline)" stop-opacity="0.8" />
+    <stop offset="95%" stop-color="var(--color-pipeline)" stop-opacity="0.1" />
+  </linearGradient>
+`;
 
 type QuoteActivityDatum = {
     order: number;
@@ -311,29 +328,31 @@ defineOptions({
                             >{{ stat.value }}</CardTitle
                         >
                         <div
-                            v-if="stat.trend !== null"
-                            class="flex items-center gap-1 text-xs"
+                        v-if="stat.trend !== null"
+                        class="flex items-center gap-1 text-xs"
                         >
-                            <span
-                                :class="
+                        <span
+                        :class="
                                     stat.trend >= 0
-                                        ? 'text-emerald-600'
-                                        : 'text-rose-600'
-                                "
+                                    ? 'text-emerald-600'
+                                    : 'text-rose-600'
+                                    "
                                 class="flex items-center gap-1 font-semibold"
-                            >
+                                >
                                 <span>{{ stat.trend >= 0 ? '↑' : '↓' }}</span>
                                 <span>{{ formatTrendValue(stat.trend) }}%</span>
-                            </span>
+                              </span>
                         </div>
                     </div>
                 </CardHeader>
                 <CardFooter
-                    v-if="stat.trend !== null || stat.note"
-                    class="pt-0"
+                    v-if="stat.trend !== null || stat.note || stat.valueText"
+                    class="pt-0 flex flex-col items-start"
                 >
+                    <span v-if="stat.valueText" class="text-xs text-muted-foreground">{{ stat.valueText }}</span>
+
                     <div
-                        class="flex items-center gap-2 text-xs text-muted-foreground"
+                        class="flex items-center gap-2 text-sm text-muted-foreground"
                     >
                         <span v-if="stat.trend !== null">{{
                             stat.trendText
@@ -367,6 +386,7 @@ defineOptions({
                     >
                         <VisXYContainer
                             :data="revenueChartData"
+                            :svg-defs="revenueSvgDefs"
                             :margin="{
                                 left: 28,
                                 right: 12,
@@ -377,16 +397,30 @@ defineOptions({
                             <VisArea
                                 :x="(d: RevenueData) => d.order"
                                 :y="(d: RevenueData) => d.pipeline"
-                                :color="revenueChartConfig.pipeline.color"
-                                :opacity="0.25"
+                                :color="'url(#fillPipeline)'"
+                                :opacity="0.4"
                                 :curve-type="CurveType.MonotoneX"
+                            />
+                            <VisArea
+                                :x="(d: RevenueData) => d.order"
+                                :y="(d: RevenueData) => d.won"
+                                :color="'url(#fillWon)'"
+                                :opacity="0.4"
+                                :curve-type="CurveType.MonotoneX"
+                            />
+                            <VisLine
+                                :x="(d: RevenueData) => d.order"
+                                :y="(d: RevenueData) => d.pipeline"
+                                :color="revenueChartConfig.pipeline.color"
+                                :curve-type="CurveType.MonotoneX"
+                                :line-width="1"
                             />
                             <VisLine
                                 :x="(d: RevenueData) => d.order"
                                 :y="(d: RevenueData) => d.won"
                                 :color="revenueChartConfig.won.color"
                                 :curve-type="CurveType.MonotoneX"
-                                :line-width="2"
+                                :line-width="1"
                             />
                             <VisAxis
                                 type="x"
@@ -414,10 +448,7 @@ defineOptions({
                                         { labelKey: 'month' },
                                     )
                                 "
-                                :color="[
-                                    revenueChartConfig.won.color,
-                                    revenueChartConfig.pipeline.color,
-                                ]"
+                                :color="[revenueChartConfig.pipeline.color, revenueChartConfig.won.color]"
                             />
                         </VisXYContainer>
                         <ChartLegendContent class="mt-4 justify-start" />
