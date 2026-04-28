@@ -49,6 +49,7 @@ use Illuminate\Support\Str;
     'signature_path',
     'signer_name',
     'signer_ip',
+    'win_probability',
 ])]
 class Quote extends Model
 {

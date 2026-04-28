@@ -51,7 +51,8 @@ class WinProbabilityService
             $score += ($templateWinRate - 0.5) * 15;
         }
 
-        return min(95, max(5, round($score, 2)));
+        $return_score = min(95, max(5, round($score, 2)));
+        return $return_score;
     }
 
     private function clientWinRate(?int $clientId, int $workspaceId): float

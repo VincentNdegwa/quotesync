@@ -6,6 +6,7 @@ use App\Enums\QuoteStatus;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
 use App\Models\Workspace;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -155,15 +156,15 @@ class DashboardController extends Controller
             ->map(fn (int|string $count): int => (int) $count)
             ->toArray();
 
-        $allStatuses = [
-            'draft', 'pending_approval', 'sent', 'viewed',
-            'accepted', 'won', 'declined', 'lost', 'expired',
-        ];
-
-        $result = [];
-        foreach ($allStatuses as $status) {
-            $result[$status] = $counts[$status] ?? 0;
-        }
+        $result = collect(QuoteStatus::cases())
+            ->map(fn (QuoteStatus $status, int $index): array => [
+                'order' => $index,
+                'status' => $status->value,
+                'label' => $status->label(),
+                'count' => $counts[$status->value] ?? 0,
+            ])
+            ->values()
+            ->all();
 
         return $result;
     }

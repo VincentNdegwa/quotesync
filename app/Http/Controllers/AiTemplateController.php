@@ -20,13 +20,30 @@ class AiTemplateController extends Controller
             abort_unless($workspace instanceof Workspace, 403);
 
             $agent = new TemplateBuilderAgent($workspace);
-            $response = $agent->prompt($request->description);
+
+            $prompt = trim(implode("\n\n", array_filter([
+                $request->filled('industry')
+                    ? 'Industry: '.$request->string('industry')->toString()
+                    : null,
+                'Description: '.$request->string('description')->toString(),
+            ])));
+
+            $response = $agent->prompt($prompt);
+            $payload = $response instanceof \Illuminate\Contracts\Support\Arrayable
+                ? $response->toArray()
+                : (array) $response;
+
+            if (empty($payload['layout']) || empty($payload['template_name'])) {
+                return response()->json([
+                    'message' => 'The AI provider returned an incomplete template. Please try again in a moment.',
+                ], 502);
+            }
 
             return response()->json([
-                'layout' => $response['layout'] ?? null,
-                'template_name' => $response['template_name'] ?? null,
-                'template_description' => $response['template_description'] ?? null,
-                'industry' => $response['industry'] ?? null,
+                'layout' => $payload['layout'],
+                'template_name' => $payload['template_name'],
+                'template_description' => $payload['template_description'] ?? null,
+                'industry' => $payload['industry'] ?? $request->input('industry'),
             ]);
         } catch (\Exception $e) {
             return response()->json([

@@ -55,6 +55,7 @@ class QuoteController extends Controller
                     'currency' => $quote->currency,
                     'valid_until' => $quote->valid_until?->toDateString(),
                     'created_at' => $quote->created_at?->toISOString(),
+                    'win_probability' => $quote->win_probability,   
                     'client' => $quote->client ? [
                         'id' => $quote->client->id,
                         'company_name' => $quote->client->company_name,
