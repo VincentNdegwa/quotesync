@@ -10,6 +10,9 @@ import {
     Activity,
     ChevronDown,
     ChevronUp,
+    Shield,
+    ShieldCheck,
+    BadgeCheck,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { Button } from '@/components/ui/button';
@@ -34,6 +37,10 @@ const iconForType = (type: string) => {
         declined:       XCircle,
         follow_up_sent: Clock,
         scheduled:      CalendarClock,
+        approval_requested: Shield,
+        approval_approved: ShieldCheck,
+        approval_rejected: XCircle,
+        approval_granted: BadgeCheck,
     };
 
     return map[type] ?? Activity;

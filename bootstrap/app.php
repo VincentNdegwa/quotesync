@@ -2,6 +2,9 @@
 
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Providers\AppServiceProvider;
+use App\Providers\AuthServiceProvider;
+use App\Providers\FortifyServiceProvider;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,6 +22,11 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->group(base_path('routes/portal.php'));
         },
     )
+    ->withProviders([
+        AppServiceProvider::class,
+        AuthServiceProvider::class,
+        FortifyServiceProvider::class,
+    ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 

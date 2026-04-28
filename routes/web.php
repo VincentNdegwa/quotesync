@@ -63,6 +63,7 @@ Route::get('approvals', [ApprovalController::class, 'index'])
 
 Route::middleware(['auth', 'verified', EnsureWorkspaceSettingsOnboarded::class])->group(function () {
     Route::post('approvals/rules', [ApprovalController::class, 'storeRule'])->name('approvals.rules.store');
+    Route::patch('approvals/rules/{rule}', [ApprovalController::class, 'updateRule'])->name('approvals.rules.update');
     Route::post('approvals/{approval}/approve', [ApprovalController::class, 'approve'])->name('approvals.approve');
     Route::post('approvals/{approval}/reject', [ApprovalController::class, 'reject'])->name('approvals.reject');
     Route::delete('approvals/rules/{rule}', [ApprovalController::class, 'destroyRule'])->name('approvals.rules.destroy');

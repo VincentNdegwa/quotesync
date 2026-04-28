@@ -17,6 +17,8 @@ use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -152,14 +154,29 @@ class PublicQuoteController extends Controller
             'signature' => ['required', 'string', 'starts_with:data:image/png;base64,'],
         ]);
 
-        $signatureData = substr($validated['signature'], strpos($validated['signature'], ',') + 1);
-        $signatureData = base64_decode($signatureData);
+        $signaturePayload = substr($validated['signature'], strpos($validated['signature'], ',') + 1);
+        $signatureBinary = base64_decode($signaturePayload, true);
+
+        if ($signatureBinary === false) {
+            throw ValidationException::withMessages([
+                'signature' => 'The provided signature image is invalid.',
+            ]);
+        }
+
+        $signaturePath = sprintf('signatures/%s-%s.png', $quote->quote_uuid, Str::uuid());
+
+        if (is_string($quote->signature_path) && $quote->signature_path !== '') {
+            Storage::disk('public')->delete($quote->signature_path);
+        }
+
+        Storage::disk('public')->put($signaturePath, $signatureBinary);
 
         $quote->forceFill([
-            'status' => 'accepted',
+            'status' => QuoteStatus::Accepted->value,
             'accepted_at' => now(),
-            'signature' => $signatureData,
+            'signature_path' => $signaturePath,
             'signer_name' => $validated['signer_name'] ?? null,
+            'signer_ip' => $request->ip(),
         ])->save();
 
         QuoteActivity::query()->create([
@@ -167,10 +184,16 @@ class PublicQuoteController extends Controller
             'workspace_id' => $quote->workspace_id,
             'user_id' => null,
             'type' => 'status_changed',
-            'description' => 'Quote was accepted and signed by '.$validated['signer_name'].'.',
+            'description' => $validated['signer_name']
+                ? 'Quote was accepted and signed by '.$validated['signer_name'].'.'
+                : 'Quote was accepted and signed by the client.',
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
-            'metadata' => ['status' => 'accepted', 'signer_name' => $validated['signer_name'] ?? null],
+            'metadata' => [
+                'status' => 'accepted',
+                'signer_name' => $validated['signer_name'] ?? null,
+                'signature_path' => $signaturePath,
+            ],
         ]);
 
         $quote->quoteFollowUps()

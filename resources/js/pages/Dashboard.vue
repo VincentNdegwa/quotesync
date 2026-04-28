@@ -143,8 +143,18 @@ const statCards = computed<StatCard[]>(() => [
   },
 ]);
 
-const revenueChartData = computed(() => props.revenue_trend);
+const revenueChartData = computed(() =>
+  props.revenue_trend.map((entry, index) => ({
+    ...entry,
+    order: index,
+  })),
+);
 type RevenueData = typeof revenueChartData.value[number];
+const revenueTickValues = computed(() => revenueChartData.value.map(point => point.order));
+const formatRevenueTick = (value: number): string => {
+  const match = revenueChartData.value.find(point => point.order === value);
+  return match?.month ?? '';
+};
 
 const revenueChartConfig: ChartConfig = {
   won: {
@@ -306,7 +316,7 @@ defineOptions({
       </Card>
     </section>
 
-    <section class="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
+    <section class="grid gap-4 grid-cols-2">
       <Card class="h-full border border-sidebar-border/70">
         <CardHeader class="pb-0">
           <div class="flex items-start justify-between">
@@ -320,14 +330,14 @@ defineOptions({
           <ChartContainer :config="revenueChartConfig" cursor class="h-full">
             <VisXYContainer :data="revenueChartData" :margin="{ left: 28, right: 12, top: 12, bottom: 32 }">
               <VisArea
-                :x="(d: RevenueData) => d.month"
+                :x="(d: RevenueData) => d.order"
                 :y="(d: RevenueData) => d.pipeline"
                 :color="revenueChartConfig.pipeline.color"
                 :opacity="0.25"
                 :curve-type="CurveType.MonotoneX"
               />
               <VisLine
-                :x="(d: RevenueData) => d.month"
+                :x="(d: RevenueData) => d.order"
                 :y="(d: RevenueData) => d.won"
                 :color="revenueChartConfig.won.color"
                 :curve-type="CurveType.MonotoneX"
@@ -335,7 +345,9 @@ defineOptions({
               />
               <VisAxis
                 type="x"
-                :x="(d: RevenueData) => d.month"
+                :x="(d: RevenueData) => d.order"
+                :tick-values="revenueTickValues"
+                :tick-format="formatRevenueTick"
                 :tick-line="false"
                 :domain-line="false"
                 :grid-line="false"
@@ -397,6 +409,7 @@ defineOptions({
                 :num-ticks="4"
                 :tick-line="false"
                 :domain-line="false"
+                :tick-format="(value: number) => formatNumber(value)"
               />
               <ChartTooltip />
               <ChartCrosshair

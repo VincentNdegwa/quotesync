@@ -89,8 +89,18 @@ const applyFilters = () => {
   window.location.href = `/analytics?start_date=${startDate.value}&end_date=${endDate.value}`;
 };
 
-const revenueChartData = computed(() => props.revenue_intelligence.revenue_trend);
+const revenueChartData = computed(() =>
+  props.revenue_intelligence.revenue_trend.map((entry, index) => ({
+    ...entry,
+    order: index,
+  })),
+);
 type RevenueData = typeof revenueChartData.value[number];
+const revenueTickValues = computed(() => revenueChartData.value.map(point => point.order));
+const formatRevenueTick = (value: number): string => {
+  const match = revenueChartData.value.find(point => point.order === value);
+  return match?.month ?? '';
+};
 
 const revenueTrendChange = computed(() => {
   const data = revenueChartData.value;
@@ -313,14 +323,14 @@ const forecastCards = computed(() => [
           <ChartContainer :config="revenueChartConfig" cursor class="h-full">
             <VisXYContainer :data="revenueChartData" :margin="{ left: 32, right: 16, top: 16, bottom: 32 }">
               <VisArea
-                :x="(d: RevenueData) => d.month"
+                :x="(d: RevenueData) => d.order"
                 :y="(d: RevenueData) => d.average"
                 :color="revenueChartConfig.average.color"
                 :opacity="0.18"
                 :curve-type="CurveType.MonotoneX"
               />
               <VisLine
-                :x="(d: RevenueData) => d.month"
+                :x="(d: RevenueData) => d.order"
                 :y="(d: RevenueData) => d.won"
                 :color="revenueChartConfig.won.color"
                 :curve-type="CurveType.MonotoneX"
@@ -328,7 +338,9 @@ const forecastCards = computed(() => [
               />
               <VisAxis
                 type="x"
-                :x="(d: RevenueData) => d.month"
+                :x="(d: RevenueData) => d.order"
+                :tick-values="revenueTickValues"
+                :tick-format="formatRevenueTick"
                 :tick-line="false"
                 :domain-line="false"
                 :grid-line="false"
@@ -415,6 +427,7 @@ const forecastCards = computed(() => [
                 :num-ticks="4"
                 :tick-line="false"
                 :domain-line="false"
+                :tick-format="(value: number) => formatNumber(value)"
               />
               <ChartTooltip />
               <ChartCrosshair

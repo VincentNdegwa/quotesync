@@ -16,6 +16,7 @@ import {
     XCircle,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import { toast } from 'vue-sonner';
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
@@ -109,11 +110,11 @@ const openSendDialog = (): void => {
 };
 
 const executeSend = (): void => {
-    if (quoteToSend.value) {
-        emit('send', quoteToSend.value);
-        showSendDialog.value = false;
-        quoteToSend.value = null;
-    }
+    router.post(QuoteSendController.store(props.quote.id).url, {}, {
+        onSuccess: ()=>{
+            showSendDialog.value = false;
+        }
+    });
 };
 
 const approve = (): void => {
@@ -230,19 +231,30 @@ const viewAsClient = (): void => {
 
 const downloadPDF = async (): Promise<void> => {
     try {
-        const response = await router.post(
-            `/quotes/${props.quote.id}/pdf`,
-            {},
-            {
-                onSuccess: (page) => {
-                    if (page.props.url) {
-                        window.open(String(page.props.url), '_blank');
-                    }
-                },
-            },
-        );
+        const response = await fetch(`/quotes/${props.quote.id}/pdf`, {
+            method: 'POST',
+            body: JSON.stringify({}),
+        });
+
+        const data = await response.json();
+
+        if (response.status === 202) {
+            toast.info(data?.message ?? 'PDF generation started. You can download it shortly.');
+
+            return;
+        }
+
+        if (response.ok && data?.url) {
+            window.open(String(data.url), '_blank');
+            toast.success('PDF download ready.');
+
+            return;
+        }
+
+        throw new Error(data?.message ?? 'Unable to generate PDF.');
     } catch (error) {
         console.error('Failed to generate PDF:', error);
+        toast.error('Failed to generate the PDF. Please try again.');
     }
 };
 

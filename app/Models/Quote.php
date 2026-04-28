@@ -20,6 +20,8 @@ use Illuminate\Support\Str;
     'number',
     'title',
     'status',
+    'approval_granted',
+    'approval_granted_at',
     'client_id',
     'assigned_to',
     'currency',
@@ -179,6 +181,14 @@ class Quote extends Model
     }
 
     /**
+     * @return HasMany<QuoteApproval, $this>
+     */
+    public function quoteApprovals(): HasMany
+    {
+        return $this->hasMany(QuoteApproval::class);
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -193,6 +203,8 @@ class Quote extends Model
             'total' => 'decimal:2',
             'requires_deposit' => 'boolean',
             'deposit_amount' => 'decimal:2',
+            'approval_granted' => 'boolean',
+            'approval_granted_at' => 'datetime',
             'sent_at' => 'datetime',
             'viewed_at' => 'datetime',
             'accepted_at' => 'datetime',

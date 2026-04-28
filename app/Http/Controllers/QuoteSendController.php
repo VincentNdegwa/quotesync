@@ -2,19 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\QuoteApprovalStatus;
+use App\Enums\QuoteStatus;
 use App\Jobs\SendQuoteEmailJob;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
-use App\Enums\QuoteStatus;
+use App\Models\QuoteApproval;
 use App\Models\Workspace;
 use App\Notifications\QuoteSentInternalNotification;
+use App\Services\ApprovalService;
 use App\Services\Quotes\QuoteFollowUpSchedulerService;
 use App\Services\Quotes\QuotePlaceholderService;
 use App\Services\Quotes\QuoteShortCodeService;
 use App\Services\Pdf\QuotePdfService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -27,10 +30,45 @@ class QuoteSendController extends Controller
         WorkspaceSettingsService $workspaceSettingsService,
         QuoteShortCodeService $quoteShortCodeService,
         QuoteFollowUpSchedulerService $quoteFollowUpSchedulerService,
+        ApprovalService $approvalService,
     ): RedirectResponse {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+
+        $currentStatus = $quote->status instanceof QuoteStatus
+            ? $quote->status
+            : QuoteStatus::from((string) $quote->status);
+
+        if ($currentStatus === QuoteStatus::PendingApproval) {
+            Inertia::flash('toast', [
+                'type' => 'warning',
+                'message' => __('Quote is pending approval and cannot be sent yet.'),
+            ]);
+
+            return back();
+        }
+
+        $approvalRequired = $quote->approval_granted !== true
+            && $approvalService->checkApprovalRequired($quote);
+
+        if ($approvalRequired) {
+            $hasPendingApprovals = QuoteApproval::query()
+                ->where('quote_id', $quote->id)
+                ->where('status', QuoteApprovalStatus::Pending->value)
+                ->exists();
+
+            if (! $hasPendingApprovals) {
+                $approvalService->initiateApproval($quote, $request->user()->id);
+            }
+
+            Inertia::flash('toast', [
+                'type' => 'info',
+                'message' => __('Quote requires approval before it can be sent. Approval requests have been created.'),
+            ]);
+
+            return back();
+        }
 
         $quote->loadMissing(['client', 'sections.lineItems']);
 
@@ -80,7 +118,7 @@ class QuoteSendController extends Controller
 
         if ($attachPdf) {
             if (!$quote->pdf_path) {
-                $pdfService = app(\App\Services\Pdf\QuotePdfService::class);
+                $pdfService = app(QuotePdfService::class);
                 $pdfPath = $pdfService->generate($quote);
                 $quote->pdf_path = $pdfPath;
                 $quote->save();
@@ -103,7 +141,7 @@ class QuoteSendController extends Controller
         )->delay($sendAt);
 
         $quote->forceFill([
-            'status' => 'sent',
+            'status' => QuoteStatus::Sent->value,
             'sent_at' => $sendAt,
         ])->save();
 

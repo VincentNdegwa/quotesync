@@ -32,11 +32,12 @@ const loadQuotes = async (): Promise<void> => {
 
 onMounted(loadQuotes);
 
-const COLUMN_ORDER = ['draft', 'sent', 'viewed', 'accepted', 'declined', 'won', 'lost', 'expired'] as const;
+const COLUMN_ORDER = ['draft','pending_approval', 'sent', 'viewed', 'accepted', 'declined', 'won', 'lost', 'expired'] as const;
 type StatusKey = (typeof COLUMN_ORDER)[number];
 
 const ALLOWED_TRANSITIONS: Record<StatusKey, StatusKey[]> = {
     draft:    ['sent'],
+    pending_approval: ['sent', 'draft'],
     sent:     ['won', 'lost', 'draft'],
     viewed:   ['won', 'lost', 'draft'],
     accepted: ['won', 'lost'],
@@ -60,6 +61,7 @@ type ColStyle = {
 
 const COLUMN_STYLES: Record<StatusKey, ColStyle> = {
     draft:    { topBar: 'bg-slate-400',   countBg: 'bg-slate-100',   countText: 'text-slate-600',   dropActive: 'ring-2 ring-slate-400 bg-slate-50',        dot: 'bg-slate-400',   badge: 'bg-slate-100',   badgeText: 'text-slate-600' },
+    pending_approval: { topBar: 'bg-amber-400',   countBg: 'bg-amber-100',   countText: 'text-amber-600',   dropActive: 'ring-2 ring-amber-400 bg-amber-50',        dot: 'bg-amber-400',   badge: 'bg-amber-100',   badgeText: 'text-amber-600' },
     sent:     { topBar: 'bg-blue-500',    countBg: 'bg-blue-50',     countText: 'text-blue-600',    dropActive: 'ring-2 ring-blue-400 bg-blue-50/60',       dot: 'bg-blue-500',    badge: 'bg-blue-50',     badgeText: 'text-blue-600' },
     viewed:   { topBar: 'bg-cyan-500',    countBg: 'bg-cyan-50',     countText: 'text-cyan-600',    dropActive: 'ring-2 ring-cyan-400 bg-cyan-50/60',       dot: 'bg-cyan-500',    badge: 'bg-cyan-50',     badgeText: 'text-cyan-600' },
     accepted: { topBar: 'bg-emerald-500',  countBg: 'bg-emerald-50',  countText: 'text-emerald-600', dropActive: 'ring-2 ring-emerald-400 bg-emerald-50/60', dot: 'bg-emerald-500', badge: 'bg-emerald-50',  badgeText: 'text-emerald-600' },

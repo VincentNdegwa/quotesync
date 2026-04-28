@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\QuoteStatus;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
 use App\Models\Workspace;
@@ -46,20 +47,20 @@ class DashboardController extends Controller
         $lastMonthStart = $now->copy()->subMonth()->startOfMonth();
         $lastMonthEnd   = $now->copy()->subMonth()->endOfMonth();
 
-        $pipelineStatuses = ['sent', 'viewed', 'pending_approval'];
-        $sentStatuses     = ['sent', 'viewed', 'accepted', 'won', 'lost', 'expired', 'declined'];
+        $pipelineStatuses = QuoteStatus::pipelineStatuses();
+        $sentStatuses     = QuoteStatus::sentStatuses();
 
         $pipelineValue = (float) $this->baseQuery()
             ->whereIn('status', $pipelineStatuses)
             ->sum('total');
 
         $wonThisMonth = (float) $this->baseQuery()
-            ->where('status', 'won')
+            ->whereIn('status', QuoteStatus::closedWonStatuses())
             ->whereBetween('created_at', $thisMonth)
             ->sum('total');
 
         $wonLastMonth = (float) $this->baseQuery()
-            ->where('status', 'won')
+            ->whereIn('status', QuoteStatus::closedWonStatuses())
             ->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])
             ->sum('total');
 
@@ -69,7 +70,7 @@ class DashboardController extends Controller
             ->count();
 
         $wonThisMonthCount = (int) $this->baseQuery()
-            ->where('status', 'won')
+            ->whereIn('status', QuoteStatus::closedWonStatuses())
             ->whereBetween('created_at', $thisMonth)
             ->count();
 
@@ -79,7 +80,7 @@ class DashboardController extends Controller
             ->count();
 
         $wonLastMonthCount = (int) $this->baseQuery()
-            ->where('status', 'won')
+            ->whereIn('status', QuoteStatus::closedWonStatuses())
             ->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])
             ->count();
 
@@ -92,7 +93,7 @@ class DashboardController extends Controller
             : 0.0;
 
         $quotesExpiring = (int) $this->baseQuery()
-            ->whereIn('status', ['sent', 'viewed'])
+            ->whereIn('status', QuoteStatus::pipelineStatuses())
             ->whereNotNull('valid_until')
             ->whereBetween('valid_until', [
                 $now->copy()->startOfDay(),
@@ -120,17 +121,17 @@ class DashboardController extends Controller
                 $end   = $date->copy()->endOfMonth();
 
                 $wonRevenue = (float) $this->baseQuery()
-                    ->where('status', 'won')
+                    ->whereIn('status', QuoteStatus::closedWonStatuses())
                     ->whereBetween('created_at', [$start, $end])
                     ->sum('total');
 
                 $sentCount = (int) $this->baseQuery()
                     ->whereBetween('sent_at', [$start, $end])
-                    ->whereIn('status', ['sent', 'viewed', 'accepted', 'won', 'lost', 'expired', 'declined'])
+                    ->whereIn('status', QuoteStatus::sentStatuses())
                     ->count();
 
                 $wonCount = (int) $this->baseQuery()
-                    ->where('status', 'won')
+                    ->whereIn('status', QuoteStatus::closedWonStatuses())
                     ->whereBetween('created_at', [$start, $end])
                     ->count();
 
@@ -179,7 +180,7 @@ class DashboardController extends Controller
     private function hotLeads(): Collection
     {
         return $this->baseQuery()
-            ->whereIn('status', ['sent', 'viewed'])
+            ->whereIn('status', QuoteStatus::pipelineStatuses())
             ->where('view_count', '>=', 3)
             ->with('client:id,company_name')
             ->orderByDesc('view_count')
@@ -199,7 +200,7 @@ class DashboardController extends Controller
     private function followUpDue(): Collection
     {
         return $this->baseQuery()
-            ->whereIn('status', ['sent', 'viewed'])
+            ->whereIn('status', QuoteStatus::pipelineStatuses())
             ->whereNotNull('sent_at')
             ->where('sent_at', '<', now()->subDays(4))
             ->where(function ($query): void {
@@ -235,7 +236,7 @@ class DashboardController extends Controller
     private function expiringSoon(): Collection
     {
         return $this->baseQuery()
-            ->whereIn('status', ['sent', 'viewed'])
+            ->whereIn('status', QuoteStatus::pipelineStatuses())
             ->whereNotNull('valid_until')
             ->whereBetween('valid_until', [
                 now()->startOfDay(),
@@ -298,7 +299,7 @@ class DashboardController extends Controller
         $start = $now->copy()->startOfMonth();
         $end   = $now->copy()->endOfMonth();
 
-        $sentStatuses = ['sent', 'viewed', 'accepted', 'won', 'lost', 'expired', 'declined'];
+        $sentStatuses = QuoteStatus::sentStatuses();
 
         $rows = $this->baseQuery()
             ->whereNotNull('created_by')
@@ -308,8 +309,8 @@ class DashboardController extends Controller
                 implode(', ', [
                     'created_by',
                     'COUNT(*) as sent_count',
-                    "SUM(CASE WHEN status = 'won' THEN 1 ELSE 0 END) as won_count",
-                    "SUM(CASE WHEN status = 'won' THEN total ELSE 0 END) as total_value",
+                    'SUM(CASE WHEN status IN (' . implode(', ', array_map(fn ($status) => "'{$status}'", QuoteStatus::closedWonStatuses())) . ') THEN 1 ELSE 0 END) as won_count',
+                    'SUM(CASE WHEN status IN (' . implode(', ', array_map(fn ($status) => "'{$status}'", QuoteStatus::closedWonStatuses())) . ') THEN total ELSE 0 END) as total_value',
                 ])
             )
             ->groupBy('created_by')

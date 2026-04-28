@@ -64,6 +64,44 @@ enum QuoteStatus: string
         return array_column(self::cases(), 'value');
     }
 
+    public static function pipelineStatuses(): array
+    {
+        return [
+            self::Sent->value,
+            self::Viewed->value,
+            self::PendingApproval->value,
+        ];
+    }
+
+    public static function sentStatuses(): array
+    {
+        return [
+            self::Sent->value,
+            self::Viewed->value,
+            self::Accepted->value,
+            self::Won->value,
+            self::Lost->value,
+            self::Expired->value,
+            self::Declined->value,
+        ];
+    }
+
+    public static function closedWonStatuses(): array
+    {
+        return [
+            self::Won->value,
+            self::Accepted->value,
+        ];
+    }
+
+    public static function closedLostStatuses(): array
+    {
+        return [
+            self::Lost->value,
+            self::Declined->value,
+        ];
+    }
+
     public static function all(): array
     {
         return array_map(fn (self $status) => [

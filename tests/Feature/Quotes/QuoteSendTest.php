@@ -1,12 +1,17 @@
 <?php
 
+use App\Enums\ApprovalRuleTriggerType;
+use App\Enums\QuoteApprovalStatus;
 use App\Jobs\SendQuoteEmailJob;
 use App\Enums\QuoteStatus;
+use App\Models\ApprovalRule;
 use App\Models\Client;
 use App\Models\FollowUpSequence;
 use App\Models\FollowUpStep;
 use App\Models\Quote;
+use App\Models\QuoteApproval;
 use App\Models\QuoteShortCode;
+use App\Models\QuoteActivity;
 use App\Models\User;
 use App\Notifications\QuoteSentInternalNotification;
 use Illuminate\Support\Facades\Notification;
@@ -58,6 +63,188 @@ test('user can send quote immediately and activity is logged', function () {
     });
 
     Notification::assertSentTo($user, QuoteSentInternalNotification::class);
+});
+
+test('sending a quote that requires approval creates pending requests instead of emailing the client', function () {
+    Queue::fake();
+    Notification::fake();
+
+    $user = User::factory()->create();
+    $workspace = $user->currentWorkspace;
+
+    $client = Client::factory()->for($workspace, 'workspace')->create([
+        'email' => 'client@example.com',
+    ]);
+
+    ApprovalRule::query()->create([
+        'workspace_id' => $workspace->id,
+        'trigger_type' => ApprovalRuleTriggerType::ValueAbove->value,
+        'threshold_value' => 10,
+        'client_id' => null,
+        'approver_id' => $user->id,
+        'is_active' => true,
+    ]);
+
+    $quote = Quote::query()->create([
+        'workspace_id' => $workspace->id,
+        'title' => 'Needs approval',
+        'status' => 'draft',
+        'client_id' => $client->id,
+        'currency' => 'USD',
+        'total' => 6500,
+        'valid_until' => now()->addDays(14)->toDateString(),
+    ]);
+
+    $response = $this->actingAs($user)->post(route('quotes.send', $quote));
+
+    $response->assertRedirect();
+
+    $quote->refresh();
+
+    expect($quote->status)->toBe(QuoteStatus::PendingApproval);
+    expect($quote->approval_granted)->toBeFalse();
+
+    $this->assertDatabaseHas('quote_approvals', [
+        'quote_id' => $quote->id,
+        'approver_id' => $user->id,
+        'status' => QuoteApprovalStatus::Pending->value,
+    ]);
+
+    Queue::assertNotPushed(SendQuoteEmailJob::class);
+    Notification::assertNothingSent();
+
+    expect(QuoteShortCode::query()->where('quote_id', $quote->id)->exists())->toBeFalse();
+
+    expect(QuoteActivity::query()
+        ->where('quote_id', $quote->id)
+        ->where('type', 'approval_requested')
+        ->count())->toBe(1);
+
+    $this->assertDatabaseMissing('quote_activities', [
+        'quote_id' => $quote->id,
+        'type' => 'sent',
+    ]);
+
+    $secondResponse = $this->actingAs($user)->post(route('quotes.send', $quote));
+
+    $secondResponse->assertRedirect();
+
+    expect(QuoteApproval::query()->where('quote_id', $quote->id)->count())->toBe(1);
+    expect(QuoteActivity::query()
+        ->where('quote_id', $quote->id)
+        ->where('type', 'approval_requested')
+        ->count())->toBe(1);
+});
+
+test('approving a pending quote logs approval activities', function () {
+    Queue::fake();
+    Notification::fake();
+
+    $user = User::factory()->create();
+    $workspace = $user->currentWorkspace;
+
+    $client = Client::factory()->for($workspace, 'workspace')->create([
+        'email' => 'client@example.com',
+    ]);
+
+    ApprovalRule::query()->create([
+        'workspace_id' => $workspace->id,
+        'trigger_type' => ApprovalRuleTriggerType::AllQuotes->value,
+        'threshold_value' => null,
+        'client_id' => null,
+        'approver_id' => $user->id,
+        'is_active' => true,
+    ]);
+
+    $quote = Quote::query()->create([
+        'workspace_id' => $workspace->id,
+        'title' => 'Needs approval',
+        'status' => 'draft',
+        'client_id' => $client->id,
+        'currency' => 'USD',
+        'total' => 1200,
+        'valid_until' => now()->addDays(14)->toDateString(),
+    ]);
+
+    $this->actingAs($user)->post(route('quotes.send', $quote))->assertRedirect();
+
+    $quote->refresh();
+
+    $approval = QuoteApproval::query()->where('quote_id', $quote->id)->firstOrFail();
+
+    $this->actingAs($user)->post(route('approvals.approve', $approval), [
+        'comment' => 'Looks good to me.',
+    ])->assertRedirect();
+
+    $quote->refresh();
+
+    expect($quote->approval_granted)->toBeTrue();
+
+    $this->assertDatabaseHas('quote_activities', [
+        'quote_id' => $quote->id,
+        'type' => 'approval_approved',
+    ]);
+
+    $this->assertDatabaseHas('quote_activities', [
+        'quote_id' => $quote->id,
+        'type' => 'approval_granted',
+    ]);
+});
+
+test('rejecting a pending quote logs rejection activity', function () {
+    Queue::fake();
+    Notification::fake();
+
+    $user = User::factory()->create();
+    $workspace = $user->currentWorkspace;
+
+    $client = Client::factory()->for($workspace, 'workspace')->create([
+        'email' => 'client@example.com',
+    ]);
+
+    ApprovalRule::query()->create([
+        'workspace_id' => $workspace->id,
+        'trigger_type' => ApprovalRuleTriggerType::AllQuotes->value,
+        'threshold_value' => null,
+        'client_id' => null,
+        'approver_id' => $user->id,
+        'is_active' => true,
+    ]);
+
+    $quote = Quote::query()->create([
+        'workspace_id' => $workspace->id,
+        'title' => 'Needs review',
+        'status' => 'draft',
+        'client_id' => $client->id,
+        'currency' => 'USD',
+        'total' => 5000,
+        'valid_until' => now()->addDays(14)->toDateString(),
+    ]);
+
+    $this->actingAs($user)->post(route('quotes.send', $quote))->assertRedirect();
+
+    $quote->refresh();
+
+    $approval = QuoteApproval::query()->where('quote_id', $quote->id)->firstOrFail();
+
+    $this->actingAs($user)->post(route('approvals.reject', $approval), [
+        'comment' => 'Needs better pricing.',
+    ])->assertRedirect();
+
+    $quote->refresh();
+
+    expect($quote->status->value)->toBe('draft');
+    expect($quote->approval_granted)->toBeFalse();
+
+    $this->assertDatabaseHas('quote_activities', [
+        'quote_id' => $quote->id,
+        'type' => 'approval_rejected',
+    ]);
+
+    $this->assertDatabaseMissing('quote_activities', [
+        'quote_id' => $quote->id,
+        'type' => 'approval_granted',
+    ]);
 });
 
 test('it flashes error if client has no email', function () {

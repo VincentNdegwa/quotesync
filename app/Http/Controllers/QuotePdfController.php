@@ -14,11 +14,14 @@ class QuotePdfController extends Controller
     {
         Gate::authorize('view', $quote);
 
-        if (!$quote->pdf_path) {
-            GenerateQuotePdf::dispatch($quote);
-            
+        if (! $quote->pdf_path) {
+            GenerateQuotePdf::dispatchSync($quote);
+            $quote->refresh();
+        }
+
+        if (! $quote->pdf_path) {
             return response()->json([
-                'message' => 'PDF generation started',
+                'message' => 'PDF generation is in progress. Please try again shortly.',
                 'status' => 'pending',
             ], 202);
         }

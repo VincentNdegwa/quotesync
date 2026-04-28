@@ -217,7 +217,7 @@ export type QuoteStatusEnum = {
     availableActions: string[];
 };
 
-export type QuoteActivityTypeEnum = EnumOption<'created' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'follow_up_sent' | 'scheduled'>;
+export type QuoteActivityTypeEnum = EnumOption<'created' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'follow_up_sent' | 'scheduled' | 'approval_requested' | 'approval_approved' | 'approval_rejected' | 'approval_granted'>;
 
 export type FollowUpChannelEnum = {
     value: 'email' | 'whatsapp' | 'sms';

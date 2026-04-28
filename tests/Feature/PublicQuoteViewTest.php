@@ -6,7 +6,9 @@ use App\Models\Quote;
 use App\Models\QuoteShortCode;
 use App\Models\User;
 use App\Notifications\QuoteViewedNotification;
+use App\Models\QuoteActivity;
 use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -72,6 +74,66 @@ test('public quote page renders the quote and throttles view notifications', fun
             ->where('data->quote_id', $quote->id)
             ->count(),
     )->toBe(1);
+});
+
+test('client acceptance stores signature path and metadata', function () {
+    Storage::fake('public');
+
+    $user = User::factory()->create();
+    $workspace = $user->currentWorkspace;
+
+    $client = Client::query()->create([
+        'workspace_id' => $workspace->id,
+        'company_name' => 'Acme Client',
+        'contact_name' => 'Alice Client',
+        'email' => 'client@example.com',
+        'created_by' => $user->id,
+    ]);
+
+    $quote = Quote::query()->create([
+        'workspace_id' => $workspace->id,
+        'quote_uuid' => (string) Str::uuid(),
+        'number' => 'QS-2026-010',
+        'title' => 'Signature capture',
+        'status' => QuoteStatus::Sent->value,
+        'client_id' => $client->id,
+        'assigned_to' => $user->id,
+        'currency' => 'USD',
+        'subtotal' => 500,
+        'discount_amount' => 0,
+        'tax_amount' => 0,
+        'total' => 500,
+        'valid_until' => now()->addDays(7)->toDateString(),
+        'created_by' => $user->id,
+    ]);
+
+    $signatureBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4/58BAgMDAwN7bwAAAABJRU5ErkJggg==';
+
+    $this->post(route('public-quotes.accept', ['quoteUuid' => $quote->quote_uuid]), [
+        'signer_name' => 'Client Test',
+        'signature' => 'data:image/png;base64,'.$signatureBase64,
+    ])->assertRedirect();
+
+    $quote->refresh();
+
+    expect($quote->status)->toBe(QuoteStatus::Accepted);
+    expect($quote->accepted_at)->not->toBeNull();
+    expect($quote->signature_path)->not->toBeNull();
+    expect($quote->signer_name)->toBe('Client Test');
+    expect($quote->signer_ip)->toBe('127.0.0.1');
+    Storage::disk('public')->assertExists($quote->signature_path);
+
+    $activity = QuoteActivity::query()
+        ->where('quote_id', $quote->id)
+        ->where('type', 'status_changed')
+        ->latest('id')
+        ->first();
+
+    expect($activity)->not->toBeNull();
+    expect($activity->metadata)->toMatchArray([
+        'status' => 'accepted',
+        'signer_name' => 'Client Test',
+    ]);
 });
 
 test('public quote page resolves quote by short code', function () {

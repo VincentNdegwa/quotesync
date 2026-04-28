@@ -131,6 +131,7 @@ const deviceChartData = computed(() =>
     percentage: item.percentage,
   })),
 );
+type DeviceChartDatum = typeof deviceChartData.value[number];
 const deviceChartConfig = computed<ChartConfig>(() =>
   deviceBreakdown.value.reduce((config, item) => {
     const key = item.device as DeviceIconKey;
@@ -151,6 +152,7 @@ const sessionChartData = computed(() =>
     duration: ((view.duration_seconds ?? 0) / 60),
   })),
 );
+type SessionChartDatum = typeof sessionChartData.value[number];
 const sessionChartConfig: ChartConfig = {
   duration: {
     label: 'Minutes read',
@@ -158,6 +160,8 @@ const sessionChartConfig: ChartConfig = {
     icon: Clock3,
   },
 };
+const sessionTickValues = computed(() => sessionChartData.value.map(point => point.view));
+const formatSessionTick = (value: number): string => `View ${Math.round(value)}`;
 
 const sessionDurationTrend = computed(() => {
   const durations = props.analytics.view_timeline
@@ -186,6 +190,7 @@ const sectionChartData = computed(() =>
     seconds: section.time_spent_seconds,
   })),
 );
+type SectionChartDatum = typeof sectionChartData.value[number];
 const sectionChartConfig: ChartConfig = {
   seconds: {
     label: 'Seconds read',
@@ -297,7 +302,7 @@ const followUpTimeline = computed(() =>
             </div>
             <div class="space-y-2">
               <CardTitle class="text-2xl font-semibold tracking-tight">{{ quote.title }}</CardTitle>
-              <CardDescription>Quote #{{ quote.number ?? '—' }} · {{ formatCurrency(quote.total, quote.currency) }}</CardDescription>
+              <CardDescription>Quote #{{ quote.number ?? '—' }} · {{ formatCurrency(quote.total, quote.currency ?? undefined) }}</CardDescription>
             </div>
             <div class="flex flex-wrap items-center gap-2">
               <Badge :variant="getQuoteStatus(quote.status)?.value === 'accepted' ? 'default' : 'secondary'">
@@ -356,8 +361,8 @@ const followUpTimeline = computed(() =>
             <ChartContainer :config="deviceChartConfig" class="h-[260px]">
               <VisSingleContainer :data="deviceChartData" :margin="{ top: 20, bottom: 20 }">
                 <VisDonut
-                  :value="d => d.count"
-                  :color="d => deviceChartConfig[d.device]?.color ?? 'var(--chart-4)'"
+                  :value="(d: DeviceChartDatum) => d.count"
+                  :color="(d: DeviceChartDatum) => deviceChartConfig[d.device]?.color ?? 'var(--chart-4)'"
                   :arc-width="32"
                 />
                 <ChartTooltip />
@@ -410,13 +415,21 @@ const followUpTimeline = computed(() =>
           <ChartContainer v-else :config="sessionChartConfig" cursor class="h-full">
             <VisXYContainer :data="sessionChartData" :margin="{ left: 36, right: 16, top: 16, bottom: 32 }">
               <VisLine
-                :x="d => d.view"
-                :y="d => d.duration"
+                :x="(d: SessionChartDatum) => d.view"
+                :y="(d: SessionChartDatum) => d.duration"
                 :color="sessionChartConfig.duration.color"
                 :curve-type="CurveType.MonotoneX"
                 :line-width="2"
               />
-              <VisAxis type="x" :x="d => d.view" :tick-line="false" :domain-line="false" :grid-line="false" />
+              <VisAxis
+                type="x"
+                :x="(d: SessionChartDatum) => d.view"
+                :tick-values="sessionTickValues"
+                :tick-format="formatSessionTick"
+                :tick-line="false"
+                :domain-line="false"
+                :grid-line="false"
+              />
               <VisAxis type="y" :num-ticks="4" :tick-line="false" :domain-line="false" :tick-format="(value: number) => `${value}m`" />
               <ChartTooltip />
               <ChartCrosshair
@@ -444,8 +457,8 @@ const followUpTimeline = computed(() =>
           <ChartContainer :config="sectionChartConfig" cursor class="h-full">
             <VisXYContainer :data="sectionChartData" :margin="{ left: 140, right: 24, top: 24, bottom: 24 }">
               <VisGroupedBar
-                :x="d => d.seconds"
-                :y="d => d.section"
+                :x="(d: SectionChartDatum) => d.seconds"
+                :y="(d: SectionChartDatum) => d.section"
                 :color="sectionChartConfig.seconds.color"
                 :orientation="Orientation.Horizontal"
                 :rounded-corners="6"
