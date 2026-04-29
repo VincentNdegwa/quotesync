@@ -8,10 +8,16 @@ use Illuminate\Database\Seeder;
 
 class DefaultUnitsSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
+    {
+        Workspace::chunk(100, function ($workspaces) {
+            foreach ($workspaces as $workspace) {
+                $this->seedForWorkspace($workspace);
+            }
+        });
+    }
+
+    public function seedForWorkspace(Workspace $workspace): void
     {
         $defaultUnits = [
             ['name' => 'Hour', 'symbol' => 'hr'],
@@ -24,22 +30,18 @@ class DefaultUnitsSeeder extends Seeder
             ['name' => 'Month', 'symbol' => 'month'],
         ];
 
-        Workspace::chunk(100, function ($workspaces) use ($defaultUnits) {
-            foreach ($workspaces as $workspace) {
-                foreach ($defaultUnits as $unitData) {
-                    ConfigurationUnit::query()->firstOrCreate(
-                        [
-                            'workspace_id' => $workspace->id,
-                            'name' => $unitData['name'],
-                        ],
-                        [
-                            'symbol' => $unitData['symbol'],
-                            'is_active' => true,
-                            'created_by' => $workspace->owner_id ?? null,
-                        ]
-                    );
-                }
-            }
-        });
+        foreach ($defaultUnits as $unitData) {
+            ConfigurationUnit::query()->firstOrCreate(
+                [
+                    'workspace_id' => $workspace->id,
+                    'name' => $unitData['name'],
+                ],
+                [
+                    'symbol' => $unitData['symbol'],
+                    'is_active' => true,
+                    'created_by' => $workspace->owner_id ?? null,
+                ]
+            );
+        }
     }
 }

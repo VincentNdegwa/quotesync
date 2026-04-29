@@ -34,6 +34,7 @@ export type WorkspaceSettingsPageProps = {
         id: number;
         name: string;
         display_name: string | null;
+        industry_id: number | null;
         settings_onboarded_at?: string | null;
     };
     groups: WorkspaceSettingsGroupSummary[];
@@ -45,6 +46,7 @@ export type WorkspaceOnboardingPageProps = {
         id: number;
         name: string;
         display_name: string | null;
+        industry_id: number | null;
     };
     currentStepIndex: number;
     business: {

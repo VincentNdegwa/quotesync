@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Form, Head, Link } from '@inertiajs/vue3';
+import { Form, Head, Link, useForm } from '@inertiajs/vue3';
 import { computed, reactive, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -21,16 +21,15 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Globe } from 'lucide-vue-next';
-import type {
-    WorkspaceSettingsField,
-    WorkspaceSettingsPageProps,
-} from '@/types';
+import type { IndustryModel, WorkspaceSettingsField, WorkspaceSettingsPageProps } from '@/types';
 import {
     translationLanguageOptions,
 } from '@/utils/location-options';
 import type { LanguageOption } from '@/utils/location-options';
 
-const props = defineProps<WorkspaceSettingsPageProps>();
+const props = defineProps<WorkspaceSettingsPageProps & {
+    industries: IndustryModel[];
+}>();
 
 defineOptions({
     layout: {
@@ -195,6 +194,16 @@ const languageOptionsForField = (field: WorkspaceSettingsField): LanguageOption[
 const isColorField = (field: WorkspaceSettingsField): boolean => {
     return field.key.toLowerCase().includes('color');
 };
+
+const industryForm = useForm({
+    industry_id: props.workspace.industry_id ?? null,
+});
+
+const updateIndustry = (): void => {
+    industryForm.put(`/business-setup/${props.currentGroup.group}`, {
+        preserveScroll: true,
+    });
+};
 </script>
 
 <template>
@@ -219,6 +228,23 @@ const isColorField = (field: WorkspaceSettingsField): boolean => {
                 </Link>
             </Button>
         </div>
+
+        <div v-if="currentGroup.group === 'brand'" class="space-y-2">
+            <Label>Industry</Label>
+            <Select v-model="industryForm.industry_id" name="industry_id" @update:model-value="updateIndustry">
+                <SelectTrigger><SelectValue placeholder="Select your industry" /></SelectTrigger>
+                <SelectContent>
+                    <SelectItem v-for="industry in industries" :key="industry.id" :value="String(industry.id)">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: industry.color || '#000' }" />
+                            {{ industry.name }}
+                        </div>
+                    </SelectItem>
+                </SelectContent>
+            </Select>
+            <InputError :message="industryForm.errors.industry_id" />
+        </div>
+
         <Form
             :action="updateAction"
             method="put"

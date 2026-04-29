@@ -4,6 +4,7 @@ namespace App\Actions\Fortify;
 
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
+use App\Events\WorkspaceCreated;
 use App\Models\Invitation;
 use App\Models\Role;
 use App\Models\User;
@@ -73,7 +74,7 @@ class CreateNewUser implements CreatesNewUsers
                     $this->invitationService->accept($invitation, $user);
                 }
             }
-
+            WorkspaceCreated::dispatch($workspace);
             return $user;
         });
     }

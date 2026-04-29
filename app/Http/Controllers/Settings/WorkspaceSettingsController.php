@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\UpdateWorkspaceSettingsRequest;
+use App\Models\Industry;
 use App\Models\Workspace;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\RedirectResponse;
@@ -39,9 +40,21 @@ class WorkspaceSettingsController extends Controller
                 'name' => $workspace->name,
                 'display_name' => $workspace->display_name,
                 'settings_onboarded_at' => $workspace->settings_onboarded_at?->toIso8601String(),
+                'industry_id' => $workspace->industry_id,
             ],
             'groups' => $groups,
             'currentGroup' => $settings,
+            'industries' => Industry::query()
+                ->where('is_active', true)
+                ->orderByRaw('LOWER(name)')
+                ->get(['id', 'name', 'icon', 'color'])
+                ->map(fn (Industry $industry): array => [
+                    'id' => $industry->id,
+                    'name' => $industry->name,
+                    'icon' => $industry->icon,
+                    'color' => $industry->color,
+                ])
+                ->values(),
         ]);
     }
 
@@ -53,6 +66,10 @@ class WorkspaceSettingsController extends Controller
 
         $validated = $request->validated();
         $settingsPayload = $validated['settings'];
+
+        if (isset($validated['industry_id'])) {
+            $workspace->update(['industry_id' => $validated['industry_id']]);
+        }
 
         if ($request->hasFile('settings.logo_path')) {
             $settingsPayload['logo_path'] = $request->file('settings.logo_path')?->store(

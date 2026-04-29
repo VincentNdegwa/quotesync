@@ -17,6 +17,7 @@ class Workspace extends LaratrustTeam
         'name',
         'owner_id',
         'currency',
+        'industry_id',
         'white_label_enabled',
         'white_label_logo',
         'white_label_company_name',
@@ -35,6 +36,16 @@ class Workspace extends LaratrustTeam
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    /**
+     * The industry this workspace belongs to.
+     *
+     * @return BelongsTo<Industry, $this>
+     */
+    public function industry(): BelongsTo
+    {
+        return $this->belongsTo(Industry::class);
     }
 
     /**

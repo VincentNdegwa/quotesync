@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Events\QuoteViewed;
+use App\Events\WorkspaceCreated;
+use App\Listeners\SeedWorkspaceDefaults;
 use App\Listeners\UpdateWinProbabilityOnView;
 use App\Models\Invoice;
 use App\Models\Quote;
@@ -38,6 +40,11 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(
             QuoteViewed::class,
             UpdateWinProbabilityOnView::class,
+        );
+
+        Event::listen(
+            WorkspaceCreated::class,
+            SeedWorkspaceDefaults::class,
         );
     }
 

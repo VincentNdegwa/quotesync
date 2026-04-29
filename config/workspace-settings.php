@@ -9,7 +9,6 @@ return [
             'onboarding' => true,
             'fields' => [
                 'company_name' => ['label' => 'Company name', 'type' => 'string', 'required' => true, 'default' => null, 'max' => 255],
-                'industry' => ['label' => 'Industry', 'type' => 'string', 'required' => false, 'default' => null, 'max' => 255],
                 'logo_path' => ['label' => 'Logo', 'type' => 'file', 'required' => false, 'default' => null, 'image' => true, 'max' => 5120],
                 'primary_color' => ['label' => 'Primary color', 'type' => 'color', 'required' => false, 'default' => '#4F46E5'],
                 'accent_color' => ['label' => 'Accent color', 'type' => 'color', 'required' => false, 'default' => '#F5A623'],

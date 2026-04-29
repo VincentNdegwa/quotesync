@@ -5,19 +5,18 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\CompleteWorkspaceOnboardingRequest;
 use App\Http\Requests\Settings\UpdateWorkspaceSettingsRequest;
+use App\Models\Industry;
 use App\Models\Role;
 use App\Models\Workspace;
-use App\Services\Invitations\InvitationService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
-use Inertia\Response;
+use Inertia\Response as InertiaResponse;
 
 class WorkspaceOnboardingController extends Controller
 {
-    public function show(Request $request, WorkspaceSettingsService $settingsService): Response|RedirectResponse
+    public function show(Request $request, WorkspaceSettingsService $settingsService): InertiaResponse|RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -54,13 +53,14 @@ class WorkspaceOnboardingController extends Controller
         $memberRole = $availableRoles->firstWhere('name', 'member');
         $fallbackRole = $availableRoles->first();
         $defaultRoleId = $memberRole['id'] ?? $fallbackRole['id'] ?? null;
-        $currentStepIndex = max(1, min((int) $request->integer('step', 1), 3));
+        $currentStepIndex = max(1, min((int) $request->integer('step', 1), 2));
 
         return Inertia::render('onboarding/Index', [
             'workspace' => [
                 'id' => $workspace->id,
                 'name' => $workspace->name,
                 'display_name' => $workspace->display_name,
+                'industry_id' => $workspace->industry_id,
             ],
             'currentStepIndex' => $currentStepIndex,
             'business' => [
@@ -78,23 +78,37 @@ class WorkspaceOnboardingController extends Controller
             'availableLanguages' => array_values((array) config('workspace-settings.groups.localization.fields.language.options', ['en'])),
             'availableRoles' => $availableRoles,
             'defaultRoleId' => $defaultRoleId,
+            'industries' => Industry::query()
+                ->where('is_active', true)
+                ->orderByRaw('LOWER(name)')
+                ->get(['id', 'name', 'icon', 'color'])
+                ->map(fn (Industry $industry): array => [
+                    'id' => $industry->id,
+                    'name' => $industry->name,
+                    'icon' => $industry->icon,
+                    'color' => $industry->color,
+                ])
+                ->values(),
         ]);
     }
 
     public function complete(
         CompleteWorkspaceOnboardingRequest $request,
         WorkspaceSettingsService $settingsService,
-        InvitationService $invitationService,
     ): RedirectResponse {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace, 404);
 
         $validated = $request->validated();
-        $stepIndex = max(1, min((int) ($validated['step_index'] ?? 1), 3));
+        $stepIndex = max(1, min((int) ($validated['step_index'] ?? 1), 2));
         $navigation = (string) ($validated['navigation'] ?? 'next');
 
         if ($stepIndex === 1) {
+            $workspace->update([
+                'industry_id' => $validated['industry_id'] ?? null,
+            ]);
+
             $settingsService->updateGroup(
                 $workspace,
                 'brand',
@@ -135,32 +149,6 @@ class WorkspaceOnboardingController extends Controller
                 ],
                 markOnboardingComplete: false,
             );
-        }
-
-        if ($stepIndex === 3) {
-            $invites = collect($validated['invites'] ?? [])
-                ->filter(fn (array $invite): bool => trim((string) ($invite['email'] ?? '')) !== '')
-                ->map(fn (array $invite): array => [
-                    'email' => strtolower(trim((string) $invite['email'])),
-                    'role_id' => (int) ($invite['role_id'] ?? 0),
-                ])
-                ->unique('email')
-                ->values();
-
-            foreach ($invites as $index => $invite) {
-                try {
-                    $invitationService->create(
-                        $workspace,
-                        $request->user(),
-                        $invite['email'],
-                        $invite['role_id'],
-                    );
-                } catch (ValidationException $exception) {
-                    throw ValidationException::withMessages([
-                        "invites.{$index}.email" => $exception->errors()['email'][0] ?? __('Unable to create invitation.'),
-                    ]);
-                }
-            }
 
             if ($settingsService->isOnboardingComplete($workspace)) {
                 $workspace->forceFill(['settings_onboarded_at' => now()])->save();
@@ -175,7 +163,7 @@ class WorkspaceOnboardingController extends Controller
             return to_route('business-setup.onboarding', ['step' => 1]);
         }
 
-        $nextStep = min($stepIndex + 1, 3);
+        $nextStep = min($stepIndex + 1, 2);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Step saved.')]);
 

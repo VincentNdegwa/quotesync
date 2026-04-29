@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Settings;
 
 use App\Http\Requests\FormRequest;
-use App\Models\Role;
 use App\Models\Workspace;
 use Illuminate\Validation\Rule;
 
@@ -35,10 +34,10 @@ class CompleteWorkspaceOnboardingRequest extends FormRequest
         /** @var Workspace|null $workspace */
         $workspace = $this->user()?->currentWorkspace;
 
-        $stepIndex = max(1, min((int) $this->input('step_index', 1), 3));
+        $stepIndex = max(1, min((int) $this->input('step_index', 1), 2));
 
         $rules = [
-            'step_index' => ['required', 'integer', 'min:1', 'max:3'],
+            'step_index' => ['required', 'integer', 'min:1', 'max:2'],
             'navigation' => ['nullable', Rule::in(['next', 'finish'])],
         ];
 
@@ -48,6 +47,7 @@ class CompleteWorkspaceOnboardingRequest extends FormRequest
                 'company_name' => ['required', 'string', 'max:255'],
                 'country' => ['required', 'string', 'size:2'],
                 'logo_path' => ['nullable', 'string', 'max:512'],
+                'industry_id' => ['nullable', 'integer', 'exists:industries,id'],
             ];
         }
 
@@ -62,18 +62,6 @@ class CompleteWorkspaceOnboardingRequest extends FormRequest
             ];
         }
 
-        return [
-            ...$rules,
-            'invites' => ['nullable', 'array', 'max:3'],
-            'invites.*.email' => ['nullable', 'email', 'max:255'],
-            'invites.*.role_id' => [
-                'nullable',
-                'required_with:invites.*.email',
-                Rule::exists((new Role)->getTable(), 'id')
-                    ->where(fn ($query) => $query
-                        ->where('workspace_id', $workspace?->id)
-                        ->orWhereNull('workspace_id')),
-            ],
-        ];
+        return $rules;
     }
 }

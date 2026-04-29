@@ -262,9 +262,12 @@ class WorkspaceSettingsService
             $field = $fields[$key];
             /** @var WorkspaceSetting|null $stored */
             $stored = $settings->get($key);
-            $value = $stored
-                ? $this->decodeValue($stored->value, $stored->cast, (bool) $stored->encrypted)
-                : ($field['default'] ?? null);
+
+            if ($stored === null) {
+                return false;
+            }
+
+            $value = $this->decodeValue($stored->value, $stored->cast, (bool) $stored->encrypted);
 
             if (is_bool($value)) {
                 continue;

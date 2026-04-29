@@ -40,9 +40,16 @@ class UpdateWorkspaceSettingsRequest extends FormRequest
             return ['group' => [Rule::in($groups)]];
         }
 
-        return [
+        $rules = [
             'settings' => ['required', 'array'],
             ...$service->rulesForGroup($group),
         ];
+
+        // Allow industry_id for brand group
+        if ($group === 'brand') {
+            $rules['industry_id'] = ['nullable', 'integer', 'exists:industries,id'];
+        }
+
+        return $rules;
     }
 }

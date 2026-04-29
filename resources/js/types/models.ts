@@ -8,11 +8,23 @@ export type UserModel = {
   updated_at: string | null;
 };
 
+export type IndustryModel = {
+  id: number;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+  is_active: boolean;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
 export type WorkspaceModel = {
   id: number;
   name: string;
   display_name: string;
   owner_id: number;
+  industry_id: number | null;
   created_at: string | null;
   updated_at: string | null;
 };
