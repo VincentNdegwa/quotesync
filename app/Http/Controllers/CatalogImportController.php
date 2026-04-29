@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Jobs\ImportCatalogItemsJob;
 use App\Models\CatalogItem;
+use App\Models\ConfigurationUnit;
 use App\Models\ImportHistory;
 use App\Models\Workspace;
 use App\Services\Import\CatalogImportValidator;
@@ -20,15 +21,26 @@ class CatalogImportController extends Controller
 {
     public function create(): Response
     {
-        return Inertia::render('catalog/Import');
+        $workspace = request()->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace, 404);
+
+        return Inertia::render('catalog/Import', [
+            'units' => ConfigurationUnit::query()
+                ->where('workspace_id', $workspace->id)
+                ->where('is_active', true)
+                ->orderByRaw('LOWER(name)')
+                ->get(['id', 'name', 'symbol', 'is_active', 'created_at']),
+            'skippedItems' => session()->get('skippedItems', []),
+        ]);
     }
 
     public function template(): StreamedResponse
     {
-        $headers = ['name', 'sku', 'unit', 'unit_price', 'cost_price'];
+        $headers = ['name', 'sku', 'unit_price', 'cost_price'];
         $rows = [
-            ['Web Design Package', 'WEB-001', 'hr', 100.00, 50.00],
-            ['Logo Design', 'LOGO-001', 'unit', 500.00, 100.00],
+            ['Web Design Package', 'WEB-001', 100.00, 50.00],
+            ['Logo Design', 'LOGO-001', 500.00, 100.00],
         ];
 
         return response()->streamDownload(function () use ($headers, $rows) {
@@ -51,17 +63,23 @@ class CatalogImportController extends Controller
             'file' => ['required', 'file', 'mimes:csv,txt', 'max:5120'],
         ]);
 
+        $defaultUnit = ConfigurationUnit::query()
+            ->where('workspace_id', $workspace->id)
+            ->where('is_active', true)
+            ->orderByRaw('LOWER(name)')
+            ->value('name') ?? 'unit';
+
         $rows = array_map('str_getcsv', file($validated['file']->getRealPath()));
         $header = collect(array_shift($rows) ?? [])->map(fn ($value) => Str::lower(trim((string) $value)))->values()->all();
 
         $mapped = collect($rows)
-            ->map(function (array $row) use ($header): array {
+            ->map(function (array $row) use ($header, $defaultUnit): array {
                 $data = array_combine($header, $row) ?: [];
 
                 return [
                     'name' => trim((string) ($data['name'] ?? '')),
                     'sku' => trim((string) ($data['sku'] ?? '')),
-                    'unit' => trim((string) ($data['unit'] ?? 'unit')),
+                    'unit' => $defaultUnit,
                     'unit_price' => (float) ($data['unit_price'] ?? 0),
                     'cost_price' => (float) ($data['cost_price'] ?? 0),
                 ];
@@ -76,18 +94,14 @@ class CatalogImportController extends Controller
 
         $errorCount = $validatedRows->where('valid', false)->count();
 
-        $detectedColumns = $header;
-        $requiredColumns = ['name', 'sku', 'unit', 'unit_price', 'cost_price'];
-        $optionalColumns = [];
-
         $token = Str::uuid()->toString();
 
         Cache::put("catalog_import:{$workspace->id}:{$token}", $mapped->all(), now()->addMinutes(30));
 
         return response()->json([
-            'detectedColumns' => $detectedColumns,
-            'requiredColumns' => $requiredColumns,
-            'optionalColumns' => $optionalColumns,
+            'detectedColumns' => $header,
+            'requiredColumns' => ['name', 'sku', 'unit_price', 'cost_price'],
+            'optionalColumns' => [],
             'previewRows' => $validatedRows->take(20)->all(),
             'importToken' => $token,
             'totalRows' => $validatedRows->count(),
@@ -101,17 +115,33 @@ class CatalogImportController extends Controller
 
         abort_unless($workspace instanceof Workspace, 404);
 
-        $validated = $request->validate([
+        $validator = validator($request->all(), [
             'import_token' => ['required', 'string'],
             'column_mapping' => ['array'],
+            'unit_mapping_mode' => ['required', 'in:all,individual'],
+            'unit_for_all' => ['nullable', 'string', 'required_if:unit_mapping_mode,all'],
+            'unit_mapping' => ['nullable', 'array', 'required_if:unit_mapping_mode,individual'],
+        ], [
+            'unit_for_all.required_if' => 'Please select a unit when applying to all items.',
+            'unit_mapping.required_if' => 'Please select units for each item when using individual mapping.',
         ]);
 
+        if ($validator->fails()) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => $validator->errors()->first()]);
+
+            return back()->withErrors($validator->errors());
+        }
+
+        $validated = $validator->validated();
         $token = $validated['import_token'];
         $columnMapping = $validated['column_mapping'] ?? [];
+        $unitMappingMode = $validated['unit_mapping_mode'];
+        $unitForAll = $validated['unit_for_all'] ?? '';
+        $unitMapping = $validated['unit_mapping'] ?? [];
         $rows = collect(Cache::pull("catalog_import:{$workspace->id}:{$token}", []));
 
         if ($rows->isEmpty()) {
-            Inertia::flash('toast', ['type' => 'error', 'message' => __('Import token expired. Please upload again.')]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Import token expired. Please upload again.']);
 
             return back();
         }
@@ -138,12 +168,26 @@ class CatalogImportController extends Controller
                 'total_rows' => $rows->count(),
             ]);
 
-            ImportCatalogItemsJob::dispatch($workspace->id, $request->user()?->id, $rows->all(), $importHistory->id);
+            ImportCatalogItemsJob::dispatch(
+                $workspace->id,
+                $request->user()?->id,
+                $rows->all(),
+                $importHistory->id,
+                $unitMappingMode,
+                $unitForAll,
+                $unitMapping
+            );
 
-            Inertia::flash('toast', ['type' => 'success', 'message' => __('Catalog import queued.')]);
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Catalog import queued.']);
 
             return to_route('catalog.index');
         }
+
+        $defaultUnit = ConfigurationUnit::query()
+            ->where('workspace_id', $workspace->id)
+            ->where('is_active', true)
+            ->orderByRaw('LOWER(name)')
+            ->value('name') ?? 'unit';
 
         $existingSkus = CatalogItem::query()
             ->where('workspace_id', $workspace->id)
@@ -153,14 +197,28 @@ class CatalogImportController extends Controller
 
         $imported = 0;
         $skipped = 0;
+        $skippedItems = [];
 
-        foreach ($rows as $row) {
+        foreach ($rows as $index => $row) {
             $sku = trim((string) ($row['sku'] ?? ''));
 
             if ($sku !== '' && in_array($sku, $existingSkus, true)) {
                 $skipped++;
+                $skippedItems[] = [
+                    'line' => $index + 2,
+                    'name' => $row['name'],
+                    'sku' => $sku,
+                    'reason' => 'Duplicate SKU',
+                ];
 
                 continue;
+            }
+
+            $unit = $defaultUnit;
+            if ($unitMappingMode === 'all' && $unitForAll !== '') {
+                $unit = $unitForAll;
+            } elseif ($unitMappingMode === 'individual' && isset($unitMapping[$index + 2])) {
+                $unit = $unitMapping[$index + 2];
             }
 
             CatalogItem::query()->create([
@@ -168,7 +226,7 @@ class CatalogImportController extends Controller
                 'created_by' => $request->user()?->id,
                 'name' => $row['name'],
                 'sku' => $sku !== '' ? $sku : null,
-                'unit' => in_array($row['unit'], ['hr', 'day', 'unit', 'sqm', 'kg', 'm', 'lot', 'month'], true) ? $row['unit'] : 'unit',
+                'unit' => $unit,
                 'unit_price' => $row['unit_price'],
                 'cost_price' => $row['cost_price'],
                 'is_active' => true,
@@ -178,13 +236,16 @@ class CatalogImportController extends Controller
         }
 
         Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Import complete. :imported imported, :skipped skipped.', [
-                'imported' => $imported,
-                'skipped' => $skipped,
-            ]),
+            'type' => $skipped > 0 ? 'warning' : 'success',
+            'message' => "Import complete. {$imported} imported, {$skipped} skipped.",
         ]);
 
-        return to_route('catalog.index');
+        if ($skipped > 0) {
+            session()->put('skippedItems', $skippedItems);
+        } else {
+            session()->forget('skippedItems');
+        }
+
+        return back();
     }
 }

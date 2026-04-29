@@ -4,6 +4,7 @@ namespace App\Services\Clients;
 
 use App\Models\Client;
 use App\Models\ConfigurationTag;
+use App\Models\Quote;
 use App\Models\Workspace;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -158,29 +159,18 @@ class ClientService
             ];
         }
 
-        $quotes = DB::table('quotes')
+        $quotes = Quote::query()
             ->where('client_id', $client->id)
             ->orderByDesc('created_at')
-            ->get([
-                'id',
-                'number',
-                'title',
-                'status',
-                'total',
-                'base_total',
-                'currency',
-                'created_at',
-                'won_at',
-                'accepted_at',
-            ]);
+            ->get();
 
         $totalQuotes = $quotes->count();
         $wonQuotes = $quotes->where('status', 'won');
         $acceptedDurations = $wonQuotes
-            ->filter(fn ($quote): bool => $quote->won_at !== null || $quote->accepted_at !== null)
+            ->filter(fn ($quote): bool => $quote->accepted_at !== null)
             ->map(function ($quote): float {
                 $createdAt = now()->parse($quote->created_at);
-                $closedAt = now()->parse($quote->won_at ?? $quote->accepted_at);
+                $closedAt = now()->parse($quote->accepted_at);
 
                 return $closedAt->diffInSeconds($createdAt) / 86400;
             });

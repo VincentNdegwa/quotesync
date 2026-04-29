@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\CatalogItem;
+use App\Models\ConfigurationUnit;
 use App\Models\ImportHistory;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -21,6 +22,9 @@ class ImportCatalogItemsJob implements ShouldQueue
         public ?int $createdBy,
         public array $rows,
         public ?int $importHistoryId = null,
+        public string $unitMappingMode = 'all',
+        public string $unitForAll = '',
+        public array $unitMapping = [],
     ) {}
 
     /**
@@ -38,7 +42,12 @@ class ImportCatalogItemsJob implements ShouldQueue
             ]);
         }
 
-        $allowedUnits = ['hr', 'day', 'unit', 'sqm', 'kg', 'm', 'lot', 'month'];
+        // Get the first active unit from the workspace
+        $defaultUnit = ConfigurationUnit::query()
+            ->where('workspace_id', $this->workspaceId)
+            ->where('is_active', true)
+            ->orderByRaw('LOWER(name)')
+            ->value('name') ?? 'unit';
 
         $existingSkus = CatalogItem::query()
             ->withoutGlobalScopes()
@@ -71,7 +80,15 @@ class ImportCatalogItemsJob implements ShouldQueue
                 continue;
             }
 
-            $unit = trim((string) ($row['unit'] ?? 'unit'));
+            // Apply unit mapping
+            $unit = $defaultUnit;
+            if ($this->unitMappingMode === 'all' && $this->unitForAll !== '') {
+                $unit = $this->unitForAll;
+            } elseif ($this->unitMappingMode === 'individual' && isset($this->unitMapping[$index + 2])) {
+                $unit = $this->unitMapping[$index + 2];
+            } else {
+                $unit = trim((string) ($row['unit'] ?? $defaultUnit));
+            }
 
             try {
                 CatalogItem::query()
@@ -81,7 +98,7 @@ class ImportCatalogItemsJob implements ShouldQueue
                         'created_by' => $this->createdBy,
                         'name' => $name,
                         'sku' => $sku !== '' ? $sku : null,
-                        'unit' => in_array($unit, $allowedUnits, true) ? $unit : 'unit',
+                        'unit' => $unit,
                         'unit_price' => (float) ($row['unit_price'] ?? 0),
                         'cost_price' => (float) ($row['cost_price'] ?? 0),
                         'is_active' => true,

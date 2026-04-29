@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import type { CatalogCategoryRecord, TaxRecord } from '@/types';
+import type { CatalogCategoryRecord, ConfigurationUnitRecord, TaxRecord } from '@/types';
 
 const NONE_OPTION = '__none__';
 
@@ -26,6 +26,7 @@ defineProps<{
     errors: Record<string, string>;
     categories: CatalogCategoryRecord[];
     taxes: TaxRecord[];
+    units: ConfigurationUnitRecord[];
 }>();
 
 const selectedTaxIds = computed<string[]>({
@@ -72,14 +73,13 @@ const selectedTaxIds = computed<string[]>({
                         <SelectValue placeholder="Select unit" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="hr">Hour</SelectItem>
-                        <SelectItem value="day">Day</SelectItem>
-                        <SelectItem value="unit">Unit</SelectItem>
-                        <SelectItem value="sqm">Square meter</SelectItem>
-                        <SelectItem value="kg">Kilogram</SelectItem>
-                        <SelectItem value="m">Meter</SelectItem>
-                        <SelectItem value="lot">Lot</SelectItem>
-                        <SelectItem value="month">Month</SelectItem>
+                        <SelectItem
+                            v-for="unit in units"
+                            :key="unit.id"
+                            :value="unit.name"
+                        >
+                            {{ unit.name }}{{ unit.symbol ? ` (${unit.symbol})` : '' }}
+                        </SelectItem>
                     </SelectContent>
                 </Select>
                 <InputError :message="errors.unit" />

@@ -6,6 +6,7 @@ use App\Http\Requests\StoreCatalogItemRequest;
 use App\Http\Requests\UpdateCatalogItemRequest;
 use App\Models\CatalogCategory;
 use App\Models\CatalogItem;
+use App\Models\ConfigurationUnit;
 use App\Models\Tax;
 use App\Models\Workspace;
 use App\Services\Catalog\CatalogItemService;
@@ -52,6 +53,11 @@ class CatalogItemController extends Controller
                 ->orderByDesc('is_default')
                 ->orderByRaw('LOWER(name)')
                 ->get(['id', 'name', 'rate', 'is_default']),
+            'units' => ConfigurationUnit::query()
+                ->where('workspace_id', $workspace->id)
+                ->where('is_active', true)
+                ->orderByRaw('LOWER(name)')
+                ->get(['id', 'name', 'symbol', 'is_active', 'created_at']),
         ]);
     }
 
@@ -103,6 +109,11 @@ class CatalogItemController extends Controller
                 ->orderByDesc('is_default')
                 ->orderByRaw('LOWER(name)')
                 ->get(['id', 'name', 'rate']),
+            'units' => ConfigurationUnit::query()
+                ->where('workspace_id', $workspace->id)
+                ->where('is_active', true)
+                ->orderByRaw('LOWER(name)')
+                ->get(['id', 'name', 'symbol', 'is_active', 'created_at']),
             'margin' => [
                 'profit_per_unit' => (float) $catalog->unit_price - (float) $catalog->cost_price,
                 'margin_percent' => (float) $catalog->unit_price > 0

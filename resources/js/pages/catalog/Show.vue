@@ -17,11 +17,12 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useFormat } from '@/composables/useFormat';
-import type { CatalogItemRecord } from '@/types';
+import type { CatalogItemRecord, ConfigurationUnitRecord } from '@/types';
 
 const props = defineProps<{
     item: CatalogItemRecord;
     availableTaxes: Array<{ id: number; name: string; rate: number | string }>;
+    units: ConfigurationUnitRecord[];
     margin: {
         profit_per_unit: number;
         margin_percent: number;
@@ -124,7 +125,20 @@ const save = (): void => {
                 </div>
                 <div class="grid gap-2">
                     <Label for="unit">Unit</Label>
-                    <Input id="unit" v-model="form.unit" />
+                    <Select v-model="form.unit">
+                        <SelectTrigger id="unit" class="w-full">
+                            <SelectValue placeholder="Select unit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem
+                                v-for="unit in units"
+                                :key="unit.id"
+                                :value="unit.name"
+                            >
+                                {{ unit.name }}{{ unit.symbol ? ` (${unit.symbol})` : '' }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div class="grid gap-2">
                     <Label for="unit_price">Unit price</Label>

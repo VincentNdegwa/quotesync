@@ -26,9 +26,10 @@ import CatalogDataTable from '@/pages/catalog/components/CatalogDataTable.vue';
 import ConfigurationCategoryCreateDialog from '@/pages/configuration/categories/components/CreateDialog.vue';
 import ConfigurationTaxCreateDialog from '@/pages/configuration/taxes/components/CreateDialog.vue';
 import { useFormat } from '@/composables/useFormat';
-import type {
+import {
     CatalogCategoryRecord,
     CatalogItemRecord,
+    ConfigurationUnitRecord,
     Paginator,
     TaxRecord,
 } from '@/types';
@@ -46,6 +47,7 @@ const props = defineProps<{
     items: Paginator<CatalogItemRecord>;
     categories: CatalogCategoryRecord[];
     taxes: TaxRecord[];
+    units: ConfigurationUnitRecord[];
     filters: Filters;
 }>();
 
@@ -100,7 +102,7 @@ const form = useForm({
     name: '',
     description: '',
     sku: '',
-    unit: 'unit',
+    unit: '',
     unit_price: 0,
     cost_price: 0,
     catalog_category_id: NONE_OPTION,
@@ -116,7 +118,7 @@ const openCreate = (): void => {
     editingItem.value = null;
     form.reset();
     form.clearErrors();
-    form.unit = 'unit';
+    form.unit = props.units.length > 0 ? props.units[0].name : '';
     form.catalog_category_id = NONE_OPTION;
     form.tax_ids = [];
     form.is_active = true;
@@ -339,6 +341,7 @@ const { formatCurrency } = useFormat(usePage().props.workspace_currency as strin
                         :errors="form.errors"
                         :categories="categories"
                         :taxes="taxes"
+                        :units="units"
                     />
 
                     <SheetFooter>

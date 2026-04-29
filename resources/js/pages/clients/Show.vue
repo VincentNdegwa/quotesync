@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router, setLayoutProps, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, setLayoutProps, useForm, usePage } from '@inertiajs/vue3';
 import { computed, watchEffect, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
 import CountryCombobox from '@/components/location/CountryCombobox.vue';
@@ -32,6 +32,7 @@ import {
     TabsTrigger,
 } from '@/components/ui/tabs';
 import InvitePortalDialog from './components/InvitePortalDialog.vue';
+import { useFormat } from '@/composables/useFormat';
 import type { ClientRecord, ClientStats } from '@/types';
 
 const props = defineProps<{
@@ -41,6 +42,8 @@ const props = defineProps<{
 }>();
 
 const inviteDialogOpen = ref(false);
+
+const { formatCurrency } = useFormat(usePage().props.workspace_currency as string || undefined);
 
 const breadcrumbs = computed(() => [
     { title: 'Clients', href: '/clients' },
@@ -146,11 +149,11 @@ const deleteClient = (): void => {
             </div>
             <div class="rounded-md border p-4">
                 <p class="text-xs text-muted-foreground">Total value won</p>
-                <p class="text-2xl font-semibold">{{ stats.total_value_won }}</p>
+                <p class="text-2xl font-semibold">{{ formatCurrency(stats.total_value_won) }}</p>
             </div>
             <div class="rounded-md border p-4">
                 <p class="text-xs text-muted-foreground">Average quote value</p>
-                <p class="text-2xl font-semibold">{{ stats.average_quote_value }}</p>
+                <p class="text-2xl font-semibold">{{ formatCurrency(stats.average_quote_value) }}</p>
             </div>
             <div class="rounded-md border p-4">
                 <p class="text-xs text-muted-foreground">Avg days to acceptance</p>
@@ -239,7 +242,7 @@ const deleteClient = (): void => {
                                     {{ quote.status || 'unknown' }}
                                 </Badge>
                             </TableCell>
-                            <TableCell class="text-right">{{ quote.base_total ?? 0 }}</TableCell>
+                            <TableCell class="text-right">{{ formatCurrency(quote.base_total ?? 0) }}</TableCell>
                             <TableCell>{{ quote.created_at ? new Date(quote.created_at).toLocaleDateString() : '—' }}</TableCell>
                         </TableRow>
                         <TableRow v-if="quoteHistory.length === 0">
