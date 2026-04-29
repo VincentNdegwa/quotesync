@@ -4,7 +4,6 @@ namespace App\Services\Invoices;
 
 use App\Models\Invoice;
 use App\Models\Workspace;
-use Illuminate\Support\Facades\DB;
 
 class InvoiceNumberingService
 {
@@ -40,6 +39,6 @@ class InvoiceNumberingService
 
         $workspace->settings->put('invoice_number_sequence', $sequence);
 
-        return $prefix . $sequence;
+        return $prefix.$sequence;
     }
 }

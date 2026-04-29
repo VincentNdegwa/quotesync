@@ -10,6 +10,7 @@ use App\Models\Tax;
 use App\Models\Workspace;
 use App\Services\Quotes\QuoteTemplateService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -193,7 +194,7 @@ class QuoteTemplateController extends Controller
     /**
      * Get template layout.
      */
-    public function getLayout(Request $request, QuoteTemplate $quoteTemplate): \Illuminate\Http\JsonResponse
+    public function getLayout(Request $request, QuoteTemplate $quoteTemplate): JsonResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -203,28 +204,28 @@ class QuoteTemplateController extends Controller
             ->with(['lineItems' => fn ($q) => $q->orderBy('sort_order'), 'lineItems.taxes'])
             ->get()
             ->map(fn ($section) => [
-                'id'         => $section->id,
-                'title'      => $section->title,
+                'id' => $section->id,
+                'title' => $section->title,
                 'sort_order' => $section->sort_order,
                 'line_items' => $section->lineItems->map(fn ($item) => [
-                    'id'               => null,
-                    'catalog_item_id'  => $item->catalog_item_id,
-                    'name'             => $item->name,
-                    'description'      => $item->description,
-                    'quantity'         => (float) $item->quantity,
-                    'unit'             => $item->unit,
-                    'unit_price'       => (float) $item->unit_price,
+                    'id' => null,
+                    'catalog_item_id' => $item->catalog_item_id,
+                    'name' => $item->name,
+                    'description' => $item->description,
+                    'quantity' => (float) $item->quantity,
+                    'unit' => $item->unit,
+                    'unit_price' => (float) $item->unit_price,
                     'discount_percent' => (float) $item->discount_percent,
-                    'is_optional'      => (bool) $item->is_optional,
-                    'notes'            => $item->notes,
-                    'sort_order'       => $item->sort_order,
-                    'subtotal'         => 0,
-                    'tax_amount'       => 0,
-                    'total'            => 0,
-                    'taxes'            => $item->taxes->map(fn ($tax) => [
-                        'tax_id'    => $tax->tax_id,
+                    'is_optional' => (bool) $item->is_optional,
+                    'notes' => $item->notes,
+                    'sort_order' => $item->sort_order,
+                    'subtotal' => 0,
+                    'tax_amount' => 0,
+                    'total' => 0,
+                    'taxes' => $item->taxes->map(fn ($tax) => [
+                        'tax_id' => $tax->tax_id,
                         'tax_label' => $tax->tax_label,
-                        'tax_rate'  => (float) $tax->tax_rate,
+                        'tax_rate' => (float) $tax->tax_rate,
                     ])->values()->all(),
                 ])->values()->all(),
             ])
@@ -232,7 +233,7 @@ class QuoteTemplateController extends Controller
             ->all();
 
         return response()->json([
-            'layout'   => $quoteTemplate->layout,
+            'layout' => $quoteTemplate->layout,
             'sections' => $sections,
         ]);
     }

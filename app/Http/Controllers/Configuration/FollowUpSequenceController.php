@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Configuration;
 use App\Enums\FollowUpChannel;
 use App\Http\Controllers\Controller;
 use App\Models\FollowUpSequence;
-use App\Models\FollowUpStep;
 use App\Models\Workspace;
 use App\Services\Quotes\QuotePlaceholderService;
 use Illuminate\Http\RedirectResponse;
@@ -31,9 +30,9 @@ class FollowUpSequenceController extends Controller
 
         foreach ($validated['steps'] as $index => $step) {
             $validation = QuotePlaceholderService::validatePlaceholders($step['message_template']);
-            if (!$validation['valid']) {
+            if (! $validation['valid']) {
                 return back()->withErrors([
-                    "steps.{$index}.message_template" => 'Invalid placeholders: ' . implode(', ', $validation['invalid']) . '. Allowed: ' . implode(', ', array_keys(QuotePlaceholderService::getAvailablePlaceholders())),
+                    "steps.{$index}.message_template" => 'Invalid placeholders: '.implode(', ', $validation['invalid']).'. Allowed: '.implode(', ', array_keys(QuotePlaceholderService::getAvailablePlaceholders())),
                 ])->withInput();
             }
         }
@@ -82,9 +81,9 @@ class FollowUpSequenceController extends Controller
         // Validate placeholders in message templates
         foreach ($validated['steps'] as $index => $step) {
             $validation = QuotePlaceholderService::validatePlaceholders($step['message_template']);
-            if (!$validation['valid']) {
+            if (! $validation['valid']) {
                 return back()->withErrors([
-                    "steps.{$index}.message_template" => 'Invalid placeholders: ' . implode(', ', $validation['invalid']) . '. Allowed: ' . implode(', ', array_keys(QuotePlaceholderService::getAvailablePlaceholders())),
+                    "steps.{$index}.message_template" => 'Invalid placeholders: '.implode(', ', $validation['invalid']).'. Allowed: '.implode(', ', array_keys(QuotePlaceholderService::getAvailablePlaceholders())),
                 ])->withInput();
             }
         }
@@ -146,6 +145,7 @@ class FollowUpSequenceController extends Controller
     {
         $workspace = $request->user()?->currentWorkspace;
         abort_unless($workspace instanceof Workspace, 404);
+
         return $workspace;
     }
 }

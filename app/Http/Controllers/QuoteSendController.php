@@ -11,13 +11,13 @@ use App\Models\QuoteApproval;
 use App\Models\Workspace;
 use App\Notifications\QuoteSentInternalNotification;
 use App\Services\ApprovalService;
+use App\Services\Pdf\QuotePdfService;
 use App\Services\Quotes\QuoteFollowUpSchedulerService;
 use App\Services\Quotes\QuotePlaceholderService;
 use App\Services\Quotes\QuoteShortCodeService;
-use App\Services\Pdf\QuotePdfService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -117,7 +117,7 @@ class QuoteSendController extends Controller
         $pdfPath = null;
 
         if ($attachPdf) {
-            if (!$quote->pdf_path) {
+            if (! $quote->pdf_path) {
                 $pdfService = app(QuotePdfService::class);
                 $pdfPath = $pdfService->generate($quote);
                 $quote->pdf_path = $pdfPath;

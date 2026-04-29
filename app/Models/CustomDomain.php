@@ -34,7 +34,7 @@ class CustomDomain extends Model
     {
         $this->verification_token = Str::random(32);
         $this->save();
-        
+
         return $this->verification_token;
     }
 
@@ -52,7 +52,7 @@ class CustomDomain extends Model
 
     public function getVerificationRecordName(): string
     {
-        return '_quoteync-domain-verification=' . $this->verification_token;
+        return '_quoteync-domain-verification='.$this->verification_token;
     }
 
     public function getVerificationRecordValue(): string

@@ -4,6 +4,7 @@ import { ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, MessageSquare } from 'lucide-vue-next';
+import { useFormat } from '@/composables/useFormat';
 import { accept as acceptQuote, decline as declineQuote } from '@/routes/public-quotes';
 import { dashboard } from '@/routes/portal';
 import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
@@ -23,10 +24,7 @@ const props = defineProps<{
     }>;
 }>();
 
-const formatCurrency = (value: number | string): string => {
-    const num = typeof value === 'string' ? parseFloat(value) : value;
-    return (num ?? 0).toFixed(2);
-};
+const { formatCurrency } = useFormat(props.quote.currency || props.quote.base_currency || undefined);
 
 const formatDate = (date: string | null): string => {
     if (!date) return '—';
@@ -89,7 +87,7 @@ const decline = () => {
                 <div class="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border bg-muted/30 px-5 py-3 text-sm">
                     <div>
                         <span class="text-muted-foreground">Total&ensp;</span>
-                        <span class="font-semibold">${{ formatCurrency(quote.total) }}</span>
+                        <span class="font-semibold">{{ formatCurrency(quote.total) }}</span>
                     </div>
                     <div>
                         <span class="text-muted-foreground">Valid until&ensp;</span>

@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
 import type {
     BuilderClientOption,
     BuilderTemplateOption,
@@ -28,11 +29,13 @@ const props = withDefaults(
         clients?: BuilderClientOption[];
         templates?: BuilderTemplateOption[];
         systemLocked?: boolean;
+        defaultCurrency?: string;
     }>(),
     {
         clients: () => [],
         templates: () => [],
         systemLocked: false,
+        defaultCurrency: 'USD',
     },
 );
 
@@ -46,10 +49,12 @@ const applyClientCurrency = (clientId: string): void => {
         return;
     }
 
-    const client = props.clients.find((option) => option.id === Number(clientId));
+    const client = props.clients.find((option) => option.id === Number(clientId));    
 
     if (client?.currency) {
         state.value.currency = client.currency;
+    } else {
+        state.value.currency = props.defaultCurrency;
     }
 };
 
@@ -71,6 +76,17 @@ const selectedClientName = computed<string>(() => {
     const client = props.clients.find((option) => option.id === state.value.client_id);
 
     return client?.company_name ?? '—';
+});
+
+const showFxRate = computed(() => {
+    return state.value.currency && state.value.currency !== props.defaultCurrency;
+});
+
+const fxRateValue = computed({
+    get: () => state.value.fx_rate ?? undefined,
+    set: (value) => {
+        state.value.fx_rate = value === undefined || value === null ? null : Number(value);
+    },
 });
 </script>
 
@@ -153,38 +169,18 @@ const selectedClientName = computed<string>(() => {
 
                 <div class="space-y-2">
                     <Label>Currency</Label>
-                    <Input v-model="state.currency" maxlength="3" :disabled="systemLocked" />
+                    <CurrencyCombobox v-model="state.currency" :disabled="systemLocked" trigger-class="w-full" />
+                </div>
+
+                <div v-if="showFxRate" class="space-y-2">
+                    <Label>Exchange rate (1 {{ defaultCurrency }} = ? {{ state.currency }})</Label>
+                    <Input v-model.number="fxRateValue" type="number" step="0.0001" min="0" :disabled="systemLocked" placeholder="Auto-fetched" />
+                    <span class="text-xs text-muted-foreground">Leave blank to auto-fetch from API</span>
                 </div>
 
                 <div class="space-y-2">
                     <Label>Valid until</Label>
                     <Input v-model="state.valid_until" type="date" :disabled="systemLocked" />
-                </div>
-
-                <div class="space-y-2 lg:col-span-2">
-                    <Label>Internal notes</Label>
-                    <Textarea v-model="state.notes" rows="2" :disabled="systemLocked" />
-                </div>
-
-                <div class="space-y-3 rounded-md border bg-muted/30 p-3 lg:col-span-2">
-                    <h4 class="flex items-center text-sm font-medium">
-                        <Layers3 class="mr-2 size-4 text-muted-foreground" />
-                        Deposit
-                    </h4>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm">Require deposit</span>
-                        <Switch v-model="state.requires_deposit" :disabled="systemLocked" />
-                    </div>
-                    <div v-if="state.requires_deposit" class="grid gap-2">
-                        <Label>Deposit amount</Label>
-                        <Input
-                            v-model.number="state.deposit_amount"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            :disabled="systemLocked"
-                        />
-                    </div>
                 </div>
             </div>
         </div>

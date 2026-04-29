@@ -7,7 +7,6 @@ use App\Enums\QuoteStatus;
 use App\Models\CatalogItem;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
-use App\Models\QuoteFollowUp;
 use App\Models\QuoteTemplate;
 use App\Models\Workspace;
 use App\Models\WorkspaceSetting;
@@ -75,24 +74,26 @@ class QuoteService
             ->limit($limit)
             ->get([
                 'id', 'quote_uuid', 'number', 'title', 'status',
-                'total', 'currency', 'valid_until', 'created_at', 'client_id',
+                'total', 'base_total', 'currency', 'base_currency', 'valid_until', 'created_at', 'client_id',
             ])
             ->map(fn (Quote $quote): array => [
-                'id'          => $quote->id,
-                'quote_uuid'  => $quote->quote_uuid,
-                'number'      => $quote->number,
-                'title'       => $quote->title,
-                'status'      => $quote->status->value,
-                'total'       => (float) $quote->total,
-                'currency'    => $quote->currency,
+                'id' => $quote->id,
+                'quote_uuid' => $quote->quote_uuid,
+                'number' => $quote->number,
+                'title' => $quote->title,
+                'status' => $quote->status->value,
+                'total' => (float) $quote->total,
+                'base_total' => $quote->base_total ? (float) $quote->base_total : null,
+                'currency' => $quote->currency,
+                'base_currency' => $quote->base_currency,
                 'valid_until' => $quote->valid_until?->toDateString(),
-                'created_at'  => $quote->created_at?->toISOString(),
-                'client'      => $quote->client ? [
-                    'id'           => $quote->client->id,
+                'created_at' => $quote->created_at?->toISOString(),
+                'client' => $quote->client ? [
+                    'id' => $quote->client->id,
                     'company_name' => $quote->client->company_name,
-                    'email'        => $quote->client->email,
+                    'email' => $quote->client->email,
                 ] : null,
-                'assignee'    => null,
+                'assignee' => null,
             ])
             ->values()
             ->all();
@@ -239,10 +240,10 @@ class QuoteService
     public function markAsWon(Quote $quote): Quote
     {
         return DB::transaction(function () use ($quote): Quote {
-            $quote->update([
-                'status' => QuoteStatus::Won->value,
-                'accepted_at' => now(),
-            ]);
+            $quote->status = QuoteStatus::Won;
+            $quote->accepted_at = now();
+            $quote->won_at = now();
+            $quote->save();
 
             QuoteActivity::query()->create([
                 'quote_id' => $quote->id,
@@ -267,11 +268,11 @@ class QuoteService
     public function markAsLost(Quote $quote, ?string $reason = null): Quote
     {
         return DB::transaction(function () use ($quote, $reason): Quote {
-            $quote->update([
-                'status' => QuoteStatus::Lost->value,
-                'declined_at' => now(),
-                'decline_reason' => $reason,
-            ]);
+            $quote->status = QuoteStatus::Lost;
+            $quote->declined_at = now();
+            $quote->lost_at = now();
+            $quote->decline_reason = $reason;
+            $quote->save();
 
             QuoteActivity::query()->create([
                 'quote_id' => $quote->id,
@@ -309,6 +310,8 @@ class QuoteService
                 'client_id' => $quote->client_id,
                 'assigned_to' => $quote->assigned_to,
                 'currency' => $quote->currency,
+                'base_currency' => $quote->base_currency,
+                'fx_rate' => $quote->fx_rate,
                 'cover_message' => $quote->cover_message,
                 'notes' => $quote->notes,
                 'terms' => $quote->terms,
@@ -320,6 +323,7 @@ class QuoteService
                 'discount_amount' => $quote->discount_amount,
                 'tax_amount' => $quote->tax_amount,
                 'total' => $quote->total,
+                'base_total' => $quote->base_total,
                 'requires_deposit' => $quote->requires_deposit,
                 'deposit_amount' => $quote->deposit_amount,
                 'created_by' => auth()->id(),
@@ -390,6 +394,8 @@ class QuoteService
                 'client_id' => $quote->client_id,
                 'assigned_to' => $quote->assigned_to,
                 'currency' => $quote->currency,
+                'base_currency' => $quote->base_currency,
+                'fx_rate' => $quote->fx_rate,
                 'cover_message' => $quote->cover_message,
                 'notes' => $quote->notes,
                 'terms' => $quote->terms,
@@ -401,6 +407,7 @@ class QuoteService
                 'discount_amount' => $quote->discount_amount,
                 'tax_amount' => $quote->tax_amount,
                 'total' => $quote->total,
+                'base_total' => $quote->base_total,
                 'requires_deposit' => $quote->requires_deposit,
                 'deposit_amount' => $quote->deposit_amount,
                 'created_by' => auth()->id(),
@@ -510,6 +517,9 @@ class QuoteService
             'client_id' => $quote->client_id,
             'assigned_to' => $quote->assigned_to,
             'currency' => $quote->currency,
+            'base_currency' => $quote->base_currency ?? $quote->currency,
+            'fx_rate' => $quote->fx_rate,
+            'base_total' => $quote->base_total,
             'valid_until' => $quote->valid_until?->toDateString(),
             'cover_message' => $quote->cover_message,
             'terms' => $quote->terms,

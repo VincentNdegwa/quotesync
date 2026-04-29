@@ -3,106 +3,313 @@
 namespace App\Services;
 
 use App\Models\Quote;
+use Illuminate\Support\Collection;
 
 class WinProbabilityService
 {
-    public function calculate(Quote $quote): float
+    private const MIN_SAMPLE_SIZE = 5;
+    private const DEFAULT_RATE    = 0.50;
+
+    public function calculate(Quote $quote): array
     {
-        $score = 50.0; // base
+        $signals = $this->gatherSignals($quote);
 
-        // Signal 1: Client's acceptance history
-        $clientWinRate = $this->clientWinRate($quote->client_id, $quote->workspace_id);
-        $score += ($clientWinRate - 0.5) * 30;
-
-        // Signal 2: View count
-        if ($quote->view_count >= 4) $score += 15;
-        elseif ($quote->view_count >= 2) $score += 8;
-        elseif ($quote->view_count === 0 && $this->daysSinceSent($quote) > 2) $score -= 10;
-
-        // Signal 3: Time spent reading
-        $minutes = ($quote->time_spent_seconds ?? 0) / 60;
-        if ($minutes >= 5) $score += 12;
-        elseif ($minutes >= 2) $score += 6;
-
-        // Signal 4: Days since sent
-        $daysSent = $this->daysSinceSent($quote);
-        if ($daysSent <= 2) $score += 5;
-        elseif ($daysSent > 7) $score -= 8;
-        elseif ($daysSent > 14) $score -= 18;
-
-        // Signal 5: Quote value vs client's average
-        $avgDeal = $this->clientAverageDealSize($quote->client_id);
-        if ($avgDeal > 0) {
-            $ratio = $quote->total / $avgDeal;
-            if ($ratio > 2.0) $score -= 12;
-            elseif ($ratio < 0.7) $score += 8;
+        if ($signals->isEmpty()) {
+            return $this->noDataResult();
         }
 
-        // Signal 6: Discount given
-        if ($quote->discount_amount > 0) {
-            $discountPct = $quote->discount_amount / $quote->subtotal * 100;
-            if ($discountPct > 20) $score -= 10;
-            elseif ($discountPct > 10) $score -= 4;
-        }
+        $weightedSum   = $signals->sum(fn ($s) => $s['probability'] * $s['weight']);
+        $totalWeight   = $signals->sum(fn ($s) => $s['weight']);
+        $probability   = $totalWeight > 0 ? $weightedSum / $totalWeight : self::DEFAULT_RATE;
 
-        // Signal 7: Template win rate
-        if ($quote->template_id) {
-            $templateWinRate = $this->templateWinRate($quote->template_id);
-            $score += ($templateWinRate - 0.5) * 15;
-        }
+        $probability   = min(0.92, max(0.05, $probability));
 
-        $return_score = min(95, max(5, round($score, 2)));
-        return $return_score;
+        $confidence    = $this->confidence($signals);
+
+        return [
+            'probability'   => round($probability * 100),
+            'confidence'    => $confidence,
+            'signals'       => $signals->toArray(),
+            'has_data'      => true,
+        ];
     }
 
-    private function clientWinRate(?int $clientId, int $workspaceId): float
+    private function gatherSignals(Quote $quote): Collection
     {
-        if (!$clientId) return 0.5;
+        $signals = collect();
 
-        $total = Quote::where('client_id', $clientId)
+        // ── Signal 1: Workspace historical win rate ──────────────────────
+        // The baseline. How often does this workspace win any quote at all.
+        $workspaceRate = $this->workspaceWinRate($quote->workspace_id);
+        if ($workspaceRate !== null) {
+            $signals->push([
+                'key'         => 'workspace_baseline',
+                'label'       => 'Your overall win rate',
+                'probability' => $workspaceRate['rate'],
+                'weight'      => min(3.0, $workspaceRate['count'] / 20),
+                'sample_size' => $workspaceRate['count'],
+                'direction'   => $workspaceRate['rate'] >= 0.5 ? 'positive' : 'negative',
+            ]);
+        }
+
+        // ── Signal 2: Client-specific win rate ───────────────────────────
+        // How often does this workspace win quotes for THIS client.
+        $clientRate = $this->clientWinRate($quote->client_id, $quote->workspace_id);
+        if ($clientRate !== null) {
+            $signals->push([
+                'key'         => 'client_history',
+                'label'       => 'Win rate with this client',
+                'probability' => $clientRate['rate'],
+                'weight'      => min(4.0, $clientRate['count'] / 3),
+                'sample_size' => $clientRate['count'],
+                'direction'   => $clientRate['rate'] >= 0.5 ? 'positive' : 'negative',
+            ]);
+        }
+
+        // ── Signal 3: Engagement — view count ───────────────────────────
+        // Based on what percentage of won quotes had this many views.
+        $engagementSignal = $this->engagementSignal(
+            $quote->view_count ?? 0,
+            $quote->workspace_id
+        );
+        if ($engagementSignal !== null) {
+            $signals->push($engagementSignal);
+        }
+
+        // ── Signal 4: Time decay ─────────────────────────────────────────
+        // Based on historical data: quotes closed after X days win at what rate.
+        $decaySignal = $this->timeDecaySignal($quote);
+        if ($decaySignal !== null) {
+            $signals->push($decaySignal);
+        }
+
+        // ── Signal 5: Value ratio vs client average ──────────────────────
+        $valueSignal = $this->valueRatioSignal($quote);
+        if ($valueSignal !== null) {
+            $signals->push($valueSignal);
+        }
+
+        return $signals;
+    }
+
+    private function workspaceWinRate(int $workspaceId): ?array
+    {
+        $resolved = Quote::where('workspace_id', $workspaceId)
+            ->whereIn('status', ['won', 'lost'])
+            ->count();
+
+        if ($resolved < self::MIN_SAMPLE_SIZE) {
+            return null;
+        }
+
+        $won = Quote::where('workspace_id', $workspaceId)
+            ->where('status', 'won')
+            ->count();
+
+        return [
+            'rate'  => $won / $resolved,
+            'count' => $resolved,
+        ];
+    }
+
+    private function clientWinRate(?int $clientId, int $workspaceId): ?array
+    {
+        if (! $clientId) {
+            return null;
+        }
+
+        $resolved = Quote::where('client_id', $clientId)
             ->where('workspace_id', $workspaceId)
             ->whereIn('status', ['won', 'lost'])
             ->count();
 
-        if ($total === 0) return 0.5;
+        if ($resolved < 2) {
+            return null;
+        }
 
         $won = Quote::where('client_id', $clientId)
             ->where('workspace_id', $workspaceId)
             ->where('status', 'won')
             ->count();
 
-        return $won / $total;
+        return [
+            'rate'  => $won / $resolved,
+            'count' => $resolved,
+        ];
     }
 
-    private function daysSinceSent(Quote $quote): int
+    private function engagementSignal(int $viewCount, int $workspaceId): ?array
     {
-        if (!$quote->sent_at) return 0;
-        return $quote->sent_at->diffInDays(now());
-    }
-
-    private function clientAverageDealSize(?int $clientId): float
-    {
-        if (!$clientId) return 0;
-
-        return Quote::where('client_id', $clientId)
+        // Compare this quote's view count to the workspace average view count
+        // at time of winning vs at time of losing
+        $avgViewsOnWon = Quote::where('workspace_id', $workspaceId)
             ->where('status', 'won')
-            ->avg('total') ?? 0;
-    }
+            ->avg('view_count') ?? 0;
 
-    private function templateWinRate(?int $templateId): float
-    {
-        if (!$templateId) return 0.5;
+        $avgViewsOnLost = Quote::where('workspace_id', $workspaceId)
+            ->where('status', 'lost')
+            ->avg('view_count') ?? 0;
 
-        $total = Quote::where('template_id', $templateId)
+        $totalResolved = Quote::where('workspace_id', $workspaceId)
             ->whereIn('status', ['won', 'lost'])
             ->count();
 
-        if ($total === 0) return 0.5;
+        if ($totalResolved < self::MIN_SAMPLE_SIZE || $avgViewsOnWon === $avgViewsOnLost) {
+            return null;
+        }
 
-        $won = Quote::where('template_id', $templateId)
+        // Position this quote's views between the lost average and won average
+        // 0 views against won avg of 3 → below average → lower probability
+        if ($avgViewsOnWon > $avgViewsOnLost) {
+            $range    = $avgViewsOnWon - $avgViewsOnLost;
+            $position = min(1.0, max(0.0, ($viewCount - $avgViewsOnLost) / $range));
+        } else {
+            $position = $viewCount > 0 ? 0.6 : 0.4;
+        }
+
+        return [
+            'key'         => 'engagement',
+            'label'       => 'Client engagement (views)',
+            'probability' => $position,
+            'weight'      => 1.5,
+            'sample_size' => $totalResolved,
+            'direction'   => $position >= 0.5 ? 'positive' : 'negative',
+            'meta'        => [
+                'view_count'       => $viewCount,
+                'avg_views_won'    => round($avgViewsOnWon, 1),
+                'avg_views_lost'   => round($avgViewsOnLost, 1),
+            ],
+        ];
+    }
+
+    private function timeDecaySignal(Quote $quote): ?array
+    {
+        if (! $quote->sent_at) {
+            return null;
+        }
+
+        $daysSinceSent = $quote->sent_at->diffInDays(now());
+
+        $workspaceId = $quote->workspace_id;
+
+        // Find the median days-to-close for won quotes in this workspace
+        $avgDaysToClose = Quote::where('workspace_id', $workspaceId)
             ->where('status', 'won')
+            ->whereNotNull('sent_at')
+            ->whereNotNull('won_at')
+            ->selectRaw('AVG(DATEDIFF(won_at, sent_at)) as avg_days')
+            ->value('avg_days') ?? 7;
+
+        $totalResolved = Quote::where('workspace_id', $workspaceId)
+            ->whereIn('status', ['won', 'lost'])
             ->count();
 
-        return $won / $total;
+        if ($totalResolved < self::MIN_SAMPLE_SIZE) {
+            return null;
+        }
+
+        // Win rate for quotes closed within avg days vs beyond it
+        $fastWins = Quote::where('workspace_id', $workspaceId)
+            ->where('status', 'won')
+            ->whereNotNull('sent_at')
+            ->whereNotNull('won_at')
+            ->whereRaw('DATEDIFF(won_at, sent_at) <= ?', [$avgDaysToClose])
+            ->count();
+
+        $fastTotal = Quote::where('workspace_id', $workspaceId)
+            ->whereIn('status', ['won', 'lost'])
+            ->whereNotNull('sent_at')
+            ->whereRaw('DATEDIFF(COALESCE(won_at, lost_at), sent_at) <= ?', [$avgDaysToClose])
+            ->count();
+
+        $fastRate = $fastTotal > 0 ? $fastWins / $fastTotal : 0.5;
+        $slowRate = 1 - $fastRate;
+
+        $probability = $daysSinceSent <= $avgDaysToClose ? $fastRate : $slowRate;
+
+        return [
+            'key'         => 'time_decay',
+            'label'       => 'Time since sent',
+            'probability' => $probability,
+            'weight'      => 1.0,
+            'sample_size' => $totalResolved,
+            'direction'   => $probability >= 0.5 ? 'positive' : 'negative',
+            'meta'        => [
+                'days_since_sent'    => $daysSinceSent,
+                'avg_days_to_close'  => round($avgDaysToClose, 1),
+            ],
+        ];
+    }
+
+    private function valueRatioSignal(Quote $quote): ?array
+    {
+        if (! $quote->client_id || ! $quote->base_total) {
+            return null;
+        }
+
+        $avgWonValue = Quote::where('client_id', $quote->client_id)
+            ->where('workspace_id', $quote->workspace_id)
+            ->where('status', 'won')
+            ->avg('base_total') ?? 0;
+
+        if ($avgWonValue <= 0) {
+            return null;
+        }
+
+        $ratio = $quote->base_total / $avgWonValue;
+
+        // Quotes near the client's historical average close better
+        // Much higher or much lower than average is unusual and riskier
+        if ($ratio >= 0.7 && $ratio <= 1.5) {
+            $probability = 0.65;
+        } elseif ($ratio > 1.5 && $ratio <= 2.5) {
+            $probability = 0.40;
+        } elseif ($ratio > 2.5) {
+            $probability = 0.25;
+        } elseif ($ratio < 0.7) {
+            $probability = 0.55;
+        } else {
+            $probability = 0.50;
+        }
+
+        return [
+            'key'         => 'value_ratio',
+            'label'       => 'Quote value vs client average',
+            'probability' => $probability,
+            'weight'      => 0.8,
+            'sample_size' => 1,
+            'direction'   => $probability >= 0.5 ? 'positive' : 'negative',
+            'meta'        => [
+                'quote_value'     => $quote->base_total,
+                'client_average'  => round($avgWonValue, 2),
+                'ratio'           => round($ratio, 2),
+            ],
+        ];
+    }
+
+    private function confidence(Collection $signals): string
+    {
+        $totalWeight = $signals->sum(fn ($s) => $s['weight']);
+        $totalSamples = $signals->sum(fn ($s) => $s['sample_size']);
+
+        if ($totalWeight < 1.0 || $totalSamples < 10) {
+            return 'low';
+        }
+
+        if ($totalWeight < 3.0 || $totalSamples < 30) {
+            return 'medium';
+        }
+
+        return 'high';
+    }
+
+    private function noDataResult(): array
+    {
+        return [
+            'probability' => null,
+            'confidence'  => 'none',
+            'signals'     => [],
+            'has_data'    => false,
+        ];
     }
 }

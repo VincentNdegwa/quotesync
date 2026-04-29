@@ -1,5 +1,6 @@
 import type { ColumnDef } from '@tanstack/vue-table';
 import { h } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import { Badge } from '@/components/ui/badge';
 import { useEnums } from '@/composables/useEnums';
 import type { QuoteListRecord, QuoteStatusEnum } from '@/types';
@@ -77,11 +78,11 @@ export const getQuoteColumns = (options: QuoteColumnOptions): ColumnDef<QuoteLis
             },
         },
         {
-            accessorKey: 'total',
+            accessorKey: 'base_total',
             header: ({ column }) => h('div', { class: 'text-center' }, sortableHeader('Total', column, 'right')),
             cell: ({ row }) => {
-                const total = typeof row.original.total === 'string' ? parseFloat(row.original.total) : row.original.total;
-                return h('div', { class: 'text-center tabular-nums' }, (total ?? 0).toFixed(2));
+                const total = typeof row.original.base_total === 'string' ? parseFloat(row.original.base_total) : row.original.base_total;
+                return h('div', { class: 'text-center tabular-nums' }, useFormat().formatCurrency(total ?? 0, row.original.base_currency || (usePage().props.workspace_currency as string) || undefined));
             },
         },
         {
@@ -99,7 +100,7 @@ export const getQuoteColumns = (options: QuoteColumnOptions): ColumnDef<QuoteLis
             cell: ({ row }) => {
                 const probability = row.original.win_probability;
                 if (probability === null || probability === undefined) return '—';
-                
+
                 const getColor = (p: number) => {
                     if (p >= 70) return 'text-green-600';
                     if (p >= 40) return 'text-yellow-600';

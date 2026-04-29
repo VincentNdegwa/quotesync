@@ -151,6 +151,9 @@ export type QuoteModel = {
   client_id: number | null;
   assigned_to: number | null;
   currency: string | null;
+  base_currency: string | null;
+  fx_rate: number | null;
+  base_total: number | null;
   cover_message: string | null;
   notes: string | null;
   terms: string | null;

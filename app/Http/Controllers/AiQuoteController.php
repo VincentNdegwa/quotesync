@@ -29,7 +29,7 @@ class AiQuoteController extends Controller
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to generate quote: ' . $e->getMessage(),
+                'message' => 'Failed to generate quote: '.$e->getMessage(),
             ], 500);
         }
     }

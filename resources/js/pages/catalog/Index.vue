@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import CatalogHeaderActions from '@/components/catalog/CatalogHeaderActions.vue';
 import CatalogItemForm from '@/components/catalog/CatalogItemForm.vue';
@@ -25,6 +25,7 @@ import {
 import CatalogDataTable from '@/pages/catalog/components/CatalogDataTable.vue';
 import ConfigurationCategoryCreateDialog from '@/pages/configuration/categories/components/CreateDialog.vue';
 import ConfigurationTaxCreateDialog from '@/pages/configuration/taxes/components/CreateDialog.vue';
+import { useFormat } from '@/composables/useFormat';
 import type {
     CatalogCategoryRecord,
     CatalogItemRecord,
@@ -206,6 +207,8 @@ const marginPercent = (item: CatalogItemRecord): number => {
 
     return Math.round(((unitPrice - Number(item.cost_price)) / unitPrice) * 10000) / 100;
 };
+
+const { formatCurrency } = useFormat(usePage().props.workspace_currency as string || undefined);
 </script>
 
 <template>
@@ -285,13 +288,13 @@ const marginPercent = (item: CatalogItemRecord): number => {
                 </div>
                 <div class="grid grid-cols-2 gap-2 text-sm">
                     <p class="text-muted-foreground">Unit price</p>
-                    <p class="text-right">{{ item.unit_price }}</p>
+                    <p class="text-right">{{ formatCurrency(item.unit_price) }}</p>
                     <p class="text-muted-foreground">Unit</p>
                     <p class="text-right">{{ item.unit }}</p>
                     <p class="text-muted-foreground">Usage count</p>
                     <p class="text-right">{{ item.usage_count }}</p>
                     <p class="text-muted-foreground">Margin</p>
-                    <p class="text-right">{{ marginPercent(item) }}% ({{ profitPerUnit(item) }})</p>
+                    <p class="text-right">{{ marginPercent(item) }}% ({{ formatCurrency(profitPerUnit(item)) }})</p>
                 </div>
                 <div class="flex justify-end gap-2">
                     <Button size="sm" variant="outline" as-child>

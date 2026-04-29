@@ -302,7 +302,7 @@ const followUpTimeline = computed(() =>
             </div>
             <div class="space-y-2">
               <CardTitle class="text-2xl font-semibold tracking-tight">{{ quote.title }}</CardTitle>
-              <CardDescription>Quote #{{ quote.number ?? '—' }} · {{ formatCurrency(quote.total, quote.currency ?? undefined) }}</CardDescription>
+              <CardDescription>Quote #{{ quote.number ?? '—' }} · {{ formatCurrency(quote.base_total, quote.base_currency ?? undefined) }}</CardDescription>
             </div>
             <div class="flex flex-wrap items-center gap-2">
               <Badge :variant="getQuoteStatus(quote.status)?.value === 'accepted' ? 'default' : 'secondary'">

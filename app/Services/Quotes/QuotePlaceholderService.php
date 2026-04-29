@@ -45,6 +45,7 @@ class QuotePlaceholderService
     public static function extractPlaceholders(string $template): array
     {
         preg_match_all('/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/', $template, $matches);
+
         return $matches[1] ?? [];
     }
 
@@ -101,7 +102,7 @@ class QuotePlaceholderService
 
         foreach ($placeholders as $key => $description) {
             $value = $data[$key] ?? '';
-            $template = str_replace('{' . $key . '}', $value, $template);
+            $template = str_replace('{'.$key.'}', $value, $template);
         }
 
         return $template;
@@ -118,6 +119,7 @@ class QuotePlaceholderService
         ?string $quoteLink = null
     ): string {
         $data = self::buildPlaceholderData($quote, $workspace, $user, $quoteLink);
+
         return self::replacePlaceholders($template, $data);
     }
 }

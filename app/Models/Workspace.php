@@ -140,7 +140,7 @@ class Workspace extends LaratrustTeam
 
     public function calculateAgencyCommission(float $quoteTotal): float
     {
-        if (!$this->isAgencyModeEnabled() || !$this->agency_commission_rate) {
+        if (! $this->isAgencyModeEnabled() || ! $this->agency_commission_rate) {
             return 0;
         }
 

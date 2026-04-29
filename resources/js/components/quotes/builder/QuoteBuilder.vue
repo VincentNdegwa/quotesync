@@ -48,6 +48,7 @@ const props = withDefaults(
         branding?: BuilderBranding | null;
         processing?: boolean;
         systemLocked?: boolean;
+        defaultCurrency?: string;
     }>(),
     {
         clients: () => [],
@@ -55,6 +56,7 @@ const props = withDefaults(
         branding: null,
         processing: false,
         systemLocked: false,
+        defaultCurrency: 'USD',
     },
 );
 
@@ -65,6 +67,11 @@ const emit = defineEmits<{
 }>();
 
 const localState = model;
+
+// Ensure base_currency is set to defaultCurrency if not present
+if (!localState.value.base_currency) {
+    localState.value.base_currency = props.defaultCurrency;
+}
 
 const currentLayout = ref<TemplateLayout>(
     ensureTemplateLayout(
@@ -781,6 +788,7 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                 :clients="clients"
                 :templates="templates"
                 :system-locked="systemLocked"
+                :default-currency="defaultCurrency"
             />
         </div>
 
@@ -960,7 +968,7 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
             v-model:item="drawerItem"
             :catalog-items="catalogItems"
             :taxes="taxes"
-            :currency="localState.currency"
+            :currency="defaultCurrency"
             @close="closeLineItemDrawer()"
             @remove="removeEditingLineItem()"
         />

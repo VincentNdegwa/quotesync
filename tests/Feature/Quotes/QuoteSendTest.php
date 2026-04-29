@@ -2,19 +2,19 @@
 
 use App\Enums\ApprovalRuleTriggerType;
 use App\Enums\QuoteApprovalStatus;
-use App\Jobs\SendQuoteEmailJob;
 use App\Enums\QuoteStatus;
+use App\Jobs\SendQuoteEmailJob;
 use App\Models\ApprovalRule;
 use App\Models\Client;
 use App\Models\FollowUpSequence;
 use App\Models\FollowUpStep;
 use App\Models\Quote;
+use App\Models\QuoteActivity;
 use App\Models\QuoteApproval;
 use App\Models\QuoteShortCode;
-use App\Models\QuoteActivity;
 use App\Models\User;
-use App\Notifications\QuoteSentInternalNotification;
 use App\Notifications\QuoteApprovalRequestedNotification;
+use App\Notifications\QuoteSentInternalNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 
@@ -334,4 +334,3 @@ test('it schedules default follow-up steps when a quote is sent', function () {
         'status' => 'pending',
     ]);
 });
-

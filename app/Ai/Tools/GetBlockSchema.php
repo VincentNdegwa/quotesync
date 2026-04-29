@@ -3,8 +3,8 @@
 namespace App\Ai\Tools;
 
 use Illuminate\Contracts\JsonSchema\JsonSchema;
-use Laravel\Ai\Tools\Request;
 use Laravel\Ai\Contracts\Tool;
+use Laravel\Ai\Tools\Request;
 use Stringable;
 
 class GetBlockSchema implements Tool

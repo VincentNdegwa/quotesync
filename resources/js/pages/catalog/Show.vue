@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, setLayoutProps, useForm } from '@inertiajs/vue3';
+import { Head, Link, setLayoutProps, useForm, usePage } from '@inertiajs/vue3';
 import { computed, watchEffect } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useFormat } from '@/composables/useFormat';
 import type { CatalogItemRecord } from '@/types';
 
 const props = defineProps<{
@@ -38,6 +39,7 @@ watchEffect(()=>{
     })
 })
 
+const { formatCurrency } = useFormat(usePage().props.workspace_currency as string || undefined);
 
 const form = useForm({
     name: props.item.name,
@@ -91,11 +93,11 @@ const save = (): void => {
         <div class="grid gap-4 md:grid-cols-3">
             <div class="rounded-md border p-4">
                 <p class="text-xs text-muted-foreground">Unit price</p>
-                <p class="text-2xl font-semibold">{{ item.unit_price }}</p>
+                <p class="text-2xl font-semibold">{{ formatCurrency(item.unit_price) }}</p>
             </div>
             <div class="rounded-md border p-4">
                 <p class="text-xs text-muted-foreground">Profit per unit</p>
-                <p class="text-2xl font-semibold">{{ margin.profit_per_unit }}</p>
+                <p class="text-2xl font-semibold">{{ formatCurrency(margin.profit_per_unit) }}</p>
             </div>
             <div class="rounded-md border p-4">
                 <p class="text-xs text-muted-foreground">Margin</p>

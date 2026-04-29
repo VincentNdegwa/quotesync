@@ -114,7 +114,9 @@ export type QuoteListRecord = {
     title: string;
     status: string;
     total: number;
+    base_total: number | null;
     currency: string | null;
+    base_currency: string | null;
     valid_until: string | null;
     created_at: string | null;
     client: { id: number; company_name: string; email?: string | null } | null;

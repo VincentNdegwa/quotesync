@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { computed, type Component } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import { CurveType, Orientation } from '@unovis/ts';
 import {
     VisArea,
@@ -46,7 +47,7 @@ const props = defineProps<{
         pipeline_value: number;
         pipeline_trend: number;
         won_this_month: number;
-        won_trend: number;
+        won_trend: number | null;
         quotes_expiring: number;
         win: {
             rate: number;
@@ -112,7 +113,7 @@ const props = defineProps<{
     generated_at: string;
 }>();
 
-const { formatCurrency, formatRelativeTime } = useFormat();
+const { formatCurrency, formatRelativeTime } = useFormat(usePage().props.workspace_currency as string || undefined);
 
 const formatNumber = (value: number): string =>
     new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(
@@ -137,26 +138,27 @@ type StatCard = {
 
 const statCards = computed<StatCard[]>(() => [
     {
-        key: 'pipeline',
-        title: 'Pipeline Value',
-        value: formatCurrency(props.stats.pipeline_value),
-        trend: props.stats.pipeline_trend ?? 0,
-        trendText: 'vs last month',
-    },
-    {
-        key: 'won',
-        title: 'Won This Month',
-        value: formatCurrency(props.stats.won_this_month),
-        trend: props.stats.won_trend ?? 0,
-        trendText: 'vs last month',
-    },
-    {
         key: 'win_rate',
         title: 'Win Rate',
         value: formatPercent(props.stats.win.rate),
         trend: props.stats.win.trend ?? 0,
         trendText: 'vs last month',
         valueText: `${props.stats.win.win_count} / ${props.stats.win.sent_count} quotes`,
+    },
+    {
+        key: 'revenue_captured',
+        title: 'Revenue Captured',
+        value: formatCurrency(props.stats.won_this_month),
+        trend: props.stats.won_trend ?? 0,
+        trendText: 'vs last month',
+        note: 'of total sent value',
+    },
+    {
+        key: 'pipeline',
+        title: 'Pipeline Value',
+        value: formatCurrency(props.stats.pipeline_value),
+        trend: props.stats.pipeline_trend ?? 0,
+        trendText: 'vs last month',
     },
     {
         key: 'expiring',
@@ -310,6 +312,7 @@ defineOptions({
                 >Open full analytics →</Link
             >
         </div>
+
 
         <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Card

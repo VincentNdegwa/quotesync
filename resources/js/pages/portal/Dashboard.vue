@@ -4,8 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Eye, CheckCircle2, XCircle, Clock } from 'lucide-vue-next';
+import { useFormat } from '@/composables/useFormat';
 import { dashboard, logout } from '@/routes/portal';
 import { show as showQuote } from '@/routes/portal/quotes';
+
+const { formatCurrency } = useFormat();
 
 const props = defineProps<{
     quotes: Array<any>;
@@ -123,7 +126,7 @@ const getStatusIcon = (status: string) => {
                             </p>
                         </div>
                         <div class="flex items-center gap-4">
-                            <span class="font-bold">${{ quote.total ? Number(quote.total).toFixed(2) : '0.00' }}</span>
+                            <span class="font-bold">{{ formatCurrency(quote.total, quote.currency ?? undefined) }}</span>
                             <Link v-if="quote.uuid" :href="showQuote(quote.uuid).url">
                                 <Button variant="outline" size="sm">View</Button>
                             </Link>

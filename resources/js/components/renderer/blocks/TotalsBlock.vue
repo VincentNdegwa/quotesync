@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { blockBaseStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
+import { useFormat } from '@/composables/useFormat';
 import type { BrandingData, QuoteData, TotalsBlockConfig } from '@/types';
 
 const props = defineProps<{
@@ -10,12 +11,7 @@ const props = defineProps<{
     previewMode: boolean;
 }>();
 
-const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat(undefined, {
-        style: 'currency',
-        currency: props.quote.currency || 'USD',
-    }).format(Number(value || 0));
-};
+const { formatCurrency } = useFormat(props.quote.base_currency || props.quote.currency || undefined);
 
 const itemBaseSubtotal = (item: QuoteData['sections'][number]['line_items'][number]): number => {
     const quantity = Math.max(Number(item.quantity || 0), 0);
@@ -25,12 +21,33 @@ const itemBaseSubtotal = (item: QuoteData['sections'][number]['line_items'][numb
     return quantity * unitPrice * (1 - discountPercent / 100);
 };
 
+const itemBaseSubtotalBeforeDiscount = (item: QuoteData['sections'][number]['line_items'][number]): number => {
+    const quantity = Math.max(Number(item.quantity || 0), 0);
+    const unitPrice = Math.max(Number(item.unit_price || 0), 0);
+
+    return quantity * unitPrice;
+};
+
 const computedSubtotal = computed(() => {
     return props.quote.sections.reduce((sum, section) => {
         return sum + section.line_items.reduce((lineSum, item) => {
             return item.is_optional ? lineSum : lineSum + itemBaseSubtotal(item);
         }, 0);
     }, 0);
+});
+
+const computedSubtotalBeforeDiscount = computed(() => {
+    return props.quote.sections.reduce((sum, section) => {
+        return sum + section.line_items.reduce((lineSum, item) => {
+            return item.is_optional ? lineSum : lineSum + itemBaseSubtotalBeforeDiscount(item);
+        }, 0);
+    }, 0);
+});
+
+const computedDiscountAmount = computed(() => {
+    const lineItemDiscount = computedSubtotalBeforeDiscount.value - computedSubtotal.value;
+    const globalDiscount = Math.max(Number(props.quote.discount_amount || 0), 0);
+    return lineItemDiscount + globalDiscount;
 });
 
 const computedTaxAmount = computed(() => {
@@ -53,7 +70,6 @@ const computedTaxAmount = computed(() => {
     }, 0);
 });
 
-const computedDiscountAmount = computed(() => Math.max(Number(props.quote.discount_amount || 0), 0));
 const computedTotal = computed(() => computedSubtotal.value + computedTaxAmount.value - computedDiscountAmount.value);
 
 const alignmentClass = computed(() => {

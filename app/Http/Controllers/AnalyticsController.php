@@ -63,26 +63,40 @@ class AnalyticsController extends Controller
 
         $wonRevenue = (float) $this->baseQuery()
             ->whereIn('status', $wonStatuses)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('total');
+            ->whereBetween('won_at', [$startDate, $endDate])
+            ->sum('base_total');
 
         $lostRevenue = (float) $this->baseQuery()
             ->whereIn('status', $lostStatuses)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('total');
+            ->whereBetween('lost_at', [$startDate, $endDate])
+            ->sum('base_total');
 
         $stillOpen = (float) $this->baseQuery()
             ->whereIn('status', QuoteStatus::pipelineStatuses())
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('total');
+            ->sum('base_total');
 
-        $totalQuoted = $wonRevenue + $lostRevenue + $stillOpen;
+        $sentQuery = $this->baseQuery()
+            ->whereNotNull('sent_at')
+            ->whereBetween('sent_at', [$startDate, $endDate]);
+
+        $sentCount = $sentQuery->count();
+        $wonCount = (int) $this->baseQuery()
+            ->whereIn('status', $wonStatuses)
+            ->whereBetween('sent_at', [$startDate, $endDate])
+            ->count();
+
+        $sentValue = (float) $sentQuery->sum('base_total');
+        $wonValue = (float) $this->baseQuery()
+            ->whereIn('status', $wonStatuses)
+            ->whereBetween('sent_at', [$startDate, $endDate])
+            ->sum('base_total');
 
         return [
             'won_revenue' => $wonRevenue,
             'lost_revenue' => $lostRevenue,
             'still_open' => $stillOpen,
-            'won_per_100' => $totalQuoted > 0 ? round(($wonRevenue / $totalQuoted) * 100) : 0,
+            'win_rate' => $sentCount > 0 ? round(($wonCount / $sentCount) * 100, 1) : 0,
+            'revenue_captured' => $sentValue > 0 ? round(($wonValue / $sentValue) * 100, 1) : 0,
             'revenue_trend' => $this->revenueTrend()->toArray(),
         ];
     }
@@ -99,8 +113,8 @@ class AnalyticsController extends Controller
 
                 $wonRevenue = (float) $this->baseQuery()
                     ->whereIn('status', $wonStatuses)
-                    ->whereBetween('created_at', [$start, $end])
-                    ->sum('total');
+                    ->whereBetween('won_at', [$start, $end])
+                    ->sum('base_total');
 
                 return [
                     'month' => $date->format('M'),
@@ -123,9 +137,9 @@ class AnalyticsController extends Controller
     {
         $declineReasons = $this->baseQuery()
             ->where('status', QuoteStatus::Declined->value)
-            ->whereBetween('created_at', [$startDate, $endDate])
+            ->whereBetween('lost_at', [$startDate, $endDate])
             ->whereNotNull('decline_reason')
-            ->selectRaw('decline_reason, COUNT(*) as count, SUM(total) as total_value')
+            ->selectRaw('decline_reason, COUNT(*) as count, SUM(base_total) as total_value')
             ->groupBy('decline_reason')
             ->orderByDesc('count')
             ->get()
@@ -146,20 +160,22 @@ class AnalyticsController extends Controller
 
         $this->baseQuery()
             ->whereNotNull('sent_at')
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->get(['status', 'sent_at', 'accepted_at', 'updated_at'])
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('won_at', [$startDate, $endDate])
+                    ->orWhereBetween('lost_at', [$startDate, $endDate]);
+            })
+            ->get(['status', 'sent_at', 'accepted_at', 'updated_at', 'won_at', 'lost_at'])
             ->each(function (Quote $quote) use (&$timeToWinBuckets): void {
                 $status = $this->resolveQuoteStatus($quote);
 
                 if (in_array($status, QuoteStatus::closedWonStatuses(), true)) {
-                    $closedAt = $quote->accepted_at instanceof Carbon
-                        ? $quote->accepted_at
-                        : ($quote->updated_at instanceof Carbon ? $quote->updated_at : null);
+                    $closedAt = $quote->won_at ?? $quote->accepted_at ?? $quote->updated_at;
 
-                    $sentAt = $quote->sent_at instanceof Carbon ? $quote->sent_at : null;
+                    $sentAt = $quote->sent_at;
 
                     if ($closedAt === null || $sentAt === null) {
                         $timeToWinBuckets['Never']++;
+
                         return;
                     }
 
@@ -218,10 +234,10 @@ class AnalyticsController extends Controller
         $wonStatuses = QuoteStatus::closedWonStatuses();
 
         $quotes = $this->baseQuery()
-            ->whereBetween('created_at', [$startDate, $endDate])
+            ->whereBetween('sent_at', [$startDate, $endDate])
             ->whereNotNull('template_id')
             ->with('template:id,name')
-            ->get(['template_id', 'status', 'total']);
+            ->get(['template_id', 'status', 'base_total']);
 
         return $quotes
             ->groupBy('template_id')
@@ -236,9 +252,9 @@ class AnalyticsController extends Controller
                 return [
                     'template_id' => (int) ($first?->template_id ?? 0),
                     'template_name' => $first?->template?->name ?? 'Unknown',
-                    'win_rate' => $totalQuotes > 0 ? round(($wonQuotes / $totalQuotes) * 100) : 0,
+                    'win_rate' => $totalQuotes > 0 ? round(($wonQuotes / $totalQuotes) * 100, 1) : 0,
                     'total_quotes' => $totalQuotes,
-                    'avg_value' => (float) ($group->avg('total') ?? 0),
+                    'avg_value' => (float) ($group->avg('base_total') ?? 0),
                 ];
             })
             ->values()
@@ -248,19 +264,23 @@ class AnalyticsController extends Controller
     private function dealSizePerformance(Carbon $startDate, Carbon $endDate): array
     {
         $wonStatuses = QuoteStatus::closedWonStatuses();
+        $baseCurrency = $this->workspace->settings()
+            ->where('group', 'quotes')
+            ->where('key', 'default_currency')
+            ->value('value') ?? 'USD';
 
         $ranges = [
-            ['range' => 'Under KES 50k', 'min' => 0, 'max' => 50000],
-            ['range' => 'KES 50k - 200k', 'min' => 50000, 'max' => 200000],
-            ['range' => 'KES 200k - 500k', 'min' => 200000, 'max' => 500000],
-            ['range' => 'Over KES 500k', 'min' => 500000, 'max' => PHP_INT_MAX],
+            ['range' => "Under {$baseCurrency} 50k", 'min' => 0, 'max' => 50000],
+            ['range' => "{$baseCurrency} 50k - 200k", 'min' => 50000, 'max' => 200000],
+            ['range' => "{$baseCurrency} 200k - 500k", 'min' => 200000, 'max' => 500000],
+            ['range' => "Over {$baseCurrency} 500k", 'min' => 500000, 'max' => PHP_INT_MAX],
         ];
 
         return collect($ranges)
             ->map(function (array $range) use ($startDate, $endDate, $wonStatuses): array {
                 $quotes = $this->baseQuery()
-                    ->whereBetween('created_at', [$startDate, $endDate])
-                    ->whereBetween('total', [$range['min'], $range['max']])
+                    ->whereBetween('sent_at', [$startDate, $endDate])
+                    ->whereBetween('base_total', [$range['min'], $range['max']])
                     ->get(['status']);
 
                 $totalCount = $quotes->count();
@@ -270,7 +290,7 @@ class AnalyticsController extends Controller
 
                 return [
                     'range' => $range['range'],
-                    'win_rate' => $totalCount > 0 ? round(($wonCount / $totalCount) * 100) : 0,
+                    'win_rate' => $totalCount > 0 ? round(($wonCount / $totalCount) * 100, 1) : 0,
                 ];
             })
             ->values()
@@ -282,7 +302,7 @@ class AnalyticsController extends Controller
         $wonStatuses = QuoteStatus::closedWonStatuses();
 
         $quotes = $this->baseQuery()
-            ->whereBetween('created_at', [$startDate, $endDate])
+            ->whereBetween('sent_at', [$startDate, $endDate])
             ->whereNotNull('subtotal')
             ->get(['subtotal', 'discount_amount', 'status']);
 
@@ -315,7 +335,7 @@ class AnalyticsController extends Controller
 
                 return [
                     'range' => $label,
-                    'win_rate' => $totalCount > 0 ? round(($wonCount / $totalCount) * 100) : 0,
+                    'win_rate' => $totalCount > 0 ? round(($wonCount / $totalCount) * 100, 1) : 0,
                 ];
             })
             ->values()
@@ -325,10 +345,10 @@ class AnalyticsController extends Controller
     private function clientIntelligence(Carbon $startDate, Carbon $endDate): array
     {
         $quotes = $this->baseQuery()
-            ->whereBetween('created_at', [$startDate, $endDate])
+            ->whereBetween('sent_at', [$startDate, $endDate])
             ->whereNotNull('client_id')
             ->with('client:id,company_name')
-            ->get(['client_id', 'status', 'total', 'sent_at', 'accepted_at']);
+            ->get(['client_id', 'status', 'base_total', 'sent_at', 'accepted_at', 'won_at']);
 
         return $quotes
             ->groupBy('client_id')
@@ -340,16 +360,16 @@ class AnalyticsController extends Controller
                 );
 
                 $responseTimes = $group
-                    ->filter(fn (Quote $quote): bool => $quote->sent_at instanceof Carbon && $quote->accepted_at instanceof Carbon)
-                    ->map(fn (Quote $quote): int => $quote->sent_at->diffInDays($quote->accepted_at));
+                    ->filter(fn (Quote $quote): bool => $quote->sent_at instanceof Carbon && ($quote->won_at instanceof Carbon || $quote->accepted_at instanceof Carbon))
+                    ->map(fn (Quote $quote): int => $quote->sent_at->diffInDays($quote->won_at ?? $quote->accepted_at));
 
                 return [
                     'client_id' => (int) ($first?->client_id ?? 0),
                     'client_name' => $first?->client?->company_name ?? 'Unknown',
                     'quotes_count' => $group->count(),
                     'won_count' => $wonQuotes->count(),
-                    'win_rate' => $group->count() > 0 ? round(($wonQuotes->count() / $group->count()) * 100) : 0,
-                    'total_won' => (float) $wonQuotes->sum('total'),
+                    'win_rate' => $group->count() > 0 ? round(($wonQuotes->count() / $group->count()) * 100, 1) : 0,
+                    'total_won' => (float) $wonQuotes->sum('base_total'),
                     'avg_response_days' => $responseTimes->isNotEmpty()
                         ? round((float) $responseTimes->avg(), 1)
                         : 0,
@@ -364,8 +384,8 @@ class AnalyticsController extends Controller
     private function currencyBreakdown(Carbon $startDate, Carbon $endDate): array
     {
         $quotes = $this->baseQuery()
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->get(['currency', 'status', 'total']);
+            ->whereBetween('sent_at', [$startDate, $endDate])
+            ->get(['currency', 'status', 'total', 'base_total']);
 
         if ($quotes->isEmpty()) {
             return [];
@@ -383,6 +403,10 @@ class AnalyticsController extends Controller
                     ->filter(fn (Quote $quote): bool => in_array($this->resolveQuoteStatus($quote), $wonStatuses, true))
                     ->sum('total');
 
+                $wonBaseRevenue = $group
+                    ->filter(fn (Quote $quote): bool => in_array($this->resolveQuoteStatus($quote), $wonStatuses, true))
+                    ->sum('base_total');
+
                 $pipelineValue = $group
                     ->filter(fn (Quote $quote): bool => in_array($this->resolveQuoteStatus($quote), $pipelineStatuses, true))
                     ->sum('total');
@@ -393,8 +417,9 @@ class AnalyticsController extends Controller
                     'currency' => (string) ($first?->currency ?? ''),
                     'quotes_sent' => $quotesSent,
                     'won_revenue' => (float) $wonRevenue,
+                    'won_base_revenue' => (float) $wonBaseRevenue,
                     'pipeline' => (float) $pipelineValue,
-                    'avg_rate' => 1.0,
+                    'avg_rate' => $group->avg('fx_rate') ?? 1.0,
                 ];
             })
             ->values()
@@ -408,18 +433,19 @@ class AnalyticsController extends Controller
 
         $openPipeline = (float) $this->baseQuery()
             ->whereIn('status', $pipelineStatuses)
-            ->sum('total');
+            ->sum('base_total');
 
         $wonLast90Days = (int) $this->baseQuery()
             ->whereIn('status', $wonStatuses)
-            ->where('created_at', '>=', Carbon::now()->subDays(90))
+            ->where('won_at', '>=', Carbon::now()->subDays(90))
             ->count();
 
-        $createdLast90Days = (int) $this->baseQuery()
-            ->where('created_at', '>=', Carbon::now()->subDays(90))
+        $sentLast90Days = (int) $this->baseQuery()
+            ->whereNotNull('sent_at')
+            ->where('sent_at', '>=', Carbon::now()->subDays(90))
             ->count();
 
-        $winRate = $createdLast90Days > 0 ? $wonLast90Days / $createdLast90Days : 0.0;
+        $winRate = $sentLast90Days > 0 ? $wonLast90Days / $sentLast90Days : 0.0;
 
         return [
             'open_pipeline' => $openPipeline,

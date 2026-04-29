@@ -8,6 +8,7 @@ use App\Enums\QuoteActivityType;
 use App\Enums\QuoteFollowUpStatus;
 use App\Enums\QuoteStatus;
 use App\Enums\TrackingEventType;
+use App\Models\PortalInvitation;
 use App\Models\Workspace;
 use App\Services\WhiteLabelService;
 use Illuminate\Http\Request;
@@ -74,11 +75,27 @@ class HandleInertiaRequests extends Middleware
             $user = $portalUser;
         }
 
+        // Get workspace currency for authenticated users
+        $workspaceCurrency = 'USD';
+        if ($user) {
+            $workspace = $isPortalUser
+                ? Workspace::find($request->session()->get('portal_current_workspace_id') ?? $user->workspace_id)
+                : $user->currentWorkspace;
+
+            if ($workspace) {
+                $workspaceCurrency = $workspace->settings()
+                    ->where('group', 'quotes')
+                    ->where('key', 'default_currency')
+                    ->value('value') ?? 'USD';
+            }
+        }
+
         return [
             ...parent::share($request),
             'name' => $whiteLabel['enabled'] ? $whiteLabel['company_name'] : config('app.name'),
             'brand' => config('app.brand'),
             'whiteLabel' => $whiteLabel,
+            'workspace_currency' => $workspaceCurrency,
             'auth' => [
                 'user' => $user,
                 'portal_user' => $isPortalUser ? $user : null,
@@ -86,19 +103,19 @@ class HandleInertiaRequests extends Middleware
                     ? (function () use ($request, $user) {
                         $sessionWorkspaceId = $request->session()->get('portal_current_workspace_id');
                         $workspaceId = $sessionWorkspaceId ?? $user->workspace_id;
-                        $workspace = \App\Models\Workspace::find($workspaceId);
-                        
-                        if (!$workspace) {
+                        $workspace = Workspace::find($workspaceId);
+
+                        if (! $workspace) {
                             $workspace = $user->workspace;
                         }
-                        
+
                         return $workspace ? [
                             'id' => $workspace->id,
                             'name' => $workspace->name,
                             'display_name' => $workspace->display_name,
                         ] : null;
                     })()
-                    : (!$isPortalUser && $user?->currentWorkspace
+                    : (! $isPortalUser && $user?->currentWorkspace
                         ? [
                             'id' => $user->currentWorkspace->id,
                             'name' => $user->currentWorkspace->name,
@@ -107,14 +124,14 @@ class HandleInertiaRequests extends Middleware
                         : null),
                 'workspaces' => $isPortalUser
                     ? ($user
-                        ? \App\Models\PortalInvitation::where('email', $user->email)
+                        ? PortalInvitation::where('email', $user->email)
                             ->whereNotNull('accepted_at')
                             ->with('workspace')
                             ->get()
                             ->pluck('workspace')
                             ->unique('id')
                             ->sortBy('name')
-                            ->map(fn (\App\Models\Workspace $workspace): array => [
+                            ->map(fn (Workspace $workspace): array => [
                                 'id' => $workspace->id,
                                 'name' => $workspace->name,
                                 'display_name' => $workspace->display_name,

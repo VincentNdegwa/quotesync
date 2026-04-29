@@ -1,18 +1,18 @@
 <?php
 
-use App\Models\Client;
 use App\Enums\QuoteStatus;
+use App\Models\Client;
 use App\Models\Quote;
+use App\Models\QuoteActivity;
 use App\Models\QuoteShortCode;
 use App\Models\User;
-use App\Notifications\QuoteViewedNotification;
 use App\Notifications\QuoteAcceptedNotification;
 use App\Notifications\QuoteDeclinedNotification;
-use App\Models\QuoteActivity;
+use App\Notifications\QuoteViewedNotification;
 use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('public quote page renders the quote and throttles view notifications', function () {

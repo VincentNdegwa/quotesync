@@ -6,7 +6,6 @@ use App\Enums\QuoteStatus;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
 use App\Models\Workspace;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -18,14 +17,16 @@ class DashboardController extends Controller
     private Workspace $workspace;
 
     private array $pipelineStatuses;
+
     private array $sentStatuses;
+
     private array $wonStatuses;
 
     public function __construct()
     {
         $this->pipelineStatuses = QuoteStatus::pipelineStatuses();
-        $this->sentStatuses     = QuoteStatus::sentStatuses();
-        $this->wonStatuses      = QuoteStatus::closedWonStatuses();
+        $this->sentStatuses = QuoteStatus::sentStatuses();
+        $this->wonStatuses = QuoteStatus::closedWonStatuses();
     }
 
     public function __invoke(Request $request): Response
@@ -37,13 +38,13 @@ class DashboardController extends Controller
         $this->workspace = $workspace;
 
         return Inertia::render('Dashboard', [
-            'stats'            => $this->stats(),
-            'revenue_trend'    => $this->revenueTrend(),
-            'quote_activity'   => $this->quoteActivity(),
-            'needs_attention'  => $this->needsAttention(),
-            'recent_activity'  => $this->recentActivity(),
+            'stats' => $this->stats(),
+            'revenue_trend' => $this->revenueTrend(),
+            'quote_activity' => $this->quoteActivity(),
+            'needs_attention' => $this->needsAttention(),
+            'recent_activity' => $this->recentActivity(),
             'team_performance' => $this->teamPerformance($request),
-            'generated_at'     => Carbon::now()->toIso8601String(),
+            'generated_at' => Carbon::now()->toIso8601String(),
         ]);
     }
 
@@ -54,49 +55,48 @@ class DashboardController extends Controller
 
     private function stats(): array
     {
-        $now          = now();
-        $thisMonth    = [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()];
+        $now = now();
+        $thisMonth = [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()];
         $lastMonthStart = $now->copy()->subMonth()->startOfMonth();
-        $lastMonthEnd   = $now->copy()->subMonth()->endOfMonth();
+        $lastMonthEnd = $now->copy()->subMonth()->endOfMonth();
 
         $pipelineValueThisMonth = (float) $this->baseQuery()
             ->whereIn('status', $this->pipelineStatuses)
-            ->whereBetween('created_at', $thisMonth)
-            ->sum('total');
+            ->sum('base_total');
 
         $pipelineValueLastMonth = (float) $this->baseQuery()
             ->whereIn('status', $this->pipelineStatuses)
-            ->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])
-            ->sum('total');
+            ->where('created_at', '<', $now->copy()->startOfMonth())
+            ->sum('base_total');
 
         $wonThisMonth = (float) $this->baseQuery()
             ->whereIn('status', $this->wonStatuses)
-            ->whereBetween('created_at', $thisMonth)
-            ->sum('total');
+            ->whereBetween('won_at', $thisMonth)
+            ->sum('base_total');
 
         $wonLastMonth = (float) $this->baseQuery()
             ->whereIn('status', $this->wonStatuses)
-            ->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])
-            ->sum('total');
+            ->whereBetween('won_at', [$lastMonthStart, $lastMonthEnd])
+            ->sum('base_total');
 
         $sentThisMonthCount = (int) $this->baseQuery()
-            ->whereIn('status', $this->sentStatuses)
+            ->whereNotNull('sent_at')
             ->whereBetween('sent_at', $thisMonth)
             ->count();
 
         $wonThisMonthCount = (int) $this->baseQuery()
             ->whereIn('status', $this->wonStatuses)
-            ->whereBetween('created_at', $thisMonth)
+            ->whereBetween('sent_at', $thisMonth)
             ->count();
 
         $sentLastMonthCount = (int) $this->baseQuery()
-            ->whereIn('status', $this->sentStatuses)
+            ->whereNotNull('sent_at')
             ->whereBetween('sent_at', [$lastMonthStart, $lastMonthEnd])
             ->count();
 
         $wonLastMonthCount = (int) $this->baseQuery()
             ->whereIn('status', $this->wonStatuses)
-            ->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])
+            ->whereBetween('sent_at', [$lastMonthStart, $lastMonthEnd])
             ->count();
 
         $winRateThisMonth = $sentThisMonthCount > 0
@@ -117,17 +117,17 @@ class DashboardController extends Controller
             ->count();
 
         return [
-            'pipeline_value'   => $pipelineValueThisMonth,
-            'pipeline_trend'   => $this->percentageTrend($pipelineValueThisMonth, $pipelineValueLastMonth),
-            'won_this_month'   => $wonThisMonth,
-            'won_trend'        => $this->percentageTrend($wonThisMonth, $wonLastMonth),
-            'win'              => [
+            'pipeline_value' => $pipelineValueThisMonth,
+            'pipeline_trend' => $this->percentageTrend($pipelineValueThisMonth, $pipelineValueLastMonth),
+            'won_this_month' => $wonThisMonth,
+            'won_trend' => $this->percentageTrend($wonThisMonth, $wonLastMonth),
+            'win' => [
                 'rate' => $winRateThisMonth,
                 'win_count' => $wonThisMonthCount,
                 'sent_count' => $sentThisMonthCount,
-                'trend'      => $this->percentageTrend($winRateThisMonth, $winRateLastMonth),
+                'trend' => $this->percentageTrend($winRateThisMonth, $winRateLastMonth),
             ],
-            'quotes_expiring'  => $quotesExpiring,
+            'quotes_expiring' => $quotesExpiring,
         ];
     }
 
@@ -135,24 +135,23 @@ class DashboardController extends Controller
     {
         return collect(range(0, 5))
             ->map(function (int $offset): array {
-                $date  = now()->subMonths(5 - $offset);
+                $date = now()->subMonths(5 - $offset);
                 $start = $date->copy()->startOfMonth();
-                $end   = $date->copy()->endOfMonth();
+                $end = $date->copy()->endOfMonth();
 
                 $wonRevenue = (float) $this->baseQuery()
                     ->whereIn('status', $this->wonStatuses)
-                    ->whereBetween('created_at', [$start, $end])
-                    ->sum('total');
+                    ->whereBetween('won_at', [$start, $end])
+                    ->sum('base_total');
 
                 $pipelineValue = (float) $this->baseQuery()
                     ->whereIn('status', $this->pipelineStatuses)
-                    ->whereBetween('sent_at', [$start, $end])
-                    ->sum('total');
+                    ->sum('base_total');
 
                 return [
-                    'month'      => $date->format('M'),
-                    'won'        => $wonRevenue,
-                    'pipeline'   => $pipelineValue,
+                    'month' => $date->format('M'),
+                    'won' => $wonRevenue,
+                    'pipeline' => $pipelineValue,
                 ];
             })
             ->values();
@@ -183,9 +182,9 @@ class DashboardController extends Controller
     private function needsAttention(): array
     {
         return [
-            'hot_leads'      => $this->hotLeads(),
-            'follow_up_due'  => $this->followUpDue(),
-            'expiring_soon'  => $this->expiringSoon(),
+            'hot_leads' => $this->hotLeads(),
+            'follow_up_due' => $this->followUpDue(),
+            'expiring_soon' => $this->expiringSoon(),
         ];
     }
 
@@ -199,11 +198,11 @@ class DashboardController extends Controller
             ->limit(5)
             ->get()
             ->map(fn (Quote $quote): array => [
-                'id'             => $quote->id,
-                'number'         => $quote->number,
-                'title'          => $quote->title,
-                'client_name'    => $quote->client?->company_name ?? 'Unknown',
-                'view_count'     => $quote->view_count,
+                'id' => $quote->id,
+                'number' => $quote->number,
+                'title' => $quote->title,
+                'client_name' => $quote->client?->company_name ?? 'Unknown',
+                'view_count' => $quote->view_count,
                 'last_viewed_at' => $quote->viewed_at?->toIso8601String(),
             ])
             ->values();
@@ -233,11 +232,11 @@ class DashboardController extends Controller
             ->limit(5)
             ->get()
             ->map(fn (Quote $quote): array => [
-                'id'              => $quote->id,
-                'number'          => $quote->number,
-                'title'           => $quote->title,
-                'client_name'     => $quote->client?->company_name ?? 'Unknown',
-                'sent_at'         => $quote->sent_at?->toIso8601String(),
+                'id' => $quote->id,
+                'number' => $quote->number,
+                'title' => $quote->title,
+                'client_name' => $quote->client?->company_name ?? 'Unknown',
+                'sent_at' => $quote->sent_at?->toIso8601String(),
                 'days_since_sent' => $quote->sent_at
                     ? (int) now()->diffInDays($quote->sent_at)
                     : 0,
@@ -259,12 +258,12 @@ class DashboardController extends Controller
             ->limit(5)
             ->get()
             ->map(fn (Quote $quote): array => [
-                'id'                 => $quote->id,
-                'number'             => $quote->number,
-                'title'              => $quote->title,
-                'client_name'        => $quote->client?->company_name ?? 'Unknown',
-                'valid_until'        => $quote->valid_until?->toIso8601String(),
-                'days_until_expiry'  => $quote->valid_until
+                'id' => $quote->id,
+                'number' => $quote->number,
+                'title' => $quote->title,
+                'client_name' => $quote->client?->company_name ?? 'Unknown',
+                'valid_until' => $quote->valid_until?->toIso8601String(),
+                'days_until_expiry' => $quote->valid_until
                     ? (int) now()->diffInDays($quote->valid_until)
                     : 0,
             ])
@@ -280,20 +279,20 @@ class DashboardController extends Controller
             ->limit(10)
             ->get()
             ->map(fn (QuoteActivity $activity): array => [
-                'id'          => $activity->id,
-                'type'        => $activity->type,
+                'id' => $activity->id,
+                'type' => $activity->type,
                 'description' => $activity->description,
-                'created_at'  => $activity->created_at?->toIso8601String(),
-                'quote'       => $activity->quote
+                'created_at' => $activity->created_at?->toIso8601String(),
+                'quote' => $activity->quote
                     ? [
-                        'id'     => $activity->quote->id,
+                        'id' => $activity->quote->id,
                         'number' => $activity->quote->number,
-                        'title'  => $activity->quote->title,
+                        'title' => $activity->quote->title,
                     ]
                     : null,
-                'user'        => $activity->user
+                'user' => $activity->user
                     ? [
-                        'id'   => $activity->user->id,
+                        'id' => $activity->user->id,
                         'name' => $activity->user->name,
                     ]
                     : null,
@@ -307,22 +306,21 @@ class DashboardController extends Controller
             return null;
         }
 
-        $now   = now();
+        $now = now();
         $start = $now->copy()->startOfMonth();
-        $end   = $now->copy()->endOfMonth();
+        $end = $now->copy()->endOfMonth();
 
         $sentStatuses = QuoteStatus::sentStatuses();
 
         $rows = $this->baseQuery()
             ->whereNotNull('created_by')
             ->whereBetween('sent_at', [$start, $end])
-            ->whereIn('status', $sentStatuses)
             ->selectRaw(
                 implode(', ', [
                     'created_by',
                     'COUNT(*) as sent_count',
-                    'SUM(CASE WHEN status IN (' . implode(', ', array_map(fn ($status) => "'{$status}'", QuoteStatus::closedWonStatuses())) . ') THEN 1 ELSE 0 END) as won_count',
-                    'SUM(CASE WHEN status IN (' . implode(', ', array_map(fn ($status) => "'{$status}'", QuoteStatus::closedWonStatuses())) . ') THEN total ELSE 0 END) as total_value',
+                    'SUM(CASE WHEN status IN ('.implode(', ', array_map(fn ($status) => "'{$status}'", QuoteStatus::closedWonStatuses())).') THEN 1 ELSE 0 END) as won_count',
+                    'SUM(CASE WHEN status IN ('.implode(', ', array_map(fn ($status) => "'{$status}'", QuoteStatus::closedWonStatuses())).') THEN base_total ELSE 0 END) as total_value',
                 ])
             )
             ->groupBy('created_by')
@@ -331,11 +329,11 @@ class DashboardController extends Controller
 
         return $rows
             ->map(fn (Quote $row): array => [
-                'user_id'     => (int) $row->created_by,
-                'user_name'   => $row->creator?->name ?? 'Unknown',
-                'sent_count'  => (int) ($row->sent_count ?? 0),
-                'won_count'   => (int) ($row->won_count ?? 0),
-                'win_rate'    => $row->sent_count > 0
+                'user_id' => (int) $row->created_by,
+                'user_name' => $row->creator?->name ?? 'Unknown',
+                'sent_count' => (int) ($row->sent_count ?? 0),
+                'won_count' => (int) ($row->won_count ?? 0),
+                'win_rate' => $row->sent_count > 0
                     ? round(($row->won_count / $row->sent_count) * 100, 1)
                     : 0.0,
                 'total_value' => (float) ($row->total_value ?? 0),
@@ -344,7 +342,7 @@ class DashboardController extends Controller
             ->values();
     }
 
-    private function percentageTrend(float $current, float $previous): float|null
+    private function percentageTrend(float $current, float $previous): ?float
     {
         if ($previous <= 0) {
             return 100.0;

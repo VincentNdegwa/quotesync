@@ -69,7 +69,7 @@ class ClientImportController extends Controller
             ->filter(fn (array $row): bool => $row['company_name'] !== '')
             ->values();
 
-        $validator = new ClientImportValidator();
+        $validator = new ClientImportValidator;
         $validatedRows = $mapped->map(function ($row, $index) use ($validator) {
             return $validator->validate($row, $index + 2);
         });
@@ -124,6 +124,7 @@ class ClientImportController extends Controller
                         $mapped[$targetField] = $row[$sourceColumn];
                     }
                 }
+
                 return $mapped;
             });
         }

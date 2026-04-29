@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class QuoteTrackingEvent extends Model
 {
     public $timestamps = false;
+
     public function quote(): BelongsTo
     {
         return $this->belongsTo(Quote::class);

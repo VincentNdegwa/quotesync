@@ -25,6 +25,9 @@ use Illuminate\Support\Str;
     'client_id',
     'assigned_to',
     'currency',
+    'base_currency',
+    'fx_rate',
+    'base_total',
     'cover_message',
     'notes',
     'terms',
@@ -50,6 +53,8 @@ use Illuminate\Support\Str;
     'signer_name',
     'signer_ip',
     'win_probability',
+    'won_at',
+    'lost_at',
 ])]
 class Quote extends Model
 {
@@ -202,6 +207,8 @@ class Quote extends Model
             'discount_amount' => 'decimal:2',
             'tax_amount' => 'decimal:2',
             'total' => 'decimal:2',
+            'fx_rate' => 'decimal:6',
+            'base_total' => 'decimal:2',
             'requires_deposit' => 'boolean',
             'deposit_amount' => 'decimal:2',
             'approval_granted' => 'boolean',
@@ -210,6 +217,8 @@ class Quote extends Model
             'viewed_at' => 'datetime',
             'accepted_at' => 'datetime',
             'declined_at' => 'datetime',
+            'won_at' => 'datetime',
+            'lost_at' => 'datetime',
             'view_count' => 'integer',
             'time_spent_seconds' => 'integer',
             'deleted_at' => 'datetime',

@@ -2,13 +2,14 @@
 
 namespace App\Services;
 
-use App\Enums\QuoteApprovalStatus;
 use App\Enums\QuoteActivityType;
+use App\Enums\QuoteApprovalStatus;
 use App\Enums\QuoteStatus;
 use App\Models\ApprovalRule;
 use App\Models\Quote;
-use App\Models\QuoteApproval;
 use App\Models\QuoteActivity;
+use App\Models\QuoteApproval;
+use App\Models\User;
 use App\Notifications\QuoteApprovalApprovedNotification;
 use App\Notifications\QuoteApprovalGrantedNotification;
 use App\Notifications\QuoteApprovalRejectedNotification;
@@ -245,7 +246,7 @@ class ApprovalService
     }
 
     /**
-     * @return Collection<int, \App\Models\User>
+     * @return Collection<int, User>
      */
     private function quoteStakeholders(Quote $quote): Collection
     {

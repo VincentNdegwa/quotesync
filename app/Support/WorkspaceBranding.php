@@ -9,9 +9,7 @@ use Illuminate\Support\Facades\Storage;
 
 class WorkspaceBranding
 {
-    public function __construct(private readonly WorkspaceSettingsService $workspaceSettingsService)
-    {
-    }
+    public function __construct(private readonly WorkspaceSettingsService $workspaceSettingsService) {}
 
     /**
      * @return array<string, mixed>
@@ -78,19 +76,19 @@ class WorkspaceBranding
         if (Storage::exists($path)) {
             $mime = mime_content_type(Storage::path($path)) ?: 'image/png';
 
-            return 'data:' . $mime . ';base64,' . base64_encode(Storage::get($path));
+            return 'data:'.$mime.';base64,'.base64_encode(Storage::get($path));
         }
 
         if (Storage::disk('public')->exists($path)) {
             $mime = mime_content_type(Storage::disk('public')->path($path)) ?: 'image/png';
 
-            return 'data:' . $mime . ';base64,' . base64_encode(Storage::disk('public')->get($path));
+            return 'data:'.$mime.';base64,'.base64_encode(Storage::disk('public')->get($path));
         }
 
         if (file_exists($path)) {
             $mime = mime_content_type($path) ?: 'image/png';
 
-            return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($path));
+            return 'data:'.$mime.';base64,'.base64_encode(file_get_contents($path));
         }
 
         return null;

@@ -1,9 +1,10 @@
 <?php
 
-use App\Models\PortalUser;
 use App\Models\Client;
-use App\Models\Workspace;
+use App\Models\PortalUser;
 use App\Models\User;
+use App\Models\Workspace;
+
 use function Pest\Laravel\actingAs;
 
 beforeEach(function () {

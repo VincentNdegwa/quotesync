@@ -32,8 +32,7 @@ class PublicQuoteController extends Controller
         Request $request,
         WorkspaceSettingsService $workspaceSettingsService,
         QuoteShortCodeService $quoteShortCodeService,
-    ): Response
-    {
+    ): Response {
         $resolvedQuote = $quoteShortCodeService->resolveQuoteByIdentifier($quoteUuid);
 
         abort_unless($resolvedQuote instanceof Quote, 404);

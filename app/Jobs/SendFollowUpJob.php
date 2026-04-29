@@ -9,12 +9,13 @@ use App\Enums\QuoteStatus;
 use App\Mail\QuoteFollowUpMail;
 use App\Models\QuoteActivity;
 use App\Models\QuoteFollowUp;
-use App\Services\Quotes\QuotePlaceholderService;
 use App\Notifications\QuoteFollowUpSentNotification;
+use App\Services\Quotes\QuotePlaceholderService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 
 class SendFollowUpJob implements ShouldQueue
 {
@@ -74,7 +75,7 @@ class SendFollowUpJob implements ShouldQueue
 
         $workspace = $quote->workspace;
         $companyName = (string) ($workspace?->display_name ?: $workspace?->name ?: config('app.name'));
-        $logoUrl = $workspace?->logo_path ? \Illuminate\Support\Facades\Storage::url($workspace->logo_path) : null;
+        $logoUrl = $workspace?->logo_path ? Storage::url($workspace->logo_path) : null;
 
         $subject = QuotePlaceholderService::replacePlaceholdersFromQuote(
             (string) ($step->subject ?: 'Follow-up for quote {quote_number}'),

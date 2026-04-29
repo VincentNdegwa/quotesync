@@ -239,7 +239,7 @@ const deleteClient = (): void => {
                                     {{ quote.status || 'unknown' }}
                                 </Badge>
                             </TableCell>
-                            <TableCell class="text-right">{{ quote.total ?? 0 }}</TableCell>
+                            <TableCell class="text-right">{{ quote.base_total ?? 0 }}</TableCell>
                             <TableCell>{{ quote.created_at ? new Date(quote.created_at).toLocaleDateString() : '—' }}</TableCell>
                         </TableRow>
                         <TableRow v-if="quoteHistory.length === 0">

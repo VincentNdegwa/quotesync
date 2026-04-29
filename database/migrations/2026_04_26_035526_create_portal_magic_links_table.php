@@ -20,7 +20,7 @@ return new class extends Migration
             $table->timestamp('expires_at');
             $table->timestamp('used_at')->nullable();
             $table->timestamps();
-            
+
             $table->index(['workspace_id', 'token']);
             $table->index('expires_at');
         });

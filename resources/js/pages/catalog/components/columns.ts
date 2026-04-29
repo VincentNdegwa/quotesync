@@ -1,9 +1,11 @@
 import type { ColumnDef } from '@tanstack/vue-table';
 import { ArrowUpDown } from 'lucide-vue-next';
 import { h } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useFormat } from '@/composables/useFormat';
 import type { CatalogItemRecord } from '@/types';
 import DataTableRowActions from './DataTableRowActions.vue';
 
@@ -65,7 +67,7 @@ export const getCatalogColumns = (options: CatalogColumnOptions): ColumnDef<Cata
     {
         accessorKey: 'unit_price',
         header: ({ column }) => h('div', { class: 'text-center' }, sortableHeader('Unit price', column, 'right')),
-        cell: ({ row }) => h('div', { class: 'text-center tabular-nums' }, row.original.unit_price),
+        cell: ({ row }) => h('div', { class: 'text-center tabular-nums' }, useFormat().formatCurrency(row.original.unit_price, (usePage().props.workspace_currency as string) || undefined)),
     },
     {
         id: 'margin_percent',

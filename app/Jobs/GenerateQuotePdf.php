@@ -16,8 +16,7 @@ class GenerateQuotePdf implements ShouldQueue
 
     public function __construct(
         public Quote $quote
-    ) {
-    }
+    ) {}
 
     public function handle(QuotePdfService $pdfService): void
     {

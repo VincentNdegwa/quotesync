@@ -20,7 +20,7 @@ class InvoicePdfService
             ->setOption('isRemoteEnabled', true);
 
         $filename = "invoices/{$invoice->id}_{$invoice->invoice_number}.pdf";
-        
+
         Storage::disk('local')->put($filename, $pdf->output());
 
         return $filename;

@@ -58,6 +58,7 @@ class ImportCatalogItemsJob implements ShouldQueue
             if ($name === '') {
                 $skipped++;
                 $errors[] = "Row {$index}: Missing name";
+
                 continue;
             }
 
@@ -66,6 +67,7 @@ class ImportCatalogItemsJob implements ShouldQueue
             if ($sku !== '' && in_array($sku, $existingSkus, true)) {
                 $skipped++;
                 $errors[] = "Row {$index}: Duplicate SKU {$sku}";
+
                 continue;
             }
 

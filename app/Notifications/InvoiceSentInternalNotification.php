@@ -37,10 +37,10 @@ class InvoiceSentInternalNotification extends Notification implements ShouldQueu
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Invoice Sent: ' . $this->invoice->number)
-            ->line('Invoice #' . $this->invoice->number . ' has been sent to ' . $this->invoice->client?->company_name)
-            ->line('Total: ' . number_format((float) $this->invoice->total, 2) . ' ' . $this->invoice->currency)
-            ->action('View Invoice', url('/invoices/' . $this->invoice->id))
+            ->subject('Invoice Sent: '.$this->invoice->number)
+            ->line('Invoice #'.$this->invoice->number.' has been sent to '.$this->invoice->client?->company_name)
+            ->line('Total: '.number_format((float) $this->invoice->total, 2).' '.$this->invoice->currency)
+            ->action('View Invoice', url('/invoices/'.$this->invoice->id))
             ->line('Thank you for using our application!');
     }
 

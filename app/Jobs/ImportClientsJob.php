@@ -56,6 +56,7 @@ class ImportClientsJob implements ShouldQueue
             if ($companyName === '') {
                 $skipped++;
                 $errors[] = "Row {$index}: Missing company name";
+
                 continue;
             }
 
@@ -64,6 +65,7 @@ class ImportClientsJob implements ShouldQueue
             if ($email !== '' && in_array($email, $existingEmails, true)) {
                 $skipped++;
                 $errors[] = "Row {$index}: Duplicate email {$email}";
+
                 continue;
             }
 

@@ -44,7 +44,7 @@ class UpdateQuoteRequest extends FormRequest
             'client_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('clients', 'id')->where(fn($query) => $query
+                Rule::exists('clients', 'id')->where(fn ($query) => $query
                     ->where('workspace_id', $workspace?->id)
                     ->whereNull('deleted_at')),
             ],
@@ -74,7 +74,7 @@ class UpdateQuoteRequest extends FormRequest
             'sections.*.line_items.*.catalog_item_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('catalog_items', 'id')->where(fn($query) => $query
+                Rule::exists('catalog_items', 'id')->where(fn ($query) => $query
                     ->where('workspace_id', $workspace?->id)
                     ->whereNull('deleted_at')),
             ],
@@ -94,7 +94,7 @@ class UpdateQuoteRequest extends FormRequest
             'sections.*.line_items.*.taxes.*.tax_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('taxes', 'id')->where(fn($query) => $query
+                Rule::exists('taxes', 'id')->where(fn ($query) => $query
                     ->where('workspace_id', $workspace?->id)
                     ->whereNull('deleted_at')),
             ],

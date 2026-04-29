@@ -834,6 +834,9 @@ export type QuoteBuilderState = {
 
     // Financials
     currency: string;
+    base_currency: string | null;
+    fx_rate: number | null;
+    base_total: number | null;
     subtotal: number;
     discount_amount: number;
     tax_amount: number;

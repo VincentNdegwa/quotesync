@@ -12,15 +12,15 @@ class CatalogImportValidator
             $errors[] = 'Name is required';
         }
 
-        if (!empty($row['unit_price']) && !is_numeric($row['unit_price'])) {
+        if (! empty($row['unit_price']) && ! is_numeric($row['unit_price'])) {
             $errors[] = 'Unit price must be a number';
         }
 
-        if (!empty($row['cost_price']) && !is_numeric($row['cost_price'])) {
+        if (! empty($row['cost_price']) && ! is_numeric($row['cost_price'])) {
             $errors[] = 'Cost price must be a number';
         }
 
-        if (!empty($row['unit']) && !$this->isValidUnit($row['unit'])) {
+        if (! empty($row['unit']) && ! $this->isValidUnit($row['unit'])) {
             $errors[] = 'Invalid unit (must be one of: hr, day, unit, sqm, kg, m, lot, month)';
         }
 

@@ -1,10 +1,12 @@
 <?php
 
 use App\Enums\InvoiceStatus;
+use App\Http\Middleware\EnsureWorkspaceSettingsOnboarded;
 use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\User;
+use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 
 test('invoice can be created from a won quote', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);
@@ -25,7 +27,7 @@ test('invoice can be created from a won quote', function () {
     ]);
 
     $this->actingAs($user)
-        ->withoutMiddleware([\App\Http\Middleware\EnsureWorkspaceSettingsOnboarded::class, \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class])
+        ->withoutMiddleware([EnsureWorkspaceSettingsOnboarded::class, EnsureEmailIsVerified::class])
         ->post(route('quotes.convert-to-invoice', $quote))
         ->assertRedirect();
 
@@ -52,7 +54,7 @@ test('invoice cannot be created from non-won quote', function () {
     ]);
 
     $this->actingAs($user)
-        ->withoutMiddleware([\App\Http\Middleware\EnsureWorkspaceSettingsOnboarded::class, \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class])
+        ->withoutMiddleware([EnsureWorkspaceSettingsOnboarded::class, EnsureEmailIsVerified::class])
         ->post(route('quotes.convert-to-invoice', $quote))
         ->assertForbidden();
 });
@@ -88,11 +90,11 @@ test('invoice numbering increments correctly', function () {
     ]);
 
     $this->actingAs($user)
-        ->withoutMiddleware([\App\Http\Middleware\EnsureWorkspaceSettingsOnboarded::class, \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class])
+        ->withoutMiddleware([EnsureWorkspaceSettingsOnboarded::class, EnsureEmailIsVerified::class])
         ->post(route('quotes.convert-to-invoice', $quote1));
 
     $this->actingAs($user)
-        ->withoutMiddleware([\App\Http\Middleware\EnsureWorkspaceSettingsOnboarded::class, \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class])
+        ->withoutMiddleware([EnsureWorkspaceSettingsOnboarded::class, EnsureEmailIsVerified::class])
         ->post(route('quotes.convert-to-invoice', $quote2));
 
     $invoice1 = Invoice::query()->where('quote_id', $quote1->id)->first();
@@ -121,7 +123,7 @@ test('invoice line items are copied from quote', function () {
     ]);
 
     $this->actingAs($user)
-        ->withoutMiddleware([\App\Http\Middleware\EnsureWorkspaceSettingsOnboarded::class, \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class])
+        ->withoutMiddleware([EnsureWorkspaceSettingsOnboarded::class, EnsureEmailIsVerified::class])
         ->post(route('quotes.convert-to-invoice', $quote));
 
     $invoice = Invoice::query()->where('quote_id', $quote->id)->first();

@@ -4,12 +4,12 @@ namespace App\Services\Quotes;
 
 use App\Models\Quote;
 use App\Models\QuoteMessage;
-use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class QuoteMessageService
 {
-    public function getMessagesForQuote(Quote $quote, bool $internalOnly = false): \Illuminate\Database\Eloquent\Collection
+    public function getMessagesForQuote(Quote $quote, bool $internalOnly = false): Collection
     {
         $query = $quote->messages()->with(['sender:id,name', 'portalUser:id,name']);
 

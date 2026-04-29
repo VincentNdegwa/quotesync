@@ -17,6 +17,7 @@ const props = defineProps<{
     catalogItems: BuilderCatalogItem[];
     taxes: BuilderTaxOption[];
     branding: BuilderBranding;
+    defaultCurrency: string;
 }>();
 
 defineOptions({
@@ -55,6 +56,7 @@ const save = (): void => {
         :taxes="taxes"
         :branding="branding"
         :processing="form.processing"
+        :default-currency="defaultCurrency"
         @save="save"
     />
 </template>

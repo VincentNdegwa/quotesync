@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('sender_type')->default('user'); // 'user' or 'portal_user'
             $table->boolean('is_internal')->default(false);
             $table->timestamps();
-            
+
             $table->index(['quote_id', 'created_at']);
             $table->index('sender_id');
             $table->index('portal_user_id');

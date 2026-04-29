@@ -352,8 +352,8 @@ const deleteRule = (rule: Rule): void => {
                             >
                                 {{
                                     fmt(
-                                        approval.quote.total,
-                                        approval.quote.currency,
+                                        approval.quote.base_total,
+                                        approval.quote.base_currency,
                                     )
                                 }}
                             </span>
@@ -498,8 +498,8 @@ const deleteRule = (rule: Rule): void => {
                         <strong>{{ selectedApproval.quote.title }}</strong>
                         ({{
                             fmt(
-                                selectedApproval.quote.total,
-                                selectedApproval.quote.currency,
+                                selectedApproval.quote.base_total,
+                                selectedApproval.quote.base_currency,
                             )
                         }}). The rep will be notified and can send it to the
                         client.

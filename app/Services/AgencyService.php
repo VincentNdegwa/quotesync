@@ -11,7 +11,7 @@ class AgencyService
     {
         $workspace = $quote->workspace;
 
-        if (!$workspace->isAgencyModeEnabled()) {
+        if (! $workspace->isAgencyModeEnabled()) {
             return 0;
         }
 
@@ -20,7 +20,7 @@ class AgencyService
 
     public function getAgencyRevenue(Workspace $workspace, ?string $startDate = null, ?string $endDate = null): float
     {
-        if (!$workspace->isAgencyModeEnabled()) {
+        if (! $workspace->isAgencyModeEnabled()) {
             return 0;
         }
 
@@ -51,7 +51,7 @@ class AgencyService
 
     public function getAgencyStats(Workspace $workspace): array
     {
-        if (!$workspace->isAgencyModeEnabled()) {
+        if (! $workspace->isAgencyModeEnabled()) {
             return [
                 'enabled' => false,
                 'total_revenue' => 0,

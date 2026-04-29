@@ -4,6 +4,7 @@ use App\Jobs\GenerateQuotePdf;
 use App\Models\Client;
 use App\Models\Quote;
 use App\Models\User;
+use App\Services\Pdf\QuotePdfService;
 use Illuminate\Support\Facades\Queue;
 
 test('pdf can be generated for a quote', function () {
@@ -23,7 +24,7 @@ test('pdf can be generated for a quote', function () {
         'discount_amount' => 0,
     ]);
 
-    $pdfService = app(\App\Services\Pdf\QuotePdfService::class);
+    $pdfService = app(QuotePdfService::class);
     $job = new GenerateQuotePdf($quote);
     $job->handle($pdfService);
 

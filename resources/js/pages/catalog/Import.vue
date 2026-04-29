@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, usePage } from '@inertiajs/vue3';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -18,6 +18,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useFormat } from '@/composables/useFormat';
 import { onUnmounted, ref } from 'vue';
 
 const props = defineProps<{
@@ -64,6 +65,8 @@ const initializeMapping = (): void => {
 };
 
 initializeMapping();
+
+const { formatCurrency } = useFormat(usePage().props.workspace_currency as string || undefined);
 
 const uploadForm = useForm({
     file: null as File | null,
@@ -211,8 +214,8 @@ defineOptions({
                         <TableCell>{{ row.data.name }}</TableCell>
                         <TableCell>{{ row.data.sku }}</TableCell>
                         <TableCell>{{ row.data.unit }}</TableCell>
-                        <TableCell class="text-right">{{ row.data.unit_price }}</TableCell>
-                        <TableCell class="text-right">{{ row.data.cost_price }}</TableCell>
+                        <TableCell class="text-right">{{ formatCurrency(row.data.unit_price) }}</TableCell>
+                        <TableCell class="text-right">{{ formatCurrency(row.data.cost_price) }}</TableCell>
                         <TableCell>
                             <div v-if="row.errors.length > 0" class="text-destructive text-xs">
                                 {{ row.errors.join(', ') }}

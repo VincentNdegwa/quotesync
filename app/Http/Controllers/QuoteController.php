@@ -18,6 +18,7 @@ use App\Models\Workspace;
 use App\Services\Quotes\QuoteAnalyticsService;
 use App\Services\Quotes\QuoteService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -52,10 +53,12 @@ class QuoteController extends Controller
                     'title' => $quote->title,
                     'status' => $quote->status,
                     'total' => (float) $quote->total,
+                    'base_total' => $quote->base_total ? (float) $quote->base_total : null,
                     'currency' => $quote->currency,
+                    'base_currency' => $quote->base_currency,
                     'valid_until' => $quote->valid_until?->toDateString(),
                     'created_at' => $quote->created_at?->toISOString(),
-                    'win_probability' => $quote->win_probability,   
+                    'win_probability' => $quote->win_probability,
                     'client' => $quote->client ? [
                         'id' => $quote->client->id,
                         'company_name' => $quote->client->company_name,
@@ -101,6 +104,9 @@ class QuoteController extends Controller
             'client_id' => null,
             'assigned_to' => $request->user()?->id,
             'currency' => $defaultCurrency,
+            'base_currency' => $defaultCurrency,
+            'fx_rate' => null,
+            'base_total' => null,
             'valid_until' => now()->addDays($validityDays)->toDateString(),
             'cover_message' => null,
             'terms' => null,
@@ -133,6 +139,7 @@ class QuoteController extends Controller
 
         return Inertia::render('quotes/Create', [
             'initialState' => $initialState,
+            'defaultCurrency' => $defaultCurrency,
             ...$this->builderLookups($workspace, $workspaceSettingsService),
         ]);
     }
@@ -234,6 +241,7 @@ class QuoteController extends Controller
 
         return Inertia::render('quotes/Edit', [
             'initialState' => $quoteService->toBuilderPayload($quote),
+            'defaultCurrency' => $this->builderLookups($workspace, $workspaceSettingsService)['defaultCurrency'],
             ...$this->builderLookups($workspace, $workspaceSettingsService),
             'quoteId' => $quote->id,
         ]);
@@ -280,8 +288,13 @@ class QuoteController extends Controller
     {
         $branding = $this->brandingPayload($workspace, $workspaceSettingsService);
 
+        /** @var Collection<int, array<string, mixed>> $quoteFields */
+        $quoteFields = collect($workspaceSettingsService->groupForFrontend($workspace, 'quotes')['fields'] ?? [])->keyBy('key');
+        $defaultCurrency = (string) ($quoteFields->get('default_currency')['value'] ?? 'USD');
+
         return [
             'branding' => $branding,
+            'defaultCurrency' => $defaultCurrency,
             'clients' => Client::query()
                 ->where('workspace_id', $workspace->id)
                 ->orderByRaw('LOWER(company_name)')
@@ -366,7 +379,7 @@ class QuoteController extends Controller
         ];
     }
 
-    public function kanban(Request $request, QuoteService $quoteService): \Illuminate\Http\JsonResponse
+    public function kanban(Request $request, QuoteService $quoteService): JsonResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 

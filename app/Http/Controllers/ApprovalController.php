@@ -8,8 +8,8 @@ use App\Models\Client;
 use App\Models\QuoteApproval;
 use App\Models\Workspace;
 use App\Services\ApprovalService;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -40,7 +40,9 @@ class ApprovalController extends Controller
                     'number',
                     'title',
                     'total',
+                    'base_total',
                     'currency',
+                    'base_currency',
                     'client_id',
                     'created_by',
                 ]),
@@ -183,7 +185,7 @@ class ApprovalController extends Controller
     public function storeRule(Request $request): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
-        abort_unless($workspace instanceof \App\Models\Workspace, 403);
+        abort_unless($workspace instanceof Workspace, 403);
 
         $this->authorize('create', ApprovalRule::class);
 

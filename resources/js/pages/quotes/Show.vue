@@ -33,7 +33,7 @@ watchEffect(() => {
 });
 
 const { getQuoteStatus } = useEnums();
-const { formatCurrency: fmt, formatDate: fmtDate } = useFormat();
+const { formatCurrency: fmt, formatDate: fmtDate } = useFormat(props.quote.base_currency || props.quote.currency || undefined);
 
 const getWinProbabilityColor = (probability: number) => {
     if (probability >= 70) return 'text-green-600';
@@ -127,7 +127,7 @@ const rejectApproval = () => {
                     </div>
                     <div>
                         <span class="text-muted-foreground">Total&ensp;</span>
-                        <span class="font-semibold">{{ fmt(quote.total) }}</span>
+                        <span class="font-semibold">{{ fmt(props.quote.base_total) }}</span>
                     </div>
                     <div>
                         <span class="text-muted-foreground">Valid until&ensp;</span>
@@ -221,7 +221,7 @@ const rejectApproval = () => {
 
                                 <div class="flex justify-between text-base font-bold">
                                     <span>Total</span>
-                                    <span class="tabular-nums">{{ fmt(quote.total) }}</span>
+                                    <span class="tabular-nums">{{ fmt(props.quote.base_total) }}</span>
                                 </div>
                             </div>
                         </div>
@@ -234,7 +234,7 @@ const rejectApproval = () => {
                     <h3 class="font-semibold text-yellow-800 mb-3">PENDING YOUR APPROVAL</h3>
                     <div class="space-y-2 text-sm mb-4">
                         <p><span class="text-muted-foreground">Requested by:</span> {{ quote.pending_approval.requested_by?.name || 'Unknown' }}</p>
-                        <p><span class="text-muted-foreground">Value:</span> {{ fmt(quote.total) }}</p>
+                        <p><span class="text-muted-foreground">Value:</span> {{ fmt(props.quote.base_total) }}</p>
                         <p v-if="quote.discount_amount > 0"><span class="text-muted-foreground">Discount:</span> {{ fmt(quote.discount_amount) }} ({{ ((quote.discount_amount / quote.subtotal) * 100).toFixed(1) }}%)</p>
                     </div>
                     <div class="mb-4">

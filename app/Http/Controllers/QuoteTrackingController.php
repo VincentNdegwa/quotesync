@@ -21,7 +21,7 @@ class QuoteTrackingController extends Controller
         $events = $request->input('events');
         if (is_string($events)) {
             $decoded = json_decode($events, true);
-            if (!is_array($decoded)) {
+            if (! is_array($decoded)) {
                 return response()->json(['error' => 'Invalid events format'], 422);
             }
             $request->merge(['events' => $decoded]);
@@ -29,7 +29,7 @@ class QuoteTrackingController extends Controller
 
         $validated = $request->validate([
             'events' => ['required', 'array', 'max:50'],
-            'events.*.event_type' => ['required', 'string', 'in:' . implode(',', TrackingEventType::values())],
+            'events.*.event_type' => ['required', 'string', 'in:'.implode(',', TrackingEventType::values())],
             'events.*.duration_seconds' => ['sometimes', 'integer', 'min:0'],
             'events.*.section_name' => ['sometimes', 'nullable', 'string', 'max:100'],
             'events.*.scroll_depth_percent' => ['sometimes', 'integer', 'min:0', 'max:100'],

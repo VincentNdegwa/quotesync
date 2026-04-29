@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Quote;
 use App\Models\Workspace;
 use Illuminate\Http\Request;
 
@@ -11,7 +12,7 @@ class WhiteLabelService
     {
         $workspace = $this->resolveWorkspaceFromRequest($request);
 
-        if (!$workspace || !$workspace->isWhiteLabelEnabled()) {
+        if (! $workspace || ! $workspace->isWhiteLabelEnabled()) {
             return $this->getDefaultBranding();
         }
 
@@ -44,7 +45,7 @@ class WhiteLabelService
 
         // Try to resolve from quote UUID (for public quote pages)
         if ($request->route('quoteUuid')) {
-            $quote = \App\Models\Quote::where('uuid', $request->route('quoteUuid'))->first();
+            $quote = Quote::where('uuid', $request->route('quoteUuid'))->first();
             if ($quote) {
                 return $quote->workspace;
             }
@@ -56,10 +57,11 @@ class WhiteLabelService
     private function extractSubdomain(string $host): ?string
     {
         $parts = explode('.', $host);
-        
+
         // Skip www and extract the first subdomain
         if (count($parts) > 2) {
             $subdomain = $parts[0];
+
             return $subdomain === 'www' ? ($parts[1] ?? null) : $subdomain;
         }
 

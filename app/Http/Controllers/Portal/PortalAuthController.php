@@ -6,8 +6,8 @@ use App\Models\PortalInvitation;
 use App\Models\PortalMagicLink;
 use App\Models\PortalUser;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
@@ -47,7 +47,7 @@ class PortalAuthController
             ->with('client')
             ->firstOrFail();
 
-        if (!$magicLink->isValid()) {
+        if (! $magicLink->isValid()) {
             return redirect()->route('portal.login')->withErrors([
                 'email' => 'This magic link has expired or already been used.',
             ]);
@@ -57,7 +57,7 @@ class PortalAuthController
             ->where('workspace_id', $magicLink->workspace_id)
             ->first();
 
-        if (!$portalUser) {
+        if (! $portalUser) {
             return redirect()->route('portal.login')->withErrors([
                 'email' => 'No account found for this email. Please register first.',
             ]);
@@ -132,12 +132,12 @@ class PortalAuthController
         $workspaceId = $request->workspace_id;
 
         // Verify the portal user has an accepted invitation to this workspace
-        $hasAccess = \App\Models\PortalInvitation::where('email', $portalUser->email)
+        $hasAccess = PortalInvitation::where('email', $portalUser->email)
             ->where('workspace_id', $workspaceId)
             ->whereNotNull('accepted_at')
             ->exists();
 
-        if (!$hasAccess) {
+        if (! $hasAccess) {
             return back()->withErrors([
                 'workspace_id' => 'You do not have access to this workspace.',
             ]);

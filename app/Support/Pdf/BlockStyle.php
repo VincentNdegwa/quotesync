@@ -38,11 +38,11 @@ class BlockStyle
         $styles = [];
 
         if (isset($config['background']) && $config['background']) {
-            $styles[] = 'background-color: ' . $config['background'] . ';';
+            $styles[] = 'background-color: '.$config['background'].';';
         }
 
         $paddingKey = $config['padding'] ?? 'md';
-        $styles[] = 'padding: ' . (self::PADDING_MAP[$paddingKey] ?? self::PADDING_MAP['md']) . ';';
+        $styles[] = 'padding: '.(self::PADDING_MAP[$paddingKey] ?? self::PADDING_MAP['md']).';';
 
         $border = $config['border'] ?? [];
         $borderColor = $border['color'] ?? ($theme['primaryColor'] ?? null);
@@ -54,15 +54,15 @@ class BlockStyle
             $value = sprintf('%s %s %s', $borderWidth, $borderStyle, $borderColor ?? '#e5e7eb');
 
             if (($border['sides'] ?? 'all') === 'all') {
-                $styles[] = 'border: ' . $value . ';';
+                $styles[] = 'border: '.$value.';';
             } else {
                 $side = ucfirst($border['sides']);
-                $styles[] = 'border-' . strtolower($side) . ': ' . $value . ';';
+                $styles[] = 'border-'.strtolower($side).': '.$value.';';
             }
         }
 
         if ($radius !== '0') {
-            $styles[] = 'border-radius: ' . $radius . ';';
+            $styles[] = 'border-radius: '.$radius.';';
         }
 
         return implode(' ', $styles);
@@ -73,11 +73,11 @@ class BlockStyle
         $styles = [self::base($config, $theme)];
 
         if (isset($config['textColor']) && $config['textColor']) {
-            $styles[] = 'color: ' . $config['textColor'] . ';';
+            $styles[] = 'color: '.$config['textColor'].';';
         }
 
         if (isset($config['fontSize']) && $config['fontSize']) {
-            $styles[] = 'font-size: ' . (self::FONT_SIZE_MAP[$config['fontSize']] ?? self::FONT_SIZE_MAP['md']) . ';';
+            $styles[] = 'font-size: '.(self::FONT_SIZE_MAP[$config['fontSize']] ?? self::FONT_SIZE_MAP['md']).';';
         }
 
         return implode(' ', $styles);
@@ -91,7 +91,7 @@ class BlockStyle
 
         $size = self::FONT_SIZE_MAP[$fontSize] ?? self::FONT_SIZE_MAP['md'];
 
-        return 'font-size: ' . $size . ';';
+        return 'font-size: '.$size.';';
     }
 
     public static function spacingClass(string $spacing): string

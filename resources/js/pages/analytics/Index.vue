@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import { CurveType, Orientation } from '@unovis/ts';
 import { VisAxis, VisLine, VisXYContainer, VisDonut, VisSingleContainer, VisGroupedBar } from '@unovis/vue';
 import type { ChartConfig } from '@/components/ui/chart';
@@ -31,41 +32,41 @@ const props = defineProps<{
     won_revenue: number;
     lost_revenue: number;
     still_open: number;
-    won_per_100: number;
+    win_rate: number;
+    revenue_captured: number;
     revenue_trend: Array<{ month: string; won: number; average: number }>;
   };
-  win_loss_analysis: {
-    decline_reasons: Array<{ decline_reason: string; count: number }>;
-    time_to_win: Array<{ range: string; count: number }>;
-    loss_reasons: Array<{ reason: string; count: number; total_value: number }>;
-  };
-  quote_performance: {
-    by_template: Array<{ template_name: string; win_rate: number; total_quotes: number; avg_value: number }>;
-    by_deal_size: Array<{ range: string; win_rate: number }>;
-    by_discount: Array<{ range: string; win_rate: number }>;
-  };
+  win_loss_analysis: Array<{
+    reason: string;
+    count: number;
+    total_value: number;
+  }>;
+  quote_performance: Array<{
+    template: string;
+    total_quotes: number;
+    win_rate: number;
+    avg_value: number;
+  }>;
   client_intelligence: Array<{
     client_id: number;
     client_name: string;
     quotes_count: number;
     won_count: number;
-    win_rate: number;
-    total_won: number;
     avg_response_days: number;
+    total_won: number;
   }>;
   currency_breakdown: Array<{
     currency: string;
     quotes_sent: number;
-    won_revenue: number;
     pipeline: number;
-    avg_rate: number;
+    won_revenue: number;
   }>;
   forecast: {
     open_pipeline: number;
-    win_rate_90_days: number;
     expected_to_close: number;
     best_case: number;
     worst_case: number;
+    win_rate_90_days: number;
   };
   filters: {
     start_date: string;
@@ -77,7 +78,7 @@ const props = defineProps<{
 const startDate = ref(props.filters.start_date);
 const endDate = ref(props.filters.end_date);
 
-const { formatCurrency } = useFormat();
+const { formatCurrency } = useFormat(usePage().props.workspace_currency as string || undefined);
 
 const formatNumber = (value: number): string => new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(value);
 const formatPercent = (value: number): string => `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(value)}%`;
@@ -126,11 +127,18 @@ const statCards = computed(() => [
     trendText: 'vs last month',
   },
   {
-    key: 'lost',
-    title: 'Lost revenue',
-    value: formatCurrency(props.revenue_intelligence.lost_revenue),
+    key: 'win_rate',
+    title: 'Win Rate',
+    value: formatPercent(props.revenue_intelligence.win_rate),
     trend: null,
-    trendText: '',
+    trendText: 'Success ratio',
+  },
+  {
+    key: 'revenue_captured',
+    title: 'Revenue Captured',
+    value: formatPercent(props.revenue_intelligence.revenue_captured),
+    trend: null,
+    trendText: 'Value conversion',
   },
   {
     key: 'open',
@@ -138,13 +146,6 @@ const statCards = computed(() => [
     value: formatCurrency(props.revenue_intelligence.still_open),
     trend: null,
     trendText: 'Active pipeline',
-  },
-  {
-    key: 'conversion',
-    title: 'Won per 100',
-    value: formatPercent(props.revenue_intelligence.won_per_100),
-    trend: null,
-    trendText: 'Conversion ratio',
   },
 ]);
 
@@ -289,7 +290,13 @@ const forecastCards = computed(() => [
       </CardHeader>
       <CardFooter class="justify-between text-xs text-muted-foreground">
         <span>Window: {{ startDate }} → {{ endDate }}</span>
-        <span>Open pipeline: {{ formatCurrency(forecast.open_pipeline) }}</span>
+        <div class="flex items-center gap-4">
+          <span class="flex items-center gap-1.5">
+            <Globe class="h-3.5 w-3.5" />
+            Figures shown in base currency. Snapshot rates applied at creation.
+          </span>
+          <span>Open pipeline: {{ formatCurrency(forecast.open_pipeline) }}</span>
+        </div>
       </CardFooter>
     </Card>
 

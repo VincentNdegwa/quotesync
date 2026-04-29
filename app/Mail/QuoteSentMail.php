@@ -78,7 +78,7 @@ class QuoteSentMail extends Mailable
 
         if ($this->pdfPath) {
             $attachments[] = Attachment::fromStorageDisk('local', $this->pdfPath)
-                ->as('quote-' . $this->quoteNumber . '.pdf')
+                ->as('quote-'.$this->quoteNumber.'.pdf')
                 ->withMime('application/pdf');
         }
 

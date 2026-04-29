@@ -3,6 +3,7 @@
 use App\Enums\TrackingEventType;
 use App\Models\Client;
 use App\Models\Quote;
+use App\Models\QuoteShortCode;
 use App\Models\QuoteTrackingEvent;
 use App\Models\User;
 
@@ -90,7 +91,7 @@ test('tracking endpoint resolves short code identifier', function () {
         'total' => 500,
     ]);
 
-    $shortCode = \App\Models\QuoteShortCode::query()->create([
+    $shortCode = QuoteShortCode::query()->create([
         'quote_id' => $quote->id,
         'code' => 'ABC123',
     ]);

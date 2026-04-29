@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Ai\Agents\TemplateBuilderAgent;
 use App\Models\Workspace;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Request;
 
 class AiTemplateController extends Controller
@@ -29,7 +30,7 @@ class AiTemplateController extends Controller
             ])));
 
             $response = $agent->prompt($prompt);
-            $payload = $response instanceof \Illuminate\Contracts\Support\Arrayable
+            $payload = $response instanceof Arrayable
                 ? $response->toArray()
                 : (array) $response;
 
@@ -47,7 +48,7 @@ class AiTemplateController extends Controller
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to generate template: ' . $e->getMessage(),
+                'message' => 'Failed to generate template: '.$e->getMessage(),
             ], 500);
         }
     }

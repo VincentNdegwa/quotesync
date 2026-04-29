@@ -32,11 +32,11 @@ test('update win probability on quote viewed event', function () {
     ]);
 
     $event = new QuoteViewed($quote);
-    $listener = new UpdateWinProbabilityOnView(new WinProbabilityService());
-    
+    $listener = new UpdateWinProbabilityOnView(new WinProbabilityService);
+
     // Test that listener can handle the event without errors
     $listener->handle($event);
-    
+
     // Verify the listener completed without throwing
     expect(true)->toBeTrue();
 });
@@ -84,7 +84,7 @@ test('win probability is recalculated on each view', function () {
         'win_probability' => 50.0,
     ]);
 
-    $listener = new UpdateWinProbabilityOnView(new WinProbabilityService());
+    $listener = new UpdateWinProbabilityOnView(new WinProbabilityService);
     $listener->handle(new QuoteViewed($quote));
 
     $quote->refresh();

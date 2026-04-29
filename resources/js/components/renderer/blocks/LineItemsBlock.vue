@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { blockBaseStyle } from '@/composables/useBlockStyles';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useFormat } from '@/composables/useFormat';
 import type { BrandingData, LineItemsBlockConfig, QuoteData } from '@/types';
 
 const props = defineProps<{
@@ -21,14 +22,7 @@ const emit = defineEmits<{
     (e: 'update-section-title', payload: { sectionIndex: number; title: string }): void;
 }>();
 
-const fmt = (value: number | string): string => {
-    return new Intl.NumberFormat(undefined, {
-        style: 'currency',
-        currency: props.quote.currency || 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    }).format(Number(value || 0));
-};
+const { formatCurrency: fmt } = useFormat(props.quote.base_currency || props.quote.currency || undefined);
 
 type LineItem = QuoteData['sections'][number]['line_items'][number];
 type Section = QuoteData['sections'][number];

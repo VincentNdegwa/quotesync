@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
+use App\Mail\PortalInvitationMail;
 use App\Models\Client;
 use App\Models\PortalInvitation;
 use App\Models\PortalMagicLink;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\PortalInvitationMail;
+use Illuminate\Support\Str;
 
 class PortalInvitationService
 {
@@ -44,7 +44,7 @@ class PortalInvitationService
     public function sendMagicLinkEmail(Client $client, string $email): PortalMagicLink
     {
         $magicLink = $this->createMagicLink($client, $email);
-        
+
         Mail::to($email)->send(new PortalInvitationMail($magicLink, true));
 
         return $magicLink;

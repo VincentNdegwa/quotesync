@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Quote;
+use App\Services\Pdf\QuotePdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -14,13 +15,13 @@ class QuoteBulkExportController extends Controller
     public function export(Request $request)
     {
         $quoteIds = $request->input('quote_ids', []);
-        
+
         if (empty($quoteIds)) {
             return response()->json(['error' => 'No quotes selected'], 400);
         }
 
         $workspace = $request->user()?->currentWorkspace;
-        
+
         $quotes = Quote::query()
             ->whereIn('id', $quoteIds)
             ->where('workspace_id', $workspace?->id)
@@ -31,31 +32,31 @@ class QuoteBulkExportController extends Controller
         }
 
         $pdfPaths = [];
-        $pdfService = app(\App\Services\Pdf\QuotePdfService::class);
+        $pdfService = app(QuotePdfService::class);
 
         foreach ($quotes as $quote) {
             Gate::authorize('view', $quote);
 
-            if (!$quote->pdf_path) {
+            if (! $quote->pdf_path) {
                 $pdfPath = $pdfService->generate($quote);
                 $quote->pdf_path = $pdfPath;
                 $quote->save();
             }
-            
+
             $pdfPaths[] = [
                 'path' => $quote->pdf_path,
                 'name' => "quote-{$quote->number}.pdf",
             ];
         }
 
-        $zipFileName = 'quotes-export-' . now()->format('Y-m-d-His') . '.zip';
-        $zipPath = storage_path('app/temp/' . $zipFileName);
+        $zipFileName = 'quotes-export-'.now()->format('Y-m-d-His').'.zip';
+        $zipPath = storage_path('app/temp/'.$zipFileName);
 
-        if (!is_dir(storage_path('app/temp'))) {
+        if (! is_dir(storage_path('app/temp'))) {
             mkdir(storage_path('app/temp'), 0755, true);
         }
 
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         if ($zip->open($zipPath, ZipArchive::CREATE) !== true) {
             return response()->json(['error' => 'Failed to create zip file'], 500);
         }
@@ -74,7 +75,7 @@ class QuoteBulkExportController extends Controller
             unlink($zipPath);
         }, 200, [
             'Content-Type' => 'application/zip',
-            'Content-Disposition' => 'attachment; filename="' . $zipFileName . '"',
+            'Content-Disposition' => 'attachment; filename="'.$zipFileName.'"',
         ]);
     }
 }

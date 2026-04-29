@@ -25,11 +25,14 @@ test('analytics page renders the strategic reporting payload', function () {
         'title' => 'Won Quote 1',
         'status' => QuoteStatus::Accepted->value,
         'total' => 1000,
-        'subtotal' => 1000,
-        'discount_amount' => 0,
+        'base_total' => 1000,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
         'created_at' => now()->subDays(20),
         'sent_at' => now()->subDays(10),
         'accepted_at' => now()->subDays(5),
+        'won_at' => now()->subDays(5),
     ]);
 
     Quote::query()->create([
@@ -38,11 +41,16 @@ test('analytics page renders the strategic reporting payload', function () {
         'title' => 'Won Quote 2',
         'status' => QuoteStatus::Accepted->value,
         'total' => 1000,
+        'base_total' => 1000,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
         'subtotal' => 1000,
         'discount_amount' => 100,
         'created_at' => now()->subDays(18),
         'sent_at' => now()->subDays(12),
         'accepted_at' => now()->subDays(10),
+        'won_at' => now()->subDays(10),
     ]);
 
     Quote::query()->create([
@@ -51,10 +59,15 @@ test('analytics page renders the strategic reporting payload', function () {
         'title' => 'Lost Quote 1',
         'status' => QuoteStatus::Declined->value,
         'total' => 1000,
+        'base_total' => 1000,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
         'decline_reason' => 'Price too high',
         'created_at' => now()->subDays(15),
         'sent_at' => now()->subDays(12),
         'declined_at' => now()->subDays(11),
+        'lost_at' => now()->subDays(11),
     ]);
 
     Quote::query()->create([
@@ -63,6 +76,10 @@ test('analytics page renders the strategic reporting payload', function () {
         'title' => 'Sent Quote',
         'status' => QuoteStatus::Sent->value,
         'total' => 1000,
+        'base_total' => 1000,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
         'created_at' => now()->subDays(8),
         'sent_at' => now()->subDays(8),
     ]);
@@ -73,6 +90,10 @@ test('analytics page renders the strategic reporting payload', function () {
         'title' => 'Viewed Quote',
         'status' => QuoteStatus::Viewed->value,
         'total' => 1000,
+        'base_total' => 1000,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
         'created_at' => now()->subDays(6),
         'sent_at' => now()->subDays(6),
         'viewed_at' => now()->subDays(5),
@@ -86,7 +107,8 @@ test('analytics page renders the strategic reporting payload', function () {
             ->where('revenue_intelligence.won_revenue', 2000)
             ->where('revenue_intelligence.lost_revenue', 1000)
             ->where('revenue_intelligence.still_open', 2000)
-            ->where('revenue_intelligence.won_per_100', 40)
+            ->where('revenue_intelligence.win_rate', 40)
+            ->where('revenue_intelligence.revenue_captured', 40)
             ->has('revenue_intelligence.revenue_trend', 12)
             ->has('win_loss_analysis.decline_reasons')
             ->has('win_loss_analysis.time_to_win')
@@ -109,7 +131,6 @@ test('analytics page renders the strategic reporting payload', function () {
     expect($page['props']['currency_breakdown'][0]['quotes_sent'])->toBe(5);
 });
 
-
 test('analytics isolates data by workspace', function () {
     $otherUser = User::factory()->create();
     $otherWorkspace = $otherUser->currentWorkspace;
@@ -124,9 +145,14 @@ test('analytics isolates data by workspace', function () {
         'title' => 'Other Workspace Quote',
         'status' => QuoteStatus::Accepted->value,
         'total' => 10000,
+        'base_total' => 10000,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
         'created_at' => now()->subMonth(),
         'sent_at' => now()->subMonth()->subDays(3),
         'accepted_at' => now()->subMonth(),
+        'won_at' => now()->subMonth(),
     ]);
 
     Quote::query()->create([
@@ -135,9 +161,14 @@ test('analytics isolates data by workspace', function () {
         'title' => 'Current Workspace Quote',
         'status' => QuoteStatus::Accepted->value,
         'total' => 1000,
+        'base_total' => 1000,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
         'created_at' => now()->subMonth(),
         'sent_at' => now()->subMonth()->subDays(2),
         'accepted_at' => now()->subMonth(),
+        'won_at' => now()->subMonth(),
     ]);
 
     $this->actingAs($this->user)
@@ -156,7 +187,7 @@ test('analytics handles empty data gracefully', function () {
             ->where('revenue_intelligence.won_revenue', 0)
             ->where('revenue_intelligence.lost_revenue', 0)
             ->where('revenue_intelligence.still_open', 0)
-            ->where('revenue_intelligence.won_per_100', 0)
+            ->where('revenue_intelligence.win_rate', 0)
             ->has('revenue_intelligence.revenue_trend', 12)
             ->where('win_loss_analysis.decline_reasons', [])
             ->where('win_loss_analysis.time_to_win', [])
@@ -184,9 +215,14 @@ test('revenue trend returns twelve months of data', function () {
         'title' => 'Month 1 Won',
         'status' => QuoteStatus::Accepted->value,
         'total' => 1000,
+        'base_total' => 1000,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
         'created_at' => now()->subMonth(),
         'sent_at' => now()->subMonth()->subDays(2),
         'accepted_at' => now()->subMonth(),
+        'won_at' => now()->subMonth(),
     ]);
 
     Quote::query()->create([
@@ -195,10 +231,15 @@ test('revenue trend returns twelve months of data', function () {
         'title' => 'Month 1 Declined',
         'status' => QuoteStatus::Declined->value,
         'total' => 500,
+        'base_total' => 500,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
         'decline_reason' => 'Price too high',
         'created_at' => now()->subMonth(),
         'sent_at' => now()->subMonth()->subDays(3),
         'declined_at' => now()->subMonth(),
+        'lost_at' => now()->subMonth(),
     ]);
 
     Quote::query()->create([
@@ -207,9 +248,14 @@ test('revenue trend returns twelve months of data', function () {
         'title' => 'Month 2 Won',
         'status' => QuoteStatus::Accepted->value,
         'total' => 2000,
+        'base_total' => 2000,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
         'created_at' => now()->subMonths(2),
         'sent_at' => now()->subMonths(2)->subDays(4),
         'accepted_at' => now()->subMonths(2),
+        'won_at' => now()->subMonths(2),
     ]);
 
     $response = $this->actingAs($this->user)
@@ -232,9 +278,14 @@ test('decline reasons aggregate correctly', function () {
         'status' => QuoteStatus::Declined->value,
         'decline_reason' => 'Price too high',
         'total' => 500,
+        'base_total' => 500,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
         'created_at' => now()->subMonth(),
         'sent_at' => now()->subMonth()->subDays(3),
         'declined_at' => now()->subMonth(),
+        'lost_at' => now()->subMonth(),
     ]);
 
     Quote::query()->create([
@@ -244,9 +295,14 @@ test('decline reasons aggregate correctly', function () {
         'status' => QuoteStatus::Declined->value,
         'decline_reason' => 'Price too high',
         'total' => 750,
+        'base_total' => 750,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
         'created_at' => now()->subMonth(),
         'sent_at' => now()->subMonth()->subDays(2),
         'declined_at' => now()->subMonth(),
+        'lost_at' => now()->subMonth(),
     ]);
 
     Quote::query()->create([
@@ -256,9 +312,14 @@ test('decline reasons aggregate correctly', function () {
         'status' => QuoteStatus::Declined->value,
         'decline_reason' => 'Competitor',
         'total' => 1000,
+        'base_total' => 1000,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
         'created_at' => now()->subMonth(),
         'sent_at' => now()->subMonth()->subDays(4),
         'declined_at' => now()->subMonth(),
+        'lost_at' => now()->subMonth(),
     ]);
 
     $response = $this->actingAs($this->user)

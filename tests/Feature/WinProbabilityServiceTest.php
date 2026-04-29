@@ -16,7 +16,7 @@ beforeEach(function () {
         'workspace_id' => $this->workspace->id,
         'created_by' => $this->user->id,
     ]);
-    $this->service = new WinProbabilityService();
+    $this->service = new WinProbabilityService;
 });
 
 test('win probability returns value between 5 and 95', function () {

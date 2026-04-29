@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import { Calendar, Lock, User } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
@@ -222,7 +222,7 @@ const onDrop = (e: DragEvent, toStatus: string): void => {
 };
 
 const formatAmount = (amount: number, currency: string | null): string => {
-    return useFormat().formatCurrency(amount, currency?? 'USD');
+    return useFormat().formatCurrency(amount, currency || (usePage().props.workspace_currency as string) || undefined);
 };
 
 const formatDate = (date: string | null): string => {
@@ -398,7 +398,7 @@ const getWinProbabilityBgColor = (probability: number) => {
 
                         <div class="flex items-center justify-between gap-2 border-t border-border/50 pt-1.5">
                             <span class="text-xs font-semibold tabular-nums text-foreground">
-                                {{ formatAmount(quote.total, quote.currency) }}
+                                {{ formatAmount(quote.base_total, quote.base_currency) }}
                             </span>
                             <div v-if="quote.valid_until" class="flex items-center gap-1 text-xs text-muted-foreground">
                                 <Calendar class="h-3 w-3 shrink-0" />

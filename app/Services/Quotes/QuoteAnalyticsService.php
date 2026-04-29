@@ -34,7 +34,7 @@ class QuoteAnalyticsService
     }
 
     /**
-     * @param Collection<int, QuoteTrackingEvent> $events
+     * @param  Collection<int, QuoteTrackingEvent>  $events
      * @return array<int, array{device: string, count: int, percentage: float}>
      */
     private function getDeviceBreakdown(Collection $events): array
@@ -62,7 +62,7 @@ class QuoteAnalyticsService
     }
 
     /**
-     * @param Collection<int, QuoteTrackingEvent> $events
+     * @param  Collection<int, QuoteTrackingEvent>  $events
      * @return array<int, array{view_number: int, date: string, time: string, duration_seconds: int|null, device: string}>
      */
     private function generateViewTimeline(Collection $events): array
@@ -102,7 +102,7 @@ class QuoteAnalyticsService
     }
 
     /**
-     * @param Collection<int, QuoteTrackingEvent> $events
+     * @param  Collection<int, QuoteTrackingEvent>  $events
      * @return array<int, array{section: string, time_spent_seconds: int, count: int}>
      */
     private function aggregateSectionEngagement(Collection $events): array
@@ -128,7 +128,7 @@ class QuoteAnalyticsService
     }
 
     /**
-     * @param Collection<int, QuoteTrackingEvent> $viewEvents
+     * @param  Collection<int, QuoteTrackingEvent>  $viewEvents
      * @return array<int, array{date: string, event: string, icon: string}>
      */
     private function generateFollowUpTimeline(Quote $quote, Collection $viewEvents): array
@@ -146,7 +146,7 @@ class QuoteAnalyticsService
         if ($firstView instanceof QuoteTrackingEvent) {
             $timeline[] = [
                 'date' => $firstView->occurred_at->toDateString(),
-                'event' => 'First opened' . ($firstView->occurred_at->isSameDay($sentAt) ? ' (same day, fast)' : ''),
+                'event' => 'First opened'.($firstView->occurred_at->isSameDay($sentAt) ? ' (same day, fast)' : ''),
                 'icon' => 'eye',
             ];
         }
@@ -166,9 +166,9 @@ class QuoteAnalyticsService
             $timeline[] = [
                 'date' => $date->toDateString(),
                 'event' => match ($status) {
-                    'sent' => 'Follow-up sent' . ($followUp->step?->subject ? ' · ' . $followUp->step->subject : ''),
-                    'pending' => 'Follow-up scheduled' . ($followUp->step?->subject ? ' · ' . $followUp->step->subject : ''),
-                    'cancelled' => 'Follow-up cancelled' . ($followUp->step?->subject ? ' · ' . $followUp->step->subject : ''),
+                    'sent' => 'Follow-up sent'.($followUp->step?->subject ? ' · '.$followUp->step->subject : ''),
+                    'pending' => 'Follow-up scheduled'.($followUp->step?->subject ? ' · '.$followUp->step->subject : ''),
+                    'cancelled' => 'Follow-up cancelled'.($followUp->step?->subject ? ' · '.$followUp->step->subject : ''),
                     default => 'Follow-up updated',
                 },
                 'icon' => match ($status) {

@@ -12,11 +12,11 @@ class ClientImportValidator
             $errors[] = 'Company name is required';
         }
 
-        if (!empty($row['email']) && !filter_var($row['email'], FILTER_VALIDATE_EMAIL)) {
+        if (! empty($row['email']) && ! filter_var($row['email'], FILTER_VALIDATE_EMAIL)) {
             $errors[] = 'Invalid email format';
         }
 
-        if (!empty($row['country']) && !$this->isValidCountry($row['country'])) {
+        if (! empty($row['country']) && ! $this->isValidCountry($row['country'])) {
             $errors[] = 'Invalid country code (use 2-letter ISO code)';
         }
 

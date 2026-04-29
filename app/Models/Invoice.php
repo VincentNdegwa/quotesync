@@ -31,6 +31,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'paid_date',
     'sent_at',
     'created_by',
+    'base_currency',
+    'fx_rate',
+    'base_total',
 ])]
 class Invoice extends Model
 {
@@ -78,6 +81,8 @@ class Invoice extends Model
             'total' => 'decimal:2',
             'paid_amount' => 'decimal:2',
             'balance_due' => 'decimal:2',
+            'fx_rate' => 'decimal:6',
+            'base_total' => 'decimal:2',
             'issue_date' => 'date',
             'due_date' => 'date',
             'paid_date' => 'date',

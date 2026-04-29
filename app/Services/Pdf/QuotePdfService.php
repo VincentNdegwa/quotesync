@@ -10,9 +10,7 @@ use Illuminate\Support\Facades\Storage;
 
 class QuotePdfService
 {
-    public function __construct(private readonly WorkspaceBranding $workspaceBranding)
-    {
-    }
+    public function __construct(private readonly WorkspaceBranding $workspaceBranding) {}
 
     public function generate(Quote $quote): string
     {
@@ -58,19 +56,19 @@ class QuotePdfService
         if (Storage::exists($signaturePath)) {
             $mime = mime_content_type(Storage::path($signaturePath)) ?: 'image/png';
 
-            return 'data:' . $mime . ';base64,' . base64_encode(Storage::get($signaturePath));
+            return 'data:'.$mime.';base64,'.base64_encode(Storage::get($signaturePath));
         }
 
         if (Storage::disk('public')->exists($signaturePath)) {
             $mime = mime_content_type(Storage::disk('public')->path($signaturePath)) ?: 'image/png';
 
-            return 'data:' . $mime . ';base64,' . base64_encode(Storage::disk('public')->get($signaturePath));
+            return 'data:'.$mime.';base64,'.base64_encode(Storage::disk('public')->get($signaturePath));
         }
 
         if (file_exists($signaturePath)) {
             $mime = mime_content_type($signaturePath) ?: 'image/png';
 
-            return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($signaturePath));
+            return 'data:'.$mime.';base64,'.base64_encode(file_get_contents($signaturePath));
         }
 
         return null;

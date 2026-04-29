@@ -1,10 +1,10 @@
-export function useFormat() {
+export function useFormat(defaultCurrency?: string) {
     const formatCurrency = (val: number | string | null | undefined, currency?: string): string => {
         const n = Number(val || 0);
 
         return new Intl.NumberFormat(undefined, {
             style: 'currency',
-            currency: currency || 'USD',
+            currency: currency || defaultCurrency || 'USD',
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
         }).format(n);

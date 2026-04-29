@@ -2,6 +2,9 @@
 
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RedirectIfPortalAuthenticated;
+use App\Http\Middleware\RedirectIfPortalGuest;
+use App\Http\Middleware\SetPortalWorkspaceContext;
 use App\Providers\AppServiceProvider;
 use App\Providers\AuthServiceProvider;
 use App\Providers\FortifyServiceProvider;
@@ -9,6 +12,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -16,7 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
         then: function () {
-            \Illuminate\Support\Facades\Route::middleware('web')
+            Route::middleware('web')
                 ->prefix('portal')
                 ->name('portal.')
                 ->group(base_path('routes/portal.php'));
@@ -31,9 +35,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->alias([
-            'portal.guest' => \App\Http\Middleware\RedirectIfPortalGuest::class,
-            'portal.auth' => \App\Http\Middleware\RedirectIfPortalAuthenticated::class,
-            'portal.workspace' => \App\Http\Middleware\SetPortalWorkspaceContext::class,
+            'portal.guest' => RedirectIfPortalGuest::class,
+            'portal.auth' => RedirectIfPortalAuthenticated::class,
+            'portal.workspace' => SetPortalWorkspaceContext::class,
         ]);
 
         $middleware->web(append: [

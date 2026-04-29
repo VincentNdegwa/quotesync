@@ -69,7 +69,7 @@ class CatalogImportController extends Controller
             ->filter(fn (array $row): bool => $row['name'] !== '')
             ->values();
 
-        $validator = new CatalogImportValidator();
+        $validator = new CatalogImportValidator;
         $validatedRows = $mapped->map(function ($row, $index) use ($validator) {
             return $validator->validate($row, $index + 2);
         });
@@ -124,6 +124,7 @@ class CatalogImportController extends Controller
                         $mapped[$targetField] = $row[$sourceColumn];
                     }
                 }
+
                 return $mapped;
             });
         }

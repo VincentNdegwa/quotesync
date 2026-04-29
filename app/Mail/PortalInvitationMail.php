@@ -2,10 +2,7 @@
 
 namespace App\Mail;
 
-use App\Models\PortalInvitation;
-use App\Models\PortalMagicLink;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
@@ -17,7 +14,9 @@ class PortalInvitationMail extends Mailable
     use Queueable, SerializesModels;
 
     public $invitation;
+
     public $magicLink;
+
     public $isMagicLink;
 
     /**

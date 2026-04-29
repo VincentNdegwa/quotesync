@@ -29,6 +29,10 @@ test('dashboard renders workspace-scoped quote metrics and activity', function (
         'title' => 'Draft quote',
         'status' => 'draft',
         'total' => 100,
+        'base_total' => 100,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
     ]);
 
     Quote::query()->create([
@@ -37,6 +41,10 @@ test('dashboard renders workspace-scoped quote metrics and activity', function (
         'title' => 'Sent quote',
         'status' => 'sent',
         'total' => 200,
+        'base_total' => 200,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
         'sent_at' => now(),
     ]);
 
@@ -46,7 +54,13 @@ test('dashboard renders workspace-scoped quote metrics and activity', function (
         'title' => 'Accepted quote',
         'status' => 'accepted',
         'total' => 300,
+        'base_total' => 300,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
+        'sent_at' => now(),
         'accepted_at' => now(),
+        'won_at' => now(),
     ]);
 
     Quote::query()->create([
@@ -55,7 +69,13 @@ test('dashboard renders workspace-scoped quote metrics and activity', function (
         'title' => 'Declined quote',
         'status' => 'declined',
         'total' => 90,
+        'base_total' => 90,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
+        'sent_at' => now(),
         'declined_at' => now(),
+        'lost_at' => now(),
     ]);
 
     Quote::query()->create([
@@ -64,7 +84,12 @@ test('dashboard renders workspace-scoped quote metrics and activity', function (
         'title' => 'Other workspace quote',
         'status' => 'accepted',
         'total' => 999,
+        'base_total' => 999,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
         'accepted_at' => now(),
+        'won_at' => now(),
     ]);
 
     QuoteActivity::query()->create([
@@ -83,11 +108,11 @@ test('dashboard renders workspace-scoped quote metrics and activity', function (
             ->component('Dashboard')
             ->has('stats', fn (Assert $stats) => $stats
                 ->where('pipeline_value', 200)
-                ->where('pipeline_trend', null)
+                ->where('pipeline_trend', 100)
                 ->where('won_this_month', 300)
-                ->where('won_trend', null)
-                ->where('win_rate', 100)
-                ->where('win_rate_trend', 100)
+                ->where('won_trend', 100)
+                ->where('win.rate', 33.3)
+                ->where('win.trend', 100)
                 ->where('quotes_expiring', 0)
             )
             ->has('revenue_trend', 6)

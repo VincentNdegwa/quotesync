@@ -4,8 +4,8 @@ namespace App\Notifications;
 
 use App\Models\Quote;
 use Illuminate\Bus\Queueable;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Notifications\Notification;
+use Illuminate\Queue\SerializesModels;
 
 abstract class QuoteNotification extends Notification
 {

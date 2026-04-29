@@ -45,7 +45,7 @@ class ApprovalRule extends Model
 
     public function matches(Quote $quote): bool
     {
-        if (!$this->is_active) {
+        if (! $this->is_active) {
             return false;
         }
 

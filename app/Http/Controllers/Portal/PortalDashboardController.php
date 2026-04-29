@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Portal;
 
+use App\Enums\QuoteStatus;
+use App\Events\QuoteViewed;
 use App\Models\Quote;
-use Illuminate\Http\Request;
+use App\Models\QuoteActivity;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -91,6 +94,7 @@ class PortalDashboardController
                 'declined', 'lost' => 'rejected',
                 default => $quote->status,
             };
+
             return $quote;
         });
 
@@ -129,7 +133,7 @@ class PortalDashboardController
 
         // Track view status like public view
         $wasFirstView = $quote->viewed_at === null;
-        $newStatus = $quote->status === \App\Enums\QuoteStatus::Sent ? \App\Enums\QuoteStatus::Viewed->value : $quote->status->value;
+        $newStatus = $quote->status === QuoteStatus::Sent ? QuoteStatus::Viewed->value : $quote->status->value;
 
         $quote->forceFill([
             'status' => $newStatus,
@@ -137,9 +141,9 @@ class PortalDashboardController
             'view_count' => max(0, (int) $quote->view_count) + 1,
         ])->save();
 
-        \App\Events\QuoteViewed::dispatch($quote);
+        QuoteViewed::dispatch($quote);
 
-        \App\Models\QuoteActivity::query()->create([
+        QuoteActivity::query()->create([
             'quote_id' => $quote->id,
             'workspace_id' => $quote->workspace_id,
             'user_id' => null,

@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\CustomDomain;
 use App\Services\DomainVerificationService;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -18,7 +18,7 @@ class CustomDomainController extends Controller
     public function index(Request $request): Response
     {
         $workspace = $request->user()->currentWorkspace;
-        
+
         $domains = CustomDomain::query()
             ->where('workspace_id', $workspace->id)
             ->get();

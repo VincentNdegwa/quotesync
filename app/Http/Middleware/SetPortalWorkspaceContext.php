@@ -12,14 +12,14 @@ class SetPortalWorkspaceContext
     public function handle(Request $request, Closure $next)
     {
         $portalUser = Auth::guard('portal')->user();
-        
-        if (!$portalUser) {
+
+        if (! $portalUser) {
             return $next($request);
         }
 
         $sessionWorkspaceId = $request->session()->get('portal_current_workspace_id');
         $workspaceId = $sessionWorkspaceId ?? $portalUser->workspace_id;
-        
+
         $invitation = PortalInvitation::where('email', $portalUser->email)
             ->where('workspace_id', $workspaceId)
             ->whereNotNull('accepted_at')

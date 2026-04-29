@@ -1,7 +1,7 @@
 <?php
 
-use App\Enums\QuoteStatus;
 use App\Enums\FollowUpChannel;
+use App\Enums\QuoteStatus;
 use App\Enums\TrackingEventType;
 use App\Models\Client;
 use App\Models\FollowUpSequence;
