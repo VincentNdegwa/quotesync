@@ -121,8 +121,6 @@ class DashboardController extends Controller
             'pipeline_trend'   => $this->percentageTrend($pipelineValueThisMonth, $pipelineValueLastMonth),
             'won_this_month'   => $wonThisMonth,
             'won_trend'        => $this->percentageTrend($wonThisMonth, $wonLastMonth),
-            'win_rate'         => $winRateThisMonth,
-            'win_rate_trend'   => $this->percentageTrend($winRateThisMonth, $winRateLastMonth),
             'win'              => [
                 'rate' => $winRateThisMonth,
                 'win_count' => $wonThisMonthCount,
