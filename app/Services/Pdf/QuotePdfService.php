@@ -53,15 +53,21 @@ class QuotePdfService
             return null;
         }
 
+        if (str_starts_with($signaturePath, 'http')) {
+            $relativePath = str_replace(Storage::url(''), '', $signaturePath);
+            if (Storage::disk('public')->exists($relativePath)) {
+                $mime = mime_content_type(Storage::disk('public')->path($relativePath)) ?: 'image/png';
+                return 'data:'.$mime.';base64,'.base64_encode(Storage::disk('public')->get($relativePath));
+            }
+        }
+
         if (Storage::exists($signaturePath)) {
             $mime = mime_content_type(Storage::path($signaturePath)) ?: 'image/png';
-
             return 'data:'.$mime.';base64,'.base64_encode(Storage::get($signaturePath));
         }
 
         if (Storage::disk('public')->exists($signaturePath)) {
             $mime = mime_content_type(Storage::disk('public')->path($signaturePath)) ?: 'image/png';
-
             return 'data:'.$mime.';base64,'.base64_encode(Storage::disk('public')->get($signaturePath));
         }
 

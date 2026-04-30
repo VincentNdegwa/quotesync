@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 #[Fillable([
@@ -187,11 +186,6 @@ class Quote extends Model
     public function winProbability(): HasOne
     {
         return $this->hasOne(QuoteWinProbability::class);
-    }
-
-    protected function getSignatureUrlAttribute(): ?string
-    {
-        return $this->signature_path ? Storage::url($this->signature_path) : null;
     }
 
     /**

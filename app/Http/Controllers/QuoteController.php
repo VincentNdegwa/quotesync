@@ -186,6 +186,8 @@ class QuoteController extends Controller
             'winProbability.signals'
         ]);
 
+        $quote->signature_path = Storage::url($quote->signature_path);
+
         return Inertia::render('quotes/Show', [
             'quote' => $quote,
             'branding' => $this->brandingPayload($workspace, $workspaceSettingsService),

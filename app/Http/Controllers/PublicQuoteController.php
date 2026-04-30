@@ -168,7 +168,8 @@ class PublicQuoteController extends Controller
         $signaturePath = sprintf('signatures/%s-%s.png', $quote->quote_uuid, Str::uuid());
 
         if (is_string($quote->signature_path) && $quote->signature_path !== '') {
-            Storage::disk('public')->delete($quote->signature_path);
+            $oldPath = str_replace(Storage::url(''), '', $quote->signature_path);
+            Storage::disk('public')->delete($oldPath);
         }
 
         Storage::disk('public')->put($signaturePath, $signatureBinary);
@@ -176,7 +177,7 @@ class PublicQuoteController extends Controller
         $quote->forceFill([
             'status' => QuoteStatus::Accepted->value,
             'accepted_at' => now(),
-            'signature_path' => $signaturePath,
+            'signature_path' => Storage::url($signaturePath),
             'signer_name' => $validated['signer_name'] ?? null,
             'signer_ip' => $request->ip(),
         ])->save();
