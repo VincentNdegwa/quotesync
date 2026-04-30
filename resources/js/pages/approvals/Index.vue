@@ -156,9 +156,9 @@ const openReject = (approval: Approval): void => {
     rejectDialogOpen.value = true;
 };
 
-const submitApprove = (): void => {
+const submitApprove = (send: boolean): void => {
     if (!selectedApproval.value) return;
-    approveForm.post(`/approvals/${selectedApproval.value.id}/approve`, {
+    approveForm.transform(() => ({ send })).post(`/approvals/${selectedApproval.value.id}/approve`, {
         preserveScroll: true,
         onSuccess: () => {
             approveDialogOpen.value = false;
@@ -368,8 +368,8 @@ const executeDeleteRule = (): void => {
                             >
                                 {{
                                     fmt(
-                                        approval.quote.base_total,
-                                        approval.quote.base_currency,
+                                        approval.quote.total,
+                                        approval.quote.currency,
                                     )
                                 }}
                             </span>
@@ -514,8 +514,8 @@ const executeDeleteRule = (): void => {
                         <strong>{{ selectedApproval.quote.title }}</strong>
                         ({{
                             fmt(
-                                selectedApproval.quote.base_total,
-                                selectedApproval.quote.base_currency,
+                                selectedApproval.quote.total,
+                                selectedApproval.quote.currency,
                             )
                         }}). The rep will be notified and can send it to the
                         client.
@@ -541,11 +541,20 @@ const executeDeleteRule = (): void => {
                 </Button>
                 <Button
                     class="gap-2"
+                    variant="outline"
                     :disabled="approveForm.processing"
-                    @click="submitApprove"
+                    @click="submitApprove(false)"
                 >
                     <CheckCircle2 class="h-4 w-4" />
-                    Confirm approval
+                    Approve only
+                </Button>
+                <Button
+                    class="gap-2"
+                    :disabled="approveForm.processing"
+                    @click="submitApprove(true)"
+                >
+                    <CheckCircle2 class="h-4 w-4" />
+                    Approve & Send
                 </Button>
             </DialogFooter>
         </DialogContent>

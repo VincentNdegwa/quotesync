@@ -6,14 +6,17 @@ use App\Enums\QuoteStatus;
 use App\Events\QuoteViewed;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
+use App\Traits\ResolvesClientState;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PortalDashboardController
 {
+    use ResolvesClientState;
     public function index(Request $request): Response
     {
         $portalUser = Auth::guard('portal')->user();
@@ -127,9 +130,9 @@ class PortalDashboardController
                 'sections.lineItems.taxes',
             ])
             ->firstOrFail();
+        $quote->signature_path = Storage::url($quote->signature_path);
 
         $quote->loadMissing(['client:id,company_name,contact_name,email', 'workspace:id,name,display_name']);
-        $quote->append('signature_url');
 
         // Track view status like public view
         $wasFirstView = $quote->viewed_at === null;
@@ -178,6 +181,7 @@ class PortalDashboardController
             'quote' => $quote->makeHidden(['internal_notes', 'profit_margin', 'deleted_at']),
             'layout' => $layout,
             'branding' => $branding,
+            'clientState' => $this->resolveClientState($quote),
         ])->withViewData('title', 'Quote Details');
     }
 

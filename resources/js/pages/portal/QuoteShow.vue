@@ -3,7 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, MessageSquare } from 'lucide-vue-next';
+import { ArrowLeft, AlertCircle, MessageSquare } from 'lucide-vue-next';
 import { useFormat } from '@/composables/useFormat';
 import { accept as acceptQuote, decline as declineQuote } from '@/routes/public-quotes';
 import { dashboard } from '@/routes/portal';
@@ -15,6 +15,7 @@ const props = defineProps<{
     quote: any;
     layout: TemplateLayout | null;
     branding: BrandingData;
+    clientState: 'open' | 'accepted' | 'closed';
     messages?: Array<{
         id: number;
         message: string;
@@ -65,13 +66,14 @@ const decline = () => {
 
             <div class="flex flex-wrap items-center gap-2">
                 <Badge
-                    :variant="quote.status === 'accepted' ? 'default' : quote.status === 'declined' ? 'destructive' : 'outline'"
-                    class="px-3 py-1 text-xs font-semibold"
+                    v-if="clientState === 'accepted'"
+                    variant="default"
+                    class="px-3 py-1 text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 border-transparent text-white"
                 >
-                    {{ quote.status }}
+                    Accepted
                 </Badge>
 
-                <div v-if="quote.status === 'sent' || quote.status === 'viewed'" class="flex gap-2">
+                <div v-if="clientState === 'open'" class="flex gap-2">
                     <Button @click="accept" :disabled="acceptForm.processing">
                         Accept
                     </Button>
@@ -99,7 +101,15 @@ const decline = () => {
                     </div>
                 </div>
 
-                <div class="overflow-hidden rounded-xl border shadow-sm">
+                <div v-if="clientState === 'closed'" class="rounded-lg bg-card p-8 text-center shadow-sm ring-1 ring-border">
+                    <div class="mx-auto h-12 w-12 text-muted-foreground mb-4 flex items-center justify-center">
+                        <AlertCircle class="h-12 w-12" />
+                    </div>
+                    <h2 class="text-xl font-semibold mb-2">This quote is no longer available</h2>
+                    <p class="text-muted-foreground">Please contact {{ branding.company_name }} for an updated quote.</p>
+                </div>
+
+                <div v-else class="overflow-hidden rounded-xl border shadow-sm">
                     <QuoteRenderer
                         v-if="layout && branding"
                         :quote="quote"

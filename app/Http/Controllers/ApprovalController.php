@@ -70,8 +70,8 @@ class ApprovalController extends Controller
                         'id' => $quote->id,
                         'number' => $quote->number,
                         'title' => $quote->title,
-                        'total' => (float) $quote->total,
-                        'currency' => $quote->currency ?? $workspaceCurrency,
+                        'total' => (float) $quote->base_total,
+                        'currency' => $quote->base_currency ?? $workspaceCurrency,
                         'client' => $quote->client ? [
                             'id' => $quote->client->id,
                             'company_name' => $quote->client->company_name,
@@ -150,15 +150,21 @@ class ApprovalController extends Controller
 
         $request->validate([
             'comment' => 'nullable|string|max:1000',
+            'send' => 'nullable|boolean',
         ]);
 
         $this->approvalService->approveQuote(
             $approval->quote,
             $request->user()->id,
-            $request->input('comment')
+            $request->input('comment'),
+            $request->boolean('send', false)
         );
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Quote approved successfully.']);
+        $message = $request->boolean('send', false)
+            ? 'Quote approved and sent successfully.'
+            : 'Quote approved successfully.';
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => $message]);
 
         return back();
     }

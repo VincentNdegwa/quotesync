@@ -20,8 +20,7 @@ const props = defineProps<{
     quote_uuid: string;
     layout: TemplateLayout | null;
     branding: BrandingData;
-    status: string;
-    is_expired: boolean;
+    clientState: 'open' | 'accepted' | 'closed';
 }>();
 
 const renderedLayout = computed(() => ensureTemplateLayout(props.layout));
@@ -101,19 +100,21 @@ onUnmounted(() => {
             <div class="flex items-center justify-between rounded-lg bg-card p-4 shadow-sm ring-1 ring-border sticky top-4 z-10">
                 <div class="flex items-center gap-3">
                     <h1 class="text-lg font-semibold">{{ quote.title }}</h1>
-                    <Badge v-if="status === 'accepted'" variant="default" class="bg-emerald-500 hover:bg-emerald-600 border-transparent text-white">
+                    <Badge v-if="clientState === 'accepted'" variant="default" class="bg-emerald-500 hover:bg-emerald-600 border-transparent text-white">
                         <CheckCircle2 class="mr-1 h-3 w-3" /> Accepted
                     </Badge>
-                    <Badge v-else-if="status === 'declined'" variant="destructive">
-                        <XCircle class="mr-1 h-3 w-3" /> Declined
-                    </Badge>
-                    <Badge v-else-if="status === 'draft'" variant="secondary">Draft</Badge>
-                    <Badge v-else-if="is_expired" variant="destructive">Expired</Badge>
                 </div>
             </div>
 
             <!-- Quote Document -->
+            <div v-if="clientState === 'closed'" class="rounded-lg bg-card p-8 text-center shadow-sm ring-1 ring-border">
+                <AlertCircle class="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h2 class="text-xl font-semibold mb-2">This quote is no longer available</h2>
+                <p class="text-muted-foreground">Please contact {{ branding.company_name }} for an updated quote.</p>
+            </div>
+
             <QuoteRenderer
+                v-else
                 :branding="branding"
                 :layout="renderedLayout"
                 :quote="quote"

@@ -9,17 +9,21 @@ use App\Models\ApprovalRule;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
 use App\Models\QuoteApproval;
-use App\Models\User;
 use App\Notifications\QuoteApprovalApprovedNotification;
 use App\Notifications\QuoteApprovalGrantedNotification;
 use App\Notifications\QuoteApprovalRejectedNotification;
 use App\Notifications\QuoteApprovalRequestedNotification;
+use App\Services\Quotes\QuoteSendingService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 
 class ApprovalService
 {
+    public function __construct(
+        private QuoteSendingService $quoteSendingService,
+    ) {}
+
     public function checkApprovalRequired(Quote $quote): bool
     {
         $matchingRules = ApprovalRule::where('workspace_id', $quote->workspace_id)
@@ -88,11 +92,11 @@ class ApprovalService
         }
     }
 
-    public function approveQuote(Quote $quote, int $userId, ?string $comment = null): void
+    public function approveQuote(Quote $quote, int $userId, ?string $comment = null, bool $sendAfterApproval = false): void
     {
         $approvalsNotified = collect();
 
-        DB::transaction(function () use ($quote, $userId, $comment, &$approvalsNotified) {
+        DB::transaction(function () use ($quote, $userId, $comment, $sendAfterApproval, &$approvalsNotified) {
             $approvals = $quote->quoteApprovals()
                 ->where('approver_id', $userId)
                 ->where('status', QuoteApprovalStatus::Pending->value)
@@ -119,7 +123,7 @@ class ApprovalService
                 ]);
             }
 
-            $this->checkAllApprovalsCompleted($quote, $userId);
+            $this->checkAllApprovalsCompleted($quote, $userId, $sendAfterApproval);
         });
 
         if ($approvalsNotified instanceof Collection && $approvalsNotified->isNotEmpty()) {
@@ -186,7 +190,7 @@ class ApprovalService
         }
     }
 
-    private function checkAllApprovalsCompleted(Quote $quote, ?int $actedBy = null): void
+    private function checkAllApprovalsCompleted(Quote $quote, ?int $actedBy = null, bool $sendAfterApproval = false): void
     {
         $pendingApprovals = $quote->quoteApprovals()
             ->where('status', QuoteApprovalStatus::Pending->value)
@@ -205,22 +209,50 @@ class ApprovalService
         } elseif ($pendingApprovals === 0) {
             $grantedAt = now();
 
-            $quote->update([
-                'status' => QuoteStatus::Draft->value,
-                'approval_granted' => true,
-                'approval_granted_at' => $grantedAt,
-            ]);
+            if ($sendAfterApproval) {
+                // When sending after approval, set status to Sent instead of Draft
+                $quote->update([
+                    'status' => QuoteStatus::Sent->value,
+                    'sent_at' => $grantedAt,
+                    'approval_granted' => true,
+                    'approval_granted_at' => $grantedAt,
+                ]);
 
-            QuoteActivity::query()->create([
-                'quote_id' => $quote->id,
-                'workspace_id' => $quote->workspace_id,
-                'user_id' => $actedBy,
-                'type' => QuoteActivityType::ApprovalGranted->value,
-                'description' => 'All approvals granted.',
-                'metadata' => [
-                    'approval_granted_at' => $grantedAt->toIso8601String(),
-                ],
-            ]);
+                QuoteActivity::query()->create([
+                    'quote_id' => $quote->id,
+                    'workspace_id' => $quote->workspace_id,
+                    'user_id' => $actedBy,
+                    'type' => QuoteActivityType::ApprovalGranted->value,
+                    'description' => 'All approvals granted and quote sent.',
+                    'metadata' => [
+                        'approval_granted_at' => $grantedAt->toIso8601String(),
+                        'sent_after_approval' => true,
+                    ],
+                ]);
+
+                // Trigger sending logic after transaction commits
+                DB::afterCommit(function () use ($quote, $actedBy): void {
+                    $this->sendQuoteAfterApproval($quote, $actedBy);
+                });
+            } else {
+                // Normal approval - return to Draft
+                $quote->update([
+                    'status' => QuoteStatus::Draft->value,
+                    'approval_granted' => true,
+                    'approval_granted_at' => $grantedAt,
+                ]);
+
+                QuoteActivity::query()->create([
+                    'quote_id' => $quote->id,
+                    'workspace_id' => $quote->workspace_id,
+                    'user_id' => $actedBy,
+                    'type' => QuoteActivityType::ApprovalGranted->value,
+                    'description' => 'All approvals granted.',
+                    'metadata' => [
+                        'approval_granted_at' => $grantedAt->toIso8601String(),
+                    ],
+                ]);
+            }
 
             $recipients = $this->quoteStakeholders($quote);
 
@@ -254,5 +286,16 @@ class ApprovalService
             ->filter()
             ->unique('id')
             ->values();
+    }
+
+    private function sendQuoteAfterApproval(Quote $quote, ?int $actedBy = null): void
+    {
+        $quote->loadMissing(['workspace']);
+
+        $this->quoteSendingService->sendQuote(
+            quote: $quote,
+            workspace: $quote->workspace,
+            userId: $actedBy,
+        );
     }
 }

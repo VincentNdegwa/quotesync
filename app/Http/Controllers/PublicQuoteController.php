@@ -14,6 +14,7 @@ use App\Notifications\QuoteDeclinedNotification;
 use App\Notifications\QuoteViewedNotification;
 use App\Services\Quotes\QuoteShortCodeService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
+use App\Traits\ResolvesClientState;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
@@ -27,6 +28,7 @@ use Inertia\Response;
 
 class PublicQuoteController extends Controller
 {
+    use ResolvesClientState;
     public function show(
         string $quoteUuid,
         Request $request,
@@ -51,17 +53,17 @@ class PublicQuoteController extends Controller
             ->firstOrFail();
 
         $quote->loadMissing(['client:id,company_name,contact_name,email', 'workspace:id,name,display_name']);
-        $quote->append('signature_url');
-
         $wasFirstView = $quote->viewed_at === null;
         $newStatus = $quote->status === QuoteStatus::Sent ? QuoteStatus::Viewed->value : $quote->status->value;
-
+        
         $quote->forceFill([
             'status' => $newStatus,
             'viewed_at' => $quote->viewed_at ?? now(),
             'view_count' => max(0, (int) $quote->view_count) + 1,
         ])->save();
-
+        
+        $quote->signature_path = Storage::url($quote->signature_path);
+            
         QuoteViewed::dispatch($quote);
 
         QuoteActivity::query()->create([
@@ -91,8 +93,7 @@ class PublicQuoteController extends Controller
             'quote_uuid' => $quote->quote_uuid,
             'layout' => $this->quoteLayoutPayload($quote),
             'branding' => $this->brandingPayload($quote->workspace, $workspaceSettingsService),
-            'status' => $quote->status->value,
-            'is_expired' => $quote->status === QuoteStatus::Expired,
+            'clientState' => $this->resolveClientState($quote),
         ]);
     }
 
@@ -188,7 +189,7 @@ class PublicQuoteController extends Controller
             'user_id' => null,
             'type' => QuoteActivityType::Accepted->value,
             'description' => $validated['signer_name']
-                ? 'Quote was accepted and signed by '.$validated['signer_name'].'.'
+                ? 'Quote was accepted and signed by ' . $validated['signer_name'] . '.'
                 : 'Quote was accepted and signed by the client.',
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
