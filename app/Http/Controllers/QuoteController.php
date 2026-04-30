@@ -92,6 +92,15 @@ class QuoteController extends Controller
                 ->find($templateId);
         }
 
+        $clientId = $request->integer('client_id');
+        $client = null;
+
+        if ($clientId > 0) {
+            $client = Client::query()
+                ->where('workspace_id', $workspace->id)
+                ->find($clientId);
+        }
+
         /** @var Collection<int, array<string, mixed>> $quoteFields */
         $quoteFields = collect($workspaceSettingsService->groupForFrontend($workspace, 'quotes')['fields'] ?? [])->keyBy('key');
         $defaultCurrency = (string) ($quoteFields->get('default_currency')['value'] ?? 'USD');
@@ -102,7 +111,7 @@ class QuoteController extends Controller
             'number' => null,
             'title' => '',
             'status' => 'draft',
-            'client_id' => null,
+            'client_id' => $client?->id,
             'assigned_to' => $request->user()?->id,
             'currency' => $defaultCurrency,
             'base_currency' => $defaultCurrency,

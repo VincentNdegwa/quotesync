@@ -3,11 +3,15 @@
 namespace App\Models;
 
 use App\Enums\QuoteApprovalStatus;
+use Database\Factories\QuoteApprovalFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class QuoteApproval extends Model
 {
+    /** @use HasFactory<QuoteApprovalFactory> */
+    use HasFactory;
     protected $fillable = [
         'quote_id',
         'approval_rule_id',

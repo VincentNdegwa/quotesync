@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import { BarChart3, Building2, FileText, LayoutGrid, ShieldCheck, SlidersHorizontal, Tags, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
@@ -19,6 +19,9 @@ import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
 const dashboardUrl = computed(() => dashboard().url);
+const page = usePage();
+
+const pendingApprovalsCount = computed(() => page.props.pending_approvals_count as number || 0);
 
 const mainNavItems = computed<NavItem[]>(() => [
     {
@@ -55,6 +58,7 @@ const mainNavItems = computed<NavItem[]>(() => [
         title: 'Approvals',
         href: '/approvals',
         icon: ShieldCheck,
+        badge: pendingApprovalsCount.value > 0 ? pendingApprovalsCount.value : undefined,
     },
 ]);
 

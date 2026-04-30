@@ -6,9 +6,12 @@ use App\Enums\QuoteActivityType;
 use App\Enums\QuoteApprovalStatus;
 use App\Enums\QuoteStatus;
 use App\Models\ApprovalRule;
+use App\Models\Client;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
 use App\Models\QuoteApproval;
+use App\Models\User;
+use App\Models\Workspace;
 use App\Notifications\QuoteApprovalApprovedNotification;
 use App\Notifications\QuoteApprovalGrantedNotification;
 use App\Notifications\QuoteApprovalRejectedNotification;
@@ -23,6 +26,146 @@ class ApprovalService
     public function __construct(
         private QuoteSendingService $quoteSendingService,
     ) {}
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function index(Workspace $workspace, User $user): array
+    {
+        $isWorkspaceOwner = $workspace->owner_id === $user->id;
+
+        $pendingApprovalsQuery = QuoteApproval::query()
+            ->where('status', QuoteApprovalStatus::Pending->value)
+            ->whereHas('quote', fn ($query) => $query->where('workspace_id', $workspace->id))
+            ->with([
+                'quote' => fn ($query) => $query->select([
+                    'id',
+                    'workspace_id',
+                    'number',
+                    'title',
+                    'total',
+                    'base_total',
+                    'currency',
+                    'base_currency',
+                    'client_id',
+                    'created_by',
+                ]),
+                'quote.client:id,company_name',
+                'quote.creator:id,name',
+                'approvalRule:id,trigger_type,threshold_value',
+            ])
+            ->orderByDesc('created_at');
+
+        if ($workspace->owner_id !== $user->id) {
+            $pendingApprovalsQuery->where('approver_id', $user->id);
+        }
+
+        $workspaceCurrency = $workspace->currency ?? 'USD';
+
+        $pendingApprovals = $pendingApprovalsQuery
+            ->get()
+            ->map(function (QuoteApproval $approval) use ($workspaceCurrency): array {
+                $quote = $approval->quote;
+
+                return [
+                    'id' => $approval->id,
+                    'created_at' => $approval->created_at?->toIso8601String(),
+                    'quote' => [
+                        'id' => $quote->id,
+                        'number' => $quote->number,
+                        'title' => $quote->title,
+                        'total' => (float) $quote->base_total,
+                        'currency' => $quote->base_currency ?? $workspaceCurrency,
+                        'client' => $quote->client ? [
+                            'id' => $quote->client->id,
+                            'company_name' => $quote->client->company_name,
+                        ] : null,
+                        'created_by_name' => $quote->creator?->name,
+                    ],
+                    'approval_rule' => $approval->approvalRule ? [
+                        'id' => $approval->approvalRule->id,
+                        'trigger_type' => $approval->approvalRule->trigger_type,
+                        'threshold_value' => $approval->approvalRule->threshold_value !== null
+                            ? (float) $approval->approvalRule->threshold_value
+                            : null,
+                    ] : null,
+                ];
+            })
+            ->values();
+
+        $rulesQuery = ApprovalRule::query()
+            ->where('workspace_id', $workspace->id)
+            ->with(['client:id,company_name', 'approver:id,name'])
+            ->orderBy('id');
+
+        if ($workspace->owner_id !== $user->id) {
+            $rulesQuery->where('approver_id', $user->id);
+        }
+
+        $rules = $rulesQuery
+            ->get()
+            ->map(function (ApprovalRule $rule): array {
+                return [
+                    'id' => $rule->id,
+                    'trigger_type' => $rule->trigger_type,
+                    'threshold_value' => $rule->threshold_value !== null ? (float) $rule->threshold_value : null,
+                    'client_id' => $rule->client_id,
+                    'client' => $rule->client ? [
+                        'id' => $rule->client->id,
+                        'company_name' => $rule->client->company_name,
+                    ] : null,
+                    'approver_id' => $rule->approver_id,
+                    'approver' => $rule->approver ? [
+                        'id' => $rule->approver->id,
+                        'name' => $rule->approver->name,
+                    ] : null,
+                    'is_active' => (bool) $rule->is_active,
+                ];
+            })
+            ->values();
+
+        $approvers = $workspace->members()
+            ->select('users.id', 'users.name')
+            ->orderBy('users.name')
+            ->get()
+            ->when($workspace->owner, function ($collection) use ($workspace) {
+                $collection->push($workspace->owner);
+
+                return $collection;
+            })
+            ->unique('id')
+            ->sortBy('name')
+            ->values()
+            ->map(fn ($approver) => ['id' => $approver->id, 'name' => $approver->name]);
+
+        $clients = Client::query()
+            ->where('workspace_id', $workspace->id)
+            ->select('id', 'company_name')
+            ->orderBy('company_name')
+            ->get()
+            ->map(fn ($client) => ['id' => $client->id, 'company_name' => $client->company_name]);
+
+        return [
+            'pendingApprovals' => $pendingApprovals,
+            'rules' => $rules,
+            'approvers' => $approvers,
+            'clients' => $clients,
+            'currency' => $workspaceCurrency,
+        ];
+    }
+
+    public function count(Workspace $workspace, User $user): int
+    {
+        $query = QuoteApproval::query()
+            ->where('status', QuoteApprovalStatus::Pending->value)
+            ->whereHas('quote', fn ($query) => $query->where('workspace_id', $workspace->id));
+
+        if ($workspace->owner_id !== $user->id) {
+            $query->where('approver_id', $user->id);
+        }
+
+        return $query->count();
+    }
 
     public function checkApprovalRequired(Quote $quote): bool
     {

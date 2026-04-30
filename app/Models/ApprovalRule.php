@@ -3,12 +3,16 @@
 namespace App\Models;
 
 use App\Enums\ApprovalRuleTriggerType;
+use Database\Factories\ApprovalRuleFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ApprovalRule extends Model
 {
+    /** @use HasFactory<ApprovalRuleFactory> */
+    use HasFactory;
     protected $fillable = [
         'workspace_id',
         'trigger_type',

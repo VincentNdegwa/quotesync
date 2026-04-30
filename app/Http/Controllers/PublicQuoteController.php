@@ -160,7 +160,8 @@ class PublicQuoteController extends Controller
         abort_unless($quote instanceof Quote, 404);
 
         if (in_array($quote->status, [QuoteStatus::Accepted, QuoteStatus::Declined, QuoteStatus::Expired], true)) {
-            return back()->with('error', 'This quote cannot be accepted.');
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'This quote cannot be accepted.']);
+            return back();
         }
 
         $validated = $request->validate([
@@ -223,7 +224,8 @@ class PublicQuoteController extends Controller
                 'cancelled_at' => now(),
             ]);
 
-        return back()->with('success', 'Quote has been successfully accepted.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Quote has been successfully accepted.']);
+        return back();
     }
 
     public function decline(string $quoteUuid, Request $request, QuoteShortCodeService $quoteShortCodeService): RedirectResponse
@@ -233,7 +235,8 @@ class PublicQuoteController extends Controller
         abort_unless($quote instanceof Quote, 404);
 
         if (in_array($quote->status, [QuoteStatus::Accepted, QuoteStatus::Declined, QuoteStatus::Expired], true)) {
-            return back()->with('error', 'This quote cannot be declined.');
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'This quote cannot be declined.']);
+            return back();
         }
 
         $validated = $request->validate([
@@ -272,6 +275,7 @@ class PublicQuoteController extends Controller
                 'cancelled_at' => now(),
             ]);
 
-        return back()->with('success', 'Quote has been declined.');
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Quote has been declined.']);
+        return back();
     }
 }
