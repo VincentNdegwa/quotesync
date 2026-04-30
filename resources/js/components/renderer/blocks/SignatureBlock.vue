@@ -74,7 +74,7 @@ return '';
         </template>
 
         <template v-else-if="quote.status === 'accepted'">
-            <div class="flex items-center gap-6">
+            <div class="flex flex-col items-start gap-6">
                 <div class="flex flex-col">
                     <img v-if="quote.signature_url" :src="quote.signature_url" alt="Signature" class="h-20 w-auto object-contain" />
                     <span v-if="quote.signer_name" class="mt-1 text-sm" style="font-family: 'Dancing Script', cursive; font-size: 1.25rem; line-height: 1;">{{ quote.signer_name }}</span>

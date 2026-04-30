@@ -49,17 +49,34 @@ export type ClientModel = {
   deleted_at: string | null;
 };
 
+export type ConfigurationUnitRecord = {
+  id: number;
+  workspace_id: number;
+  name: string;
+  symbol: string;
+  is_active: boolean;
+  created_at: string;
+  created_by: number | null;
+};
+
 export type CatalogItemModel = {
   id: number;
   workspace_id: number;
   name: string;
   description: string | null;
   sku: string | null;
-  unit: string;
+  unit_id: number | null;
   unit_price: number | string;
-  created_at: string | null;
-  updated_at: string | null;
+  cost_price: number | string;
+  catalog_category_id: number | null;
+  image_path: string | null;
+  is_active: boolean;
+  usage_count: number;
+  created_by: number | null;
+  created_at: string;
+  updated_at: string;
   deleted_at: string | null;
+  configuration_unit: Pick<ConfigurationUnitRecord, 'id' | 'name' | 'symbol'> | null;
 };
 
 export type QuoteLineItemTaxModel = {

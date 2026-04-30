@@ -27,15 +27,11 @@ class QuoteObserver
 
         $quote->base_currency = $baseCurrency;
 
-        if ($quote->isDirty(['total', 'currency', 'base_currency', 'fx_rate'])) {
-            if ($quote->currency === $quote->base_currency) {
-                $quote->fx_rate = 1.0;
-                $quote->base_total = $quote->total;
-            } else {
-                $rate = $quote->fx_rate ?? $this->exchangeRateService->getRate($quote->base_currency, $quote->currency);
-                $quote->fx_rate = $rate;
-                $quote->total = round($quote->base_total / $rate, 2);
-            }
+        if ($quote->currency !== $quote->base_currency) {
+            $rate = $quote->fx_rate ?? $this->exchangeRateService->getRate($quote->base_currency, $quote->currency);
+            $quote->fx_rate = $rate;
+        } else {
+            $quote->fx_rate = 1.0;
         }
     }
 

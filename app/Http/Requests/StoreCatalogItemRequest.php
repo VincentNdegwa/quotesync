@@ -45,7 +45,7 @@ class StoreCatalogItemRequest extends FormRequest
                         ->where('workspace_id', $workspace?->id)
                         ->whereNull('deleted_at')),
             ],
-            'unit' => ['required', 'exists:configuration_units,id'],
+            'unit_id' => ['required', 'exists:configuration_units,id'],
             'unit_price' => ['required', 'numeric', 'min:0'],
             'cost_price' => ['nullable', 'numeric', 'min:0'],
             'catalog_category_id' => ['nullable', 'integer', Rule::exists('catalog_categories', 'id')->where('workspace_id', $workspace?->id)],

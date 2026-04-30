@@ -133,7 +133,7 @@ const deleteClient = (): void => {
                 <Button as-child>
                     <Link :href="`/quotes/create?client_id=${client.id}`">New quote</Link>
                 </Button>
-                <Button variant="outline" @click="inviteDialogOpen = true">Invite to Portal</Button>
+                <!-- <Button variant="outline" @click="inviteDialogOpen = true">Invite to Portal</Button> -->
                 <Button variant="destructive" @click="deleteClient">Delete</Button>
             </div>
         </div>

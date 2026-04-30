@@ -758,12 +758,19 @@ export type BuilderTaxOption = {
     rate: number;
 };
 
+export type BuilderConfigurationUnit = {
+    id: number;
+    name: string;
+    symbol: string;
+};
+
 export type BuilderCatalogItem = {
     id: number;
     name: string;
     description: string | null;
-    unit: string | null;
+    unit_id: number | null;
     unit_price: number;
+    configuration_unit: BuilderConfigurationUnit | null;
     taxes: BuilderTaxOption[];
 };
 
@@ -802,6 +809,7 @@ export type QuoteBuilderLineItem = {
     description: string | null;
     quantity: number;
     unit: string | null;
+    unit_id: number | null;
     unit_price: number;
     discount_percent: number;
     subtotal: number;

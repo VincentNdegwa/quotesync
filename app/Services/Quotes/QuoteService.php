@@ -146,6 +146,8 @@ class QuoteService
 
             $this->syncSections($quote, $sections);
 
+            $this->calculateQuoteTotals($quote);
+
             return $quote->refresh();
         });
     }
@@ -227,6 +229,8 @@ class QuoteService
             ])->save();
 
             $this->syncSections($quote, $sections);
+
+            $this->calculateQuoteTotals($quote);
 
             return $quote->refresh();
         });
@@ -686,5 +690,46 @@ class QuoteService
                 }
             }
         }
+    }
+
+    private function calculateQuoteTotals(Quote $quote): void
+    {
+        $subtotal = 0;
+        $discountAmount = 0;
+        $taxAmount = 0;
+
+        foreach ($quote->sections as $section) {
+            foreach ($section->lineItems as $lineItem) {
+                if ($lineItem->is_optional) {
+                    continue;
+                }
+
+                $subtotal += $lineItem->subtotal;
+                $discountAmount += ($lineItem->subtotal * $lineItem->discount_percent / 100);
+                $taxAmount += $lineItem->tax_amount;
+            }
+        }
+
+        $total = $subtotal - $discountAmount + $taxAmount;
+
+        // Line items are in base currency, convert to quote currency
+        $baseTotal = $total; // Line items are in base currency
+        $quoteTotal = null;
+        
+        if ($quote->fx_rate && $quote->base_currency && $quote->base_currency !== $quote->currency) {
+            // Convert from base currency to quote currency
+            $quoteTotal = $total * $quote->fx_rate;
+        } elseif ($quote->base_currency === $quote->currency) {
+            // Same currency, total equals base_total
+            $quoteTotal = $total;
+        }
+
+        $quote->update([
+            'subtotal' => $subtotal,
+            'discount_amount' => $discountAmount,
+            'tax_amount' => $taxAmount,
+            'total' => $quoteTotal,
+            'base_total' => $baseTotal,
+        ]);
     }
 }

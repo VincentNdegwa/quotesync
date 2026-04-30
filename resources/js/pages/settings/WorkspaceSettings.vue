@@ -232,7 +232,7 @@ const updateIndustry = (): void => {
         <div v-if="currentGroup.group === 'brand'" class="space-y-2">
             <Label>Industry</Label>
             <Select v-model="industryForm.industry_id" name="industry_id" @update:model-value="updateIndustry">
-                <SelectTrigger><SelectValue placeholder="Select your industry" /></SelectTrigger>
+                <SelectTrigger class="w-full" ><SelectValue placeholder="Select your industry" /></SelectTrigger>
                 <SelectContent>
                     <SelectItem v-for="industry in industries" :key="industry.id" :value="String(industry.id)">
                         <div class="flex items-center gap-2">

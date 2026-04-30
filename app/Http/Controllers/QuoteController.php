@@ -10,6 +10,7 @@ use App\Http\Requests\UpdateQuoteStatusRequest;
 use App\Jobs\SendFollowUpJob;
 use App\Models\CatalogItem;
 use App\Models\Client;
+use App\Models\ConfigurationUnit;
 use App\Models\Quote;
 use App\Models\QuoteFollowUp;
 use App\Models\QuoteTemplate;
@@ -309,17 +310,22 @@ class QuoteController extends Controller
             'catalogItems' => CatalogItem::query()
                 ->where('workspace_id', $workspace->id)
                 ->where('is_active', true)
-                ->with('taxes:id,name,rate')
+                ->with(['taxes:id,name,rate', 'configurationUnit:id,name,symbol'])
                 ->orderByRaw('LOWER(name)')
                 ->limit(300)
-                ->get(['id', 'name', 'description', 'sku', 'unit', 'unit_price'])
+                ->get(['id', 'name', 'description', 'sku', 'unit_id', 'unit_price'])
                 ->map(fn (CatalogItem $item): array => [
                     'id' => $item->id,
                     'name' => $item->name,
                     'description' => $item->description,
                     'sku' => $item->sku,
-                    'unit' => $item->unit,
+                    'unit_id' => $item->unit_id,
                     'unit_price' => (float) $item->unit_price,
+                    'configuration_unit' => $item->configurationUnit ? [
+                        'id' => $item->configurationUnit->id,
+                        'name' => $item->configurationUnit->name,
+                        'symbol' => $item->configurationUnit->symbol,
+                    ] : null,
                     'taxes' => $item->taxes->map(fn (Tax $tax): array => [
                         'id' => $tax->id,
                         'name' => $tax->name,
@@ -350,6 +356,17 @@ class QuoteController extends Controller
                     'id' => $tax->id,
                     'name' => $tax->name,
                     'rate' => (float) $tax->rate,
+                ])
+                ->values(),
+            'units' => ConfigurationUnit::query()
+                ->where('workspace_id', $workspace->id)
+                ->where('is_active', true)
+                ->orderByRaw('LOWER(name)')
+                ->get(['id', 'name', 'symbol', 'is_active', 'created_at'])
+                ->map(fn (ConfigurationUnit $unit): array => [
+                    'id' => $unit->id,
+                    'name' => $unit->name,
+                    'symbol' => $unit->symbol,
                 ])
                 ->values(),
         ];

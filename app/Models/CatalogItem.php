@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Auth;
     'name',
     'description',
     'sku',
-    'unit',
+    'unit_id',
     'unit_price',
     'cost_price',
     'image_path',
@@ -57,6 +57,14 @@ class CatalogItem extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(CatalogCategory::class, 'catalog_category_id');
+    }
+
+    /**
+     * @return BelongsTo<ConfigurationUnit, $this>
+     */
+    public function configurationUnit(): BelongsTo
+    {
+        return $this->belongsTo(ConfigurationUnit::class, 'unit_id');
     }
 
     /**

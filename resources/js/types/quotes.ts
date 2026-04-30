@@ -13,6 +13,7 @@ export type QuoteBuilderLineItem = {
     description: string | null;
     quantity: number;
     unit: string | null;
+    unit_id: number | null;
     unit_price: number;
     discount_percent: number;
     subtotal: number;

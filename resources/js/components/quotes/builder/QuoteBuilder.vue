@@ -19,6 +19,7 @@ import type {
     Block,
     BlockType,
     BuilderCatalogItem,
+    BuilderConfigurationUnit,
     BuilderBranding,
     BuilderClientOption,
     BuilderTaxOption,
@@ -45,6 +46,7 @@ const props = withDefaults(
         templates?: BuilderTemplateOption[];
         catalogItems: BuilderCatalogItem[];
         taxes: BuilderTaxOption[];
+        units: BuilderConfigurationUnit[];
         branding?: BuilderBranding | null;
         processing?: boolean;
         systemLocked?: boolean;
@@ -412,6 +414,7 @@ const createEmptyLineItem = (sortOrder: number): QuoteBuilderLineItem => ({
     description: null,
     quantity: 1,
     unit: null,
+    unit_id: null,
     unit_price: 0,
     discount_percent: 0,
     subtotal: 0,
@@ -968,6 +971,7 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
             v-model:item="drawerItem"
             :catalog-items="catalogItems"
             :taxes="taxes"
+            :units="units"
             :currency="defaultCurrency"
             @close="closeLineItemDrawer()"
             @remove="removeEditingLineItem()"

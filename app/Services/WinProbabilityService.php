@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Quote;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class WinProbabilityService
 {
@@ -193,11 +194,12 @@ class WinProbabilityService
         $workspaceId = $quote->workspace_id;
 
         // Find the median days-to-close for won quotes in this workspace
+        $dateDiff = $this->getDateDiffExpression('won_at', 'sent_at');
         $avgDaysToClose = Quote::where('workspace_id', $workspaceId)
             ->where('status', 'won')
             ->whereNotNull('sent_at')
             ->whereNotNull('won_at')
-            ->selectRaw('AVG(DATEDIFF(won_at, sent_at)) as avg_days')
+            ->selectRaw("AVG({$dateDiff}) as avg_days")
             ->value('avg_days') ?? 7;
 
         $totalResolved = Quote::where('workspace_id', $workspaceId)
@@ -213,13 +215,14 @@ class WinProbabilityService
             ->where('status', 'won')
             ->whereNotNull('sent_at')
             ->whereNotNull('won_at')
-            ->whereRaw('DATEDIFF(won_at, sent_at) <= ?', [$avgDaysToClose])
+            ->whereRaw("{$dateDiff} <= ?", [$avgDaysToClose])
             ->count();
 
+        $dateDiffCoalesced = $this->getDateDiffExpression('COALESCE(won_at, lost_at)', 'sent_at');
         $fastTotal = Quote::where('workspace_id', $workspaceId)
             ->whereIn('status', ['won', 'lost'])
             ->whereNotNull('sent_at')
-            ->whereRaw('DATEDIFF(COALESCE(won_at, lost_at), sent_at) <= ?', [$avgDaysToClose])
+            ->whereRaw("{$dateDiffCoalesced} <= ?", [$avgDaysToClose])
             ->count();
 
         $fastRate = $fastTotal > 0 ? $fastWins / $fastTotal : 0.5;
@@ -311,5 +314,17 @@ class WinProbabilityService
             'signals'     => [],
             'has_data'    => false,
         ];
+    }
+
+    private function getDateDiffExpression(string $date1, string $date2): string
+    {
+        $driver = DB::getDriverName();
+
+        return match ($driver) {
+            'sqlite' => "julianday({$date1}) - julianday({$date2})",
+            'mysql' => "DATEDIFF({$date1}, {$date2})",
+            'pgsql' => "date_part('day', {$date1} - {$date2})",
+            default => "DATEDIFF({$date1}, {$date2})", // Fallback to MySQL syntax
+        };
     }
 }

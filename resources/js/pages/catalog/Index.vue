@@ -107,7 +107,7 @@ const form = useForm({
     name: '',
     description: '',
     sku: '',
-    unit: '',
+    unit_id: null as number | null,
     unit_price: 0,
     cost_price: 0,
     catalog_category_id: NONE_OPTION,
@@ -123,7 +123,7 @@ const openCreate = (): void => {
     editingItem.value = null;
     form.reset();
     form.clearErrors();
-    form.unit = props.units.length > 0 ? props.units[0].name : '';
+    form.unit_id = props.units.length > 0 ? props.units[0].id : null;
     form.catalog_category_id = NONE_OPTION;
     form.tax_ids = [];
     form.is_active = true;
@@ -136,7 +136,7 @@ const openEdit = (item: CatalogItemRecord): void => {
         name: item.name,
         description: item.description ?? '',
         sku: item.sku ?? '',
-        unit: item.unit,
+        unit_id: item.unit_id,
         unit_price: Number(item.unit_price ?? 0),
         cost_price: Number(item.cost_price ?? 0),
         catalog_category_id: item.category?.id ? String(item.category.id) : NONE_OPTION,
@@ -322,7 +322,7 @@ const { formatCurrency } = useFormat(usePage().props.workspace_currency as strin
                     <p class="text-muted-foreground">Unit price</p>
                     <p class="text-right">{{ formatCurrency(item.unit_price) }}</p>
                     <p class="text-muted-foreground">Unit</p>
-                    <p class="text-right">{{ item.unit }}</p>
+                    <p class="text-right">{{ item.configuration_unit?.symbol || '-' }}</p>
                     <p class="text-muted-foreground">Usage count</p>
                     <p class="text-right">{{ item.usage_count }}</p>
                     <p class="text-muted-foreground">Margin</p>

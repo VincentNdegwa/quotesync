@@ -46,7 +46,7 @@ const form = useForm({
     name: props.item.name,
     description: props.item.description ?? '',
     sku: props.item.sku ?? '',
-    unit: props.item.unit,
+    unit_id: props.item.unit_id,
     unit_price: Number(props.item.unit_price ?? 0),
     cost_price: Number(props.item.cost_price ?? 0),
     tax_ids: props.item.tax_ids ?? [],
@@ -66,6 +66,18 @@ const selectedTaxIds = computed<string[]>({
         form.tax_ids = values
             .map((value) => Number(value))
             .filter((value) => Number.isFinite(value));
+    },
+});
+
+const selectedUnitId = computed<string | null>({
+    get: () => {
+        if (form.unit_id === null || form.unit_id === undefined) {
+            return null;
+        }
+        return String(form.unit_id);
+    },
+    set: (value) => {
+        form.unit_id = value ? Number(value) : null;
     },
 });
 
@@ -124,16 +136,16 @@ const save = (): void => {
                     <Input id="sku" v-model="form.sku" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="unit">Unit</Label>
-                    <Select v-model="form.unit">
-                        <SelectTrigger id="unit" class="w-full">
+                    <Label for="unit_id">Unit</Label>
+                    <Select v-model="selectedUnitId">
+                        <SelectTrigger id="unit_id" class="w-full">
                             <SelectValue placeholder="Select unit" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem
                                 v-for="unit in units"
                                 :key="unit.id"
-                                :value="unit.name"
+                                :value="String(unit.id)"
                             >
                                 {{ unit.name }}{{ unit.symbol ? ` (${unit.symbol})` : '' }}
                             </SelectItem>

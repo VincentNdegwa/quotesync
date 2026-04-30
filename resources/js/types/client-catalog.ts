@@ -56,13 +56,14 @@ export type CatalogItemRecord = {
     name: string;
     description: string | null;
     sku: string | null;
-    unit: string;
+    unit_id: number | null;
     unit_price: number | string;
     cost_price: number | string;
     is_active: boolean;
     usage_count: number;
     image_path: string | null;
     category?: { id: number; name: string } | null;
+    configuration_unit?: { id: number; name: string; symbol: string } | null;
     taxes?: Array<{ id: number; name: string; rate: number | string }>;
     tax_ids?: number[];
     created_at: string;

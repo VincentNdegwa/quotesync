@@ -6,12 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useFormat } from '@/composables/useFormat';
-import type { BuilderCatalogItem, BuilderTaxOption, QuoteBuilderLineItem } from '@/types';
+import type { BuilderCatalogItem, BuilderConfigurationUnit, BuilderTaxOption, QuoteBuilderLineItem } from '@/types';
 
 const props = defineProps<{
     open: boolean;
     catalogItems: BuilderCatalogItem[];
     taxes: BuilderTaxOption[];
+    units: BuilderConfigurationUnit[];
     currency: string | null;
 }>();
 
@@ -73,13 +74,43 @@ const selectedCatalogId = computed<string>({
 
         item.value.name = catalog.name;
         item.value.description = catalog.description;
-        item.value.unit = catalog.unit;
+        item.value.unit = catalog.configuration_unit?.symbol || '';
+        item.value.unit_id = catalog.configuration_unit?.id || null;
         item.value.unit_price = Number(catalog.unit_price || 0);
         item.value.taxes = catalog.taxes.map((tax) => ({
             tax_id: tax.id,
             tax_label: tax.name,
             tax_rate: tax.rate,
         }));
+    },
+});
+
+const selectedUnitId = computed<string>({
+    get: () => {
+        if (!item.value?.unit_id) {
+            return '';
+        }
+
+        return String(item.value.unit_id);
+    },
+    set: (value) => {
+        if (!item.value) {
+            return;
+        }
+
+        const nextId = Number(value);
+
+        if (!Number.isFinite(nextId) || nextId <= 0) {
+            item.value.unit_id = null;
+            item.value.unit = '';
+
+            return;
+        }
+
+        const unit = props.units.find((entry) => entry.id === nextId);
+
+        item.value.unit_id = unit ? nextId : null;
+        item.value.unit = unit ? unit.symbol : '';
     },
 });
 
@@ -164,7 +195,12 @@ const toggleTax = (tax: BuilderTaxOption): void => {
 
                 <div class="space-y-1">
                     <Label class="text-xs text-muted-foreground">Unit</Label>
-                    <Input :model-value="item?.unit ?? ''" placeholder="hr, pcs..." @update:model-value="(value) => (item!.unit = String(value) || null)" />
+                    <select v-model="selectedUnitId" class="h-9 w-full rounded-md border bg-background px-3 text-sm">
+                        <option value="">None</option>
+                        <option v-for="unit in units" :key="unit.id" :value="String(unit.id)">
+                            {{ unit.name }} ({{ unit.symbol }})
+                        </option>
+                    </select>
                 </div>
 
                 <div class="space-y-1">

@@ -41,6 +41,11 @@ class CatalogItemController extends Controller
                         'rate' => $tax->rate,
                     ])->values()->all(),
                     'tax_ids' => $item->taxes->pluck('id')->values()->all(),
+                    'configuration_unit' => $item->configurationUnit ? [
+                        'id' => $item->configurationUnit->id,
+                        'name' => $item->configurationUnit->name,
+                        'symbol' => $item->configurationUnit->symbol,
+                    ] : null,
                 ]),
             'categories' => CatalogCategory::query()
                 ->where('workspace_id', $workspace->id)
@@ -91,7 +96,7 @@ class CatalogItemController extends Controller
 
         abort_unless($workspace instanceof Workspace && $catalog->workspace_id === $workspace->id, 404);
 
-        $catalog->load(['category:id,name', 'taxes:id,name,rate']);
+        $catalog->load(['category:id,name', 'taxes:id,name,rate', 'configurationUnit:id,name,symbol']);
 
         return Inertia::render('catalog/Show', [
             'item' => [
@@ -102,6 +107,11 @@ class CatalogItemController extends Controller
                     'rate' => $tax->rate,
                 ])->values()->all(),
                 'tax_ids' => $catalog->taxes->pluck('id')->values()->all(),
+                'configuration_unit' => $catalog->configurationUnit ? [
+                    'id' => $catalog->configurationUnit->id,
+                    'name' => $catalog->configurationUnit->name,
+                    'symbol' => $catalog->configurationUnit->symbol,
+                ] : null,
             ],
             'availableTaxes' => Tax::query()
                 ->where('workspace_id', $workspace->id)

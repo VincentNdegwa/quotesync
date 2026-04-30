@@ -51,10 +51,10 @@ const inviteDialogOpen = ref(false);
                     <span>Edit</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem class="flex items-center gap-2" @select="inviteDialogOpen = true">
+                <!-- <DropdownMenuItem class="flex items-center gap-2" @select="inviteDialogOpen = true">
                     <Mail class="h-4 w-4" />
                     <span>Invite to Portal</span>
-                </DropdownMenuItem>
+                </DropdownMenuItem> -->
             </DropdownMenuContent>
         </DropdownMenu>
 

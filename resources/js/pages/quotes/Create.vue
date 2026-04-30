@@ -3,6 +3,7 @@ import { Head, useForm } from '@inertiajs/vue3';
 import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
 import type {
     BuilderCatalogItem,
+    BuilderConfigurationUnit,
     BuilderBranding,
     BuilderClientOption,
     BuilderTaxOption,
@@ -16,6 +17,7 @@ const props = defineProps<{
     templates: BuilderTemplateOption[];
     catalogItems: BuilderCatalogItem[];
     taxes: BuilderTaxOption[];
+    units: BuilderConfigurationUnit[];
     branding: BuilderBranding;
     defaultCurrency: string;
 }>();
@@ -54,6 +56,7 @@ const save = (): void => {
         :templates="templates"
         :catalog-items="catalogItems"
         :taxes="taxes"
+        :units="units"
         :branding="branding"
         :processing="form.processing"
         :default-currency="defaultCurrency"

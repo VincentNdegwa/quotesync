@@ -43,6 +43,18 @@ const selectedTaxIds = computed<string[]>({
             .filter((value) => Number.isFinite(value));
     },
 });
+
+const selectedUnitId = computed<string | null>({
+    get: () => {
+        if (form.value.unit_id === null || form.value.unit_id === undefined) {
+            return null;
+        }
+        return String(form.value.unit_id);
+    },
+    set: (value) => {
+        form.value.unit_id = value ? Number(value) : null;
+    },
+});
 </script>
 
 <template>
@@ -67,22 +79,22 @@ const selectedTaxIds = computed<string[]>({
             </div>
 
             <div class="grid gap-2">
-                <Label for="unit" required>Unit</Label>
-                <Select v-model="form.unit">
-                    <SelectTrigger id="unit" class="w-full">
+                <Label for="unit_id" required>Unit</Label>
+                <Select v-model="selectedUnitId">
+                    <SelectTrigger id="unit_id" class="w-full">
                         <SelectValue placeholder="Select unit" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem
                             v-for="unit in units"
                             :key="unit.id"
-                            :value="unit.name"
+                            :value="String(unit.id)"
                         >
                             {{ unit.name }}{{ unit.symbol ? ` (${unit.symbol})` : '' }}
                         </SelectItem>
                     </SelectContent>
                 </Select>
-                <InputError :message="errors.unit" />
+                <InputError :message="errors.unit_id" />
             </div>
         </div>
 
