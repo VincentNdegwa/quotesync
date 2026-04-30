@@ -170,6 +170,23 @@ export type QuoteTemplateModel = {
   updated_at: string | null;
 };
 
+export type QuoteWinProbabilityModel = {
+  probability: number | null;
+  confidence: 'none' | 'low' | 'medium' | 'high';
+  signals: QuoteWinProbabilitySignalModel[];
+  has_data: boolean;
+};
+
+export type QuoteWinProbabilitySignalModel = {
+  key: string | null;
+  label: string | null;
+  probability: number | null;
+  weight: number | null;
+  sample_size: number;
+  direction: 'positive' | 'negative';
+  meta: Record<string, unknown> | null;
+};
+
 export type QuoteModel = {
   id: number;
   workspace_id: number;
@@ -212,6 +229,7 @@ export type QuoteModel = {
   created_at: string | null;
   updated_at: string | null;
   deleted_at: string | null;
+  win_probability: QuoteWinProbabilityModel | null;
   client: ClientModel | null;
   workspace: Pick<WorkspaceModel, 'id' | 'name' | 'display_name' | 'owner_id'> | null;
   assignee: Pick<UserModel, 'id' | 'name' | 'email'> | null;

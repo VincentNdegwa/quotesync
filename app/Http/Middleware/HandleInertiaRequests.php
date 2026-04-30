@@ -7,7 +7,9 @@ use App\Enums\InvoiceStatus;
 use App\Enums\QuoteActivityType;
 use App\Enums\QuoteFollowUpStatus;
 use App\Enums\QuoteStatus;
+use App\Enums\SignalDirection;
 use App\Enums\TrackingEventType;
+use App\Enums\WinProbabilityConfidence;
 use App\Models\PortalInvitation;
 use App\Models\Workspace;
 use App\Services\WhiteLabelService;
@@ -175,6 +177,8 @@ class HandleInertiaRequests extends Middleware
                 'quoteFollowUpStatus' => QuoteFollowUpStatus::all(),
                 'trackingEventType' => TrackingEventType::all(),
                 'invoiceStatus' => InvoiceStatus::all(),
+                'winProbabilityConfidence' => WinProbabilityConfidence::all(),
+                'signalDirection' => SignalDirection::all(),
             ],
         ];
     }

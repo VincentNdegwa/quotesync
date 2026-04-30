@@ -59,7 +59,7 @@ class QuoteController extends Controller
                     'base_currency' => $quote->base_currency,
                     'valid_until' => $quote->valid_until?->toDateString(),
                     'created_at' => $quote->created_at?->toISOString(),
-                    'win_probability' => $quote->win_probability,
+                    'win_probability' => $quote->winProbability?->toResponseArray(),
                     'client' => $quote->client ? [
                         'id' => $quote->client->id,
                         'company_name' => $quote->client->company_name,
@@ -183,6 +183,7 @@ class QuoteController extends Controller
             'sections.lineItems.taxes',
             'activities.user:id,name',
             'quoteFollowUps.step:id,follow_up_sequence_id,channel,subject,message_template,day_offset',
+            'winProbability.signals'
         ]);
 
         return Inertia::render('quotes/Show', [

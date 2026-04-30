@@ -98,8 +98,10 @@ export const getQuoteColumns = (options: QuoteColumnOptions): ColumnDef<QuoteLis
             accessorKey: 'win_probability',
             header: ({ column }) => sortableHeader('Win Probability', column),
             cell: ({ row }) => {
-                const probability = row.original.win_probability;
-                if (probability === null || probability === undefined) return '—';
+                const winProb = row.original.win_probability;
+                if (!winProb || winProb.probability === null || winProb.probability === undefined) return '—';
+
+                const probability = winProb.probability;
 
                 const getColor = (p: number) => {
                     if (p >= 70) return 'text-green-600';

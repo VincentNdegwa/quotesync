@@ -13,7 +13,6 @@ class UpdateWinProbabilityOnView
 
     public function handle(QuoteViewed $event): void
     {
-        $probability = $this->service->calculate($event->quote);
-        $event->quote->update(['win_probability' => $probability]);
+        $this->service->calculate($event->quote);
     }
 }

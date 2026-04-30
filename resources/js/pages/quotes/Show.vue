@@ -99,21 +99,22 @@ const rejectApproval = () => {
                 />
             </div>
 
-            <div v-if="quote.win_probability !== null && quote.win_probability !== undefined" class="w-full">
+            <div v-if="quote.win_probability && quote.win_probability.probability !== null" class="w-full">
                 <div class="flex items-center justify-between mb-1">
                     <span class="text-xs font-medium text-muted-foreground">Win Probability</span>
-                    <span class="text-xs font-bold" :class="getWinProbabilityColor(quote.win_probability)">
-                        {{ Math.round(quote.win_probability) }}%
+                    <span class="text-xs font-bold" :class="getWinProbabilityColor(quote.win_probability.probability)">
+                        {{ Math.round(quote.win_probability.probability) }}%
                     </span>
                 </div>
                 <div class="h-2 w-full rounded-full bg-gray-200 overflow-hidden">
                     <div
                         class="h-full rounded-full transition-all duration-500"
-                        :class="getWinProbabilityBgColor(quote.win_probability)"
-                        :style="{ width: `${quote.win_probability}%` }"
+                        :class="getWinProbabilityBgColor(quote.win_probability.probability)"
+                        :style="{ width: `${quote.win_probability.probability}%` }"
                     />
                 </div>
             </div>
+            
         </div>
 
         <div class="grid gap-6 xl:grid-cols-[1fr_340px]">

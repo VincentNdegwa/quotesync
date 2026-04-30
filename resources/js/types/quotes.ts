@@ -1,4 +1,5 @@
-import type { BrandingData, TemplateLayout } from './builder';
+import type { BrandingData, QuoteData, TemplateLayout } from './builder';
+import type { QuoteWinProbabilityModel } from './models';
 
 export type TaxSnapshot = {
     tax_id: number | null;
@@ -122,6 +123,7 @@ export type QuoteListRecord = {
     created_at: string | null;
     client: { id: number; company_name: string; email?: string | null } | null;
     assignee: { id: number; name: string } | null;
+    win_probability: QuoteWinProbabilityModel | null;
 };
 
 export type QuoteTemplateRecord = {
@@ -204,8 +206,6 @@ export type Quote = {
     terms: string | null;
 };
 
-export type { BrandingData, QuoteData, TemplateLayout } from './builder';
-
 export type EnumOption<T = string> = {
     value: T;
     label: string;
@@ -243,6 +243,20 @@ export type InvoiceStatusEnum = {
     label: string;
 };
 
+export type WinProbabilityConfidenceEnum = {
+    value: 'none' | 'low' | 'medium' | 'high';
+    label: string;
+    badgeColor: string;
+    cssColor: string;
+};
+
+export type SignalDirectionEnum = {
+    value: 'positive' | 'negative';
+    label: string;
+    badgeColor: string;
+    cssColor: string;
+};
+
 export type GlobalEnums = {
     quoteStatus: QuoteStatusEnum[];
     quoteActivityType: QuoteActivityTypeEnum[];
@@ -250,4 +264,6 @@ export type GlobalEnums = {
     quoteFollowUpStatus: QuoteFollowUpStatusEnum[];
     trackingEventType: TrackingEventTypeEnum[];
     invoiceStatus: InvoiceStatusEnum[];
+    winProbabilityConfidence: WinProbabilityConfidenceEnum[];
+    signalDirection: SignalDirectionEnum[];
 };

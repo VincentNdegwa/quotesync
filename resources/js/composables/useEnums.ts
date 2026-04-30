@@ -1,6 +1,6 @@
 import { usePage } from '@inertiajs/vue3';
 import { Mail, MessageSquare, Phone } from 'lucide-vue-next';
-import type { FollowUpChannelEnum, GlobalEnums, InvoiceStatusEnum, QuoteActivityTypeEnum, QuoteFollowUpStatusEnum, QuoteStatusEnum, TrackingEventTypeEnum } from '@/types/quotes';
+import type { FollowUpChannelEnum, GlobalEnums, InvoiceStatusEnum, QuoteActivityTypeEnum, QuoteFollowUpStatusEnum, QuoteStatusEnum, SignalDirectionEnum, TrackingEventTypeEnum, WinProbabilityConfidenceEnum } from '@/types/quotes';
 
 export function useEnums() {
     const page = usePage();
@@ -30,6 +30,14 @@ export function useEnums() {
         return enums.invoiceStatus.find((status) => status.value === value);
     };
 
+    const getWinProbabilityConfidence = (value: string): WinProbabilityConfidenceEnum | undefined => {
+        return enums.winProbabilityConfidence?.find((confidence) => confidence.value === value);
+    };
+
+    const getSignalDirection = (value: string): SignalDirectionEnum | undefined => {
+        return enums.signalDirection?.find((direction) => direction.value === value);
+    };
+
     const getFollowUpChannelIcon = (channel: string) => {
         return { email: Mail, whatsapp: MessageSquare, sms: Phone }[channel] ?? Mail;
     };
@@ -47,6 +55,8 @@ export function useEnums() {
         getQuoteFollowUpStatus,
         getTrackingEventType,
         getInvoiceStatus,
+        getWinProbabilityConfidence,
+        getSignalDirection,
         getFollowUpChannelIcon,
         getFollowUpChannelColor,
     };

@@ -178,7 +178,15 @@ class Quote extends Model
      */
     public function messages(): HasMany
     {
-        return $this->hasMany(QuoteMessage::class);
+        return $this->hasMany(QuoteMessage::class)->latest();
+    }
+
+    /**
+     * @return HasOne<QuoteWinProbability, $this>
+     */
+    public function winProbability(): HasOne
+    {
+        return $this->hasOne(QuoteWinProbability::class);
     }
 
     protected function getSignatureUrlAttribute(): ?string

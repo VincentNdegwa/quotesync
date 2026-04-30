@@ -2,7 +2,11 @@
 
 namespace App\Services;
 
+use App\Enums\SignalDirection;
+use App\Enums\WinProbabilityConfidence;
 use App\Models\Quote;
+use App\Models\QuoteWinProbability;
+use App\Models\QuoteWinProbabilitySignal;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -16,6 +20,7 @@ class WinProbabilityService
         $signals = $this->gatherSignals($quote);
 
         if ($signals->isEmpty()) {
+            $this->saveWinProbability($quote, null, WinProbabilityConfidence::None, false, collect());
             return $this->noDataResult();
         }
 
@@ -25,14 +30,45 @@ class WinProbabilityService
 
         $probability   = min(0.92, max(0.05, $probability));
 
-        $confidence    = $this->confidence($signals);
+        $confidenceString = $this->confidence($signals);
+        $confidenceEnum = WinProbabilityConfidence::from($confidenceString);
+
+        $this->saveWinProbability($quote, round($probability * 100), $confidenceEnum, true, $signals);
 
         return [
             'probability'   => round($probability * 100),
-            'confidence'    => $confidence,
+            'confidence'    => $confidenceString,
             'signals'       => $signals->toArray(),
             'has_data'      => true,
         ];
+    }
+
+    private function saveWinProbability(Quote $quote, ?int $probability, WinProbabilityConfidence $confidence, bool $hasData, Collection $signals): void
+    {
+        DB::transaction(function () use ($quote, $probability, $confidence, $hasData, $signals) {
+            $winProbability = $quote->winProbability()->updateOrCreate(
+                ['quote_id' => $quote->id],
+                [
+                    'probability' => $probability,
+                    'confidence' => $confidence,
+                    'has_data' => $hasData,
+                ]
+            );
+
+            $winProbability->signals()->delete();
+
+            foreach ($signals as $signal) {
+                $winProbability->signals()->create([
+                    'key' => $signal['key'],
+                    'label' => $signal['label'],
+                    'probability' => $signal['probability'],
+                    'weight' => $signal['weight'],
+                    'sample_size' => $signal['sample_size'],
+                    'direction' => SignalDirection::from($signal['direction']),
+                    'meta' => $signal['meta'] ?? null,
+                ]);
+            }
+        });
     }
 
     private function gatherSignals(Quote $quote): Collection

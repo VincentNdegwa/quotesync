@@ -385,8 +385,8 @@ const getWinProbabilityBgColor = (probability: number) => {
                             <div class="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
                                 <div
                                     class="h-full rounded-full"
-                                    :class="getWinProbabilityBgColor(quote.win_probability)"
-                                    :style="{ width: `${quote.win_probability}%` }"
+                                    :class="getWinProbabilityBgColor(quote.win_probability.probability)"
+                                    :style="{ width: `${quote.win_probability.probability}%` }"
                                 />
                             </div>
                         </div>
