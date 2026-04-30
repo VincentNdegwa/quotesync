@@ -18,14 +18,21 @@ class Workspace extends LaratrustTeam
         'owner_id',
         'currency',
         'industry_id',
-        'white_label_enabled',
-        'white_label_logo',
-        'white_label_company_name',
-        'white_label_primary_color',
-        'white_label_domain',
         'agency_mode_enabled',
         'agency_commission_rate',
         'agency_commission_type',
+        'logo_path',
+        'primary_color',
+        'accent_color',
+        'address',
+        'phone',
+        'email',
+        'website',
+        'country',
+        'tax_number',
+        'white_label_mode',
+        'favicon_path',
+        'custom_domain',
     ];
 
     /**
@@ -103,7 +110,7 @@ class Workspace extends LaratrustTeam
     {
         return [
             'settings_onboarded_at' => 'datetime',
-            'white_label_enabled' => 'boolean',
+            'white_label_mode' => 'boolean',
             'agency_mode_enabled' => 'boolean',
             'agency_commission_rate' => 'decimal:2',
         ];
@@ -111,27 +118,27 @@ class Workspace extends LaratrustTeam
 
     public function isWhiteLabelEnabled(): bool
     {
-        return $this->white_label_enabled ?? true;
+        return $this->white_label_mode ?? true;
     }
 
     public function getWhiteLabelLogoUrl(): ?string
     {
-        return $this->white_label_logo;
+        return $this->logo_path;
     }
 
     public function getWhiteLabelCompanyName(): ?string
     {
-        return $this->white_label_company_name ?: $this->name;
+        return $this->name;
     }
 
     public function getWhiteLabelPrimaryColor(): ?string
     {
-        return $this->white_label_primary_color;
+        return $this->primary_color;
     }
 
     public function getWhiteLabelDomain(): ?string
     {
-        return $this->white_label_domain;
+        return $this->custom_domain;
     }
 
     public function isAgencyModeEnabled(): bool

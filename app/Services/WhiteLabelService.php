@@ -32,7 +32,7 @@ class WhiteLabelService
         $subdomain = $this->extractSubdomain($host);
 
         if ($subdomain) {
-            $workspace = Workspace::where('white_label_domain', $subdomain)->first();
+            $workspace = Workspace::where('custom_domain', $subdomain)->first();
             if ($workspace) {
                 return $workspace;
             }
@@ -82,11 +82,11 @@ class WhiteLabelService
     public function updateWhiteLabelSettings(Workspace $workspace, array $data): void
     {
         $workspace->update([
-            'white_label_enabled' => $data['enabled'] ?? false,
-            'white_label_logo' => $data['logo_url'] ?? null,
-            'white_label_company_name' => $data['company_name'] ?? null,
-            'white_label_primary_color' => $data['primary_color'] ?? null,
-            'white_label_domain' => $data['domain'] ?? null,
+            'white_label_mode' => $data['enabled'] ?? false,
+            'logo_path' => $data['logo_url'] ?? null,
+            'name' => $data['company_name'] ?? $workspace->name,
+            'primary_color' => $data['primary_color'] ?? null,
+            'custom_domain' => $data['domain'] ?? null,
         ]);
     }
 }

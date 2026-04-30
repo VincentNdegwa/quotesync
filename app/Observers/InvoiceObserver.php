@@ -15,10 +15,7 @@ class InvoiceObserver
     {
         $workspace = $invoice->workspace;
 
-        $baseCurrency = $workspace->settings()
-            ->where('group', 'quotes')
-            ->where('key', 'default_currency')
-            ->value('value') ?? 'USD';
+        $baseCurrency = $workspace->currency ?? 'USD';
 
         if (empty($invoice->currency)) {
             $invoice->currency = $baseCurrency;

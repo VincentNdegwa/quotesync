@@ -29,12 +29,11 @@ class WorkspaceOnboardingController extends Controller
         }
 
         $brand = $settingsService->groupForFrontend($workspace, 'brand');
-        $localization = $settingsService->groupForFrontend($workspace, 'localization');
         $quotes = $settingsService->groupForFrontend($workspace, 'quotes');
+        $invoices = $settingsService->groupForFrontend($workspace, 'invoices');
 
-        $brandFields = collect($brand['fields'])->keyBy('key');
-        $localizationFields = collect($localization['fields'])->keyBy('key');
         $quoteFields = collect($quotes['fields'])->keyBy('key');
+        $invoiceFields = collect($invoices['fields'])->keyBy('key');
 
         $availableRoles = Role::query()
             ->where(function ($query) use ($workspace) {
@@ -64,18 +63,15 @@ class WorkspaceOnboardingController extends Controller
             ],
             'currentStepIndex' => $currentStepIndex,
             'business' => [
-                'company_name' => $brandFields->get('company_name')['value'] ?? null,
-                'country' => $localizationFields->get('country')['value'] ?? null,
-                'logo_path' => $brandFields->get('logo_path')['value'] ?? null,
+                'company_name' => $workspace->name,
+                'country' => $workspace->country,
+                'logo_path' => $workspace->logo_path,
+                'currency' => $workspace->currency,
             ],
             'quoteDefaults' => [
-                'currency' => $quoteFields->get('default_currency')['value'] ?? null,
                 'quote_prefix' => $quoteFields->get('quote_prefix')['value'] ?? null,
+                'invoice_prefix' => $quoteFields->get('invoice_prefix')['value'] ?? null,
             ],
-            'localization' => [
-                'language' => $localizationFields->get('language')['value'] ?? 'en',
-            ],
-            'availableLanguages' => array_values((array) config('workspace-settings.groups.localization.fields.language.options', ['en'])),
             'availableRoles' => $availableRoles,
             'defaultRoleId' => $defaultRoleId,
             'industries' => Industry::query()
@@ -107,48 +103,42 @@ class WorkspaceOnboardingController extends Controller
         if ($stepIndex === 1) {
             $workspace->update([
                 'industry_id' => $validated['industry_id'] ?? null,
+                'name' => $validated['company_name'] ?? $workspace->name,
+                'logo_path' => $validated['logo_path'] ?? null,
+                'country' => $validated['country'] ?? null,
+                'currency' => $validated['currency'] ?? 'USD',
             ]);
-
-            $settingsService->updateGroup(
-                $workspace,
-                'brand',
-                [
-                    'company_name' => $validated['company_name'],
-                    'logo_path' => $validated['logo_path'] ?? null,
-                ],
-                markOnboardingComplete: false,
-            );
-
-            $settingsService->updateGroup(
-                $workspace,
-                'localization',
-                [
-                    'country' => $validated['country'],
-                ],
-                markOnboardingComplete: false,
-            );
         }
 
         if ($stepIndex === 2) {
             $settingsService->updateGroup(
                 $workspace,
-                'localization',
+                'quotes',
                 [
-                    'currency' => $validated['currency'],
-                    'language' => $validated['language'],
+                    'quote_prefix' => $validated['quote_prefix'],
                 ],
                 markOnboardingComplete: false,
             );
 
             $settingsService->updateGroup(
                 $workspace,
-                'quotes',
+                'invoices',
                 [
-                    'quote_prefix' => $validated['quote_prefix'],
-                    'default_currency' => $validated['currency'],
+                    'invoice_prefix' => $validated['invoice_prefix'] ?? 'INV',
                 ],
                 markOnboardingComplete: false,
             );
+
+            if (isset($validated['timezone'])) {
+                $settingsService->updateGroup(
+                    $workspace,
+                    'localization',
+                    [
+                        'timezone' => $validated['timezone'],
+                    ],
+                    markOnboardingComplete: false,
+                );
+            }
 
             if ($settingsService->isOnboardingComplete($workspace)) {
                 $workspace->forceFill(['settings_onboarded_at' => now()])->save();

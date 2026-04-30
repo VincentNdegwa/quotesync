@@ -63,6 +63,11 @@ class WorkspaceSettingsService
         $inserts = [];
 
         foreach ($this->groups() as $group => $definition) {
+            // Skip groups with subsections - they're handled separately
+            if (isset($definition['subsections'])) {
+                continue;
+            }
+
             /** @var array<string, array<string, mixed>> $fields */
             $fields = $definition['fields'] ?? [];
 
@@ -151,6 +156,61 @@ class WorkspaceSettingsService
         /** @var array<string, array<string, mixed>> $fields */
         $fields = $definition['fields'] ?? [];
 
+        // Handle subsections
+        if (isset($definition['subsections'])) {
+            $subsections = $definition['subsections'];
+            $allFields = [];
+
+            foreach ($subsections as $subsectionKey => $subsection) {
+                $subsectionFields = $subsection['fields'] ?? [];
+                $settings = $workspace->settings()
+                    ->where('group', $subsectionKey)
+                    ->get(['key', 'value', 'cast', 'encrypted'])
+                    ->keyBy('key');
+
+                $fieldPayload = collect($subsectionFields)
+                    ->map(function (array $field, string $key) use ($settings, $subsectionFields): array {
+                        /** @var WorkspaceSetting|null $stored */
+                        $stored = $settings->get($key);
+                        $cast = $this->castForField($field);
+                        $encrypted = (bool) ($field['encrypted'] ?? false);
+
+                        $decoded = $stored
+                            ? $this->decodeValue($stored->value, $stored->cast, (bool) $stored->encrypted)
+                            : ($field['default'] ?? null);
+
+                        return [
+                            'key' => $key,
+                            'label' => $field['label'] ?? $key,
+                            'description' => $field['description'] ?? null,
+                            'type' => $field['type'] ?? 'string',
+                            'cast' => $cast,
+                            'required' => (bool) ($field['required'] ?? false),
+                            'encrypted' => $encrypted,
+                            'placeholder' => $field['placeholder'] ?? null,
+                            'options' => $field['options'] ?? null,
+                            'value' => $decoded,
+                            'has_value' => $stored !== null,
+                        ];
+                    })
+                    ->values()
+                    ->all();
+
+                $allFields[$subsectionKey] = [
+                    'label' => $subsection['label'],
+                    'fields' => $fieldPayload,
+                ];
+            }
+
+            return [
+                'group' => $group,
+                'label' => $definition['label'],
+                'description' => $definition['description'] ?? null,
+                'subsections' => $allFields,
+                'fields' => [],
+            ];
+        }
+
         $settings = $workspace->settings()
             ->where('group', $group)
             ->get(['key', 'value', 'cast', 'encrypted'])
@@ -177,8 +237,8 @@ class WorkspaceSettingsService
                     'encrypted' => $encrypted,
                     'placeholder' => $field['placeholder'] ?? null,
                     'options' => $field['options'] ?? null,
-                    'value' => $encrypted ? null : $decoded,
-                    'has_value' => $encrypted ? ! empty($stored?->value) : ($decoded !== null && $decoded !== ''),
+                    'value' => $decoded,
+                    'has_value' => $stored !== null,
                 ];
             })
             ->values()
@@ -186,10 +246,8 @@ class WorkspaceSettingsService
 
         return [
             'group' => $group,
-            'label' => $definition['label'] ?? ucfirst($group),
+            'label' => $definition['label'],
             'description' => $definition['description'] ?? null,
-            'visible' => (bool) ($definition['visible'] ?? false),
-            'onboarding' => (bool) ($definition['onboarding'] ?? false),
             'fields' => $fieldPayload,
         ];
     }
@@ -243,11 +301,45 @@ class WorkspaceSettingsService
         /** @var array<string, array<string, mixed>> $fields */
         $fields = $definition['fields'] ?? [];
 
+        // Handle subsections
+        if (isset($definition['subsections'])) {
+            $subsections = $definition['subsections'];
+            foreach ($subsections as $subsectionKey => $subsection) {
+                if (!$this->isGroupComplete($workspace, $subsectionKey)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         $requiredKeys = collect($fields)
             ->filter(fn (array $field): bool => (bool) ($field['required'] ?? false))
             ->keys();
 
         if ($requiredKeys->isEmpty()) {
+            return true;
+        }
+
+        // Brand and localization fields are now in the workspace table
+        if ($group === 'brand' || $group === 'localization') {
+            foreach ($requiredKeys as $key) {
+                $value = null;
+
+                if ($group === 'brand' && $key === 'company_name') {
+                    $value = $workspace->name;
+                } elseif ($group === 'brand' && $key === 'logo_path') {
+                    $value = $workspace->logo_path;
+                } elseif ($group === 'localization' && $key === 'country') {
+                    $value = $workspace->country;
+                } elseif ($group === 'localization' && $key === 'currency') {
+                    $value = $workspace->currency;
+                }
+
+                if ($value === null || (is_string($value) && trim($value) === '')) {
+                    return false;
+                }
+            }
+
             return true;
         }
 
@@ -294,6 +386,18 @@ class WorkspaceSettingsService
         $definition = $this->groupDefinition($group);
         /** @var array<string, array<string, mixed>> $fields */
         $fields = $definition['fields'] ?? [];
+
+        // Handle subsections (e.g., quotes_invoices)
+        if (isset($definition['subsections'])) {
+            $subsections = $definition['subsections'];
+            $allFields = [];
+
+            foreach ($subsections as $subsection) {
+                $allFields = array_merge($allFields, $subsection['fields'] ?? []);
+            }
+
+            $fields = $allFields;
+        }
 
         return collect($fields)
             ->mapWithKeys(function (array $field, string $key): array {
@@ -346,7 +450,7 @@ class WorkspaceSettingsService
             'timezone' => ['string', 'timezone'],
             'country' => ['string', 'size:2'],
             'currency' => ['string', 'size:3'],
-            'select' => array_filter(['string', Arr::has($field, 'options') ? 'in:'.implode(',', Arr::get($field, 'options', [])) : null]),
+            'select' => array_filter(['string', Arr::has($field, 'options') ? 'in:'.implode(',', array_map(fn ($opt) => '"'.$opt.'"', Arr::get($field, 'options', []))) : null]),
             'color' => ['string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'text' => ['string'],
             default => array_filter(['string', isset($field['max']) ? 'max:'.$field['max'] : null]),

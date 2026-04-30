@@ -264,10 +264,7 @@ class AnalyticsController extends Controller
     private function dealSizePerformance(Carbon $startDate, Carbon $endDate): array
     {
         $wonStatuses = QuoteStatus::closedWonStatuses();
-        $baseCurrency = $this->workspace->settings()
-            ->where('group', 'quotes')
-            ->where('key', 'default_currency')
-            ->value('value') ?? 'USD';
+        $baseCurrency = $this->workspace->currency ?? 'USD';
 
         $ranges = [
             ['range' => "Under {$baseCurrency} 50k", 'min' => 0, 'max' => 50000],

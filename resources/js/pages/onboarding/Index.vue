@@ -137,9 +137,10 @@ const onboardingForm = reactive({
         country: props.business?.country ?? '',
         logo_path: props.business?.logo_path ?? '',
         industry_id: props.workspace?.industry_id ?? null,
-        currency: props.quoteDefaults?.currency ?? 'USD',
-        language: props.localization?.language ?? 'en',
+        currency: props.business?.currency ?? 'USD',
         quote_prefix: props.quoteDefaults?.quote_prefix ?? 'QS',
+        invoice_prefix: props.quoteDefaults?.invoice_prefix ?? 'INV',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC',
     },
 });
 
@@ -149,6 +150,7 @@ watch(
         onboardingForm.data.company_name = business?.company_name ?? '';
         onboardingForm.data.country = business?.country ?? '';
         onboardingForm.data.logo_path = business?.logo_path ?? '';
+        onboardingForm.data.currency = business?.currency ?? 'USD';
     },
     { immediate: true },
 );
@@ -156,16 +158,8 @@ watch(
 watch(
     () => props.quoteDefaults,
     (quoteDefaults) => {
-        onboardingForm.data.currency = quoteDefaults?.currency ?? 'USD';
         onboardingForm.data.quote_prefix = quoteDefaults?.quote_prefix ?? 'QS';
-    },
-    { immediate: true },
-);
-
-watch(
-    () => props.localization,
-    (localization) => {
-        onboardingForm.data.language = localization?.language ?? 'en';
+        onboardingForm.data.invoice_prefix = quoteDefaults?.invoice_prefix ?? 'INV';
     },
     { immediate: true },
 );
@@ -315,11 +309,9 @@ const handleFormSuccess = (): void => {
                     />
                     <InputError :message="errors.country" />
                 </div>
-            </div>
 
-            <div v-if="stepIndex === 2" class="space-y-4">
                 <div class="grid gap-2">
-                    <Label required>Default Currency</Label>
+                    <Label required>Currency</Label>
                     <CurrencyCombobox
                         v-model="onboardingForm.data.currency"
                         trigger-class="w-full"
@@ -331,20 +323,9 @@ const handleFormSuccess = (): void => {
                     />
                     <InputError :message="errors.currency" />
                 </div>
-                <div class="grid gap-2">
-                    <Label required>Interface Language</Label>
-                    <LanguageCombobox
-                        v-model="onboardingForm.data.language"
-                        :options="languageOptions"
-                        trigger-class="w-full"
-                    />
-                    <input
-                        type="hidden"
-                        name="language"
-                        :value="onboardingForm.data.language"
-                    />
-                    <InputError :message="errors.language" />
-                </div>
+            </div>
+
+            <div v-if="stepIndex === 2" class="space-y-4">
                 <div class="grid gap-2">
                     <Label required>Quote Prefix</Label>
                     <Input
@@ -355,6 +336,20 @@ const handleFormSuccess = (): void => {
                     <p class="text-xs text-muted-foreground italic">
                         Sample:
                         {{ onboardingForm.data.quote_prefix || 'QS' }}-{{
+                            new Date().getFullYear()
+                        }}-001
+                    </p>
+                </div>
+                <div class="grid gap-2">
+                    <Label required>Invoice Prefix</Label>
+                    <Input
+                        v-model="onboardingForm.data.invoice_prefix"
+                        name="invoice_prefix"
+                        placeholder="INV"
+                    />
+                    <p class="text-xs text-muted-foreground italic">
+                        Sample:
+                        {{ onboardingForm.data.invoice_prefix || 'INV' }}-{{
                             new Date().getFullYear()
                         }}-001
                     </p>

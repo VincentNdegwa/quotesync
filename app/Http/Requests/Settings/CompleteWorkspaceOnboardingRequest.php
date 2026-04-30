@@ -48,17 +48,15 @@ class CompleteWorkspaceOnboardingRequest extends FormRequest
                 'country' => ['required', 'string', 'size:2'],
                 'logo_path' => ['nullable', 'string', 'max:512'],
                 'industry_id' => ['nullable', 'integer', 'exists:industries,id'],
+                'currency' => ['required', 'string', 'size:3'],
             ];
         }
 
         if ($stepIndex === 2) {
-            $languageOptions = (array) config('workspace-settings.groups.localization.fields.language.options', ['en']);
-
             return [
                 ...$rules,
-                'currency' => ['required', 'string', 'size:3'],
-                'language' => ['required', 'string', Rule::in($languageOptions)],
                 'quote_prefix' => ['required', 'string', 'max:20'],
+                'invoice_prefix' => ['required', 'string', 'max:20'],
             ];
         }
 

@@ -163,14 +163,14 @@ class PortalDashboardController
         $layout = $quote->layout_snapshot ?? $quote->template?->layout ?? null;
 
         $branding = [
-            'company_name' => $quote->workspace->white_label_enabled
-                ? $quote->workspace->white_label_company_name
+            'company_name' => $quote->workspace->white_label_mode
+                ? $quote->workspace->name
                 : $quote->workspace->name,
-            'logo_url' => $quote->workspace->white_label_enabled
-                ? $quote->workspace->white_label_logo
+            'logo_url' => $quote->workspace->white_label_mode
+                ? $quote->workspace->logo_path
                 : null,
-            'primary_color' => $quote->workspace->white_label_enabled
-                ? ($quote->workspace->white_label_primary_color ?? '#2563EB')
+            'primary_color' => $quote->workspace->white_label_mode
+                ? ($quote->workspace->primary_color ?? '#2563EB')
                 : '#2563EB',
             'accent_color' => '#F59E0B',
             'company_email' => $quote->workspace->owner?->email,

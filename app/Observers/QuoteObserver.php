@@ -16,10 +16,7 @@ class QuoteObserver
     {
         $workspace = $quote->workspace;
 
-        $baseCurrency = $workspace->settings()
-            ->where('group', 'quotes')
-            ->where('key', 'default_currency')
-            ->value('value') ?? 'USD';
+        $baseCurrency = $workspace->currency ?? 'USD';
 
         if (empty($quote->currency)) {
             $quote->currency = $baseCurrency;

@@ -130,10 +130,7 @@ class HandleInertiaRequests extends Middleware
             return 'USD';
         }
 
-        return $workspace->settings()
-            ->where('group', 'quotes')
-            ->where('key', 'default_currency')
-            ->value('value') ?? 'USD';
+        return $workspace->currency ?? 'USD';
     }
 
     /**
@@ -188,8 +185,8 @@ class HandleInertiaRequests extends Middleware
                 'id' => $workspace->id,
                 'name' => $workspace->name,
                 'display_name' => $workspace->display_name,
-                'logo' => $workspace->white_label_enabled ? $workspace->white_label_logo : null,
-                'company_name' => $workspace->white_label_enabled ? $workspace->white_label_company_name : $workspace->name,
+                'logo' => $workspace->white_label_mode ? $workspace->logo_path : null,
+                'company_name' => $workspace->white_label_mode ? $workspace->name : $workspace->name,
             ])
             ->values()
             ->all();
