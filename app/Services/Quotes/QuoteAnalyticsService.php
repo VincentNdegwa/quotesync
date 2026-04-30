@@ -20,14 +20,16 @@ class QuoteAnalyticsService
 
         $events = $quote->trackingEvents;
         $viewEvents = $events->filter(fn (QuoteTrackingEvent $event): bool => $this->isEventType($event, TrackingEventType::View));
-        $timeSpentEvents = $events->filter(fn (QuoteTrackingEvent $event): bool => $this->isEventType($event, TrackingEventType::TimeSpent));
+
+        $viewTimeline = $this->generateViewTimeline($events);
+        $totalTimeReadSeconds = collect($viewTimeline)->sum('duration_seconds');
 
         return [
             'opened_count' => $viewEvents->count(),
-            'total_time_read_seconds' => $timeSpentEvents->sum('duration_seconds') ?? 0,
+            'total_time_read_minutes' => $totalTimeReadSeconds > 0 ? round($totalTimeReadSeconds / 60, 1) : 0,
             'last_opened_at' => $viewEvents->max('occurred_at'),
             'device_breakdown' => $this->getDeviceBreakdown($viewEvents),
-            'view_timeline' => $this->generateViewTimeline($viewEvents),
+            'view_timeline' => $viewTimeline,
             'section_engagement' => $this->aggregateSectionEngagement($events),
             'follow_up_timeline' => $this->generateFollowUpTimeline($quote, $viewEvents),
         ];
@@ -72,29 +74,36 @@ class QuoteAnalyticsService
             ->filter(fn (QuoteTrackingEvent $event): bool => $this->isEventType($event, TrackingEventType::View))
             ->values();
 
+        $viewTimeSpent = [];
+
+        foreach ($viewEvents as $index => $viewEvent) {
+            $nextView = $viewEvents->get($index + 1);
+            $cutoffTime = $nextView ? $nextView->occurred_at : null;
+
+            $viewSpecificEvents = $sortedEvents->filter(function ($event) use ($viewEvent, $cutoffTime) {
+                if (! $this->isEventType($event, TrackingEventType::TimeSpent)) {
+                    return false;
+                }
+                if ($event->occurred_at->lessThan($viewEvent->occurred_at)) {
+                    return false;
+                }
+                if ($cutoffTime && $event->occurred_at->greaterThanOrEqualTo($cutoffTime)) {
+                    return false;
+                }
+                return true;
+            });
+
+            $maxDuration = $viewSpecificEvents->max('duration_seconds');
+            $viewTimeSpent[$index] = $maxDuration > 0 ? (int) $maxDuration : null;
+        }
+
         return $viewEvents
-            ->map(function (QuoteTrackingEvent $viewEvent, int $index) use ($sortedEvents, $viewEvents): array {
-                $nextViewAt = $viewEvents->get($index + 1)?->occurred_at;
-
-                $durationSeconds = $sortedEvents
-                    ->filter(function (QuoteTrackingEvent $event) use ($viewEvent, $nextViewAt): bool {
-                        if (! $this->isEventType($event, TrackingEventType::TimeSpent)) {
-                            return false;
-                        }
-
-                        if ($event->occurred_at->lessThan($viewEvent->occurred_at)) {
-                            return false;
-                        }
-
-                        return $nextViewAt === null || $event->occurred_at->lessThan($nextViewAt);
-                    })
-                    ->sum('duration_seconds');
-
+            ->map(function (QuoteTrackingEvent $viewEvent, int $index) use ($viewTimeSpent): array {
                 return [
                     'view_number' => $index + 1,
                     'date' => $viewEvent->occurred_at->toDateString(),
                     'time' => $viewEvent->occurred_at->format('g:i A'),
-                    'duration_seconds' => $durationSeconds > 0 ? (int) $durationSeconds : null,
+                    'duration_seconds' => $viewTimeSpent[$index],
                     'device' => $this->detectDeviceType($viewEvent->user_agent),
                 ];
             })

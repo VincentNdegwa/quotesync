@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { computed, type Component } from 'vue';
+import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
+import { computed, watchEffect, type Component } from 'vue';
 import { CurveType, Orientation } from '@unovis/ts';
 import { VisAxis, VisGroupedBar, VisLine, VisXYContainer, VisDonut, VisSingleContainer } from '@unovis/vue';
 import type { ChartConfig } from '@/components/ui/chart';
@@ -41,14 +41,13 @@ import {
   Send,
   Smartphone,
   Sparkles,
-  TrendingDown,
-  TrendingUp,
   XCircle,
 } from 'lucide-vue-next';
+import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 
 type AnalyticsData = {
   opened_count: number;
-  total_time_read_seconds: number;
+  total_time_read_minutes: number;
   last_opened_at: string | null;
   device_breakdown: Array<{ device: string; count: number; percentage: number }>;
   view_timeline: Array<{
@@ -84,9 +83,24 @@ const formatTime = (seconds: number): string => {
     return `${seconds}s`;
   }
 
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  if (minutes < 60) {
+    return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+
+  if (hours < 24) {
+    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+  }
+
+  const days = Math.floor(hours / 24);
+  const remainingHours = hours % 24;
+
+  return remainingHours > 0 ? `${days}d ${remainingHours}h` : `${days}d`;
 };
 const formatTrendValue = (value: number): string => new Intl.NumberFormat(undefined, {
   maximumFractionDigits: Math.abs(value) < 10 ? 1 : 0,
@@ -121,6 +135,12 @@ const deviceIconMap: Record<DeviceIconKey, Component> = {
 const getDeviceIcon = (device: string): Component => deviceIconMap[device as DeviceIconKey] ?? CircleHelp;
 const getDeviceLabel = (device: string): string => device.charAt(0).toUpperCase() + device.slice(1);
 
+const breadcrumbs = computed(() => [
+    { title: 'Quotes', href: QuoteController.index().url },
+    { title: props.quote?.title ?? 'Quote details', href: QuoteController.show({quote: props.quote.id}).url },
+    { title: 'Quote analytics', href: ''}
+]);
+
 const deviceBreakdown = computed(() =>
   [...props.analytics.device_breakdown].sort((a, b) => b.count - a.count),
 );
@@ -145,42 +165,22 @@ const deviceChartConfig = computed<ChartConfig>(() =>
 );
 const primaryDevice = computed(() => deviceBreakdown.value[0] ?? null);
 
-const sessionChartData = computed(() =>
-  props.analytics.view_timeline.map(view => ({
+const sessionChartData = computed(() => {
+  return props.analytics.view_timeline.map(view => ({
     view: view.view_number,
     label: `View ${view.view_number}`,
-    duration: ((view.duration_seconds ?? 0) / 60),
-  })),
-);
+    duration: view.duration_seconds ?? 0,
+  }));
+});
 type SessionChartDatum = typeof sessionChartData.value[number];
 const sessionChartConfig: ChartConfig = {
   duration: {
-    label: 'Minutes read',
+    label: 'Seconds read',
     color: 'var(--chart-1)',
     icon: Clock3,
   },
 };
 const sessionTickValues = computed(() => sessionChartData.value.map(point => point.view));
-const formatSessionTick = (value: number): string => `View ${Math.round(value)}`;
-
-const sessionDurationTrend = computed(() => {
-  const durations = props.analytics.view_timeline
-    .map(view => view.duration_seconds ?? 0)
-    .filter(duration => duration > 0);
-
-  if (durations.length < 2) {
-    return null;
-  }
-
-  const latest = durations[durations.length - 1];
-  const previous = durations[durations.length - 2];
-  if (previous === 0) {
-    return latest > 0 ? 100 : null;
-  }
-
-  return ((latest - previous) / previous) * 100;
-});
-
 const sectionEngagement = computed(() =>
   [...props.analytics.section_engagement].sort((a, b) => b.time_spent_seconds - a.time_spent_seconds),
 );
@@ -236,9 +236,9 @@ const sectionInsight = computed(() => {
   return `They spent the most time on ${topSection.section}.`;
 });
 
-const avgSessionLengthSeconds = computed(() =>
+const avgSessionLengthMinutes = computed(() =>
   props.analytics.opened_count > 0
-    ? Math.round(props.analytics.total_time_read_seconds / props.analytics.opened_count)
+    ? Math.round((props.analytics.total_time_read_minutes / props.analytics.opened_count) * 10) / 10
     : 0,
 );
 
@@ -253,9 +253,9 @@ const statCards = computed(() => [
   {
     key: 'time',
     title: 'Total time read',
-    value: formatTime(props.analytics.total_time_read_seconds),
-    sublabel: avgSessionLengthSeconds.value > 0 ? `Avg ${formatTime(avgSessionLengthSeconds.value)} per view` : 'No duration data yet',
-    trend: sessionDurationTrend.value,
+    value: formatTime(props.analytics.total_time_read_minutes * 60),
+    sublabel: avgSessionLengthMinutes.value > 0 ? `Avg ${formatTime(avgSessionLengthMinutes.value * 60)} per view` : 'No duration data yet',
+    trend: null,
   },
   {
     key: 'last-opened',
@@ -271,7 +271,7 @@ const sessionTimeline = computed(() =>
     id: view.view_number,
     label: `View ${view.view_number}`,
     timestamp: `${formatDateTime(view.date)} · ${view.time}`,
-    durationLabel: view.duration_seconds ? formatTime(view.duration_seconds) : 'Ongoing',
+    durationLabel: view.duration_seconds ? formatTime(view.duration_seconds) : '0s',
     deviceLabel: getDeviceLabel(view.device),
     device: view.device,
     highlight: longestSession.value?.view_number === view.view_number && (view.duration_seconds ?? 0) > 240,
@@ -286,6 +286,14 @@ const followUpTimeline = computed(() =>
     icon: getTimelineIcon(item.icon),
   })),
 );
+
+
+watchEffect(() => {
+    setLayoutProps({
+        breadcrumbs: breadcrumbs.value,
+    });
+});
+
 </script>
 
 <template>
@@ -296,20 +304,16 @@ const followUpTimeline = computed(() =>
       <CardHeader class="gap-4">
         <div class="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div class="space-y-4">
-            <div class="inline-flex items-center gap-2 rounded-full border bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground">
-              <BarChart3 class="h-3.5 w-3.5" />
-              Quote analytics
-            </div>
             <div class="space-y-2">
               <CardTitle class="text-2xl font-semibold tracking-tight">{{ quote.title }}</CardTitle>
-              <CardDescription>Quote #{{ quote.number ?? '—' }} · {{ formatCurrency(quote.base_total, quote.base_currency ?? undefined) }}</CardDescription>
+              <CardDescription>Quote #{{ quote.number ?? '—' }} </CardDescription>
             </div>
             <div class="flex flex-wrap items-center gap-2">
               <Badge :variant="getQuoteStatus(quote.status)?.value === 'accepted' ? 'default' : 'secondary'">
                 {{ getQuoteStatus(quote.status)?.label }}
               </Badge>
               <Badge variant="outline">Opened {{ props.analytics.opened_count }}×</Badge>
-              <Badge variant="outline">{{ formatTime(props.analytics.total_time_read_seconds) }} read</Badge>
+              <Badge variant="outline">{{ formatTime(props.analytics.total_time_read_minutes * 60) }} read</Badge>
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2 md:justify-end">
@@ -347,7 +351,7 @@ const followUpTimeline = computed(() =>
       </Card>
     </section>
 
-    <section class="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
+    <section class="grid gap-4 lg:grid-cols-2 grid-cols-1 ">
       <Card class="border border-sidebar-border/70">
         <CardHeader class="pb-0">
           <CardTitle class="text-base font-semibold">Where they opened</CardTitle>
@@ -406,14 +410,18 @@ const followUpTimeline = computed(() =>
       <Card class="border border-sidebar-border/70">
         <CardHeader class="pb-0">
           <CardTitle class="text-base font-semibold">Session duration</CardTitle>
-          <CardDescription>Minutes spent per view across the thread.</CardDescription>
+          <CardDescription>Seconds spent per view across the thread.</CardDescription>
         </CardHeader>
         <CardContent class="h-[320px]">
           <div v-if="sessionChartData.length === 0" class="flex h-full items-center justify-center rounded-lg border border-dashed px-4 text-sm text-muted-foreground">
             No views yet. Check back after sharing the quote.
           </div>
           <ChartContainer v-else :config="sessionChartConfig" cursor class="h-full">
-            <VisXYContainer :data="sessionChartData" :margin="{ left: 36, right: 16, top: 16, bottom: 32 }">
+            <VisXYContainer
+              :y-domain="[0, undefined]"
+              :data="sessionChartData"
+              :margin="{ left: 0, right: 0, top: 20, bottom: 0 }"
+            >
               <VisLine
                 :x="(d: SessionChartDatum) => d.view"
                 :y="(d: SessionChartDatum) => d.duration"
@@ -425,12 +433,11 @@ const followUpTimeline = computed(() =>
                 type="x"
                 :x="(d: SessionChartDatum) => d.view"
                 :tick-values="sessionTickValues"
-                :tick-format="formatSessionTick"
                 :tick-line="false"
                 :domain-line="false"
                 :grid-line="false"
               />
-              <VisAxis type="y" :num-ticks="4" :tick-line="false" :domain-line="false" :tick-format="(value: number) => `${value}m`" />
+              <VisAxis type="y" :num-ticks="4" :tick-line="false" :domain-line="false" :tick-format="(value: number) => `${value}`" />
               <ChartTooltip />
               <ChartCrosshair
                 :template="componentToString(sessionChartConfig, ChartTooltipContent, { labelKey: 'label', indicator: 'line' })"
@@ -445,6 +452,8 @@ const followUpTimeline = computed(() =>
           <span>Includes ongoing sessions</span>
         </CardFooter>
       </Card>
+
+
     </section>
 
     <section class="grid gap-4 lg:grid-cols-[1.1fr_1fr]">

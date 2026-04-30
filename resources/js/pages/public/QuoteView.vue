@@ -21,15 +21,18 @@ const props = defineProps<{
     layout: TemplateLayout | null;
     branding: BrandingData;
     clientState: 'open' | 'accepted' | 'closed';
+    isWorkspaceMember: boolean;
 }>();
 
 const renderedLayout = computed(() => ensureTemplateLayout(props.layout));
 
-const tracking = useQuoteTracking({
-    quoteUuid: props.quote_uuid,
-    endpoint: `/q/${props.quote_uuid}/tracking`,
-    flushInterval: 5000,
-});
+const tracking = props.isWorkspaceMember
+    ? null
+    : useQuoteTracking({
+        quoteUuid: props.quote_uuid,
+        endpoint: `/q/${props.quote_uuid}/tracking`,
+        flushInterval: 5000,
+    });
 
 let scrollHandler: (() => void) | null = null;
 
@@ -70,23 +73,27 @@ function handleDecline() {
 }
 
 onMounted(() => {
-    tracking.start();
+    if (tracking) {
+        tracking.start();
 
-    scrollHandler = (): void => {
-        const scrollTop = window.scrollY;
-        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-        const scrollPercent = docHeight > 0 ? Math.round((scrollTop / docHeight) * 100) : 0;
-        tracking.trackScrollDepth(scrollPercent);
-    };
+        scrollHandler = (): void => {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollPercent = docHeight > 0 ? Math.round((scrollTop / docHeight) * 100) : 0;
+            tracking.trackScrollDepth(scrollPercent);
+        };
 
-    window.addEventListener('scroll', scrollHandler, { passive: true });
+        window.addEventListener('scroll', scrollHandler, { passive: true });
+    }
 });
 
 onUnmounted(() => {
     if (scrollHandler) {
         window.removeEventListener('scroll', scrollHandler);
     }
-    tracking.stop();
+    if (tracking) {
+        tracking.stop();
+    }
 });
 </script>
 

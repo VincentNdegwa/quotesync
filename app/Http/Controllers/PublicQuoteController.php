@@ -53,39 +53,49 @@ class PublicQuoteController extends Controller
             ->firstOrFail();
 
         $quote->loadMissing(['client:id,company_name,contact_name,email', 'workspace:id,name,display_name']);
-        $wasFirstView = $quote->viewed_at === null;
-        $newStatus = $quote->status === QuoteStatus::Sent ? QuoteStatus::Viewed->value : $quote->status->value;
-        
-        $quote->forceFill([
-            'status' => $newStatus,
-            'viewed_at' => $quote->viewed_at ?? now(),
-            'view_count' => max(0, (int) $quote->view_count) + 1,
-        ])->save();
-        
         $quote->signature_path = Storage::url($quote->signature_path);
-            
-        QuoteViewed::dispatch($quote);
 
-        QuoteActivity::query()->create([
-            'quote_id' => $quote->id,
-            'workspace_id' => $quote->workspace_id,
-            'user_id' => null,
-            'type' => QuoteActivityType::Viewed->value,
-            'description' => $wasFirstView ? 'Quote viewed for the first time.' : 'Quote viewed again by client.',
-            'metadata' => [
-                'first_view' => $wasFirstView,
-                'view_count' => (int) $quote->view_count,
-            ],
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
+        $currentUser = $request->user();
+        $isWorkspaceMember = false;
 
-        if (! DatabaseNotification::query()
-            ->where('type', QuoteViewedNotification::class)
-            ->where('data->quote_id', $quote->id)
-            ->where('created_at', '>=', now()->subHour())
-            ->exists()) {
-            Notification::send($this->quoteRecipients($quote), new QuoteViewedNotification($quote));
+        if ($currentUser && $quote->workspace) {
+            $isWorkspaceMember = $quote->workspace->owner_id === $currentUser->id
+                || $quote->workspace->members()->where('users.id', $currentUser->id)->exists();
+        }
+
+        if (! $isWorkspaceMember) {
+            $wasFirstView = $quote->viewed_at === null;
+            $newStatus = $quote->status === QuoteStatus::Sent ? QuoteStatus::Viewed->value : $quote->status->value;
+
+            $quote->forceFill([
+                'status' => $newStatus,
+                'viewed_at' => $quote->viewed_at ?? now(),
+                'view_count' => max(0, (int) $quote->view_count) + 1,
+            ])->save();
+
+            QuoteViewed::dispatch($quote);
+
+            QuoteActivity::query()->create([
+                'quote_id' => $quote->id,
+                'workspace_id' => $quote->workspace_id,
+                'user_id' => null,
+                'type' => QuoteActivityType::Viewed->value,
+                'description' => $wasFirstView ? 'Quote viewed for the first time.' : 'Quote viewed again by client.',
+                'metadata' => [
+                    'first_view' => $wasFirstView,
+                    'view_count' => (int) $quote->view_count,
+                ],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            if (! DatabaseNotification::query()
+                ->where('type', QuoteViewedNotification::class)
+                ->where('data->quote_id', $quote->id)
+                ->where('created_at', '>=', now()->subHour())
+                ->exists()) {
+                Notification::send($this->quoteRecipients($quote), new QuoteViewedNotification($quote));
+            }
         }
 
         return Inertia::render('public/QuoteView', [
@@ -94,6 +104,7 @@ class PublicQuoteController extends Controller
             'layout' => $this->quoteLayoutPayload($quote),
             'branding' => $this->brandingPayload($quote->workspace, $workspaceSettingsService),
             'clientState' => $this->resolveClientState($quote),
+            'isWorkspaceMember' => $isWorkspaceMember,
         ]);
     }
 

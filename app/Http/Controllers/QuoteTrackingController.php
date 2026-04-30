@@ -17,7 +17,19 @@ class QuoteTrackingController extends Controller
 
         abort_unless($quote instanceof Quote, 404);
 
-        // Handle FormData from sendBeacon (events comes as JSON string)
+        $quote->loadMissing(['workspace']);
+        $currentUser = $request->user();
+        $isWorkspaceMember = false;
+
+        if ($currentUser && $quote->workspace) {
+            $isWorkspaceMember = $quote->workspace->owner_id === $currentUser->id
+                || $quote->workspace->members()->where('users.id', $currentUser->id)->exists();
+        }
+
+        if ($isWorkspaceMember) {
+            return response()->json(['stored' => 0, 'skipped' => true]);
+        }
+
         $events = $request->input('events');
         if (is_string($events)) {
             $decoded = json_decode($events, true);
