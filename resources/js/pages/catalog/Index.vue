@@ -4,6 +4,7 @@ import { ref, watch } from 'vue';
 import CatalogHeaderActions from '@/components/catalog/CatalogHeaderActions.vue';
 import CatalogItemForm from '@/components/catalog/CatalogItemForm.vue';
 import Heading from '@/components/Heading.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -97,6 +98,10 @@ const selectedIds = ref<number[]>([]);
 const viewMode = ref<'table' | 'grid'>('table');
 const isSheetOpen = ref(false);
 const editingItem = ref<CatalogItemRecord | null>(null);
+const deleteDialogOpen = ref(false);
+const bulkActionToRun = ref<'activate' | 'deactivate' | 'delete' | 'change_category' | null>(null);
+const categoryIdForAction = ref<string | undefined>(undefined);
+
 
 const form = useForm({
     name: '',
@@ -167,6 +172,13 @@ const runBulkAction = (action: 'activate' | 'deactivate' | 'delete' | 'change_ca
         return;
     }
 
+    if (action === 'delete') {
+        bulkActionToRun.value = action;
+        categoryIdForAction.value = categoryId;
+        deleteDialogOpen.value = true;
+        return;
+    }
+
     router.post('/catalog/bulk-action', {
         ids: selectedIds.value,
         action,
@@ -175,6 +187,24 @@ const runBulkAction = (action: 'activate' | 'deactivate' | 'delete' | 'change_ca
         preserveScroll: true,
         onSuccess: () => {
             selectedIds.value = [];
+        },
+    });
+};
+
+const executeBulkAction = (): void => {
+    if (!bulkActionToRun.value) return;
+
+    router.post('/catalog/bulk-action', {
+        ids: selectedIds.value,
+        action: bulkActionToRun.value,
+        category_id: categoryIdForAction.value ? Number(categoryIdForAction.value) : null,
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            selectedIds.value = [];
+            deleteDialogOpen.value = false;
+            bulkActionToRun.value = null;
+            categoryIdForAction.value = undefined;
         },
     });
 };
@@ -356,5 +386,14 @@ const { formatCurrency } = useFormat(usePage().props.workspace_currency as strin
 
         <ConfigurationCategoryCreateDialog v-model:open="categoryDialogOpen" />
         <ConfigurationTaxCreateDialog v-model:open="taxDialogOpen" />
+
+        <ConfirmDialog
+            v-model:open="deleteDialogOpen"
+            title="Delete selected items"
+            :description="`Are you sure you want to delete ${selectedIds.length} selected item${selectedIds.length > 1 ? 's' : ''}? This action cannot be undone.`"
+            confirm-text="Delete"
+            variant="destructive"
+            @confirm="executeBulkAction"
+        />
     </div>
 </template>

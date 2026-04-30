@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CatalogCategory;
+use App\Models\ConfigIndustry;
 use App\Models\ConfigurationTag;
 use App\Models\ConfigurationUnit;
 use App\Models\Tax;
@@ -67,6 +68,18 @@ class ConfigurationController extends Controller
                 ->where('workspace_id', $workspace->id)
                 ->orderByRaw('LOWER(name)')
                 ->get(['id', 'name', 'symbol', 'is_active', 'created_at']),
+        ]);
+    }
+
+    public function industries(Request $request): Response
+    {
+        $workspace = $this->workspaceFromRequest($request);
+
+        return Inertia::render('configuration/industries/Index', [
+            'industries' => ConfigIndustry::query()
+                ->where('workspace_id', $workspace->id)
+                ->orderByRaw('LOWER(name)')
+                ->get(['id', 'name', 'description', 'icon', 'color', 'is_active', 'created_at']),
         ]);
     }
 

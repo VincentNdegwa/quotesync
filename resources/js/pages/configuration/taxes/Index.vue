@@ -2,6 +2,7 @@
 import { Head, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import Heading from '@/components/Heading.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,6 +37,8 @@ defineOptions({
 const createOpen = ref(false);
 const editOpen = ref(false);
 const editingTax = ref<TaxRecord | null>(null);
+const deleteOpen = ref(false);
+const taxToDelete = ref<TaxRecord | null>(null);
 
 const openEdit = (tax: TaxRecord): void => {
     editingTax.value = tax;
@@ -43,9 +46,20 @@ const openEdit = (tax: TaxRecord): void => {
 };
 
 const removeTax = (tax: TaxRecord): void => {
-    router.delete(`/configuration/taxes/${tax.id}`, {
-        preserveScroll: true,
-    });
+    taxToDelete.value = tax;
+    deleteOpen.value = true;
+};
+
+const executeDelete = (): void => {
+    if (taxToDelete.value) {
+        router.delete(`/configuration/taxes/${taxToDelete.value.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                deleteOpen.value = false;
+                taxToDelete.value = null;
+            },
+        });
+    }
 };
 </script>
 
@@ -98,5 +112,14 @@ const removeTax = (tax: TaxRecord): void => {
 
         <CreateDialog v-model:open="createOpen" />
         <EditDialog v-model:open="editOpen" :tax="editingTax" />
+
+        <ConfirmDialog
+            v-model:open="deleteOpen"
+            title="Delete tax"
+            description="Are you sure you want to delete this tax? This action cannot be undone."
+            confirm-text="Delete"
+            variant="destructive"
+            @confirm="executeDelete"
+        />
     </div>
 </template>

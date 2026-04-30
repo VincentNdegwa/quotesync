@@ -2,16 +2,18 @@
 
 namespace Database\Seeders;
 
-use App\Models\ClientIndustry;
+use App\Models\ConfigIndustry;
 use App\Models\Workspace;
 use Illuminate\Database\Seeder;
 
-class ClientIndustrySeeder extends Seeder
+class DefaultIndustriesSeeder extends Seeder
 {
     public function run(): void
     {
-        Workspace::query()->each(function (Workspace $workspace) {
-            $this->seedForWorkspace($workspace);
+        Workspace::chunk(100, function ($workspaces) {
+            foreach ($workspaces as $workspace) {
+                $this->seedForWorkspace($workspace);
+            }
         });
     }
 
@@ -50,17 +52,18 @@ class ClientIndustrySeeder extends Seeder
             ],
         ];
 
-        foreach ($defaultIndustries as $industry) {
-            ClientIndustry::query()->firstOrCreate(
+        foreach ($defaultIndustries as $industryData) {
+            ConfigIndustry::query()->firstOrCreate(
                 [
                     'workspace_id' => $workspace->id,
-                    'name' => $industry['name'],
+                    'name' => $industryData['name'],
                 ],
                 [
-                    'description' => $industry['description'],
-                    'icon' => $industry['icon'],
-                    'color' => $industry['color'],
+                    'description' => $industryData['description'],
+                    'icon' => $industryData['icon'],
+                    'color' => $industryData['color'],
                     'is_active' => true,
+                    'created_by' => $workspace->owner_id ?? null,
                 ]
             );
         }

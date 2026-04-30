@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Form, Head, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import Heading from '@/components/Heading.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,10 +34,24 @@ const roleDisplay = (role: WorkspaceRoleOption): string => role.display_name ?? 
 
 const inviteAction = '/teams/invitations';
 
+const deleteOpen = ref(false);
+const invitationToCancel = ref<string | null>(null);
+
 const cancelInvitation = (code: string): void => {
-    router.delete(`/teams/invitations/${code}`, {
-        preserveScroll: true,
-    });
+    invitationToCancel.value = code;
+    deleteOpen.value = true;
+};
+
+const executeCancel = (): void => {
+    if (invitationToCancel.value) {
+        router.delete(`/teams/invitations/${invitationToCancel.value}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                deleteOpen.value = false;
+                invitationToCancel.value = null;
+            },
+        });
+    }
 };
 </script>
 
@@ -186,5 +202,14 @@ const cancelInvitation = (code: string): void => {
                 </div>
             </CardContent>
         </Card>
+
+        <ConfirmDialog
+            v-model:open="deleteOpen"
+            title="Cancel invitation"
+            description="Are you sure you want to cancel this invitation? This action cannot be undone."
+            confirm-text="Cancel invitation"
+            variant="destructive"
+            @confirm="executeCancel"
+        />
     </div>
 </template>

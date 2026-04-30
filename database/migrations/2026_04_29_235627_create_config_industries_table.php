@@ -11,18 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('client_industries', function (Blueprint $table) {
+        Schema::create('config_industries', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('workspace_id')->constrained()->onDelete('cascade');
+            $table->foreignId('workspace_id')->constrained('workspaces')->cascadeOnDelete();
             $table->string('name');
             $table->text('description')->nullable();
             $table->string('icon')->nullable();
             $table->string('color')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
-
+            $table->softDeletes();
             $table->index(['workspace_id', 'is_active']);
-            $table->index(['workspace_id', 'name']);
         });
     }
 
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('client_industries');
+        Schema::dropIfExists('config_industries');
     }
 };

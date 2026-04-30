@@ -2,6 +2,7 @@
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import Heading from '@/components/Heading.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,6 +24,8 @@ const props = defineProps<{
 const showAddForm = ref(false);
 const newDomain = ref('');
 const adding = ref(false);
+const deleteOpen = ref(false);
+const domainToDelete = ref<number | null>(null);
 
 const addDomain = () => {
     if (!newDomain.value.trim()) return;
@@ -53,9 +56,18 @@ const setPrimary = (domainId: number) => {
 };
 
 const deleteDomain = (domainId: number) => {
-    if (confirm('Are you sure you want to remove this domain?')) {
-        router.delete(`/custom-domains/${domainId}`, {
+    domainToDelete.value = domainId;
+    deleteOpen.value = true;
+};
+
+const executeDelete = (): void => {
+    if (domainToDelete.value) {
+        router.delete(`/custom-domains/${domainToDelete.value}`, {
             preserveScroll: true,
+            onSuccess: () => {
+                deleteOpen.value = false;
+                domainToDelete.value = null;
+            },
         });
     }
 };
@@ -191,5 +203,14 @@ const formatDate = (date: string | null) => {
                 <p>4. Once verified, set it as your primary domain</p>
             </CardContent>
         </Card>
+
+        <ConfirmDialog
+            v-model:open="deleteOpen"
+            title="Remove custom domain"
+            description="Are you sure you want to remove this domain? This action cannot be undone."
+            confirm-text="Remove"
+            variant="destructive"
+            @confirm="executeDelete"
+        />
     </div>
 </template>

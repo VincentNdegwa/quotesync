@@ -12,6 +12,7 @@ use App\Http\Controllers\CatalogItemController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ClientExportController;
 use App\Http\Controllers\ClientImportController;
+use App\Http\Controllers\ConfigIndustryController;
 use App\Http\Controllers\Configuration\FollowUpSequenceController as ConfigFollowUpSequenceController;
 use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\ConfigurationTagController;
@@ -163,6 +164,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('configuration/units', [ConfigurationUnitController::class, 'store'])->name('configuration.units.store');
         Route::put('configuration/units/{unit}', [ConfigurationUnitController::class, 'update'])->name('configuration.units.update');
         Route::delete('configuration/units/{unit}', [ConfigurationUnitController::class, 'destroy'])->name('configuration.units.destroy');
+        Route::get('configuration/industries', [ConfigurationController::class, 'industries'])->name('configuration.industries');
+        Route::post('configuration/industries', [ConfigIndustryController::class, 'store'])->name('configuration.industries.store');
+        Route::put('configuration/industries/{industry}', [ConfigIndustryController::class, 'update'])->name('configuration.industries.update');
+        Route::delete('configuration/industries/{industry}', [ConfigIndustryController::class, 'destroy'])->name('configuration.industries.destroy');
 
         Route::get('configuration/follow-ups', [ConfigurationController::class, 'followUps'])->name('configuration.follow-ups');
         Route::post('configuration/follow-ups', [ConfigFollowUpSequenceController::class, 'store'])->name('configuration.follow-ups.store');

@@ -12,6 +12,7 @@ const navItems: NavItem[] = [
     { title: 'Categories', href: '/configuration/categories' },
     { title: 'Tags', href: '/configuration/tags' },
     { title: 'Units', href: '/configuration/units' },
+    { title: 'Industries', href :'/configuration/industries' },
     { title: 'Follow-ups', href: '/configuration/follow-ups' },
     { title: 'Templates', href: '/configuration/templates' },
 ];
@@ -42,7 +43,9 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
                             :key="item.href"
                             variant="ghost"
                             class="w-full justify-start"
-                            :class="{ 'bg-muted': isCurrentOrParentUrl(item.href) }"
+                            :class="{
+                                'bg-muted': isCurrentOrParentUrl(item.href),
+                            }"
                             as-child
                         >
                             <Link :href="item.href">{{ item.title }}</Link>

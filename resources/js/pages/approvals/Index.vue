@@ -13,6 +13,7 @@ import {
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -79,7 +80,9 @@ const activeTab = ref<'pending' | 'rules'>('pending');
 const rejectDialogOpen = ref(false);
 const approveDialogOpen = ref(false);
 const ruleDialogOpen = ref(false);
+const deleteRuleDialogOpen = ref(false);
 const selectedApproval = ref<Approval | null>(null);
+const ruleToDelete = ref<Rule | null>(null);
 
 const rejectForm = useForm({ comment: '' });
 const approveForm = useForm({ comment: '' });
@@ -192,7 +195,20 @@ const toggleRule = (rule: Rule, active: boolean): void => {
 };
 
 const deleteRule = (rule: Rule): void => {
-    router.delete(`/approvals/rules/${rule.id}`, { preserveScroll: true });
+    ruleToDelete.value = rule;
+    deleteRuleDialogOpen.value = true;
+};
+
+const executeDeleteRule = (): void => {
+    if (ruleToDelete.value) {
+        router.delete(`/approvals/rules/${ruleToDelete.value.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                deleteRuleDialogOpen.value = false;
+                ruleToDelete.value = null;
+            },
+        });
+    }
 };
 </script>
 
@@ -612,7 +628,7 @@ const deleteRule = (rule: Rule): void => {
                 <div class="space-y-1.5">
                     <Label>Trigger</Label>
                     <Select v-model="newRuleForm.trigger_type">
-                        <SelectTrigger>
+                        <SelectTrigger class="w-full" >
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -678,7 +694,7 @@ const deleteRule = (rule: Rule): void => {
                 <div v-if="clientRequired" class="space-y-1.5">
                     <Label>Client</Label>
                     <Select v-model="newRuleForm.client_id">
-                        <SelectTrigger>
+                        <SelectTrigger class="w-full">
                             <SelectValue placeholder="Select a client" />
                         </SelectTrigger>
                         <SelectContent>
@@ -702,7 +718,7 @@ const deleteRule = (rule: Rule): void => {
                 <div class="space-y-1.5">
                     <Label>Approver</Label>
                     <Select v-model="newRuleForm.approver_id">
-                        <SelectTrigger>
+                        <SelectTrigger class="w-full">
                             <SelectValue placeholder="Who must approve?" />
                         </SelectTrigger>
                         <SelectContent>
@@ -739,4 +755,13 @@ const deleteRule = (rule: Rule): void => {
             </DialogFooter>
         </DialogContent>
     </Dialog>
+
+    <ConfirmDialog
+        v-model:open="deleteRuleDialogOpen"
+        title="Delete approval rule"
+        description="Are you sure you want to delete this approval rule? This action cannot be undone."
+        confirm-text="Delete"
+        variant="destructive"
+        @confirm="executeDeleteRule"
+    />
 </template>

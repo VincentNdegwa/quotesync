@@ -3,6 +3,7 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import { ChevronRight, Clock, Mail, MessageCircle, Phone, Plus, Trash2, Zap } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -62,6 +63,8 @@ const editingSequence = ref<Sequence | null>(null);
 const activeStepIndex = ref<number | null>(null);
 const subjectInputRef = ref<InstanceType<typeof Input> | null>(null);
 const tiptapEditorRef = ref<{ insertText: (text: string) => void } | null>(null);
+const deleteOpen = ref(false);
+const sequenceToDelete = ref<Sequence | null>(null);
 
 const emptyStep = (sortOrder = 0): Step => ({
     day_offset: sortOrder === 0 ? 2 : (sortOrder + 1) * 3,
@@ -104,6 +107,23 @@ const closeDrawer = (): void => {
     drawerOpen.value = false;
     editingSequence.value = null;
     activeStepIndex.value = null;
+};
+
+const removeSequence = (sequence: Sequence): void => {
+    sequenceToDelete.value = sequence;
+    deleteOpen.value = true;
+};
+
+const executeDelete = (): void => {
+    if (sequenceToDelete.value) {
+        router.delete(`/configuration/follow-ups/${sequenceToDelete.value.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                deleteOpen.value = false;
+                sequenceToDelete.value = null;
+            },
+        });
+    }
 };
 
 const addStep = (): void => {
@@ -233,7 +253,7 @@ const placeholderGroups = computed(() => ({
                             variant="ghost"
                             size="icon"
                             class="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            @click="router.delete(`/configuration/follow-ups/${sequence.id}`, { preserveScroll: true })"
+                            @click="removeSequence(sequence)"
                         >
                             <Trash2 class="h-3.5 w-3.5" />
                         </Button>
@@ -670,4 +690,13 @@ const placeholderGroups = computed(() => ({
             </SheetFooter>
         </SheetContent>
     </Sheet>
+
+    <ConfirmDialog
+        v-model:open="deleteOpen"
+        title="Delete follow-up sequence"
+        description="Are you sure you want to delete this follow-up sequence? This action cannot be undone."
+        confirm-text="Delete"
+        variant="destructive"
+        @confirm="executeDelete"
+    />
 </template>

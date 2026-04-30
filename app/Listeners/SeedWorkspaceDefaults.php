@@ -3,7 +3,7 @@
 namespace App\Listeners;
 
 use App\Events\WorkspaceCreated;
-use Database\Seeders\ClientIndustrySeeder;
+use Database\Seeders\DefaultIndustriesSeeder;
 use Database\Seeders\DefaultUnitsSeeder;
 
 class SeedWorkspaceDefaults
@@ -11,6 +11,6 @@ class SeedWorkspaceDefaults
     public function handle(WorkspaceCreated $event): void
     {
         (new DefaultUnitsSeeder())->seedForWorkspace($event->workspace);
-        (new ClientIndustrySeeder())->seedForWorkspace($event->workspace);
+        (new DefaultIndustriesSeeder())->seedForWorkspace($event->workspace);
     }
 }
