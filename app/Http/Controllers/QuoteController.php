@@ -53,9 +53,9 @@ class QuoteController extends Controller
                     'number' => $quote->number,
                     'title' => $quote->title,
                     'status' => $quote->status,
-                    'total' => (float) $quote->total,
+                    'total' => (float) ($quote->base_total ?? $quote->total),
                     'base_total' => $quote->base_total ? (float) $quote->base_total : null,
-                    'currency' => $quote->currency,
+                    'currency' => $quote->base_currency ?? $quote->currency,
                     'base_currency' => $quote->base_currency,
                     'valid_until' => $quote->valid_until?->toDateString(),
                     'created_at' => $quote->created_at?->toISOString(),
@@ -171,9 +171,6 @@ class QuoteController extends Controller
         return to_route('quotes.edit', $quote);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Request $request, Quote $quote, WorkspaceSettingsService $workspaceSettingsService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
@@ -193,11 +190,40 @@ class QuoteController extends Controller
             'winProbability.signals'
         ]);
 
+        $quote = $this->transformForInternalView($quote);
+
         return Inertia::render('quotes/Show', [
             'quote' => $quote,
             'settings' => $workspaceSettingsService->builderSettings($workspace),
             'quoteStatuses' => QuoteStatus::all(),
         ]);
+    }
+
+    private function transformForInternalView(Quote $quote): array
+    {
+        $data = $quote->toArray();
+
+        $data['subtotal'] = $quote->base_subtotal;
+        $data['discount_amount'] = $quote->base_discount_amount;
+        $data['tax_amount'] = $quote->base_tax_amount;
+        $data['total'] = $quote->base_total;
+        $data['currency'] = $quote->base_currency;
+
+        if (isset($data['sections'])) {
+            foreach ($data['sections'] as &$section) {
+                if (isset($section['line_items'])) {
+                    foreach ($section['line_items'] as &$lineItem) {
+                        if (isset($lineItem['taxes'])) {
+                            foreach ($lineItem['taxes'] as &$tax) {
+                                $tax['tax_amount'] = $tax['base_tax_amount'] ?? $tax['tax_amount'];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $data;
     }
 
     public function analytics(Request $request, Quote $quote, QuoteAnalyticsService $analyticsService): Response
@@ -327,28 +353,6 @@ class QuoteController extends Controller
         ];
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function brandingPayload(Workspace $workspace, WorkspaceSettingsService $workspaceSettingsService): array
-    {
-        /** @var Collection<int, array<string, mixed>> $fields */
-        $fields = collect($workspaceSettingsService->groupForFrontend($workspace, 'brand')['fields'] ?? []);
-        $brandFields = $fields->keyBy('key');
-
-        $logoUrl = $brandFields->get('logo_path')['value'] ?? null;
-
-        return [
-            'company_name' => $brandFields->get('company_name')['value'] ?? null,
-            'logo_url' => $logoUrl,
-            'primary_color' => $brandFields->get('primary_color')['value'] ?? '#4F46E5',
-            'accent_color' => $brandFields->get('accent_color')['value'] ?? '#F5A623',
-            'company_email' => $brandFields->get('company_email')['value'] ?? null,
-            'company_phone' => $brandFields->get('company_phone')['value'] ?? null,
-            'company_address' => $brandFields->get('company_address')['value'] ?? null,
-            'company_tagline' => $brandFields->get('company_tagline')['value'] ?? null,
-        ];
-    }
 
     public function kanban(Request $request, QuoteService $quoteService): JsonResponse
     {

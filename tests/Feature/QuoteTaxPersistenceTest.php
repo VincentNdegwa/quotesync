@@ -50,6 +50,8 @@ test('it persists inclusive and exclusive tax flags when creating a quote', func
         'client_id' => $this->client->id,
         'status' => 'draft',
         'currency' => 'GBP',
+        'base_currency' => 'GBP',
+        'fx_rate' => 1.0,
         'created_by' => $this->user->id,
         'sections' => [
             [
@@ -89,20 +91,27 @@ test('it persists inclusive and exclusive tax flags when creating a quote', func
     // Check line item totals (10% inc + 10% exc on 200 should be 220 total)
     $lineItem = $quote->sections->first()->lineItems->first();
     expect((float) $lineItem->total)->toBe(220.0);
-    expect((float) $lineItem->tax_amount)->toBe(38.18); // 18.18 (inc) + 20 (exc)
+    expect((float) $lineItem->taxAmount)->toBe(38.18); // 18.18 (inc) + 20 (exc) - uses accessor
 
-    // Verify tax persistence in database
-    $this->assertDatabaseHas('quote_line_item_taxes', [
-        'quote_line_item_id' => $lineItem->id,
-        'tax_id' => $this->exclusiveTax->id,
-        'inclusive' => false,
-    ]);
+    // Verify tax persistence in database with tax_amount and base_tax_amount
+    $exclusiveTaxEntry = $lineItem->taxes->where('tax_id', $this->exclusiveTax->id)->first();
+    $inclusiveTaxEntry = $lineItem->taxes->where('tax_id', $this->inclusiveTax->id)->first();
 
-    $this->assertDatabaseHas('quote_line_item_taxes', [
-        'quote_line_item_id' => $lineItem->id,
-        'tax_id' => $this->inclusiveTax->id,
-        'inclusive' => true,
-    ]);
+    expect($exclusiveTaxEntry)->not->toBeNull();
+    expect($inclusiveTaxEntry)->not->toBeNull();
+    
+    expect((float) $exclusiveTaxEntry->tax_amount)->toBe(20.0);
+    expect((float) $exclusiveTaxEntry->base_tax_amount)->toBe(20.0);
+    expect((bool) $exclusiveTaxEntry->inclusive)->toBeFalse();
+    
+    expect((float) $inclusiveTaxEntry->tax_amount)->toEqualWithDelta(18.18, 0.01);
+    expect((float) $inclusiveTaxEntry->base_tax_amount)->toEqualWithDelta(18.18, 0.01);
+    expect((bool) $inclusiveTaxEntry->inclusive)->toBeTrue();
+
+    // Verify quote has base currency fields
+    expect($quote->base_subtotal)->not->toBeNull();
+    expect($quote->base_discount_amount)->not->toBeNull();
+    expect($quote->base_tax_amount)->not->toBeNull();
 });
 
 test('it persists inclusive and exclusive tax flags when updating a quote', function () {
@@ -155,4 +164,10 @@ test('it persists inclusive and exclusive tax flags when updating a quote', func
     
     expect((bool) $exclusiveTaxEntry->inclusive)->toBeFalse();
     expect((bool) $inclusiveTaxEntry->inclusive)->toBeTrue();
+    
+    // Verify tax_amount and base_tax_amount are stored
+    expect($exclusiveTaxEntry->tax_amount)->not->toBeNull();
+    expect($exclusiveTaxEntry->base_tax_amount)->not->toBeNull();
+    expect($inclusiveTaxEntry->tax_amount)->not->toBeNull();
+    expect($inclusiveTaxEntry->base_tax_amount)->not->toBeNull();
 });

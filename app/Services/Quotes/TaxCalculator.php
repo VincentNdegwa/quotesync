@@ -11,7 +11,7 @@ class TaxCalculator
      * Calculate line item totals considering inclusive and exclusive taxes
      *
      * Stated Price (baseAmount) is the price entered by the user.
-     * 
+     *
      * For inclusive tax (tax already included in price):
      * - tax = baseAmount * rate / (100 + rate)
      *
@@ -22,7 +22,7 @@ class TaxCalculator
      * @param  float  $unitPrice  Item unit price
      * @param  float  $discountPercent  Discount percentage (0-100)
      * @param  array<array{tax_rate: float, inclusive: bool}>  $taxes  Array of tax items
-     * @return array{subtotal: float, taxAmount: float, total: float}
+     * @return array{subtotal: float, taxAmount: float, total: float, taxBreakdown: array}
      */
     public static function calculateLineItemTotals(
         float $quantity,
@@ -35,6 +35,25 @@ class TaxCalculator
         $discount = min(max($discountPercent, 0), 100);
 
         $baseAmount = $qty * $price * (1 - $discount / 100);
+
+        // Calculate individual tax amounts for each tax type
+        $taxBreakdown = [];
+        foreach ($taxes as $tax) {
+            $rate = max($tax['tax_rate'] ?? 0, 0);
+            $isInclusive = ($tax['inclusive'] ?? false) === true;
+
+            if ($isInclusive) {
+                $taxAmount = $baseAmount * $rate / (100 + $rate);
+            } else {
+                $taxAmount = $baseAmount * $rate / 100;
+            }
+
+            $taxBreakdown[] = [
+                'tax_rate' => $rate,
+                'inclusive' => $isInclusive,
+                'tax_amount' => round($taxAmount, 2),
+            ];
+        }
 
         // 1. Calculate inclusive taxes (extracted from the baseAmount)
         $inclusiveTaxAmount = collect($taxes)
@@ -56,10 +75,10 @@ class TaxCalculator
 
         // Total Tax is the sum of both
         $taxAmount = $inclusiveTaxAmount + $exclusiveTaxAmount;
-        
+
         // Total is Stated Price + Exclusive Taxes
         $total = $baseAmount + $exclusiveTaxAmount;
-        
+
         // Subtotal is Total - Total Tax (which is also baseAmount - inclusiveTaxAmount)
         $subtotal = $total - $taxAmount;
 
@@ -67,6 +86,7 @@ class TaxCalculator
             'subtotal' => $subtotal,
             'taxAmount' => $taxAmount,
             'total' => $total,
+            'taxBreakdown' => $taxBreakdown,
         ];
     }
 

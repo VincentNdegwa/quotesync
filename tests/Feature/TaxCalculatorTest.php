@@ -23,6 +23,10 @@ test('it calculates inclusive and exclusive taxes correctly from stated price', 
     expect($result['total'])->toEqualWithDelta(220.0, 0.01);
     expect($result['taxAmount'])->toEqualWithDelta(38.18, 0.01);
     expect($result['subtotal'])->toEqualWithDelta(181.82, 0.01);
+    expect($result)->toHaveKey('taxBreakdown');
+    expect($result['taxBreakdown'])->toHaveCount(2);
+    expect($result['taxBreakdown'][0]['tax_amount'])->toEqualWithDelta(18.18, 0.01);
+    expect($result['taxBreakdown'][1]['tax_amount'])->toEqualWithDelta(20.0, 0.01);
 });
 
 test('it handles only inclusive tax', function () {

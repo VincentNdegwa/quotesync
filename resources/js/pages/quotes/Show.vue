@@ -223,7 +223,7 @@ const rejectApproval = () => {
 
                                 <div class="flex justify-between text-base font-bold">
                                     <span>Total</span>
-                                    <span class="tabular-nums">{{ fmt(props.quote.base_total) }}</span>
+                                    <span class="tabular-nums">{{ fmt(props.quote.total) }}</span>
                                 </div>
                             </div>
                         </div>

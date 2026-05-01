@@ -61,11 +61,6 @@ class QuoteService
         return $query->paginate($perPage)->withQueryString();
     }
 
-    /**
-     * Returns all non-archived quotes for the kanban board (no pagination).
-     *
-     * @return array<int, array<string, mixed>>
-     */
     public function allForKanban(Workspace $workspace, int $limit = 500): array
     {
         return Quote::query()
@@ -83,9 +78,9 @@ class QuoteService
                 'number' => $quote->number,
                 'title' => $quote->title,
                 'status' => $quote->status->value,
-                'total' => (float) $quote->total,
+                'total' => (float) ($quote->base_total ?? $quote->total),
                 'base_total' => $quote->base_total ? (float) $quote->base_total : null,
-                'currency' => $quote->currency,
+                'currency' => $quote->base_currency ?? $quote->currency,
                 'base_currency' => $quote->base_currency,
                 'valid_until' => $quote->valid_until?->toDateString(),
                 'created_at' => $quote->created_at?->toISOString(),
@@ -231,6 +226,7 @@ class QuoteService
 
             $this->syncSections($quote, $sections);
 
+            $quote->load('sections.lineItems.taxes');
             $this->calculateQuoteTotals($quote);
 
             return $quote->refresh();
@@ -329,6 +325,9 @@ class QuoteService
                 'tax_amount' => $quote->tax_amount,
                 'total' => $quote->total,
                 'base_total' => $quote->base_total,
+                'base_subtotal' => $quote->base_subtotal,
+                'base_discount_amount' => $quote->base_discount_amount,
+                'base_tax_amount' => $quote->base_tax_amount,
                 'requires_deposit' => $quote->requires_deposit,
                 'deposit_amount' => $quote->deposit_amount,
                 'created_by' => auth()->id(),
@@ -351,7 +350,6 @@ class QuoteService
                         'unit_price' => $lineItem->unit_price,
                         'discount_percent' => $lineItem->discount_percent,
                         'subtotal' => $lineItem->subtotal,
-                        'tax_amount' => $lineItem->tax_amount,
                         'total' => $lineItem->total,
                         'is_optional' => $lineItem->is_optional,
                         'notes' => $lineItem->notes,
@@ -364,6 +362,8 @@ class QuoteService
                             'tax_label' => $tax->tax_label,
                             'tax_rate' => $tax->tax_rate,
                             'inclusive' => (bool) $tax->inclusive,
+                            'tax_amount' => $tax->tax_amount,
+                            'base_tax_amount' => $tax->base_tax_amount,
                         ]);
                     }
                 }
@@ -414,6 +414,9 @@ class QuoteService
                 'tax_amount' => $quote->tax_amount,
                 'total' => $quote->total,
                 'base_total' => $quote->base_total,
+                'base_subtotal' => $quote->base_subtotal,
+                'base_discount_amount' => $quote->base_discount_amount,
+                'base_tax_amount' => $quote->base_tax_amount,
                 'requires_deposit' => $quote->requires_deposit,
                 'deposit_amount' => $quote->deposit_amount,
                 'created_by' => auth()->id(),
@@ -436,7 +439,6 @@ class QuoteService
                         'unit_price' => $lineItem->unit_price,
                         'discount_percent' => $lineItem->discount_percent,
                         'subtotal' => $lineItem->subtotal,
-                        'tax_amount' => $lineItem->tax_amount,
                         'total' => $lineItem->total,
                         'is_optional' => $lineItem->is_optional,
                         'notes' => $lineItem->notes,
@@ -449,6 +451,8 @@ class QuoteService
                             'tax_label' => $tax->tax_label,
                             'tax_rate' => $tax->tax_rate,
                             'inclusive' => (bool) $tax->inclusive,
+                            'tax_amount' => $tax->tax_amount,
+                            'base_tax_amount' => $tax->base_tax_amount,
                         ]);
                     }
                 }
@@ -504,16 +508,13 @@ class QuoteService
         ]);
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     public function toBuilderPayload(Quote $quote): array
     {
         $quote->loadMissing([
             'sections.lineItems.taxes',
         ]);
 
-        return [
+        $payload = [
             'id' => $quote->id,
             'quote_uuid' => $quote->quote_uuid,
             'number' => $quote->number,
@@ -555,7 +556,7 @@ class QuoteService
                             'unit_price' => (float) $lineItem->unit_price,
                             'discount_percent' => (float) $lineItem->discount_percent,
                             'subtotal' => (float) $lineItem->subtotal,
-                            'tax_amount' => (float) $lineItem->tax_amount,
+                            'tax_amount' => (float) $lineItem->taxAmount,
                             'total' => (float) $lineItem->total,
                             'is_optional' => (bool) $lineItem->is_optional,
                             'notes' => $lineItem->notes,
@@ -565,12 +566,15 @@ class QuoteService
                                 'tax_label' => $tax->tax_label,
                                 'tax_rate' => (float) $tax->tax_rate,
                                 'inclusive' => (bool) $tax->inclusive,
+                                'tax_amount' => $tax->tax_amount,
                             ])->values()->all(),
                         ];
                     })->values()->all(),
                 ];
             })->values()->all(),
         ];
+
+        return $payload;
     }
 
     /**
@@ -687,7 +691,6 @@ class QuoteService
                     'unit_price' => (float) Arr::get($lineItemData, 'unit_price', 0),
                     'discount_percent' => (float) Arr::get($lineItemData, 'discount_percent', 0),
                     'subtotal' => $calculatedTotals['subtotal'],
-                    'tax_amount' => $calculatedTotals['taxAmount'],
                     'total' => $calculatedTotals['total'],
                     'is_optional' => (bool) Arr::get($lineItemData, 'is_optional', false),
                     'notes' => Arr::get($lineItemData, 'notes'),
@@ -698,14 +701,17 @@ class QuoteService
                     continue;
                 }
 
-                foreach ($taxes as $taxData) {
+                foreach ($taxes as $index => $taxData) {
                     $inclusiveValue = Arr::get($taxData, 'inclusive') ?? Arr::get($taxData, 'tax_inclusive', false);
+                    $taxBreakdown = $calculatedTotals['taxBreakdown'][$index] ?? null;
 
                     $lineItem->taxes()->create([
                         'tax_id' => Arr::get($taxData, 'tax_id'),
                         'tax_label' => (string) Arr::get($taxData, 'tax_label', 'Tax'),
                         'tax_rate' => (float) Arr::get($taxData, 'tax_rate', 0),
                         'inclusive' => (bool) $inclusiveValue,
+                        'tax_amount' => $taxBreakdown['tax_amount'] ?? 0,
+                        'base_tax_amount' => $taxBreakdown['tax_amount'] ?? 0, // Same as tax_amount (base currency)
                     ]);
                 }
             }
@@ -725,31 +731,53 @@ class QuoteService
                 }
 
                 $subtotal += $lineItem->subtotal;
-                $discountAmount += ($lineItem->subtotal * $lineItem->discount_percent / 100);
-                $taxAmount += $lineItem->tax_amount;
+                // Calculate discount from original amount: quantity * unit_price * discount_percent
+                $discountAmount += ($lineItem->quantity * $lineItem->unit_price * $lineItem->discount_percent / 100);
+                $taxAmount += $lineItem->taxAmount;
             }
         }
 
-        $total = $subtotal - $discountAmount + $taxAmount;
+        $total = $subtotal + $taxAmount;
 
-        // Line items are in base currency, convert to quote currency
-        $baseTotal = $total; // Line items are in base currency
-        $quoteTotal = null;
-        
+        // Line items are in base currency (workspace currency)
+        // base_* fields are in base currency (GBP)
+        $baseTotal = $total;
+        $baseSubtotal = $subtotal;
+        $baseDiscountAmount = $discountAmount;
+        $baseTaxAmount = 0;
+
+        foreach ($quote->sections as $section) {
+            foreach ($section->lineItems as $lineItem) {
+                if ($lineItem->is_optional) {
+                    continue;
+                }
+                $baseTaxAmount += $lineItem->taxAmount; // Use taxAmount (base currency)
+            }
+        }
+
+        // Convert to quote currency (KES)
+        // Fields without base_ prefix should be in quote currency
+        $quoteSubtotal = $subtotal;
+        $quoteDiscountAmount = $discountAmount;
+        $quoteTaxAmount = $taxAmount;
+        $quoteTotal = $total;
+
         if ($quote->fx_rate && $quote->base_currency && $quote->base_currency !== $quote->currency) {
-            // Convert from base currency to quote currency
+            $quoteSubtotal = $subtotal * $quote->fx_rate;
+            $quoteDiscountAmount = $discountAmount * $quote->fx_rate;
+            $quoteTaxAmount = $taxAmount * $quote->fx_rate;
             $quoteTotal = $total * $quote->fx_rate;
-        } elseif ($quote->base_currency === $quote->currency) {
-            // Same currency, total equals base_total
-            $quoteTotal = $total;
         }
 
         $quote->update([
-            'subtotal' => $subtotal,
-            'discount_amount' => $discountAmount,
-            'tax_amount' => $taxAmount,
+            'subtotal' => $quoteSubtotal,
+            'discount_amount' => $quoteDiscountAmount,
+            'tax_amount' => $quoteTaxAmount,
             'total' => $quoteTotal,
             'base_total' => $baseTotal,
+            'base_subtotal' => $baseSubtotal,
+            'base_discount_amount' => $baseDiscountAmount,
+            'base_tax_amount' => $baseTaxAmount,
         ]);
     }
 }

@@ -47,6 +47,7 @@ class StoreQuoteRequest extends FormRequest
                     ->where('workspace_id', $workspace?->id)
                     ->whereNull('deleted_at')),
             ],
+            'fx_rate' => ['nullable', 'numeric'],
             'assigned_to' => [
                 'nullable',
                 'integer',

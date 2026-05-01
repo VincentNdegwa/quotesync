@@ -24,10 +24,9 @@ class QuoteObserver
 
         $quote->base_currency = $baseCurrency;
 
-        if ($quote->currency !== $quote->base_currency) {
-            $rate = $quote->fx_rate ?? $this->exchangeRateService->getRate($quote->base_currency, $quote->currency);
-            $quote->fx_rate = $rate;
-        } else {
+        if ($quote->currency !== $quote->base_currency && empty($quote->fx_rate)) {
+            $quote->fx_rate = $this->exchangeRateService->getRate($quote->base_currency, $quote->currency);
+        } elseif ($quote->currency === $quote->base_currency && empty($quote->fx_rate)) {
             $quote->fx_rate = 1.0;
         }
     }

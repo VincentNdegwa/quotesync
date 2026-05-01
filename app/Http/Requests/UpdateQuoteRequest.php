@@ -48,6 +48,7 @@ class UpdateQuoteRequest extends FormRequest
                     ->where('workspace_id', $workspace?->id)
                     ->whereNull('deleted_at')),
             ],
+            'fx_rate' => ['nullable', 'numeric'],
             'assigned_to' => ['nullable', 'integer', Rule::exists('users', 'id')],
             'currency' => ['nullable', 'string', 'size:3'],
             'valid_until' => ['nullable', 'date'],
