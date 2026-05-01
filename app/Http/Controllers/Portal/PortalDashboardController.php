@@ -6,6 +6,7 @@ use App\Enums\QuoteStatus;
 use App\Events\QuoteViewed;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
+use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use App\Traits\ResolvesClientState;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -111,7 +112,7 @@ class PortalDashboardController
         ])->withViewData('title', 'Quotes');
     }
 
-    public function show(Request $request, string $uuid): Response
+    public function show(Request $request, string $uuid, WorkspaceSettingsService $workspaceSettingsService): Response
     {
         $portalUser = Auth::guard('portal')->user();
         abort_unless($portalUser, 401);
@@ -162,25 +163,10 @@ class PortalDashboardController
 
         $layout = $quote->layout_snapshot ?? $quote->template?->layout ?? null;
 
-        $branding = [
-            'company_name' => $quote->workspace->white_label_mode
-                ? $quote->workspace->name
-                : $quote->workspace->name,
-            'logo_url' => $quote->workspace->white_label_mode
-                ? $quote->workspace->logo_path
-                : null,
-            'primary_color' => $quote->workspace->white_label_mode
-                ? ($quote->workspace->primary_color ?? '#2563EB')
-                : '#2563EB',
-            'accent_color' => '#F59E0B',
-            'company_email' => $quote->workspace->owner?->email,
-            'company_phone' => null,
-        ];
-
         return Inertia::render('portal/QuoteShow', [
             'quote' => $quote->makeHidden(['internal_notes', 'profit_margin', 'deleted_at']),
             'layout' => $layout,
-            'branding' => $branding,
+            'settings' => $workspaceSettingsService->builderSettings($quote->workspace),
             'clientState' => $this->resolveClientState($quote),
         ])->withViewData('title', 'Quote Details');
     }

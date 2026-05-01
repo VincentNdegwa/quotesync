@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Eye, CheckCircle2, XCircle, Clock } from 'lucide-vue-next';
 import { useFormat } from '@/composables/useFormat';
-import { dashboard, logout } from '@/routes/portal';
 import { show as showQuote } from '@/routes/portal/quotes';
 
 const { formatCurrency, formatDate } = useFormat();
@@ -116,7 +115,7 @@ const getStatusIcon = (status: string) => {
                     >
                         <div class="flex-1">
                             <div class="flex items-center gap-2">
-                                <span class="font-medium">{{ quote.template?.name || 'Untitled Quote' }}</span>
+                                <span class="font-medium">{{ quote?.title || 'Untitled Quote' }}</span>
                                 <Badge :variant="getStatusBadge(quote.status || 'unknown')">
                                     {{ quote.status || 'Unknown' }}
                                 </Badge>

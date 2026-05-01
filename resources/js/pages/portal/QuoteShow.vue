@@ -9,12 +9,12 @@ import { accept as acceptQuote, decline as declineQuote } from '@/routes/public-
 import { dashboard } from '@/routes/portal';
 import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
 import QuoteChat from '@/components/quotes/QuoteChat.vue';
-import type { BrandingData, TemplateLayout } from '@/types';
+import type { WorkspaceSettings, TemplateLayout } from '@/types';
 
 const props = defineProps<{
     quote: any;
     layout: TemplateLayout | null;
-    branding: BrandingData;
+    settings: WorkspaceSettings;
     clientState: 'open' | 'accepted' | 'closed';
     messages?: Array<{
         id: number;
@@ -101,15 +101,15 @@ const decline = () => {
                         <AlertCircle class="h-12 w-12" />
                     </div>
                     <h2 class="text-xl font-semibold mb-2">This quote is no longer available</h2>
-                    <p class="text-muted-foreground">Please contact {{ branding.company_name }} for an updated quote.</p>
+                    <p class="text-muted-foreground">Please contact {{ settings.workspace.company_name }} for an updated quote.</p>
                 </div>
 
                 <div v-else class="overflow-hidden rounded-xl border shadow-sm">
                     <QuoteRenderer
-                        v-if="layout && branding"
+                        v-if="layout && settings"
                         :quote="quote"
                         :layout="layout"
-                        :branding="branding"
+                        :settings="settings"
                         :preview-mode="true"
                         :edit-mode="false"
                     />

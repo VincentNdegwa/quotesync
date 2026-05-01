@@ -79,7 +79,7 @@ class HandleInertiaRequests extends Middleware
             'brand' => config('app.brand'),
             'whiteLabel' => $whiteLabel,
             'workspace_currency' => $this->getWorkspaceCurrency($workspace),
-            'pending_approvals_count' => $user && $workspace ? $this->approvalService->count($workspace, $user) : 0,
+            'pending_approvals_count' => $user && $workspace && !$isPortalUser ? $this->approvalService->count($workspace, $user) : 0,
             'localization' => $workspace ? $this->getLocalizationSettings($workspace) : null,
             'auth' => [
                 'user' => $user,
