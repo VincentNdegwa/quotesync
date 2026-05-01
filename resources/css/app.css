@@ -207,3 +207,9 @@
     scrollbar-width: thin;
     scrollbar-color: var(--muted-foreground) transparent;
 }
+
+/* Dot pattern background */
+.bg-dot-pattern {
+    background-image: radial-gradient(var(--border) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
