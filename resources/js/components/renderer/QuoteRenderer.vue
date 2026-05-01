@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, provide, ref } from 'vue';
 import EditableBlock from '@/components/builder/EditableBlock.vue';
 import CoverMessageBlock from '@/components/renderer/blocks/CoverMessageBlock.vue';
 import DividerBlock from '@/components/renderer/blocks/DividerBlock.vue';
@@ -26,15 +26,19 @@ const props = withDefaults(
         previewMode?: boolean;
         editMode?: boolean;
         selectedBlockId?: string | null;
+        isInternalView?: boolean;
     }>(),
     {
         previewMode: false,
         editMode: false,
         selectedBlockId: null,
+        isInternalView: false,
     },
 );
 
 const effectiveBranding = computed<BrandingData>(() => props.settings.workspace);
+
+provide('isInternalView', computed(() => props.isInternalView));
 
 const emit = defineEmits<{
     (e: 'select-block', blockId: string): void;

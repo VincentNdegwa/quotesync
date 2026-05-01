@@ -149,6 +149,7 @@ const rejectApproval = () => {
                         :settings="settings"
                         :preview-mode="true"
                         :edit-mode="false"
+                        :is-internal-view="true"
                     />
 
                     <template v-else>

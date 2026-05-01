@@ -127,6 +127,7 @@ onUnmounted(() => {
                 :quote="quote"
                 :preview-mode="false"
                 :edit-mode="false"
+                :is-internal-view="false"
                 class="shadow-lg ring-1 ring-border"
             />
         </div>

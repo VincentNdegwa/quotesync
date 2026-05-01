@@ -213,6 +213,11 @@ class QuoteController extends Controller
             foreach ($data['sections'] as &$section) {
                 if (isset($section['line_items'])) {
                     foreach ($section['line_items'] as &$lineItem) {
+                        $lineItem['unit_price'] = $lineItem['base_unit_price'] ?? $lineItem['unit_price'];
+                        $lineItem['subtotal'] = $lineItem['base_subtotal'] ?? $lineItem['subtotal'];
+                        $lineItem['tax_amount'] = $lineItem['base_tax_amount'] ?? $lineItem['tax_amount'];
+                        $lineItem['total'] = $lineItem['base_total'] ?? $lineItem['total'];
+
                         if (isset($lineItem['taxes'])) {
                             foreach ($lineItem['taxes'] as &$tax) {
                                 $tax['tax_amount'] = $tax['base_tax_amount'] ?? $tax['tax_amount'];

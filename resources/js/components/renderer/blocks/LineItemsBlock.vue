@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ComputedRef, inject } from 'vue';
 import { blockBaseStyle } from '@/composables/useBlockStyles';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -15,13 +15,13 @@ const props = defineProps<{
     editMode?: boolean;
 }>();
 
-const effectiveSettings = computed(() => props.settings.quotes);
+const isInternalView = inject<ComputedRef<boolean>>('isInternalView', computed(() => false));
 
-// Use config for display options
+const effectiveCurrency = computed(() => isInternalView.value ? (props.quote.base_currency || props.quote.currency) : props.quote.currency);
+
 const showUnitPrice = computed(() => props.config.showUnitPrice ?? true);
 const showTax = computed(() => props.config.showTax ?? true);
 
-// Use settings for tax calculation (fallback to quote state)
 const taxInclusive = computed(() => (props.quote as any).tax_inclusive ?? false);
 
 const emit = defineEmits<{
@@ -32,7 +32,7 @@ const emit = defineEmits<{
     (e: 'update-section-title', payload: { sectionIndex: number; title: string }): void;
 }>();
 
-const { formatCurrency: fmt } = useFormat(props.quote.base_currency || props.quote.currency || undefined);
+const { formatCurrency: fmt } = useFormat(effectiveCurrency.value);
 
 type LineItem = QuoteData['sections'][number]['line_items'][number];
 type Section = QuoteData['sections'][number];
@@ -56,36 +56,69 @@ const columnCount = computed(() => {
 
 const itemTax = (item: LineItem): number => {
     if (!item.taxes?.length) return 0;
-    
-    const taxes = item.taxes.map((tax: any) => ({
-        tax_rate: Number(tax.tax_rate || tax.rate || 0),
-        inclusive: Boolean(tax.inclusive),
-    }));
 
-    const result = calculateLineItemTotals(
+    // If tax_amount is present in taxes, use it
+    const hasTaxAmounts = item.taxes.some((tax: any) => tax.tax_amount > 0);
+    if (hasTaxAmounts) {
+        return item.taxes.reduce((sum, tax: any) => sum + Number(tax.tax_amount || 0), 0);
+    }
+
+    // Otherwise, calculate locally using composable
+    const { taxAmount } = calculateLineItemTotals(
         Number(item.quantity || 0),
         Number(item.unit_price || 0),
         Number(item.discount_percent || 0),
-        taxes,
+        item.taxes.map((tax: any) => ({
+            tax_rate: Number(tax.tax_rate || 0),
+            inclusive: tax.inclusive || false,
+        })),
     );
 
-    return result.taxAmount;
+    return taxAmount;
 };
 
 const itemTotal = (item: LineItem): number => {
-    const taxes = (item.taxes || []).map((tax: any) => ({
-        tax_rate: Number(tax.tax_rate || tax.rate || 0),
-        inclusive: Boolean(tax.inclusive),
-    }));
+    // If total is present and non-zero, use it
+    if (item.total && item.total > 0) {
+        return Number(item.total);
+    }
 
-    const result = calculateLineItemTotals(
+    // Otherwise, calculate locally using composable
+    const { total } = calculateLineItemTotals(
         Number(item.quantity || 0),
         Number(item.unit_price || 0),
         Number(item.discount_percent || 0),
-        taxes,
+        item.taxes?.map((tax: any) => ({
+            tax_rate: Number(tax.tax_rate || 0),
+            inclusive: tax.inclusive || false,
+        })) || [],
     );
 
-    return result.total;
+    return total;
+};
+
+const itemSubtotal = (item: LineItem): number => {
+    // If subtotal is present and non-zero, use it
+    if (item.subtotal && item.subtotal > 0) {
+        return Number(item.subtotal);
+    }
+
+    // Otherwise, calculate locally using composable
+    const { subtotal } = calculateLineItemTotals(
+        Number(item.quantity || 0),
+        Number(item.unit_price || 0),
+        Number(item.discount_percent || 0),
+        item.taxes?.map((tax: any) => ({
+            tax_rate: Number(tax.tax_rate || 0),
+            inclusive: tax.inclusive || false,
+        })) || [],
+    );
+
+    return subtotal;
+};
+
+const itemUnitPrice = (item: LineItem): number => {
+    return Number(item.unit_price || 0);
 };
 
 const sectionSubtotal = (section: Section): number => section.line_items.reduce((sum, item) => sum + itemTotal(item), 0);
@@ -98,7 +131,7 @@ const itemMeta = (item: LineItem): string => {
     }
 
     if (showUnitPrice.value) {
-        parts.push(fmt(item.unit_price));
+        parts.push(fmt(itemUnitPrice(item)));
     }
 
     if (props.config.showDiscount && Number(item.discount_percent || 0) > 0) {
@@ -245,7 +278,7 @@ const stripeClass = (index: number): string => {
                                     <TableCell v-if="config.showQuantity" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">
                                         {{ item.quantity }}{{ config.showUnit && item.unit ? ` ${item.unit}` : '' }}
                                     </TableCell>
-                                    <TableCell v-if="showUnitPrice" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">{{ fmt(item.unit_price) }}</TableCell>
+                                    <TableCell v-if="showUnitPrice" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">{{ fmt(itemUnitPrice(item)) }}</TableCell>
                                     <TableCell v-if="config.showDiscount" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">{{ item.discount_percent ? `${item.discount_percent}%` : '' }}</TableCell>
                                     <TableCell v-if="showTax" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">{{ fmt(itemTax(item)) }}</TableCell>
                                     <TableCell v-if="config.showLineTotal" class="text-right font-semibold tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">{{ fmt(itemTotal(item)) }}</TableCell>

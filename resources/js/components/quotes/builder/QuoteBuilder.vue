@@ -833,6 +833,7 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                             :preview-mode="canvasMode === 'preview'"
                             :edit-mode="canvasMode === 'edit'"
                             :selected-block-id="selectedBlockId"
+                            :is-internal-view="true"
                             @select-block="
                                 (blockId) => (selectedBlockId = blockId)
                             "

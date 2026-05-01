@@ -112,6 +112,7 @@ const decline = () => {
                         :settings="settings"
                         :preview-mode="true"
                         :edit-mode="false"
+                        :is-internal-view="false"
                     />
                     <div v-else class="p-12 text-center text-muted-foreground">
                         Quote layout not available

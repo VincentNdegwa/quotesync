@@ -66,6 +66,7 @@ const brandingData = computed<BrandingData>(() => {
                         :layout="currentLayout"
                         :branding="brandingData"
                         :preview-mode="true"
+                        :is-internal-view="true"
                     />
                 </div>
             </div>

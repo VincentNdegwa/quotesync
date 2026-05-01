@@ -119,29 +119,6 @@ class PublicQuoteController extends Controller
     }
 
     /**
-     * @return array<string, mixed>
-     */
-    private function brandingPayload(Workspace $workspace, WorkspaceSettingsService $workspaceSettingsService): array
-    {
-        /** @var Collection<int, array<string, mixed>> $fields */
-        $fields = collect($workspaceSettingsService->groupForFrontend($workspace, 'brand')['fields'] ?? []);
-        $brandFields = $fields->keyBy('key');
-
-        $logoUrl = $brandFields->get('logo_path')['value'] ?? null;
-
-        return [
-            'company_name' => $brandFields->get('company_name')['value'] ?? $workspace->display_name ?? $workspace->name,
-            'logo_url' => $logoUrl,
-            'primary_color' => $brandFields->get('primary_color')['value'] ?? '#2563EB',
-            'accent_color' => $brandFields->get('accent_color')['value'] ?? '#F59E0B',
-            'company_email' => $brandFields->get('company_email')['value'] ?? null,
-            'company_phone' => $brandFields->get('company_phone')['value'] ?? null,
-            'company_address' => $brandFields->get('company_address')['value'] ?? null,
-            'company_tagline' => $brandFields->get('company_tagline')['value'] ?? null,
-        ];
-    }
-
-    /**
      * @return Collection<int, User>
      */
     private function quoteRecipients(Quote $quote): Collection

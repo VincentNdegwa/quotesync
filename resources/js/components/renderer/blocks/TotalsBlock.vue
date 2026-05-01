@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, inject } from 'vue';
 import { blockBaseStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
 import { useFormat } from '@/composables/useFormat';
 import { calculateLineItemTotals } from '@/composables/useTaxCalculation';
@@ -12,117 +12,13 @@ const props = defineProps<{
     previewMode: boolean;
 }>();
 
+const isInternalView = inject<ComputedRef<boolean>>('isInternalView', computed(() => false));
+
 const effectiveSettings = computed(() => props.settings.quotes);
 
-// Use settings for tax calculation (fallback to quote state)
-const taxInclusive = computed(() => (props.quote as any).tax_inclusive ?? false);
+const effectiveCurrency = computed(() => isInternalView.value ? (props.quote.base_currency || props.quote.currency) : props.quote.currency);
 
-const { formatCurrency } = useFormat(props.quote.base_currency || props.quote.currency || undefined);
-
-const itemBaseSubtotal = (item: QuoteData['sections'][number]['line_items'][number]): number => {
-    const quantity = Math.max(Number(item.quantity || 0), 0);
-    const unitPrice = Math.max(Number(item.unit_price || 0), 0);
-    const discountPercent = Math.min(Math.max(Number(item.discount_percent || 0), 0), 100);
-
-    return quantity * unitPrice * (1 - discountPercent / 100);
-};
-
-const itemBaseSubtotalBeforeDiscount = (item: QuoteData['sections'][number]['line_items'][number]): number => {
-    const quantity = Math.max(Number(item.quantity || 0), 0);
-    const unitPrice = Math.max(Number(item.unit_price || 0), 0);
-
-    return quantity * unitPrice;
-};
-
-const computedSubtotal = computed(() => {
-    return props.quote.sections.reduce((sum, section) => {
-        return sum + section.line_items.reduce((lineSum, item) => {
-            // Use base amount (stated price) as the subtotal per item
-            const itemBase = Number(item.quantity || 0) * Number(item.unit_price || 0) * (1 - Number(item.discount_percent || 0) / 100);
-            return item.is_optional ? lineSum : lineSum + itemBase;
-        }, 0);
-    }, 0);
-});
-
-const computedSubtotalBeforeDiscount = computed(() => {
-    return props.quote.sections.reduce((sum, section) => {
-        return sum + section.line_items.reduce((lineSum, item) => {
-            return item.is_optional ? lineSum : lineSum + itemBaseSubtotalBeforeDiscount(item);
-        }, 0);
-    }, 0);
-});
-
-const computedDiscountAmount = computed(() => {
-    const lineItemDiscount = computedSubtotalBeforeDiscount.value - computedSubtotal.value;
-    const globalDiscount = Math.max(Number(props.quote.discount_amount || 0), 0);
-    return lineItemDiscount + globalDiscount;
-});
-
-const computedTaxAmount = computed(() => {
-    return props.quote.sections.reduce((sum, section) => {
-        return sum + section.line_items.reduce((lineSum, item) => {
-            if (item.is_optional) {
-                return lineSum;
-            }
-
-            if (item.taxes.length > 0) {
-                const taxes = item.taxes.map((tax) => ({
-                    tax_rate: Number(tax.tax_rate || 0),
-                    inclusive: Boolean(tax.inclusive),
-                }));
-
-                const totals = calculateLineItemTotals(
-                    Number(item.quantity || 0),
-                    Number(item.unit_price || 0),
-                    Number(item.discount_percent || 0),
-                    taxes,
-                );
-
-                return lineSum + totals.taxAmount;
-            }
-
-            return lineSum + Number(item.tax_amount || 0);
-        }, 0);
-    }, 0);
-});
-
-const computedTotal = computed(() => {
-    // Total is calculated as:
-    // Stated Subtotal (before any extraction) + Exclusive Taxes - Global Discount
-    // Wait, let's be precise. 
-    // Subtotal already has line item discounts.
-    // taxAmount is (Inclusive + Exclusive)
-    // Inclusive is already in Subtotal.
-    // Exclusive is NOT in Subtotal.
-    // So Total = Subtotal + Exclusive - Global Discount
-    
-    // Actually, calculateLineItemTotals returns:
-    // total = baseAmount + exclusiveTaxAmount
-    // subtotal = total - taxAmount
-    
-    // If we want the final quote total:
-    let runningTotal = 0;
-    props.quote.sections.forEach(section => {
-        section.line_items.forEach(item => {
-            if (!item.is_optional) {
-                const taxes = item.taxes.map(tax => ({
-                    tax_rate: Number(tax.tax_rate || 0),
-                    inclusive: tax.inclusive ?? false
-                }));
-                const totals = calculateLineItemTotals(
-                    Number(item.quantity || 0),
-                    Number(item.unit_price || 0),
-                    Number(item.discount_percent || 0),
-                    taxes
-                );
-                runningTotal += totals.total;
-            }
-        });
-    });
-
-    const globalDiscount = Math.max(Number(props.quote.discount_amount || 0), 0);
-    return runningTotal - globalDiscount;
-});
+const { formatCurrency } = useFormat(effectiveCurrency.value);
 
 const alignmentClass = computed(() => {
     if (props.config.alignment === 'center') {
@@ -148,65 +44,131 @@ const taxLines = computed(() => {
             .filter((item) => !item.is_optional)
             .forEach((item) => {
                 if (item.taxes.length > 0) {
-                    const taxes = item.taxes.map((tax) => ({
-                        tax_rate: Number(tax.tax_rate || 0),
-                        inclusive: Boolean(tax.inclusive),
-                    }));
-
-                    const totals = calculateLineItemTotals(
-                        Number(item.quantity || 0),
-                        Number(item.unit_price || 0),
-                        Number(item.discount_percent || 0),
-                        taxes,
-                    );
-
                     item.taxes.forEach((tax) => {
                         const key = `${tax.tax_label}-${tax.tax_rate}`;
-                        
-                        // Calculate individual tax amount for breakdown using correct logic
-                        const rate = Number(tax.tax_rate || 0);
-                        const isInclusive = Boolean(tax.inclusive);
-                        const baseAmount = Number(item.quantity || 0) * Number(item.unit_price || 0) * (1 - Number(item.discount_percent || 0) / 100);
-                        
-                        let amount: number;
-                        if (isInclusive) {
-                            amount = baseAmount * rate / (100 + rate);
-                        } else {
-                            // Exclusive taxes are calculated on the baseAmount (stated price)
-                            amount = baseAmount * rate / 100;
+                        // If tax_amount is present, use it; otherwise calculate locally
+                        const amount = Number(tax.tax_amount || 0);
+                        const hasTaxAmount = amount > 0;
+
+                        let taxAmount = amount;
+                        if (!hasTaxAmount) {
+                            // Calculate locally for this specific tax
+                            const unitPrice = Number(item.unit_price || 0);
+                            const quantity = Number(item.quantity || 0);
+                            const discountPercent = Number(item.discount_percent || 0);
+                            const beforeDiscount = unitPrice * quantity;
+                            const subtotal = beforeDiscount * (1 - discountPercent / 100);
+                            const rate = Number(tax.tax_rate || 0);
+
+                            if (tax.inclusive) {
+                                taxAmount = (subtotal * rate) / (100 + rate);
+                            } else {
+                                taxAmount = (subtotal * rate) / 100;
+                            }
                         }
 
                         const existing = breakdown.get(key);
-
                         if (existing) {
-                            existing.amount += amount;
-
-                            return;
+                            existing.amount += taxAmount;
+                        } else {
+                            breakdown.set(key, {
+                                label: tax.tax_label || `Tax ${tax.tax_rate}%`,
+                                amount: taxAmount,
+                            });
                         }
-
-                        breakdown.set(key, {
-                            amount,
-                            label: `${tax.tax_label} (${tax.tax_rate}%) ${isInclusive ? 'Inclusive' : 'Exclusive'}`,
-                        });
                     });
                 }
             });
     });
 
-    if (breakdown.size > 0) {
-        return Array.from(breakdown.values()).map((line) => ({
-            label: line.label,
-            amount: line.amount,
-        }));
+    return Array.from(breakdown.values());
+});
+
+const calculatedSubtotal = computed(() => {
+    // If subtotal is present and non-zero, use it
+    if (props.quote.subtotal && props.quote.subtotal > 0) {
+        return Number(props.quote.subtotal);
     }
 
-    return [
-        {
-            label: 'Tax',
-            amount: computedTaxAmount.value,
-        },
-    ];
+    // Otherwise, calculate locally using composable
+    return props.quote.sections.reduce((sum, section) => {
+        return sum + section.line_items.reduce((sectionSum, item) => {
+            if (item.is_optional) return sectionSum;
+
+            const { subtotal } = calculateLineItemTotals(
+                Number(item.quantity || 0),
+                Number(item.unit_price || 0),
+                Number(item.discount_percent || 0),
+                item.taxes?.map((tax: any) => ({
+                    tax_rate: Number(tax.tax_rate || 0),
+                    inclusive: tax.inclusive || false,
+                })) || [],
+            );
+
+            return sectionSum + subtotal;
+        }, 0);
+    }, 0);
 });
+
+const calculatedTaxAmount = computed(() => {
+    // If tax_amount is present and non-zero, use it
+    if (props.quote.tax_amount && props.quote.tax_amount > 0) {
+        return Number(props.quote.tax_amount);
+    }
+
+    // Otherwise, sum up tax lines
+    return taxLines.value.reduce((sum, line) => sum + line.amount, 0);
+});
+
+const calculatedDiscountAmount = computed(() => {
+    // If discount_amount is present and non-zero, use it
+    if (props.quote.discount_amount && props.quote.discount_amount > 0) {
+        return Number(props.quote.discount_amount);
+    }
+
+    // Otherwise, calculate locally
+    return props.quote.sections.reduce((sum, section) => {
+        return sum + section.line_items.reduce((sectionSum, item) => {
+            if (item.is_optional) return sectionSum;
+
+            const unitPrice = Number(item.unit_price || 0);
+            const quantity = Number(item.quantity || 0);
+            const discountPercent = Number(item.discount_percent || 0);
+
+            const beforeDiscount = unitPrice * quantity;
+            const discountAmount = beforeDiscount * (discountPercent / 100);
+
+            return sectionSum + discountAmount;
+        }, 0);
+    }, 0);
+});
+
+const calculatedTotal = computed(() => {
+    // If total is present and non-zero, use it
+    if (props.quote.total && props.quote.total > 0) {
+        return Number(props.quote.total);
+    }
+
+    // Otherwise, calculate locally using composable
+    return props.quote.sections.reduce((sum, section) => {
+        return sum + section.line_items.reduce((sectionSum, item) => {
+            if (item.is_optional) return sectionSum;
+
+            const { total } = calculateLineItemTotals(
+                Number(item.quantity || 0),
+                Number(item.unit_price || 0),
+                Number(item.discount_percent || 0),
+                item.taxes?.map((tax: any) => ({
+                    tax_rate: Number(tax.tax_rate || 0),
+                    inclusive: tax.inclusive || false,
+                })) || [],
+            );
+
+            return sectionSum + total;
+        }, 0);
+    }, 0);
+});
+
 </script>
 
 <template>
@@ -224,14 +186,14 @@ const taxLines = computed(() => {
         >
             <div v-if="config.showSubtotal" class="flex items-center justify-between">
                 <span>Subtotal</span>
-                <span class="tabular-nums">{{ formatCurrency(computedSubtotal) }}</span>
+                <span class="tabular-nums">{{ formatCurrency(calculatedSubtotal) }}</span>
             </div>
 
             <div v-if="taxLines.length > 0" class="my-2 border-t" />
 
-            <div v-if="config.showGlobalDiscount" class="flex items-center justify-between">
+            <div v-if="config.showGlobalDiscount && calculatedDiscountAmount > 0" class="flex items-center justify-between">
                 <span>Discount</span>
-                <span class="tabular-nums">-{{ formatCurrency(computedDiscountAmount) }}</span>
+                <span class="tabular-nums">-{{ formatCurrency(calculatedDiscountAmount) }}</span>
             </div>
 
             <div v-for="taxLine in taxLines" :key="taxLine.label" class="flex items-center justify-between">
@@ -243,7 +205,7 @@ const taxLines = computed(() => {
 
             <div v-if="config.showTaxTotal" class="flex items-center justify-between">
                 <span>Total tax</span>
-                <span class="tabular-nums">{{ formatCurrency(computedTaxAmount) }}</span>
+                <span class="tabular-nums">{{ formatCurrency(calculatedTaxAmount) }}</span>
             </div>
 
             <div class="my-2 border-t" />
@@ -258,7 +220,7 @@ const taxLines = computed(() => {
                 }"
             >
                 <span>{{ config.totalLabel }}</span>
-                <span class="tabular-nums">{{ formatCurrency(computedTotal) }}</span>
+                <span class="tabular-nums">{{ formatCurrency(calculatedTotal) }}</span>
             </div>
         </div>
     </div>
