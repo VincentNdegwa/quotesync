@@ -100,8 +100,8 @@ test('invoice numbering increments correctly', function () {
     $invoice1 = Invoice::query()->where('quote_id', $quote1->id)->first();
     $invoice2 = Invoice::query()->where('quote_id', $quote2->id)->first();
 
-    expect($invoice1->invoice_number)->toBe('INV1');
-    expect($invoice2->invoice_number)->toBe('INV2');
+    expect($invoice1->invoice_number)->toBe(sprintf('INV-%d-001', (int) now()->year));
+    expect($invoice2->invoice_number)->toBe(sprintf('INV-%d-002', (int) now()->year));
 });
 
 test('invoice line items are copied from quote', function () {

@@ -493,9 +493,7 @@ class QuoteService
     {
         abort_unless($quote->status->canBeArchived(), 403, 'This quote cannot be archived.');
 
-        $quote->update([
-            'archived_at' => now(),
-        ]);
+        $quote->delete();
 
         QuoteActivity::query()->create([
             'quote_id' => $quote->id,

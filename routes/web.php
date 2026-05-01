@@ -22,7 +22,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceSendController;
-use App\Http\Controllers\MembersController;
+use App\Http\Controllers\Settings\MembersController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PortalInvitationController;
 use App\Http\Controllers\PublicQuoteController;

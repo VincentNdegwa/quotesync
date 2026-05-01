@@ -28,8 +28,8 @@ test('pdf can be generated for a quote', function () {
     $job = new GenerateQuotePdf($quote);
     $job->handle($pdfService);
 
-    expect($quote->pdf_path)->not->toBeNull();
-    expect($quote->pdf_path)->toContain('.pdf');
+    expect($quote->pdf_url)->not->toBeNull();
+    expect($quote->pdf_url)->toContain('.pdf');
 });
 
 test('pdf generation job can be dispatched', function () {

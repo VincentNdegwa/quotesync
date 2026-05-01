@@ -31,10 +31,10 @@ class CatalogItemFactory extends Factory
             'name' => fake()->words(3, true),
             'description' => fake()->sentence(),
             'sku' => strtoupper(fake()->bothify('SKU-####')),
-            'unit' => fake()->randomElement(['hr', 'day', 'unit', 'sqm', 'kg', 'm', 'lot', 'month']),
+            'unit_id' => null,
             'unit_price' => fake()->randomFloat(2, 10, 1500),
             'cost_price' => fake()->randomFloat(2, 5, 900),
-            'image_path' => null,
+            'image_url' => null,
             'is_active' => true,
             'usage_count' => fake()->numberBetween(0, 200),
         ];

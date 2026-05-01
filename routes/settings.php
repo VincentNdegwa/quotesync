@@ -37,7 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('teams/invitations', [InvitationController::class, 'store'])
         ->name('invitations.store');
-    Route::delete('teams/invitations/{invitation}', [InvitationController::class, 'destroy'])
+    Route::delete('teams/invitations/{code}', [InvitationController::class, 'destroy'])
         ->name('invitations.destroy');
 
     Route::inertia('settings/appearance', 'settings/Appearance')->name('appearance.edit');

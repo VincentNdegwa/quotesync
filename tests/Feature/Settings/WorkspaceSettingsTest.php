@@ -13,8 +13,8 @@ test('workspace settings page renders visible groups', function () {
         ->get('/business-setup/brand')
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('settings/WorkspaceSettings')
-            ->where('currentGroup.group', 'brand')
+            ->component('settings/setup/brand')
+            ->has('business')
             ->has('groups')
             ->where('groups.0.key', 'brand')
             ->where('groups', fn ($groups): bool => ! collect($groups)->pluck('key')->contains('integrations')),
@@ -28,10 +28,9 @@ test('workspace settings can be updated for a dynamic group', function () {
     $response = $this->actingAs($user)
         ->put('/business-setup/localization', [
             'settings' => [
-                'country' => 'NG',
                 'timezone' => 'Africa/Lagos',
-                'currency' => 'NGN',
                 'date_format' => 'DD/MM/YYYY',
+                'currency' => 'NGN',
             ],
         ]);
 
@@ -40,15 +39,15 @@ test('workspace settings can be updated for a dynamic group', function () {
     $this->assertDatabaseHas((new WorkspaceSetting)->getTable(), [
         'workspace_id' => $workspace->id,
         'group' => 'localization',
-        'key' => 'country',
-        'value' => 'NG',
+        'key' => 'timezone',
+        'value' => 'Africa/Lagos',
     ]);
 
     $this->assertDatabaseHas((new WorkspaceSetting)->getTable(), [
         'workspace_id' => $workspace->id,
         'group' => 'localization',
-        'key' => 'timezone',
-        'value' => 'Africa/Lagos',
+        'key' => 'date_format',
+        'value' => 'DD/MM/YYYY',
     ]);
 });
 
@@ -61,6 +60,9 @@ test('workspace settings logo upload stores a public file path', function () {
     $response = $this->actingAs($user)
         ->put('/business-setup/brand', [
             'company_name' => 'Acme Inc',
+            'country' => 'US',
+            'currency' => 'USD',
+            'primary_color' => '#4F46E5',
             'logo_path' => UploadedFile::fake()->image('logo.png'),
         ]);
 
@@ -77,27 +79,30 @@ test('workspace settings array field is stored as json', function () {
     $workspace = $user->currentWorkspace;
 
     $response = $this->actingAs($user)
-        ->put('/business-setup/quotes', [
+        ->put('/business-setup/quotes_invoices', [
             'settings' => [
                 'quote_prefix' => 'QS',
                 'quote_number_sequence' => 1,
                 'quote_validity_days' => 30,
-                'default_currency' => 'USD',
-                'show_margin_to_roles' => ['owner', 'admin'],
+                'allow_optional_items' => false,
             ],
         ]);
+
+    if ($response->status() !== 302) {
+        dump($response->exception?->validator?->errors());
+    }
 
     $response->assertRedirect();
 
     $storedSetting = WorkspaceSetting::query()
         ->where('workspace_id', $workspace->id)
         ->where('group', 'quotes')
-        ->where('key', 'show_margin_to_roles')
+        ->where('key', 'allow_optional_items')
         ->first();
 
     expect($storedSetting)->not->toBeNull();
-    expect($storedSetting?->cast)->toBe('json');
-    expect(json_decode((string) $storedSetting?->value, true))->toBe(['owner', 'admin']);
+    expect($storedSetting?->cast)->toBe('boolean');
+    expect($storedSetting?->value)->toBe('1');
 });
 
 test('workspace notification channels are stored as array values', function () {

@@ -45,12 +45,13 @@ class QuoteFactory extends Factory
             'accepted_at' => null,
             'declined_at' => null,
             'decline_reason' => null,
-            'signature_path' => null,
+            'signature_url' => null,
             'signer_name' => null,
             'signer_ip' => null,
             'win_probability' => null,
             'won_at' => null,
             'lost_at' => null,
+            'quote_uuid' => fake()->uuid(),
         ];
     }
 }

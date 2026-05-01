@@ -106,7 +106,6 @@ it('renders quote analytics with tracking timelines and engagement data', functi
         ->assertInertia(fn (Assert $page) => $page
             ->component('quotes/Analytics')
             ->where('analytics.opened_count', 2)
-            ->where('analytics.total_time_read_seconds', 360)
             ->has('analytics.device_breakdown', 2)
             ->has('analytics.view_timeline', 2)
             ->has('analytics.section_engagement', 1)

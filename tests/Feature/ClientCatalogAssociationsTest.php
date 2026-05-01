@@ -54,6 +54,11 @@ test('catalog items can sync multiple taxes via pivot table', function () {
         'created_by' => $user->id,
     ]);
 
+    $unit = \App\Models\ConfigurationUnit::factory()->create([
+        'workspace_id' => $workspace?->id,
+        'created_by' => $user->id,
+    ]);
+
     $firstTax = Tax::factory()->create([
         'workspace_id' => $workspace?->id,
         'created_by' => $user->id,
@@ -67,7 +72,7 @@ test('catalog items can sync multiple taxes via pivot table', function () {
     $this->actingAs($user)
         ->post('/catalog', [
             'name' => 'Consultation',
-            'unit' => 'unit',
+            'unit_id' => $unit->id,
             'unit_price' => 100,
             'cost_price' => 40,
             'catalog_category_id' => $category->id,
@@ -85,7 +90,7 @@ test('catalog items can sync multiple taxes via pivot table', function () {
     $this->actingAs($user)
         ->put('/catalog/'.$item?->id, [
             'name' => 'Consultation',
-            'unit' => 'unit',
+            'unit_id' => $unit->id,
             'unit_price' => 100,
             'cost_price' => 40,
             'catalog_category_id' => $category->id,

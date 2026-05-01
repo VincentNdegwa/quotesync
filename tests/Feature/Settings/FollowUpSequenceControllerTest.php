@@ -26,10 +26,10 @@ test('follow-ups settings page renders sequences', function () {
     ]);
 
     $this->actingAs($user)
-        ->get(route('follow-ups.index'))
+        ->get(route('configuration.follow-ups'))
         ->assertOk()
         ->assertInertia(fn (AssertableInertia $page) => $page
-            ->component('settings/FollowUps')
+            ->component('configuration/follow-ups/Index')
             ->where('sequences.0.name', 'Default Follow Up')
             ->where('sequences.0.is_default', true)
             ->where('sequences.0.steps.0.day_offset', 2)
@@ -41,7 +41,7 @@ test('user can create a follow-up sequence', function () {
     $workspace = $user->currentWorkspace;
 
     $this->actingAs($user)
-        ->post(route('follow-ups.store'), [
+        ->post(route('configuration.follow-ups.store'), [
             'name' => 'New Sequence',
             'is_default' => true,
             'steps' => [
@@ -75,7 +75,7 @@ test('creating a default sequence unsets other defaults', function () {
     ]);
 
     $this->actingAs($user)
-        ->post(route('follow-ups.store'), [
+        ->post(route('configuration.follow-ups.store'), [
             'name' => 'New Default',
             'is_default' => true,
             'steps' => [
@@ -114,7 +114,7 @@ test('user can update a follow-up sequence', function () {
     ]);
 
     $this->actingAs($user)
-        ->put(route('follow-ups.update', $sequence), [
+        ->put(route('configuration.follow-ups.update', $sequence), [
             'name' => 'Updated',
             'is_default' => true,
             'steps' => [
@@ -154,7 +154,7 @@ test('user can delete a follow-up sequence', function () {
     ]);
 
     $this->actingAs($user)
-        ->delete(route('follow-ups.destroy', $sequence))
+        ->delete(route('configuration.follow-ups.destroy', $sequence))
         ->assertRedirect();
 
     expect(FollowUpSequence::query()->where('id', $sequence->id)->exists())->toBeFalse();
@@ -173,7 +173,7 @@ test('user cannot access another workspace sequence', function () {
     ]);
 
     $this->actingAs($ownerB)
-        ->put(route('follow-ups.update', $sequence), [
+        ->put(route('configuration.follow-ups.update', $sequence), [
             'name' => 'Hijacked',
             'is_default' => false,
             'steps' => [

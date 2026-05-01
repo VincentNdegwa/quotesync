@@ -54,7 +54,7 @@ test('workspace owner can cancel a pending invitation', function () {
     ]);
 
     $response = $this->actingAs($owner)
-        ->delete(route('invitations.destroy', ['invitation' => $invitation->code]));
+        ->delete(route('invitations.destroy', ['code' => $invitation->code]));
 
     $response->assertRedirect();
 
@@ -79,6 +79,8 @@ test('non-admin workspace member cannot cancel invitation', function () {
 
     $member = User::factory()->create();
     $member->addRole($memberRole, $workspace);
+    $member->update(['current_workspace_id' => $workspace->id]);
+    $member->refresh();
 
     $invitation = $workspace->invitations()->create([
         'email' => 'cannot-cancel@example.com',
@@ -88,7 +90,7 @@ test('non-admin workspace member cannot cancel invitation', function () {
     ]);
 
     $response = $this->actingAs($member)
-        ->delete(route('invitations.destroy', ['invitation' => $invitation->code]));
+        ->delete(route('invitations.destroy', ['code' => $invitation->code]));
 
     $response->assertForbidden();
 

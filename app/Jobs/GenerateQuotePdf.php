@@ -23,7 +23,7 @@ class GenerateQuotePdf implements ShouldQueue
         $pdfPath = $pdfService->generate($this->quote);
 
         $this->quote->update([
-            'pdf_path' => $pdfPath,
+            'pdf_url' => $pdfPath,
         ]);
     }
 }

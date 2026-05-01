@@ -70,7 +70,7 @@ class WorkspaceSettingsController extends Controller
             $props['business'] = [
                 'company_name' => $workspace->name,
                 'country' => $workspace->country,
-                'logo_path' => $workspace->logo_url,
+                'logo_url' => $workspace->logo_url,
                 'currency' => $workspace->currency,
                 'primary_color' => $workspace->primary_color,
                 'accent_color' => $workspace->accent_color,
@@ -79,7 +79,7 @@ class WorkspaceSettingsController extends Controller
                 'email' => $workspace->email,
                 'website' => $workspace->website,
                 'tax_number' => $workspace->tax_number,
-                'favicon_path' => $workspace->favicon_url,
+                'favicon_url' => $workspace->favicon_url,
                 'white_label_mode' => $workspace->white_label_mode,
                 'industry_id' => $workspace->industry_id
             ];
@@ -120,19 +120,23 @@ class WorkspaceSettingsController extends Controller
         }
 
         if ($group === 'brand') {
-            $workspace->update([
-                'name' => $validated['company_name'] ?? $workspace->name,
-                'country' => $validated['country'] ?? $workspace->country,
-                'currency' => $validated['currency'] ?? $workspace->currency,
-                'primary_color' => $validated['primary_color'] ?? $workspace->primary_color,
-                'accent_color' => $validated['accent_color'] ?? $workspace->accent_color,
-                'address' => $validated['address'] ?? $workspace->address,
-                'phone' => $validated['phone'] ?? $workspace->phone,
-                'email' => $validated['email'] ?? $workspace->email,
-                'website' => $validated['website'] ?? $workspace->website,
-                'tax_number' => $validated['tax_number'] ?? $workspace->tax_number,
-                'white_label_mode' => $validated['white_label_mode'] ?? $workspace->white_label_mode,
-            ]);
+            $updateData = array_filter([
+                'name' => $validated['company_name'] ?? null,
+                'country' => $validated['country'] ?? null,
+                'currency' => $validated['currency'] ?? null,
+                'primary_color' => $validated['primary_color'] ?? null,
+                'accent_color' => $validated['accent_color'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'phone' => $validated['phone'] ?? null,
+                'email' => $validated['email'] ?? null,
+                'website' => $validated['website'] ?? null,
+                'tax_number' => $validated['tax_number'] ?? null,
+                'white_label_mode' => $validated['white_label_mode'] ?? null,
+            ], fn ($value) => $value !== null);
+
+            if (!empty($updateData)) {
+                $workspace->update($updateData);
+            }
 
             if ($request->hasFile('logo_path')) {
                 $result = $fileStorageService->store($request->file('logo_path'), "workspaces/{$workspace->id}/branding");

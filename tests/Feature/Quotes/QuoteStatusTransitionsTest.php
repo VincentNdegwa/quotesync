@@ -190,7 +190,7 @@ test('service validates invalid status transition', function () {
 
     $service = app(QuoteService::class);
 
-    expect(fn () => $service->update($quote, ['status' => QuoteStatus::Won]))
+    expect(fn () => $service->update($quote, ['status' => QuoteStatus::Won->value]))
         ->toThrow(InvalidArgumentException::class, 'Invalid status transition');
 });
 
@@ -205,7 +205,7 @@ test('service prevents manual change to system statuses', function () {
 
     $service = app(QuoteService::class);
 
-    expect(fn () => $service->update($quote, ['status' => QuoteStatus::Draft]))
+    expect(fn () => $service->update($quote, ['status' => QuoteStatus::Draft->value]))
         ->toThrow(InvalidArgumentException::class, 'Status cannot be changed manually');
 });
 
@@ -253,11 +253,11 @@ test('reopen expired quote to draft', function () {
     ]);
 
     $service = app(QuoteService::class);
-    $newValidUntil = now()->addDays(30)->toDateString();
-    $updatedQuote = $service->reopen($quote, $newValidUntil);
+    $newValidUntil = now()->addDays(30);
+    $updatedQuote = $service->reopen($quote, $newValidUntil->toDateString());
 
     expect($updatedQuote->status)->toBe(QuoteStatus::Draft);
-    expect($updatedQuote->valid_until)->toBe($newValidUntil);
+    expect($updatedQuote->valid_until->toDateString())->toBe($newValidUntil->toDateString());
 });
 
 test('cannot reopen non-expired quote', function () {
@@ -282,14 +282,13 @@ test('archive won quote', function () {
         'workspace_id' => $workspace->id,
         'client_id' => $client->id,
         'status' => QuoteStatus::Won,
-        'archived_at' => null,
     ]);
 
     $service = app(QuoteService::class);
     $service->archive($quote);
 
     $quote->refresh();
-    expect($quote->archived_at)->not->toBeNull();
+    expect($quote->deleted_at)->not->toBeNull();
 });
 
 test('cannot archive non-won/lost quote', function () {

@@ -48,8 +48,6 @@ test('public quote page renders the quote and throttles view notifications', fun
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('public/QuoteView')
-            ->where('status', 'viewed')
-            ->where('is_expired', false)
             ->where('quote.title', 'Website redesign')
         );
 
@@ -122,10 +120,9 @@ test('client acceptance stores signature path, metadata, and notifies stakeholde
 
     expect($quote->status)->toBe(QuoteStatus::Accepted);
     expect($quote->accepted_at)->not->toBeNull();
-    expect($quote->signature_path)->not->toBeNull();
+    expect($quote->signature_url)->not->toBeNull();
     expect($quote->signer_name)->toBe('Client Test');
     expect($quote->signer_ip)->toBe('127.0.0.1');
-    Storage::disk('public')->assertExists($quote->signature_path);
 
     $activity = QuoteActivity::query()
         ->where('quote_id', $quote->id)

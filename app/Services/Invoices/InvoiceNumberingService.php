@@ -34,7 +34,6 @@ class InvoiceNumberingService
 
         if ((bool) $resetYearly) {
             $hasInvoiceInCurrentYear = Invoice::query()
-                ->withTrashed()
                 ->where('workspace_id', $workspace->id)
                 ->whereYear('created_at', (int) now()->year)
                 ->exists();

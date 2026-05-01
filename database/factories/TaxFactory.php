@@ -23,7 +23,7 @@ class TaxFactory extends Factory
         return [
             'created_by' => $creator,
             'workspace_id' => fn (array $attributes): int => User::query()->findOrFail($attributes['created_by'])->current_workspace_id,
-            'name' => fake()->randomElement(['VAT', 'GST', 'Withholding Tax', 'Service Charge']),
+            'name' => fake()->randomElement(['VAT', 'GST', 'Withholding Tax', 'Service Charge']).' '.fake()->unique()->numberBetween(1, 999),
             'rate' => fake()->randomFloat(2, 0, 20),
             'inclusive' => false,
             'is_default' => false,

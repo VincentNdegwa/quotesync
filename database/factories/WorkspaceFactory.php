@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -14,7 +15,7 @@ class WorkspaceFactory extends Factory
         return [
             'name' => fake()->company(),
             'display_name' => fake()->company(),
-            'owner_id' => 1,
+            'owner_id' => User::factory(),
         ];
     }
 }

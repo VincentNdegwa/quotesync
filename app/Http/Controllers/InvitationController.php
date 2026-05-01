@@ -29,9 +29,22 @@ class InvitationController extends Controller
         return back();
     }
 
-    public function destroy(Request $request, Invitation $invitation, InvitationService $invitationService): RedirectResponse
+    public function destroy(Request $request, string $code, InvitationService $invitationService): RedirectResponse
     {
-        $invitationService->cancel($invitation, $request->user());
+        $invitation = Invitation::query()
+            ->where('code', $code)
+            ->firstOrFail();
+
+        // Check if invitation belongs to user's workspace
+        if ($invitation->workspace_id !== $request->user()->currentWorkspace->id) {
+            abort(404);
+        }
+
+        try {
+            $invitationService->cancel($invitation, $request->user());
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            abort(403);
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Invitation cancelled.')]);
 
