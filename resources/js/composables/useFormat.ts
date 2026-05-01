@@ -14,15 +14,44 @@ export function useFormat(defaultCurrency?: string) {
         const n = Number(val || 0);
         const currencyCode = currency || defaultCurrency || 'USD';
         const position = getCurrencyPosition();
-        const formatted = new Intl.NumberFormat(undefined, {
+        const numberFormat = getNumberFormat();
+
+        // Check if number is a whole number
+        const isWholeNumber = n === Math.floor(n);
+        const decimals = isWholeNumber ? 0 : 2;
+
+        // Parse number format to determine separators
+        const usesCommaForThousands = numberFormat.includes(',');
+        const usesPeriodForDecimal = numberFormat.includes('.');
+
+        // Format the number with custom separators
+        const parts = n.toFixed(decimals).split('.');
+        const integerPart = parts[0];
+        const decimalPart = decimals > 0 ? (parts[1] || '0'.repeat(decimals)) : '';
+
+        // Add thousand separators
+        const thousandsSeparator = usesCommaForThousands ? ',' : '.';
+        const decimalSeparator = usesPeriodForDecimal ? '.' : ',';
+
+        const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSeparator);
+        const formattedNumber = decimals > 0 ? `${formattedInteger}${decimalSeparator}${decimalPart}` : formattedInteger;
+
+        // Get currency symbol
+        const formatter = new Intl.NumberFormat(undefined, {
             style: 'currency',
             currency: currencyCode,
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        }).format(n);
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        });
+        const formattedWithSymbol = formatter.format(0);
+        const currencySymbol = formattedWithSymbol.replace(/[0-9]/g, '').trim() || currencyCode;
 
-        // Handle currency position if needed (Intl.NumberFormat handles most cases)
-        return formatted;
+        // Position the currency symbol
+        if (position === 'after') {
+            return `${formattedNumber} ${currencySymbol}`;
+        }
+
+        return `${currencySymbol} ${formattedNumber}`;
     };
 
     const formatDate = (val: string | null | undefined): string => {
@@ -33,19 +62,37 @@ export function useFormat(defaultCurrency?: string) {
         const date = new Date(val);
         const dateFormat = getDateFormat();
 
-        // Convert date format to locale options
-        const options: Intl.DateTimeFormatOptions = {};
-        if (dateFormat.includes('d')) {
-            options.day = 'numeric';
+        // Handle custom date formats
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+        const monthName = date.toLocaleDateString(undefined, { month: 'short' });
+        const monthNameLong = date.toLocaleDateString(undefined, { month: 'long' });
+
+        if (dateFormat === 'DD/MM/YYYY') {
+            return `${day}/${month}/${year}`;
         }
-        if (dateFormat.includes('M') || dateFormat.includes('MMM') || dateFormat.includes('MMMM')) {
-            options.month = dateFormat.includes('MMMM') ? 'long' : dateFormat.includes('MMM') ? 'short' : 'numeric';
+        if (dateFormat === 'MM/DD/YYYY') {
+            return `${month}/${day}/${year}`;
         }
-        if (dateFormat.includes('y') || dateFormat.includes('Y')) {
-            options.year = 'numeric';
+        if (dateFormat === 'YYYY-MM-DD') {
+            return `${year}-${month}-${day}`;
+        }
+        if (dateFormat === 'MMM d, yyyy') {
+            return `${monthName} ${day}, ${year}`;
+        }
+        if (dateFormat === 'MMMM d, yyyy') {
+            return `${monthNameLong} ${day}, ${year}`;
+        }
+        if (dateFormat === 'd MMM yyyy') {
+            return `${day} ${monthName} ${year}`;
+        }
+        if (dateFormat === 'd MMMM yyyy') {
+            return `${day} ${monthNameLong} ${year}`;
         }
 
-        return date.toLocaleDateString(undefined, options);
+        // Fallback to default
+        return `${monthName} ${day}, ${year}`;
     };
 
     const formatTime = (val: string | null | undefined): string => {
@@ -56,16 +103,17 @@ export function useFormat(defaultCurrency?: string) {
         const date = new Date(val);
         const timeFormat = getTimeFormat();
 
-        const options: Intl.DateTimeFormatOptions = {};
-        if (timeFormat.includes('h') || timeFormat.includes('H')) {
-            options.hour = timeFormat.includes('h') ? 'numeric' : '2-digit';
-            options.hour12 = timeFormat.includes('h');
-        }
-        if (timeFormat.includes('m')) {
-            options.minute = '2-digit';
+        const hours = date.getHours();
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+
+        if (timeFormat === '24h') {
+            return `${hours.toString().padStart(2, '0')}:${minutes}`;
         }
 
-        return date.toLocaleTimeString(undefined, options);
+        // 12h format
+        const displayHours = hours % 12 || 12;
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        return `${displayHours}:${minutes} ${ampm}`;
     };
 
     const formatDateTime = (val: string | null | undefined): string => {
@@ -73,47 +121,39 @@ export function useFormat(defaultCurrency?: string) {
             return '—';
         }
 
-        const date = new Date(val);
-        const dateFormat = getDateFormat();
-        const timeFormat = getTimeFormat();
-
-        const options: Intl.DateTimeFormatOptions = {};
-
-        // Date options
-        if (dateFormat.includes('d')) {
-            options.day = 'numeric';
-        }
-        if (dateFormat.includes('M') || dateFormat.includes('MMM') || dateFormat.includes('MMMM')) {
-            options.month = dateFormat.includes('MMMM') ? 'long' : dateFormat.includes('MMM') ? 'short' : 'numeric';
-        }
-        if (dateFormat.includes('y') || dateFormat.includes('Y')) {
-            options.year = 'numeric';
-        }
-
-        // Time options
-        if (timeFormat.includes('h') || timeFormat.includes('H')) {
-            options.hour = timeFormat.includes('h') ? 'numeric' : '2-digit';
-            options.hour12 = timeFormat.includes('h');
-        }
-        if (timeFormat.includes('m')) {
-            options.minute = '2-digit';
-        }
-
-        return date.toLocaleString(undefined, options);
+        return `${formatDate(val)} ${formatTime(val)}`;
     };
 
     const formatNumber = (val: number | string | null | undefined, decimals: number = 2): string => {
         const n = Number(val || 0);
         const numberFormat = getNumberFormat();
 
+        // Check if number is a whole number
+        const isWholeNumber = n === Math.floor(n);
+
+        // For whole numbers, don't add decimal part
+        if (isWholeNumber) {
+            const usesCommaForThousands = numberFormat.includes(',');
+            const thousandsSeparator = usesCommaForThousands ? ',' : '.';
+            const formattedInteger = Math.floor(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSeparator);
+            return formattedInteger;
+        }
+
         // Parse the number format to determine separators
         const usesCommaForThousands = numberFormat.includes(',');
         const usesPeriodForDecimal = numberFormat.includes('.');
 
-        return new Intl.NumberFormat(undefined, {
-            minimumFractionDigits: decimals,
-            maximumFractionDigits: decimals,
-        }).format(n);
+        // Format the number with custom separators
+        const parts = n.toFixed(decimals).split('.');
+        const integerPart = parts[0];
+        const decimalPart = parts[1] || '0'.repeat(decimals);
+
+        // Add thousand separators
+        const thousandsSeparator = usesCommaForThousands ? ',' : '.';
+        const decimalSeparator = usesPeriodForDecimal ? '.' : ',';
+
+        const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSeparator);
+        return `${formattedInteger}${decimalSeparator}${decimalPart}`;
     };
 
     const formatRelativeTime = (val: string | null | undefined): string => {
@@ -158,14 +198,43 @@ export function useFormat(defaultCurrency?: string) {
         const date = new Date(val);
         const timezone = targetTimezone || getTimezone();
 
-        return date.toLocaleString(undefined, {
+        // Convert to target timezone
+        const options: Intl.DateTimeFormatOptions = {
             timeZone: timezone,
             year: 'numeric',
-            month: 'short',
-            day: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
             hour: '2-digit',
             minute: '2-digit',
-        });
+            hour12: getTimeFormat() !== '24h',
+        };
+
+        const formatted = date.toLocaleString(undefined, options);
+        
+        // Parse and reformat according to custom date format
+        const parts = formatted.split(/[,\s]+/);
+        const timePart = parts[parts.length - 1];
+        const datePart = parts.slice(0, -1).join(' ');
+        
+        // Reformat date part according to custom format
+        const dateFormat = getDateFormat();
+        const dateObj = new Date(formatted);
+        const day = dateObj.getDate().toString().padStart(2, '0');
+        const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+        const year = dateObj.getFullYear();
+        
+        let formattedDate;
+        if (dateFormat === 'DD/MM/YYYY') {
+            formattedDate = `${day}/${month}/${year}`;
+        } else if (dateFormat === 'MM/DD/YYYY') {
+            formattedDate = `${month}/${day}/${year}`;
+        } else if (dateFormat === 'YYYY-MM-DD') {
+            formattedDate = `${year}-${month}-${day}`;
+        } else {
+            formattedDate = datePart;
+        }
+        
+        return `${formattedDate} ${timePart}`;
     };
 
     return {
