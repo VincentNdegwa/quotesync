@@ -448,7 +448,7 @@ class WorkspaceSettingsService
                 'name' => $workspace->name,
                 'currency' => $workspace->currency ?? 'USD',
                 'country' => $workspace->country ?? null,
-                'logo_url' => $workspace->logo_path ? url(Storage::url($workspace->logo_path)) : null,
+                'logo_url' => $workspace->logo_url,
                 'primary_color' => $workspace->primary_color ?? '#4F46E5',
                 'accent_color' => $workspace->accent_color ?? '#F5A623',
                 'company_address' => $workspace->address ?? null,

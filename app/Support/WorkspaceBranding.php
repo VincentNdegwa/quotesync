@@ -60,7 +60,7 @@ class WorkspaceBranding
             return $path;
         }
 
-        return app('url')->to(Storage::url($path));
+        return null;
     }
 
     private function resolveDataUri(?string $path): ?string

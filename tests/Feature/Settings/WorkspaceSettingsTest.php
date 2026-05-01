@@ -60,23 +60,16 @@ test('workspace settings logo upload stores a public file path', function () {
 
     $response = $this->actingAs($user)
         ->put('/business-setup/brand', [
-            'settings' => [
-                'company_name' => 'Acme Inc',
-                'logo_path' => UploadedFile::fake()->image('logo.png'),
-            ],
+            'company_name' => 'Acme Inc',
+            'logo_path' => UploadedFile::fake()->image('logo.png'),
         ]);
 
     $response->assertRedirect();
 
-    $storedLogoSetting = WorkspaceSetting::query()
-        ->where('workspace_id', $workspace->id)
-        ->where('group', 'brand')
-        ->where('key', 'logo_path')
-        ->first();
-
-    expect($storedLogoSetting)->not->toBeNull();
-    expect($storedLogoSetting?->value)->toBeString();
-    Storage::disk('public')->assertExists((string) $storedLogoSetting?->value);
+    $workspace->refresh();
+    expect($workspace->logo_url)->not->toBeNull();
+    expect($workspace->logo_url)->toBeString();
+    Storage::disk('public')->assertExists(str_replace(Storage::url(''), '', $workspace->logo_url));
 });
 
 test('workspace settings array field is stored as json', function () {

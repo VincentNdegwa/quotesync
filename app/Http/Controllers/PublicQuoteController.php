@@ -13,6 +13,7 @@ use App\Notifications\QuoteAcceptedNotification;
 use App\Notifications\QuoteDeclinedNotification;
 use App\Notifications\QuoteViewedNotification;
 use App\Services\Quotes\QuoteShortCodeService;
+use App\Services\FileStorageService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use App\Traits\ResolvesClientState;
 use Illuminate\Http\RedirectResponse;
@@ -97,9 +98,6 @@ class PublicQuoteController extends Controller
             }
         }
 
-        $quote->signature_path = Storage::url($quote->signature_path);
-
-
         return Inertia::render('public/QuoteView', [
             'quote' => $quote->makeHidden(['internal_notes', 'profit_margin', 'deleted_at']),
             'quote_uuid' => $quote->quote_uuid,
@@ -129,8 +127,7 @@ class PublicQuoteController extends Controller
         $fields = collect($workspaceSettingsService->groupForFrontend($workspace, 'brand')['fields'] ?? []);
         $brandFields = $fields->keyBy('key');
 
-        $logoPath = $brandFields->get('logo_path')['value'] ?? null;
-        $logoUrl = is_string($logoPath) && $logoPath !== '' ? Storage::url($logoPath) : null;
+        $logoUrl = $brandFields->get('logo_path')['value'] ?? null;
 
         return [
             'company_name' => $brandFields->get('company_name')['value'] ?? $workspace->display_name ?? $workspace->name,
@@ -155,7 +152,7 @@ class PublicQuoteController extends Controller
             ->values();
     }
 
-    public function accept(string $quoteUuid, Request $request, QuoteShortCodeService $quoteShortCodeService): RedirectResponse
+    public function accept(string $quoteUuid, Request $request, QuoteShortCodeService $quoteShortCodeService, FileStorageService $fileStorageService): RedirectResponse
     {
         $quote = $quoteShortCodeService->resolveQuoteByIdentifier($quoteUuid);
 
@@ -171,28 +168,18 @@ class PublicQuoteController extends Controller
             'signature' => ['required', 'string', 'starts_with:data:image/png;base64,'],
         ]);
 
-        $signaturePayload = substr($validated['signature'], strpos($validated['signature'], ',') + 1);
-        $signatureBinary = base64_decode($signaturePayload, true);
+        $result = $fileStorageService->storeBase64Image($validated['signature'], 'signatures');
 
-        if ($signatureBinary === false) {
+        if ($result['error']) {
             throw ValidationException::withMessages([
-                'signature' => 'The provided signature image is invalid.',
+                'signature' => 'Failed to save signature: ' . $result['message'],
             ]);
         }
-
-        $signaturePath = sprintf('signatures/%s-%s.png', $quote->quote_uuid, Str::uuid());
-
-        if (is_string($quote->signature_path) && $quote->signature_path !== '') {
-            $oldPath = str_replace(Storage::url(''), '', $quote->signature_path);
-            Storage::disk('public')->delete($oldPath);
-        }
-
-        Storage::disk('public')->put($signaturePath, $signatureBinary);
 
         $quote->forceFill([
             'status' => QuoteStatus::Accepted->value,
             'accepted_at' => now(),
-            'signature_path' => Storage::url($signaturePath),
+            'signature_url' => $result['url'],
             'signer_name' => $validated['signer_name'] ?? null,
             'signer_ip' => $request->ip(),
         ])->save();
@@ -210,7 +197,7 @@ class PublicQuoteController extends Controller
             'metadata' => [
                 'status' => 'accepted',
                 'signer_name' => $validated['signer_name'] ?? null,
-                'signature_path' => $signaturePath,
+                'signature_url' => $result['url'],
             ],
         ]);
 

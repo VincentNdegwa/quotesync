@@ -8,7 +8,7 @@ import type { QuoteData, SignatureBlockConfig, WorkspaceSettings } from '@/types
 
 const props = defineProps<{
     config: SignatureBlockConfig;
-    quote: QuoteData & { status?: string; signature_path?: string | null; signer_name?: string | null; accepted_at?: string | null };
+    quote: QuoteData & { status?: string; signature_url?: string | null; signer_name?: string | null; accepted_at?: string | null };
     settings: WorkspaceSettings;
     previewMode: boolean;
     editMode?: boolean;
@@ -72,7 +72,7 @@ const updateContextText = (value: string | null): void => {
         <template v-else-if="quote.status === 'accepted' || quote.status === 'won' ">
             <div class="flex flex-col items-start gap-6">
                 <div class="flex flex-col">
-                    <img v-if="quote.signature_path" :src="quote.signature_path" alt="Signature" class="h-20 w-auto object-contain" />
+                    <img v-if="quote.signature_url" :src="quote.signature_url" alt="Signature" class="h-20 w-auto object-contain" />
                     <span v-if="quote.signer_name" class="mt-1 text-sm" style="font-family: 'Dancing Script', cursive; font-size: 1.25rem; line-height: 1;">{{ quote.signer_name }}</span>
                 </div>
                 <div class="text-sm text-muted-foreground">

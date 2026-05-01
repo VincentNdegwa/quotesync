@@ -52,7 +52,7 @@ export type WorkspaceOnboardingPageProps = {
     business: {
         company_name: string | null;
         country: string | null;
-        logo_path: string | null;
+        logo_url: string | null;
     };
     quoteDefaults: {
         currency: string | null;

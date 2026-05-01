@@ -193,8 +193,6 @@ class QuoteController extends Controller
             'winProbability.signals'
         ]);
 
-        $quote->signature_path = Storage::url($quote->signature_path);
-
         return Inertia::render('quotes/Show', [
             'quote' => $quote,
             'settings' => $workspaceSettingsService->builderSettings($workspace),
@@ -338,8 +336,7 @@ class QuoteController extends Controller
         $fields = collect($workspaceSettingsService->groupForFrontend($workspace, 'brand')['fields'] ?? []);
         $brandFields = $fields->keyBy('key');
 
-        $logoPath = $brandFields->get('logo_path')['value'] ?? null;
-        $logoUrl = is_string($logoPath) && $logoPath !== '' ? Storage::url($logoPath) : null;
+        $logoUrl = $brandFields->get('logo_path')['value'] ?? null;
 
         return [
             'company_name' => $brandFields->get('company_name')['value'] ?? null,

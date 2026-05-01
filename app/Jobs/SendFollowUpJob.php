@@ -75,7 +75,7 @@ class SendFollowUpJob implements ShouldQueue
 
         $workspace = $quote->workspace;
         $companyName = (string) ($workspace?->display_name ?: $workspace?->name ?: config('app.name'));
-        $logoUrl = $workspace?->logo_path ? Storage::url($workspace->logo_path) : null;
+        $logoUrl = $workspace?->logo_url;
 
         $subject = QuotePlaceholderService::replacePlaceholdersFromQuote(
             (string) ($step->subject ?: 'Follow-up for quote {quote_number}'),

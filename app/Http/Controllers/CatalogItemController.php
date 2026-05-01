@@ -10,6 +10,7 @@ use App\Models\ConfigurationUnit;
 use App\Models\Tax;
 use App\Models\Workspace;
 use App\Services\Catalog\CatalogItemService;
+use App\Services\FileStorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -58,7 +59,7 @@ class CatalogItemController extends Controller
         ]);
     }
 
-    public function store(StoreCatalogItemRequest $request, CatalogItemService $catalogItemService): RedirectResponse
+    public function store(StoreCatalogItemRequest $request, CatalogItemService $catalogItemService, FileStorageService $fileStorageService): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -69,10 +70,10 @@ class CatalogItemController extends Controller
         $payload['created_by'] = $request->user()?->id;
 
         if ($request->hasFile('image')) {
-            $payload['image_path'] = $request->file('image')?->store(
-                "workspaces/{$workspace->id}/catalog",
-                'public',
-            );
+            $result = $fileStorageService->store($request->file('image'), "workspaces/{$workspace->id}/catalog");
+            if (!$result['error']) {
+                $payload['image_url'] = $result['url'];
+            }
         }
 
         $catalogItemService->create($workspace, $payload);
@@ -117,7 +118,7 @@ class CatalogItemController extends Controller
         ]);
     }
 
-    public function update(UpdateCatalogItemRequest $request, CatalogItem $catalog, CatalogItemService $catalogItemService): RedirectResponse
+    public function update(UpdateCatalogItemRequest $request, CatalogItem $catalog, CatalogItemService $catalogItemService, FileStorageService $fileStorageService): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -126,10 +127,10 @@ class CatalogItemController extends Controller
         $payload = $request->validated();
 
         if ($request->hasFile('image')) {
-            $payload['image_path'] = $request->file('image')?->store(
-                "workspaces/{$workspace->id}/catalog",
-                'public',
-            );
+            $result = $fileStorageService->store($request->file('image'), "workspaces/{$workspace->id}/catalog");
+            if (!$result['error']) {
+                $payload['image_url'] = $result['url'];
+            }
         }
 
         $catalogItemService->update($catalog, $payload);

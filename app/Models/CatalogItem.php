@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Auth;
     'unit_id',
     'unit_price',
     'cost_price',
-    'image_path',
+    'image_url',
     'is_active',
     'usage_count',
     'created_by',

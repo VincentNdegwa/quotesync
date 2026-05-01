@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\UpdateWorkspaceSettingsRequest;
 use App\Models\Industry;
 use App\Models\Workspace;
+use App\Services\FileStorageService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -69,7 +70,7 @@ class WorkspaceSettingsController extends Controller
             $props['business'] = [
                 'company_name' => $workspace->name,
                 'country' => $workspace->country,
-                'logo_path' => isset($workspace->logo_path) ? Storage::url($workspace->logo_path) : null,
+                'logo_path' => $workspace->logo_url,
                 'currency' => $workspace->currency,
                 'primary_color' => $workspace->primary_color,
                 'accent_color' => $workspace->accent_color,
@@ -78,7 +79,7 @@ class WorkspaceSettingsController extends Controller
                 'email' => $workspace->email,
                 'website' => $workspace->website,
                 'tax_number' => $workspace->tax_number,
-                'favicon_path' => isset($workspace->favicon_path)? Storage::url($workspace->favicon_path): null,
+                'favicon_path' => $workspace->favicon_url,
                 'white_label_mode' => $workspace->white_label_mode,
                 'industry_id' => $workspace->industry_id
             ];
@@ -106,7 +107,7 @@ class WorkspaceSettingsController extends Controller
         return Inertia::render($component, $props);
     }
 
-    public function update(UpdateWorkspaceSettingsRequest $request, WorkspaceSettingsService $settingsService, string $group): RedirectResponse
+    public function update(UpdateWorkspaceSettingsRequest $request, WorkspaceSettingsService $settingsService, FileStorageService $fileStorageService, string $group): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -134,21 +135,17 @@ class WorkspaceSettingsController extends Controller
             ]);
 
             if ($request->hasFile('logo_path')) {
-                $workspace->update([
-                    'logo_path' => $request->file('logo_path')?->store(
-                        "workspaces/{$workspace->id}/branding",
-                        'public',
-                    ),
-                ]);
+                $result = $fileStorageService->store($request->file('logo_path'), "workspaces/{$workspace->id}/branding");
+                if (!$result['error']) {
+                    $workspace->update(['logo_url' => $result['url']]);
+                }
             }
 
             if ($request->hasFile('favicon_path')) {
-                $workspace->update([
-                    'favicon_path' => $request->file('favicon_path')?->store(
-                        "workspaces/{$workspace->id}/branding",
-                        'public',
-                    ),
-                ]);
+                $result = $fileStorageService->store($request->file('favicon_path'), "workspaces/{$workspace->id}/branding");
+                if (!$result['error']) {
+                    $workspace->update(['favicon_url' => $result['url']]);
+                }
             }
         } elseif ($group === 'quotes_invoices') {
             $settingsPayload = $validated['settings'];
@@ -177,10 +174,10 @@ class WorkspaceSettingsController extends Controller
             $settingsPayload = $validated['settings'];
 
             if ($request->hasFile('settings.logo_path')) {
-                $settingsPayload['logo_path'] = $request->file('settings.logo_path')?->store(
-                    "workspaces/{$workspace->id}/branding",
-                    'public',
-                );
+                $result = $fileStorageService->store($request->file('settings.logo_path'), "workspaces/{$workspace->id}/branding");
+                if (!$result['error']) {
+                    $settingsPayload['logo_path'] = $result['url'];
+                }
             }
 
             $settingsService->updateGroup(

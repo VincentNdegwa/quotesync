@@ -61,7 +61,7 @@ export type CatalogItemRecord = {
     cost_price: number | string;
     is_active: boolean;
     usage_count: number;
-    image_path: string | null;
+    image_url: string | null;
     category?: { id: number; name: string } | null;
     configuration_unit?: { id: number; name: string; symbol: string } | null;
     taxes?: Array<{ id: number; name: string; rate: number | string }>;

@@ -131,8 +131,6 @@ class PortalDashboardController
                 'sections.lineItems.taxes',
             ])
             ->firstOrFail();
-        $quote->signature_path = Storage::url($quote->signature_path);
-
         $quote->loadMissing(['client:id,company_name,contact_name,email', 'workspace:id,name,display_name']);
 
         // Track view status like public view

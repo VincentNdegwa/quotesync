@@ -197,8 +197,8 @@ const save = (): void => {
                     const target = event.target as HTMLInputElement;
                     form.image = target.files?.[0] ?? null;
                 }" />
-                <p class="text-xs text-muted-foreground" v-if="item.image_path">
-                    Existing image: {{ item.image_path }}
+                <p class="text-xs text-muted-foreground" v-if="item.image_url">
+                    Existing image: {{ item.image_url }}
                 </p>
             </div>
 

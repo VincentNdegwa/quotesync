@@ -20,7 +20,7 @@ const props = defineProps<{
     business: {
         company_name: string;
         country: string;
-        logo_path: string;
+        logo_url: string;
         currency: string;
         primary_color: string;
         accent_color: string;
@@ -29,7 +29,7 @@ const props = defineProps<{
         email: string;
         website: string;
         tax_number: string;
-        favicon_path: string;
+        favicon_url: string;
         white_label_mode: boolean;
         industry_id?: string
     };
@@ -69,7 +69,7 @@ const logoPreview = computed(() => {
     if (brandForm.logo_path instanceof File) {
         return URL.createObjectURL(brandForm.logo_path);
     }
-    return props.business.logo_path;
+    return props.business.logo_url;
 });
 
 const industryId = computed({

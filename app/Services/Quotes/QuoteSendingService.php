@@ -40,8 +40,7 @@ class QuoteSendingService
         $brandFields = collect($this->workspaceSettingsService->groupForFrontend($workspace, 'brand')['fields'] ?? [])->keyBy('key');
 
         $companyName = (string) ($brandFields->get('company_name')['value'] ?? config('app.name'));
-        $logoPath = $brandFields->get('logo_path')['value'] ?? null;
-        $logoUrl = is_string($logoPath) && $logoPath !== '' ? Storage::url($logoPath) : null;
+        $logoUrl = $brandFields->get('logo_path')['value'] ?? null;
 
         $subjectTemplate = $emailFields->get('quote_email_subject')['value'] ?? 'Your Quote {quote_number} from {company_name}';
         $bodyTemplate = $emailFields->get('quote_email_template')['value'] ?? "Hi {client_name},\n\nPlease review quote {quote_number} totaling {quote_total}.";

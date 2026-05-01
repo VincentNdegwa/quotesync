@@ -69,7 +69,7 @@ export type CatalogItemModel = {
   unit_price: number | string;
   cost_price: number | string;
   catalog_category_id: number | null;
-  image_path: string | null;
+  image_url: string | null;
   is_active: boolean;
   usage_count: number;
   created_by: number | null;
@@ -221,7 +221,6 @@ export type QuoteModel = {
   declined_at: string | null;
   decline_reason: string | null;
   created_by: number | null;
-  signature_path: string | null;
   signature_url: string | null;
   signer_name: string | null;
   signer_ip: string | null;

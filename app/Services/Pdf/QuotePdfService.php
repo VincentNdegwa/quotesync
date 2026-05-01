@@ -55,34 +55,20 @@ class QuotePdfService
 
     private function resolveSignatureDataUri(Quote $quote): ?string
     {
-        $signaturePath = $quote->signature_path;
+        $signatureUrl = $quote->signature_url;
 
-        if (! is_string($signaturePath) || $signaturePath === '') {
+        if (! is_string($signatureUrl) || $signatureUrl === '') {
             return null;
         }
 
-        if (str_starts_with($signaturePath, 'http')) {
-            $relativePath = str_replace(Storage::url(''), '', $signaturePath);
-            if (Storage::disk('public')->exists($relativePath)) {
-                $mime = mime_content_type(Storage::disk('public')->path($relativePath)) ?: 'image/png';
-                return 'data:'.$mime.';base64,'.base64_encode(Storage::disk('public')->get($relativePath));
-            }
+        if (!str_starts_with($signatureUrl, 'http')) {
+            return null;
         }
 
-        if (Storage::exists($signaturePath)) {
-            $mime = mime_content_type(Storage::path($signaturePath)) ?: 'image/png';
-            return 'data:'.$mime.';base64,'.base64_encode(Storage::get($signaturePath));
-        }
-
-        if (Storage::disk('public')->exists($signaturePath)) {
-            $mime = mime_content_type(Storage::disk('public')->path($signaturePath)) ?: 'image/png';
-            return 'data:'.$mime.';base64,'.base64_encode(Storage::disk('public')->get($signaturePath));
-        }
-
-        if (file_exists($signaturePath)) {
-            $mime = mime_content_type($signaturePath) ?: 'image/png';
-
-            return 'data:'.$mime.';base64,'.base64_encode(file_get_contents($signaturePath));
+        $relativePath = str_replace(Storage::url(''), '', $signatureUrl);
+        if (Storage::disk('public')->exists($relativePath)) {
+            $mime = mime_content_type(Storage::disk('public')->path($relativePath)) ?: 'image/png';
+            return 'data:'.$mime.';base64,'.base64_encode(Storage::disk('public')->get($relativePath));
         }
 
         return null;

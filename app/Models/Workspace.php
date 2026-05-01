@@ -21,7 +21,7 @@ class Workspace extends LaratrustTeam
         'agency_mode_enabled',
         'agency_commission_rate',
         'agency_commission_type',
-        'logo_path',
+        'logo_url',
         'primary_color',
         'accent_color',
         'address',
@@ -31,7 +31,7 @@ class Workspace extends LaratrustTeam
         'country',
         'tax_number',
         'white_label_mode',
-        'favicon_path',
+        'favicon_url',
         'custom_domain',
     ];
 

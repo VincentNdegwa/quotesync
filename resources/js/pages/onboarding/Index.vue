@@ -135,7 +135,7 @@ const onboardingForm = reactive({
         navigation: 'next',
         company_name: props.business?.company_name ?? '',
         country: props.business?.country ?? '',
-        logo_path: props.business?.logo_path ?? '',
+        logo_url: props.business?.logo_url ?? '',
         industry_id: props.workspace?.industry_id ?? null,
         currency: props.business?.currency ?? 'USD',
         quote_prefix: props.quoteDefaults?.quote_prefix ?? 'QS',
@@ -149,7 +149,7 @@ watch(
     (business) => {
         onboardingForm.data.company_name = business?.company_name ?? '';
         onboardingForm.data.country = business?.country ?? '';
-        onboardingForm.data.logo_path = business?.logo_path ?? '';
+        onboardingForm.data.logo_url = business?.logo_url ?? '';
         onboardingForm.data.currency = business?.currency ?? 'USD';
     },
     { immediate: true },

@@ -42,8 +42,7 @@ class InvoiceSendController extends Controller
         $brandFields = collect($workspaceSettingsService->groupForFrontend($workspace, 'brand')['fields'] ?? [])->keyBy('key');
 
         $companyName = (string) ($brandFields->get('company_name')['value'] ?? config('app.name'));
-        $logoPath = $brandFields->get('logo_path')['value'] ?? null;
-        $logoUrl = is_string($logoPath) && $logoPath !== '' ? Storage::url($logoPath) : null;
+        $logoUrl = $brandFields->get('logo_path')['value'] ?? null;
 
         $subjectTemplate = $emailFields->get('invoice_email_subject')['value'] ?? 'Your Invoice {invoice_number} from {company_name}';
         $bodyTemplate = $emailFields->get('invoice_email_template')['value'] ?? "Hi {client_name},\n\nPlease find invoice {invoice_number} totaling {invoice_total} attached.";
