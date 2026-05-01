@@ -35,34 +35,26 @@ class CatalogItemController extends Controller
             'items' => $catalogItemService->paginateForIndex($workspace, $filters)
                 ->through(fn (CatalogItem $item): array => [
                     ...$item->toArray(),
-                    'taxes' => $item->taxes->map(fn (Tax $tax): array => [
-                        'id' => $tax->id,
-                        'name' => $tax->name,
-                        'rate' => $tax->rate,
-                    ])->values()->all(),
+                    'taxes' => $item->taxes,
                     'tax_ids' => $item->taxes->pluck('id')->values()->all(),
-                    'configuration_unit' => $item->configurationUnit ? [
-                        'id' => $item->configurationUnit->id,
-                        'name' => $item->configurationUnit->name,
-                        'symbol' => $item->configurationUnit->symbol,
-                    ] : null,
+                    'configuration_unit' => $item->configurationUnit,
                 ]),
             'categories' => CatalogCategory::query()
                 ->where('workspace_id', $workspace->id)
                 ->orderBy('sort_order')
                 ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'is_active']),
+                ->get(),
             'taxes' => Tax::query()
                 ->where('workspace_id', $workspace->id)
                 ->where('is_active', true)
                 ->orderByDesc('is_default')
                 ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'rate', 'is_default']),
+                ->get(),
             'units' => ConfigurationUnit::query()
                 ->where('workspace_id', $workspace->id)
                 ->where('is_active', true)
                 ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'symbol', 'is_active', 'created_at']),
+                ->get(),
         ]);
     }
 
@@ -101,29 +93,21 @@ class CatalogItemController extends Controller
         return Inertia::render('catalog/Show', [
             'item' => [
                 ...$catalog->toArray(),
-                'taxes' => $catalog->taxes->map(fn (Tax $tax): array => [
-                    'id' => $tax->id,
-                    'name' => $tax->name,
-                    'rate' => $tax->rate,
-                ])->values()->all(),
+                'taxes' => $catalog->taxes,
                 'tax_ids' => $catalog->taxes->pluck('id')->values()->all(),
-                'configuration_unit' => $catalog->configurationUnit ? [
-                    'id' => $catalog->configurationUnit->id,
-                    'name' => $catalog->configurationUnit->name,
-                    'symbol' => $catalog->configurationUnit->symbol,
-                ] : null,
+                'configuration_unit' => $catalog->configurationUnit,
             ],
             'availableTaxes' => Tax::query()
                 ->where('workspace_id', $workspace->id)
                 ->where('is_active', true)
                 ->orderByDesc('is_default')
                 ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'rate']),
+                ->get(),
             'units' => ConfigurationUnit::query()
                 ->where('workspace_id', $workspace->id)
                 ->where('is_active', true)
                 ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'symbol', 'is_active', 'created_at']),
+                ->get(),
             'margin' => [
                 'profit_per_unit' => (float) $catalog->unit_price - (float) $catalog->cost_price,
                 'margin_percent' => (float) $catalog->unit_price > 0

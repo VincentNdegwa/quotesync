@@ -24,6 +24,13 @@ class QuotePdfService
 
         $layout = QuoteLayout::normalize($quote->layout_snapshot);
         $branding = $this->workspaceBranding->forWorkspace($quote->workspace);
+        
+        // Get workspace settings for quotes (not quotes_invoices group)
+        $settingsService = app(\App\Services\WorkspaceSettings\WorkspaceSettingsService::class);
+        $quoteSettings = collect($settingsService->groupForFrontend($quote->workspace, 'quotes')['fields'] ?? [])
+            ->keyBy('key')
+            ->map(fn ($field) => $field['value'] ?? $field['default'] ?? null)
+            ->toArray();
 
         $html = view('pdf.quotes.index', [
             'quote' => $quote,
@@ -31,6 +38,7 @@ class QuotePdfService
             'blocks' => $layout['blocks'],
             'branding' => $branding,
             'signatureDataUri' => $this->resolveSignatureDataUri($quote),
+            'settings' => $quoteSettings,
         ])->render();
 
         $pdf = Pdf::loadHTML($html)

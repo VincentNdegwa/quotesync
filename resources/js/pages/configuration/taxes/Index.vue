@@ -21,6 +21,7 @@ type TaxRecord = {
     id: number;
     name: string;
     rate: number | string;
+    inclusive: boolean;
     is_default: boolean;
     is_active: boolean;
     created_at: string;
@@ -82,6 +83,7 @@ const executeDelete = (): void => {
                     <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead class="text-right">Rate %</TableHead>
+                        <TableHead>Treatment</TableHead>
                         <TableHead>Default</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead class="text-right">Actions</TableHead>
@@ -91,6 +93,11 @@ const executeDelete = (): void => {
                     <TableRow v-for="tax in taxes" :key="tax.id">
                         <TableCell class="font-medium">{{ tax.name }}</TableCell>
                         <TableCell class="text-right">{{ tax.rate }}</TableCell>
+                        <TableCell>
+                            <Badge :variant="tax.inclusive ? 'secondary' : 'default'">
+                                {{ tax.inclusive ? 'Inclusive' : 'Exclusive' }}
+                            </Badge>
+                        </TableCell>
                         <TableCell>
                             <Badge :variant="tax.is_default ? 'default' : 'secondary'">
                                 {{ tax.is_default ? 'Default' : 'No' }}

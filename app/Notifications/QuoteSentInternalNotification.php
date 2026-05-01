@@ -21,7 +21,7 @@ class QuoteSentInternalNotification extends QuoteNotification
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return $this->getChannelsFromSettings($notifiable, 'notify_quote_sent', 'notify_quote_sent_channel');
     }
 
     /**

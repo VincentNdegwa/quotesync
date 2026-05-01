@@ -2,12 +2,12 @@
 import { computed } from 'vue';
 import { blockContentStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
-import type { BrandingData, PaymentTermsBlockConfig, QuoteData } from '@/types';
+import type { PaymentTermsBlockConfig, QuoteData, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     config: PaymentTermsBlockConfig;
     quote: QuoteData;
-    branding: BrandingData;
+    settings: WorkspaceSettings;
     previewMode: boolean;
     editMode?: boolean;
 }>();
@@ -15,6 +15,10 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: 'update-payment-terms', payload: { labelText: string; contextText: string | null }): void;
 }>();
+
+const effectiveContextText = computed(() => {
+    return props.config.contextText ?? props.settings.quotes.default_payment_terms ?? null;
+});
 
 const methodLabelMap: Record<PaymentTermsBlockConfig['paymentMethods'][number], string> = {
     bank_transfer: 'Bank transfer',
@@ -24,7 +28,7 @@ const methodLabelMap: Record<PaymentTermsBlockConfig['paymentMethods'][number], 
     cheque: 'Cheque',
 };
 
-const hasEditableContent = computed(() => !!props.config.contextText || !!props.editMode || !!props.previewMode);
+const hasEditableContent = computed(() => !!effectiveContextText.value || !!props.editMode || !!props.previewMode);
 
 const emitUpdate = (labelText: string | null, contextText: string | null): void => {
     emit('update-payment-terms', {
@@ -34,7 +38,7 @@ const emitUpdate = (labelText: string | null, contextText: string | null): void 
 };
 
 const updateLabel = (value: string | null): void => {
-    emitUpdate(value, props.config.contextText);
+    emitUpdate(value, effectiveContextText.value);
 };
 
 const updateContextText = (value: string | null): void => {
@@ -68,7 +72,7 @@ const updateContextText = (value: string | null): void => {
         </div>
 
         <InlineEditableText
-            :model-value="config.contextText"
+            :model-value="effectiveContextText"
             :edit-mode="editMode"
             :rows="6"
             placeholder="Add payment instructions"

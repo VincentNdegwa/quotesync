@@ -5,11 +5,16 @@ namespace App\Services\WorkspaceSettings;
 use App\Models\Workspace;
 use App\Models\WorkspaceSetting;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 
 class WorkspaceSettingsService
 {
+    private const CACHE_TTL = 3600; // 1 hour
+    private const CACHE_VERSION = 'v1'; // Increment this when cache format changes
+
     /**
      * @return array<string, mixed>
      */
@@ -54,11 +59,45 @@ class WorkspaceSettingsService
         }
     }
 
+    /**
+     * Get all settings for a workspace, cached
+     * @return array<string, array<string, mixed>>
+     */
+    private function getWorkspaceSettings(Workspace $workspace)
+    {
+        $cacheKey = "workspace_settings:{$workspace->id}:" . self::CACHE_VERSION;
+
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($workspace) {
+            return $workspace->settings()
+                ->get(['key', 'value', 'group', 'cast', 'encrypted'])
+                ->map(fn ($setting) => [
+                    'key' => $setting->key,
+                    'value' => $setting->value,
+                    'group' => $setting->group,
+                    'cast' => $setting->cast,
+                    'encrypted' => $setting->encrypted,
+                ])
+                ->keyBy(fn ($item) => "{$item['group']}.{$item['key']}")
+                ->toArray();
+        });
+    }
+
+    /**
+     * Clear cache for a workspace
+     */
+    public function clearCache(Workspace $workspace): void
+    {
+        // Clear cache for all versions to ensure stale data is removed
+        foreach (['v0', 'v1'] as $version) {
+            $cacheKey = "workspace_settings:{$workspace->id}:{$version}";
+            Cache::forget($cacheKey);
+        }
+    }
+
     public function syncDefaults(Workspace $workspace): void
     {
-        $existing = $workspace->settings()
-            ->get(['id', 'group', 'key'])
-            ->mapWithKeys(fn (WorkspaceSetting $setting): array => ["{$setting->group}.{$setting->key}" => true]);
+        $existing = collect($this->getWorkspaceSettings($workspace))
+            ->mapWithKeys(fn ($setting): array => ["{$setting['group']}.{$setting['key']}" => true]);
 
         $inserts = [];
 
@@ -97,6 +136,7 @@ class WorkspaceSettingsService
 
         if (! empty($inserts)) {
             WorkspaceSetting::query()->insert($inserts);
+            $this->clearCache($workspace);
         }
     }
 
@@ -140,6 +180,8 @@ class WorkspaceSettingsService
             }
         });
 
+        $this->clearCache($workspace);
+
         if ($markOnboardingComplete && $workspace->settings_onboarded_at === null && $this->isOnboardingComplete($workspace)) {
             $workspace->forceFill(['settings_onboarded_at' => now()])->save();
         }
@@ -156,6 +198,9 @@ class WorkspaceSettingsService
         /** @var array<string, array<string, mixed>> $fields */
         $fields = $definition['fields'] ?? [];
 
+        // Get all settings for this workspace in one query (cached)
+        $allSettings = collect($this->getWorkspaceSettings($workspace));
+
         // Handle subsections
         if (isset($definition['subsections'])) {
             $subsections = $definition['subsections'];
@@ -163,20 +208,20 @@ class WorkspaceSettingsService
 
             foreach ($subsections as $subsectionKey => $subsection) {
                 $subsectionFields = $subsection['fields'] ?? [];
-                $settings = $workspace->settings()
-                    ->where('group', $subsectionKey)
-                    ->get(['key', 'value', 'cast', 'encrypted'])
+                
+                // Filter settings for this subsection from the cached all settings
+                $subsectionSettings = $allSettings->filter(fn ($setting) => $setting['group'] === $subsectionKey)
                     ->keyBy('key');
 
                 $fieldPayload = collect($subsectionFields)
-                    ->map(function (array $field, string $key) use ($settings, $subsectionFields): array {
-                        /** @var WorkspaceSetting|null $stored */
-                        $stored = $settings->get($key);
+                    ->map(function (array $field, string $key) use ($subsectionSettings, $subsectionFields): array {
+                        /** @var array<string, mixed>|null $stored */
+                        $stored = $subsectionSettings->get($key);
                         $cast = $this->castForField($field);
                         $encrypted = (bool) ($field['encrypted'] ?? false);
 
                         $decoded = $stored
-                            ? $this->decodeValue($stored->value, $stored->cast, (bool) $stored->encrypted)
+                            ? $this->decodeValue($stored['value'], $stored['cast'], (bool) $stored['encrypted'])
                             : ($field['default'] ?? null);
 
                         return [
@@ -211,20 +256,19 @@ class WorkspaceSettingsService
             ];
         }
 
-        $settings = $workspace->settings()
-            ->where('group', $group)
-            ->get(['key', 'value', 'cast', 'encrypted'])
+        // Filter settings for this group from the cached all settings
+        $settings = $allSettings->filter(fn ($setting) => $setting['group'] === $group)
             ->keyBy('key');
 
         $fieldPayload = collect($fields)
             ->map(function (array $field, string $key) use ($settings): array {
-                /** @var WorkspaceSetting|null $stored */
+                /** @var array<string, mixed>|null $stored */
                 $stored = $settings->get($key);
                 $cast = $this->castForField($field);
                 $encrypted = (bool) ($field['encrypted'] ?? false);
 
                 $decoded = $stored
-                    ? $this->decodeValue($stored->value, $stored->cast, (bool) $stored->encrypted)
+                    ? $this->decodeValue($stored['value'], $stored['cast'], (bool) $stored['encrypted'])
                     : ($field['default'] ?? null);
 
                 return [
@@ -343,23 +387,23 @@ class WorkspaceSettingsService
             return true;
         }
 
-        $settings = $workspace->settings()
-            ->where('group', $group)
+        // Use cached settings
+        $allSettings = collect($this->getWorkspaceSettings($workspace));
+        $settings = $allSettings->filter(fn ($setting) => $setting['group'] === $group)
             ->whereIn('key', $requiredKeys->all())
-            ->get(['key', 'value', 'cast', 'encrypted'])
             ->keyBy('key');
 
         foreach ($requiredKeys as $key) {
             /** @var array<string, mixed> $field */
             $field = $fields[$key];
-            /** @var WorkspaceSetting|null $stored */
+            /** @var array<string, mixed>|null $stored */
             $stored = $settings->get($key);
 
             if ($stored === null) {
                 return false;
             }
 
-            $value = $this->decodeValue($stored->value, $stored->cast, (bool) $stored->encrypted);
+            $value = $this->decodeValue($stored['value'], $stored['cast'], (bool) $stored['encrypted']);
 
             if (is_bool($value)) {
                 continue;
@@ -371,6 +415,51 @@ class WorkspaceSettingsService
         }
 
         return true;
+    }
+
+    /**
+     * Get all workspace settings needed for the builder/frontend
+     * @return array<string, mixed>
+     */
+    public function builderSettings(Workspace $workspace): array
+    {
+        $this->syncDefaults($workspace);
+
+        // Get quotes settings
+        $quoteFields = collect($this->groupForFrontend($workspace, 'quotes')['fields'] ?? [])->keyBy('key');
+
+        return [
+            'quotes' => [
+                'quote_prefix' => $quoteFields->get('quote_prefix')['value'] ?? 'QS',
+                'quote_number_sequence' => (int) ($quoteFields->get('quote_number_sequence')['value'] ?? 1),
+                'quote_number_reset_yearly' => (bool) ($quoteFields->get('quote_number_reset_yearly')['value'] ?? true),
+                'quote_validity_days' => (int) ($quoteFields->get('quote_validity_days')['value'] ?? 30),
+                'require_cover_message' => (bool) ($quoteFields->get('require_cover_message')['value'] ?? false),
+                'default_cover_message' => $quoteFields->get('default_cover_message')['value'] ?? null,
+                'default_terms' => $quoteFields->get('default_terms')['value'] ?? null,
+                'default_payment_terms' => $quoteFields->get('default_payment_terms')['value'] ?? null,
+                'default_notes' => $quoteFields->get('default_notes')['value'] ?? null,
+                'allow_client_negotiation' => (bool) ($quoteFields->get('allow_client_negotiation')['value'] ?? false),
+                'allow_optional_items' => (bool) ($quoteFields->get('allow_optional_items')['value'] ?? true),
+                'require_deposit' => (bool) ($quoteFields->get('require_deposit')['value'] ?? false),
+                'default_deposit_percent' => (float) ($quoteFields->get('default_deposit_percent')['value'] ?? 50),
+            ],
+            'workspace' => [
+                'name' => $workspace->name,
+                'currency' => $workspace->currency ?? 'USD',
+                'country' => $workspace->country ?? null,
+                'logo_url' => $workspace->logo_path ? url(Storage::url($workspace->logo_path)) : null,
+                'primary_color' => $workspace->primary_color ?? '#4F46E5',
+                'accent_color' => $workspace->accent_color ?? '#F5A623',
+                'company_address' => $workspace->address ?? null,
+                'company_phone' => $workspace->phone ?? null,
+                'company_email' => $workspace->email ?? null,
+                'company_website' => $workspace->website ?? null,
+                'tax_number' => $workspace->tax_number ?? null,
+                'company_name' => $workspace->name,
+                'company_tagline' => null,
+            ],
+        ];
     }
 
     public function isOnboardingComplete(Workspace $workspace): bool

@@ -2,14 +2,20 @@
 import { computed } from 'vue';
 import { blockBaseStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
 import { useFormat } from '@/composables/useFormat';
-import type { BrandingData, QuoteData, TotalsBlockConfig } from '@/types';
+import { calculateLineItemTotals } from '@/composables/useTaxCalculation';
+import type { QuoteData, TotalsBlockConfig, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     config: TotalsBlockConfig;
     quote: QuoteData;
-    branding: BrandingData;
+    settings: WorkspaceSettings;
     previewMode: boolean;
 }>();
+
+const effectiveSettings = computed(() => props.settings.quotes);
+
+// Use settings for tax calculation (fallback to quote state)
+const taxInclusive = computed(() => (props.quote as any).tax_inclusive ?? false);
 
 const { formatCurrency } = useFormat(props.quote.base_currency || props.quote.currency || undefined);
 
@@ -31,7 +37,9 @@ const itemBaseSubtotalBeforeDiscount = (item: QuoteData['sections'][number]['lin
 const computedSubtotal = computed(() => {
     return props.quote.sections.reduce((sum, section) => {
         return sum + section.line_items.reduce((lineSum, item) => {
-            return item.is_optional ? lineSum : lineSum + itemBaseSubtotal(item);
+            // Use base amount (stated price) as the subtotal per item
+            const itemBase = Number(item.quantity || 0) * Number(item.unit_price || 0) * (1 - Number(item.discount_percent || 0) / 100);
+            return item.is_optional ? lineSum : lineSum + itemBase;
         }, 0);
     }, 0);
 });
@@ -58,11 +66,19 @@ const computedTaxAmount = computed(() => {
             }
 
             if (item.taxes.length > 0) {
-                const taxableSubtotal = itemBaseSubtotal(item);
+                const taxes = item.taxes.map((tax) => ({
+                    tax_rate: Number(tax.tax_rate || 0),
+                    inclusive: Boolean(tax.inclusive),
+                }));
 
-                return lineSum + item.taxes.reduce((taxSum, tax) => {
-                    return taxSum + taxableSubtotal * (Number(tax.tax_rate || 0) / 100);
-                }, 0);
+                const totals = calculateLineItemTotals(
+                    Number(item.quantity || 0),
+                    Number(item.unit_price || 0),
+                    Number(item.discount_percent || 0),
+                    taxes,
+                );
+
+                return lineSum + totals.taxAmount;
             }
 
             return lineSum + Number(item.tax_amount || 0);
@@ -70,7 +86,43 @@ const computedTaxAmount = computed(() => {
     }, 0);
 });
 
-const computedTotal = computed(() => computedSubtotal.value + computedTaxAmount.value - computedDiscountAmount.value);
+const computedTotal = computed(() => {
+    // Total is calculated as:
+    // Stated Subtotal (before any extraction) + Exclusive Taxes - Global Discount
+    // Wait, let's be precise. 
+    // Subtotal already has line item discounts.
+    // taxAmount is (Inclusive + Exclusive)
+    // Inclusive is already in Subtotal.
+    // Exclusive is NOT in Subtotal.
+    // So Total = Subtotal + Exclusive - Global Discount
+    
+    // Actually, calculateLineItemTotals returns:
+    // total = baseAmount + exclusiveTaxAmount
+    // subtotal = total - taxAmount
+    
+    // If we want the final quote total:
+    let runningTotal = 0;
+    props.quote.sections.forEach(section => {
+        section.line_items.forEach(item => {
+            if (!item.is_optional) {
+                const taxes = item.taxes.map(tax => ({
+                    tax_rate: Number(tax.tax_rate || 0),
+                    inclusive: tax.inclusive ?? false
+                }));
+                const totals = calculateLineItemTotals(
+                    Number(item.quantity || 0),
+                    Number(item.unit_price || 0),
+                    Number(item.discount_percent || 0),
+                    taxes
+                );
+                runningTotal += totals.total;
+            }
+        });
+    });
+
+    const globalDiscount = Math.max(Number(props.quote.discount_amount || 0), 0);
+    return runningTotal - globalDiscount;
+});
 
 const alignmentClass = computed(() => {
     if (props.config.alignment === 'center') {
@@ -95,27 +147,49 @@ const taxLines = computed(() => {
         section.line_items
             .filter((item) => !item.is_optional)
             .forEach((item) => {
-                const quantity = Number(item.quantity || 0);
-                const unitPrice = Number(item.unit_price || 0);
-                const discountPercent = Math.min(Math.max(Number(item.discount_percent || 0), 0), 100);
-                const taxableSubtotal = quantity * unitPrice * (1 - discountPercent / 100);
+                if (item.taxes.length > 0) {
+                    const taxes = item.taxes.map((tax) => ({
+                        tax_rate: Number(tax.tax_rate || 0),
+                        inclusive: Boolean(tax.inclusive),
+                    }));
 
-                (item.taxes || []).forEach((tax) => {
-                    const key = `${tax.tax_label}-${tax.tax_rate}`;
-                    const amount = taxableSubtotal * (Number(tax.tax_rate || 0) / 100);
-                    const existing = breakdown.get(key);
+                    const totals = calculateLineItemTotals(
+                        Number(item.quantity || 0),
+                        Number(item.unit_price || 0),
+                        Number(item.discount_percent || 0),
+                        taxes,
+                    );
 
-                    if (existing) {
-                        existing.amount += amount;
+                    item.taxes.forEach((tax) => {
+                        const key = `${tax.tax_label}-${tax.tax_rate}`;
+                        
+                        // Calculate individual tax amount for breakdown using correct logic
+                        const rate = Number(tax.tax_rate || 0);
+                        const isInclusive = Boolean(tax.inclusive);
+                        const baseAmount = Number(item.quantity || 0) * Number(item.unit_price || 0) * (1 - Number(item.discount_percent || 0) / 100);
+                        
+                        let amount: number;
+                        if (isInclusive) {
+                            amount = baseAmount * rate / (100 + rate);
+                        } else {
+                            // Exclusive taxes are calculated on the baseAmount (stated price)
+                            amount = baseAmount * rate / 100;
+                        }
 
-                        return;
-                    }
+                        const existing = breakdown.get(key);
 
-                    breakdown.set(key, {
-                        amount,
-                        label: `${tax.tax_label} (${tax.tax_rate}%)`,
+                        if (existing) {
+                            existing.amount += amount;
+
+                            return;
+                        }
+
+                        breakdown.set(key, {
+                            amount,
+                            label: `${tax.tax_label} (${tax.tax_rate}%) ${isInclusive ? 'Inclusive' : 'Exclusive'}`,
+                        });
                     });
-                });
+                }
             });
     });
 
@@ -179,7 +253,7 @@ const taxLines = computed(() => {
                 :class="config.highlightTotal ? 'text-base' : 'text-sm'
                 "
                 :style="{
-                    color: branding.primary_color,
+                    color: settings.workspace.primary_color,
                     backgroundColor: config.totalRowBackground ?? undefined,
                 }"
             >

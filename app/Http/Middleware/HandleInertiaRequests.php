@@ -17,6 +17,7 @@ use App\Services\WhiteLabelService;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Auth;
+use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -24,6 +25,7 @@ class HandleInertiaRequests extends Middleware
     public function __construct(
         private WhiteLabelService $whiteLabelService,
         private ApprovalService $approvalService,
+        private WorkspaceSettingsService $workspaceSettingsService,
     ) {}
 
     /**
@@ -78,6 +80,7 @@ class HandleInertiaRequests extends Middleware
             'whiteLabel' => $whiteLabel,
             'workspace_currency' => $this->getWorkspaceCurrency($workspace),
             'pending_approvals_count' => $user && $workspace ? $this->approvalService->count($workspace, $user) : 0,
+            'localization' => $workspace ? $this->getLocalizationSettings($workspace) : null,
             'auth' => [
                 'user' => $user,
                 'portal_user' => $isPortalUser ? $user : null,
@@ -255,6 +258,20 @@ class HandleInertiaRequests extends Middleware
             'winProbabilityConfidence' => WinProbabilityConfidence::all(),
             'signalDirection' => SignalDirection::all(),
         ];
+    }
+
+    /**
+     * Get localization settings for the workspace.
+     *
+     * @return array<string, mixed>
+     */
+    private function getLocalizationSettings(Workspace $workspace): array
+    {
+        $settings = $this->workspaceSettingsService->groupForFrontend($workspace, 'localization')['fields'] ?? [];
+
+        return collect($settings)->mapWithKeys(function (array $field): array {
+            return [$field['key'] => $field['value'] ?? $field['default'] ?? null];
+        })->toArray();
     }
 
     /**

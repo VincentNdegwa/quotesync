@@ -78,13 +78,10 @@ const props = defineProps<{
 const startDate = ref(props.filters.start_date);
 const endDate = ref(props.filters.end_date);
 
-const { formatCurrency } = useFormat(usePage().props.workspace_currency as string || undefined);
+const { formatCurrency, formatNumber } = useFormat(usePage().props.workspace_currency as string || undefined);
 
-const formatNumber = (value: number): string => new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(value);
-const formatPercent = (value: number): string => `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(value)}%`;
-const formatTrendValue = (value: number): string => new Intl.NumberFormat(undefined, {
-  maximumFractionDigits: Math.abs(value) < 10 ? 1 : 0,
-}).format(value);
+const formatPercent = (value: number): string => `${formatNumber(value, 0)}%`;
+const formatTrendValue = (value: number): string => formatNumber(value, Math.abs(value) < 10 ? 1 : 0);
 
 const applyFilters = () => {
   window.location.href = `/analytics?start_date=${startDate.value}&end_date=${endDate.value}`;

@@ -1,9 +1,10 @@
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import type {
     Ref,
     QuoteBuilderLineItem,
     QuoteBuilderState,
 } from '@/types';
+import { calculateLineItemTotals } from './useTaxCalculation';
 
 export type TaxBreakdownItem = {
     taxLabel: string;
@@ -22,23 +23,17 @@ export const lineItemTotals = (lineItem: QuoteBuilderLineItem): {
     taxAmount: number;
     total: number;
 } => {
-    const quantity = Math.max(toNumber(lineItem.quantity), 0);
-    const unitPrice = Math.max(toNumber(lineItem.unit_price), 0);
-    const discountPercent = Math.min(Math.max(toNumber(lineItem.discount_percent), 0), 100);
+    const taxes = lineItem.taxes.map((tax) => ({
+        tax_rate: toNumber(tax.tax_rate),
+        inclusive: Boolean(tax.inclusive),
+    }));
 
-    const subtotal = quantity * unitPrice * (1 - discountPercent / 100);
-
-    const taxAmount = lineItem.taxes.reduce((sum, tax) => {
-        const rate = Math.max(toNumber(tax.tax_rate), 0);
-
-        return sum + (subtotal * rate) / 100;
-    }, 0);
-
-    return {
-        subtotal,
-        taxAmount,
-        total: subtotal + taxAmount,
-    };
+    return calculateLineItemTotals(
+        toNumber(lineItem.quantity),
+        toNumber(lineItem.unit_price),
+        toNumber(lineItem.discount_percent),
+        taxes,
+    );
 };
 
 export const useQuoteBuilder = (state: Ref<QuoteBuilderState>) => {
@@ -48,9 +43,10 @@ export const useQuoteBuilder = (state: Ref<QuoteBuilderState>) => {
 
     const subtotal = computed(() => {
         return allLineItems.value.reduce((sum, item) => {
-            const totals = lineItemTotals(item);
+            // Use base amount (stated price) as the subtotal per item
+            const itemBase = toNumber(item.quantity) * toNumber(item.unit_price) * (1 - toNumber(item.discount_percent) / 100);
 
-            return item.is_optional ? sum : sum + totals.subtotal;
+            return item.is_optional ? sum : sum + itemBase;
         }, 0);
     });
 
@@ -68,13 +64,24 @@ export const useQuoteBuilder = (state: Ref<QuoteBuilderState>) => {
         allLineItems.value
             .filter((item) => !item.is_optional)
             .forEach((item) => {
-                const subtotal = lineItemTotals(item).subtotal;
+                const totals = lineItemTotals(item);
 
                 item.taxes.forEach((tax) => {
                     const rate = Math.max(toNumber(tax.tax_rate), 0);
                     const label = tax.tax_label || 'Tax';
                     const key = `${label}-${rate}`;
-                    const amount = subtotal * (rate / 100);
+                    const isInclusive = tax.inclusive ?? false;
+                    
+                    // We need to use the baseAmount (stated price) for both inclusive extraction 
+                    // and exclusive calculation to match our fix in useTaxCalculation.ts
+                    const baseAmount = toNumber(item.quantity) * toNumber(item.unit_price) * (1 - toNumber(item.discount_percent) / 100);
+                    
+                    let amount: number;
+                    if (isInclusive) {
+                        amount = (baseAmount * rate) / (100 + rate);
+                    } else {
+                        amount = (baseAmount * rate) / 100;
+                    }
 
                     const current = breakdown.get(key);
 
@@ -97,31 +104,47 @@ export const useQuoteBuilder = (state: Ref<QuoteBuilderState>) => {
 
     const total = computed(() => subtotal.value + taxAmount.value - toNumber(state.value.discount_amount));
 
-    const recompute = (): void => {
-        state.value.sections = state.value.sections.map((section, sectionIndex) => {
-            const mappedLineItems = section.line_items.map((lineItem, lineIndex) => {
-                const totals = lineItemTotals(lineItem);
-
-                return {
-                    ...lineItem,
-                    subtotal: totals.subtotal,
-                    tax_amount: totals.taxAmount,
-                    total: totals.total,
-                    sort_order: lineIndex,
-                };
-            });
+const recompute = (): void => {
+    state.value.sections = state.value.sections.map((section, sectionIndex) => {
+        const mappedLineItems = section.line_items.map((lineItem, lineIndex) => {
+            const totals = lineItemTotals(lineItem);
 
             return {
-                ...section,
-                sort_order: sectionIndex,
-                line_items: mappedLineItems,
+                ...lineItem,
+                subtotal: totals.subtotal,
+                tax_amount: totals.taxAmount,
+                total: totals.total,
+                sort_order: lineIndex,
             };
         });
 
-        state.value.subtotal = subtotal.value;
-        state.value.tax_amount = taxAmount.value;
-        state.value.total = total.value;
-    };
+        return {
+            ...section,
+            sort_order: sectionIndex,
+            line_items: mappedLineItems,
+        };
+    });
+
+    state.value.subtotal = subtotal.value;
+    state.value.tax_amount = taxAmount.value;
+    state.value.total = total.value;
+};
+
+// Add watch to trigger recompute when line items change deep inside the state
+watch(
+    () => state.value.sections,
+    () => {
+        recompute();
+    },
+    { deep: true }
+);
+
+watch(
+    () => state.value.discount_amount,
+    () => {
+        recompute();
+    }
+);
 
     const addSection = (title = 'New section'): void => {
         state.value.sections.push({

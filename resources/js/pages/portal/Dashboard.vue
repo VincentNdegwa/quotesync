@@ -8,7 +8,7 @@ import { useFormat } from '@/composables/useFormat';
 import { dashboard, logout } from '@/routes/portal';
 import { show as showQuote } from '@/routes/portal/quotes';
 
-const { formatCurrency } = useFormat();
+const { formatCurrency, formatDate } = useFormat();
 
 const props = defineProps<{
     quotes: Array<any>;
@@ -122,7 +122,7 @@ const getStatusIcon = (status: string) => {
                                 </Badge>
                             </div>
                             <p class="text-sm text-gray-500 mt-1">
-                                {{ quote.workspace?.name || 'Unknown' }} • {{ quote.created_at ? new Date(quote.created_at).toLocaleDateString() : 'N/A' }}
+                                {{ quote.workspace?.name || 'Unknown' }} • {{ formatDate(quote.created_at) }}
                             </p>
                         </div>
                         <div class="flex items-center gap-4">

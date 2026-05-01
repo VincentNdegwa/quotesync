@@ -3,7 +3,7 @@
 
     $style = BlockStyle::content($config, $theme);
     $label = $config['labelText'] ?? __('Terms & Conditions');
-    $content = $config['contextText'] ?? $quote->terms;
+    $content = $config['contextText'] ?? $quote->terms ?? ($settings['default_terms'] ?? null);
 @endphp
 
 @if($content)

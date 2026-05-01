@@ -10,6 +10,7 @@ use App\Models\QuoteActivity;
 use App\Models\QuoteTemplate;
 use App\Models\Workspace;
 use App\Models\WorkspaceSetting;
+use App\Services\Quotes\TaxCalculator;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -362,6 +363,7 @@ class QuoteService
                             'tax_id' => $tax->tax_id,
                             'tax_label' => $tax->tax_label,
                             'tax_rate' => $tax->tax_rate,
+                            'inclusive' => (bool) $tax->inclusive,
                         ]);
                     }
                 }
@@ -446,6 +448,7 @@ class QuoteService
                             'tax_id' => $tax->tax_id,
                             'tax_label' => $tax->tax_label,
                             'tax_rate' => $tax->tax_rate,
+                            'inclusive' => (bool) $tax->inclusive,
                         ]);
                     }
                 }
@@ -563,6 +566,7 @@ class QuoteService
                                 'tax_id' => $tax->tax_id,
                                 'tax_label' => $tax->tax_label,
                                 'tax_rate' => (float) $tax->tax_rate,
+                                'inclusive' => (bool) $tax->inclusive,
                             ])->values()->all(),
                         ];
                     })->values()->all(),
@@ -609,10 +613,12 @@ class QuoteService
                             'tax_id' => $tax->id,
                             'tax_label' => $tax->name,
                             'tax_rate' => (float) $tax->rate,
+                            'tax_inclusive' => (bool) $tax->inclusive,
                         ])->values()->all() ?? $lineItem->taxes->map(fn ($tax): array => [
                             'tax_id' => $tax->tax_id,
                             'tax_label' => $tax->tax_label,
                             'tax_rate' => (float) $tax->tax_rate,
+                            'tax_inclusive' => $tax->tax_inclusive ?? false,
                         ])->values()->all();
 
                         return [
@@ -658,6 +664,21 @@ class QuoteService
             }
 
             foreach ($lineItems as $lineItemIndex => $lineItemData) {
+                $taxes = Arr::get($lineItemData, 'taxes', []);
+
+                // Ensure we use 'inclusive' consistently from payload
+                $taxesArray = is_array($taxes) ? collect($taxes)->map(fn ($tax) => [
+                    'tax_rate' => (float) Arr::get($tax, 'tax_rate', 0),
+                    'inclusive' => (bool) (Arr::get($tax, 'inclusive') ?? Arr::get($tax, 'tax_inclusive', false)),
+                ])->values()->all() : [];
+
+                $calculatedTotals = TaxCalculator::calculateLineItemTotals(
+                    (float) Arr::get($lineItemData, 'quantity', 1),
+                    (float) Arr::get($lineItemData, 'unit_price', 0),
+                    (float) Arr::get($lineItemData, 'discount_percent', 0),
+                    $taxesArray,
+                );
+
                 $lineItem = $section->lineItems()->create([
                     'quote_id' => $quote->id,
                     'catalog_item_id' => Arr::get($lineItemData, 'catalog_item_id'),
@@ -667,25 +688,26 @@ class QuoteService
                     'unit' => Arr::get($lineItemData, 'unit'),
                     'unit_price' => (float) Arr::get($lineItemData, 'unit_price', 0),
                     'discount_percent' => (float) Arr::get($lineItemData, 'discount_percent', 0),
-                    'subtotal' => (float) Arr::get($lineItemData, 'subtotal', 0),
-                    'tax_amount' => (float) Arr::get($lineItemData, 'tax_amount', 0),
-                    'total' => (float) Arr::get($lineItemData, 'total', 0),
+                    'subtotal' => $calculatedTotals['subtotal'],
+                    'tax_amount' => $calculatedTotals['taxAmount'],
+                    'total' => $calculatedTotals['total'],
                     'is_optional' => (bool) Arr::get($lineItemData, 'is_optional', false),
                     'notes' => Arr::get($lineItemData, 'notes'),
                     'sort_order' => (int) Arr::get($lineItemData, 'sort_order', $lineItemIndex),
                 ]);
-
-                $taxes = Arr::get($lineItemData, 'taxes', []);
 
                 if (! is_array($taxes)) {
                     continue;
                 }
 
                 foreach ($taxes as $taxData) {
+                    $inclusiveValue = Arr::get($taxData, 'inclusive') ?? Arr::get($taxData, 'tax_inclusive', false);
+
                     $lineItem->taxes()->create([
                         'tax_id' => Arr::get($taxData, 'tax_id'),
                         'tax_label' => (string) Arr::get($taxData, 'tax_label', 'Tax'),
                         'tax_rate' => (float) Arr::get($taxData, 'tax_rate', 0),
+                        'inclusive' => (bool) $inclusiveValue,
                     ]);
                 }
             }

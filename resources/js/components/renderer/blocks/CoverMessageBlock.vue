@@ -2,12 +2,12 @@
 import { computed } from 'vue';
 import { blockContentStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
-import type { BrandingData, CoverMessageBlockConfig, QuoteData } from '@/types';
+import type { CoverMessageBlockConfig, QuoteData, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     config: CoverMessageBlockConfig;
     quote: QuoteData;
-    branding: BrandingData;
+    settings: WorkspaceSettings;
     previewMode: boolean;
     editMode?: boolean;
 }>();
@@ -17,12 +17,16 @@ const emit = defineEmits<{
     (e: 'update-cover-label', value: string | null): void;
 }>();
 
+const effectiveContextText = computed(() => {
+    return props.config.contextText ?? props.settings.quotes.default_cover_message ?? null;
+});
+
 const fontSizeClass = computed(() => {
     const size = props.config.fontSize ?? 'md';
     return { sm: 'text-sm leading-6', md: 'text-base leading-7', lg: 'text-lg leading-8' }[size] ?? 'text-base leading-7';
 });
 
-const showBlock = computed(() => !!props.config.contextText?.trim() || props.previewMode || props.editMode);
+const showBlock = computed(() => !!effectiveContextText.value?.trim() || props.previewMode || props.editMode);
 </script>
 
 <template>
@@ -43,7 +47,7 @@ const showBlock = computed(() => !!props.config.contextText?.trim() || props.pre
         />
 
         <InlineEditableText
-            :model-value="config.contextText"
+            :model-value="effectiveContextText"
             :edit-mode="editMode"
             :rows="4"
             placeholder="Write a personal intro message for your client..."

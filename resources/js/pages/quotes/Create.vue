@@ -4,11 +4,11 @@ import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
 import type {
     BuilderCatalogItem,
     BuilderConfigurationUnit,
-    BuilderBranding,
     BuilderClientOption,
     BuilderTaxOption,
     BuilderTemplateOption,
     QuoteBuilderState,
+    WorkspaceSettings,
 } from '@/types';
 
 const props = defineProps<{
@@ -18,8 +18,7 @@ const props = defineProps<{
     catalogItems: BuilderCatalogItem[];
     taxes: BuilderTaxOption[];
     units: BuilderConfigurationUnit[];
-    branding: BuilderBranding;
-    defaultCurrency: string;
+    settings: WorkspaceSettings;
 }>();
 
 defineOptions({
@@ -57,9 +56,8 @@ const save = (): void => {
         :catalog-items="catalogItems"
         :taxes="taxes"
         :units="units"
-        :branding="branding"
+        :settings="settings"
         :processing="form.processing"
-        :default-currency="defaultCurrency"
         @save="save"
     />
 </template>

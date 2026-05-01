@@ -4,9 +4,10 @@ import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type {
     BuilderCatalogItem,
-    BuilderBranding,
+    BuilderConfigurationUnit,
     BuilderTaxOption,
     QuoteBuilderState,
+    WorkspaceSettings,
 } from '@/types';
 import { computed } from 'vue';
 import { watchEffect } from 'vue';
@@ -16,7 +17,8 @@ const props = defineProps<{
     initialState: QuoteBuilderState;
     catalogItems: BuilderCatalogItem[];
     taxes: BuilderTaxOption[];
-    branding: BuilderBranding;
+    units: BuilderConfigurationUnit[];
+    settings: WorkspaceSettings;
 }>();
 
 const breadcrumbs = computed(() => [
@@ -57,7 +59,8 @@ const save = (): void => {
         mode="template"
         :catalog-items="catalogItems"
         :taxes="taxes"
-        :branding="branding"
+        :units="units"
+        :settings="settings"
         :processing="form.processing"
         @save="save"
     />

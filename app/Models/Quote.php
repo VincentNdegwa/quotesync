@@ -176,6 +176,28 @@ class Quote extends Model
     }
 
     /**
+     * Check if this quote is a hot lead based on view count threshold.
+     */
+    public function isHotLead(): bool
+    {
+        $workspace = $this->workspace;
+        $settingsService = app(\App\Services\WorkspaceSettings\WorkspaceSettingsService::class);
+        $settings = $settingsService->groupForFrontend($workspace, 'notifications')['fields'] ?? [];
+
+        $hotLeadThreshold = $settings['hot_lead_threshold']['value'] ?? 3;
+
+        if ($hotLeadThreshold <= 0) {
+            return false;
+        }
+
+        $viewCount = $this->trackingEvents()
+            ->where('event_type', \App\Enums\TrackingEventType::VIEW)
+            ->count();
+
+        return $viewCount >= $hotLeadThreshold;
+    }
+
+    /**
      * @return HasMany<QuoteMessage, $this>
      */
     public function messages(): HasMany

@@ -16,7 +16,7 @@ class QuoteApprovalRequestedNotification extends QuoteNotification implements Sh
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return $this->getChannelsFromSettings($notifiable, 'notify_approval_requested', 'notify_approval_requested_channel');
     }
 
     public function toMail(object $notifiable): MailMessage

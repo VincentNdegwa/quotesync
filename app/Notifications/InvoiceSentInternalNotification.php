@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Invoice;
+use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -28,7 +29,26 @@ class InvoiceSentInternalNotification extends Notification implements ShouldQueu
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        $workspace = $this->invoice->workspace;
+        $settingsService = app(WorkspaceSettingsService::class);
+        $settings = $settingsService->groupForFrontend($workspace, 'notifications')['fields'] ?? [];
+
+        $enabled = $settings['notify_invoice_sent']['value'] ?? true;
+        if (! $enabled) {
+            return [];
+        }
+
+        $channels = $settings['notify_invoice_sent_channel']['value'] ?? ['in_app', 'mail'];
+
+        $result = [];
+        if (in_array('in_app', $channels, true)) {
+            $result[] = 'database';
+        }
+        if (in_array('mail', $channels, true)) {
+            $result[] = 'mail';
+        }
+
+        return $result;
     }
 
     /**

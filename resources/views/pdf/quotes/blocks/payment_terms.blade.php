@@ -4,7 +4,7 @@
 
     $style = BlockStyle::content($config, $theme);
     $label = $config['labelText'] ?? __('Payment Terms');
-    $context = $config['contextText'] ?? null;
+    $context = $config['contextText'] ?? ($settings['default_payment_terms'] ?? null);
     $showDepositInfo = $config['showDepositInfo'] ?? true;
     $showPaymentMethods = $config['showPaymentMethods'] ?? false;
     $paymentMethods = $config['paymentMethods'] ?? [];

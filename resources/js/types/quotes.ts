@@ -5,6 +5,7 @@ export type TaxSnapshot = {
     tax_id: number | null;
     tax_label: string;
     tax_rate: number;
+    inclusive: boolean;
 };
 
 export type QuoteBuilderLineItem = {

@@ -17,6 +17,7 @@ import type {
     BuilderClientOption,
     BuilderTemplateOption,
     QuoteBuilderState,
+    WorkspaceSettings,
 } from '@/types';
 
 const state = defineModel<QuoteBuilderState>('state', {
@@ -30,17 +31,23 @@ const props = withDefaults(
         templates?: BuilderTemplateOption[];
         systemLocked?: boolean;
         defaultCurrency?: string;
+        settings?: WorkspaceSettings | null;
     }>(),
     {
         clients: () => [],
         templates: () => [],
         systemLocked: false,
         defaultCurrency: 'USD',
+        settings: null,
     },
 );
 
 const expanded = ref(false);
 const NONE_TEMPLATE = '__none__';
+
+const effectiveDefaultCurrency = computed(() => {
+    return props.settings?.workspace.currency ?? props.defaultCurrency;
+});
 
 const applyClientCurrency = (clientId: string): void => {
     state.value.client_id = clientId ? Number(clientId) : null;
@@ -54,7 +61,7 @@ const applyClientCurrency = (clientId: string): void => {
     if (client?.currency) {
         state.value.currency = client.currency;
     } else {
-        state.value.currency = props.defaultCurrency;
+        state.value.currency = effectiveDefaultCurrency.value;
     }
 };
 
@@ -79,7 +86,7 @@ const selectedClientName = computed<string>(() => {
 });
 
 const showFxRate = computed(() => {
-    return state.value.currency && state.value.currency !== props.defaultCurrency;
+    return state.value.currency && state.value.currency !== effectiveDefaultCurrency.value;
 });
 
 const fxRateValue = computed({
@@ -173,7 +180,7 @@ const fxRateValue = computed({
                 </div>
 
                 <div v-if="showFxRate" class="space-y-2">
-                    <Label>Exchange rate (1 {{ defaultCurrency }} = ? {{ state.currency }})</Label>
+                    <Label>Exchange rate (1 {{ effectiveDefaultCurrency }} = ? {{ state.currency }})</Label>
                     <Input v-model.number="fxRateValue" type="number" step="0.0001" min="0" :disabled="systemLocked" placeholder="Auto-fetched" />
                     <span class="text-xs text-muted-foreground">Leave blank to auto-fetch from API</span>
                 </div>

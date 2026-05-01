@@ -43,7 +43,7 @@ const props = defineProps<{
 
 const inviteDialogOpen = ref(false);
 
-const { formatCurrency } = useFormat(usePage().props.workspace_currency as string || undefined);
+const { formatCurrency, formatDate } = useFormat(usePage().props.workspace_currency as string || undefined);
 
 const breadcrumbs = computed(() => [
     { title: 'Clients', href: '/clients' },
@@ -243,7 +243,7 @@ const deleteClient = (): void => {
                                 </Badge>
                             </TableCell>
                             <TableCell class="text-right">{{ formatCurrency(quote.base_total ?? 0) }}</TableCell>
-                            <TableCell>{{ quote.created_at ? new Date(quote.created_at).toLocaleDateString() : '—' }}</TableCell>
+                            <TableCell>{{ formatDate(quote.created_at) }}</TableCell>
                         </TableRow>
                         <TableRow v-if="quoteHistory.length === 0">
                             <TableCell colspan="4" class="text-center text-muted-foreground">

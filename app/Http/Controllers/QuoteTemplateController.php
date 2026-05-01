@@ -60,6 +60,8 @@ class QuoteTemplateController extends Controller
 
         abort_unless($workspace instanceof Workspace, 404);
 
+        $settings = $workspaceSettingsService->builderSettings($workspace);
+
         return Inertia::render('configuration/templates/Create', [
             'initialState' => [
                 'id' => null,
@@ -68,15 +70,15 @@ class QuoteTemplateController extends Controller
                 'status' => 'draft',
                 'client_id' => null,
                 'assigned_to' => null,
-                'currency' => null,
+                'currency' => $settings['workspace']['currency'],
                 'valid_until' => null,
                 'description' => null,
                 'industry' => null,
-                'cover_message' => null,
-                'terms' => null,
-                'notes' => null,
+                'cover_message' => $settings['quotes']['default_cover_message'],
+                'terms' => $settings['quotes']['default_terms'],
+                'notes' => $settings['quotes']['default_notes'],
                 'template_id' => null,
-                'requires_deposit' => false,
+                'requires_deposit' => $settings['quotes']['require_deposit'],
                 'deposit_amount' => null,
                 'subtotal' => 0,
                 'discount_amount' => 0,
@@ -93,6 +95,7 @@ class QuoteTemplateController extends Controller
                     ],
                 ],
             ],
+            'settings' => $settings,
             ...$this->builderLookups($workspace, $workspaceSettingsService),
         ]);
     }
@@ -155,6 +158,7 @@ class QuoteTemplateController extends Controller
         return Inertia::render('configuration/templates/Edit', [
             'templateId' => $quoteTemplate->id,
             'initialState' => $quoteTemplateService->toBuilderPayload($quoteTemplate),
+            'settings' => $workspaceSettingsService->builderSettings($workspace),
             ...$this->builderLookups($workspace, $workspaceSettingsService),
         ]);
     }
@@ -250,36 +254,16 @@ class QuoteTemplateController extends Controller
             'catalogItems' => CatalogItem::query()
                 ->where('workspace_id', $workspace->id)
                 ->where('is_active', true)
-                ->with('taxes:id,name,rate')
+                ->with('taxes')
                 ->orderByRaw('LOWER(name)')
                 ->limit(300)
-                ->get(['id', 'name', 'description', 'sku', 'unit', 'unit_price'])
-                ->map(fn (CatalogItem $item): array => [
-                    'id' => $item->id,
-                    'name' => $item->name,
-                    'description' => $item->description,
-                    'sku' => $item->sku,
-                    'unit' => $item->unit,
-                    'unit_price' => (float) $item->unit_price,
-                    'taxes' => $item->taxes->map(fn (Tax $tax): array => [
-                        'id' => $tax->id,
-                        'name' => $tax->name,
-                        'rate' => (float) $tax->rate,
-                    ])->values()->all(),
-                ])
-                ->values(),
+                ->get(),
             'taxes' => Tax::query()
                 ->where('workspace_id', $workspace->id)
                 ->where('is_active', true)
                 ->orderByDesc('is_default')
                 ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'rate'])
-                ->map(fn (Tax $tax): array => [
-                    'id' => $tax->id,
-                    'name' => $tax->name,
-                    'rate' => (float) $tax->rate,
-                ])
-                ->values(),
+                ->get(),
         ];
     }
 

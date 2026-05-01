@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { useFormat } from '@/composables/useFormat';
 
 type Approval = {
     id: number;
@@ -96,25 +97,7 @@ const newRuleForm = useForm({
 
 const pendingCount = computed(() => props.pendingApprovals.length);
 
-const fmt = (value: number, currency?: string): string => {
-    try {
-        return new Intl.NumberFormat(undefined, {
-            style: 'currency',
-            currency: currency ?? props.currency ?? 'USD',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2,
-        }).format(value);
-    } catch {
-        return `${currency ?? props.currency} ${value.toFixed(2)}`;
-    }
-};
-
-const fmtDate = (val: string): string =>
-    new Date(val).toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-    });
+const { formatCurrency: fmt, formatDate } = useFormat(props.currency);
 
 const daysAgo = (val: string): string => {
     const diff = Math.floor((Date.now() - new Date(val).getTime()) / 86400000);

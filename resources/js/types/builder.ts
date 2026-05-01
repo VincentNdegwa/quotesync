@@ -142,6 +142,7 @@ export type LineItemsBlockConfig = BaseBlockConfig & {
     showDiscount: boolean;
     showTax: boolean;
     showLineTotal: boolean;
+    showCostPrice: boolean;
     showOptionalBadge: boolean;
     optionalItemStyle: 'checkbox' | 'badge' | 'greyed';
     headerBackground: string | null;   // table header row background only
@@ -519,6 +520,7 @@ const DEFAULT_BLOCK_CONFIGS: BlockConfigMap = {
         showDiscount: true,
         showTax: true,
         showLineTotal: true,
+        showCostPrice: false,
         showOptionalBadge: true,
         optionalItemStyle: 'badge',
         headerBackground: null,
@@ -756,6 +758,7 @@ export type BuilderTaxOption = {
     id: number;
     name: string;
     rate: number;
+    inclusive: boolean;
 };
 
 export type BuilderConfigurationUnit = {
@@ -791,6 +794,48 @@ export type BuilderTemplateOption = {
 export type BuilderBranding = BrandingData;
 
 // ─────────────────────────────────────────────────────────────────────────────
+// WORKSPACE SETTINGS
+// Centralized workspace settings for the builder/frontend
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type WorkspaceQuoteSettings = {
+    quote_prefix: string;
+    quote_number_sequence: number;
+    quote_number_reset_yearly: boolean;
+    quote_validity_days: number;
+    require_cover_message: boolean;
+    default_cover_message: string | null;
+    default_terms: string | null;
+    default_payment_terms: string | null;
+    default_notes: string | null;
+    allow_client_negotiation: boolean;
+    allow_optional_items: boolean;
+    require_deposit: boolean;
+    default_deposit_percent: number;
+};
+
+export type WorkspaceInfo = {
+    name: string;
+    currency: string;
+    country: string | null;
+    logo_url: string | null;
+    primary_color: string;
+    accent_color: string;
+    company_address: string | null;
+    company_phone: string | null;
+    company_email: string | null;
+    company_website: string | null;
+    tax_number: string | null;
+    company_name: string | null;
+    company_tagline: string | null;
+};
+
+export type WorkspaceSettings = {
+    quotes: WorkspaceQuoteSettings;
+    workspace: WorkspaceInfo;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // QUOTE BUILDER STATE
 // The reactive state object that lives in the builder composable.
 // Mirrors the quote model but is optimised for the builder UX.
@@ -800,6 +845,7 @@ export type QuoteBuilderLineItemTax = {
     tax_id: number | null;
     tax_label: string;
     tax_rate: number;
+    inclusive: boolean;
 };
 
 export type QuoteBuilderLineItem = {

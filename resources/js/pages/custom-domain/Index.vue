@@ -9,6 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Check, X, Globe, RefreshCw, Trash2, Star } from 'lucide-vue-next';
+import { useFormat } from '@/composables/useFormat';
+
+const { formatDate } = useFormat();
 
 const props = defineProps<{
     domains: Array<{
@@ -70,11 +73,6 @@ const executeDelete = (): void => {
             },
         });
     }
-};
-
-const formatDate = (date: string | null) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString();
 };
 </script>
 

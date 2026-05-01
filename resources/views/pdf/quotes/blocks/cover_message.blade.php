@@ -3,7 +3,7 @@
 
     $style = BlockStyle::content($config, $theme);
     $label = $config['labelText'] ?? null;
-    $content = $config['contextText'] ?? $quote->cover_message;
+    $content = $config['contextText'] ?? $quote->cover_message ?? ($settings['default_cover_message'] ?? null);
 @endphp
 
 @if($content)

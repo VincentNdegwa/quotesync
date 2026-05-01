@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import TiptapEditor from '@/components/ui/tiptap-editor/TiptapEditor.vue';
-import { FileText, Settings, FileCheck, Layers } from 'lucide-vue-next';
+import { FileText, Settings, FileCheck } from 'lucide-vue-next';
 import type { WorkspaceSettingsField, WorkspaceSettingsPageProps } from '@/types';
 
 const props = defineProps<WorkspaceSettingsPageProps>();
@@ -197,77 +197,6 @@ const invoicesFields = computed(() => props.currentGroup.fields.filter(f => isIn
                                 v-model="formValues.quote_validity_days"
                             />
                             <InputError :message="errors['settings.quote_validity_days']" />
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Display Options -->
-                <div class="space-y-4">
-                    <h4 class="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <Layers class="h-4 w-4" />
-                        Display Options
-                    </h4>
-                    <div class="grid gap-4 md:grid-cols-2">
-                        <div class="space-y-2 flex items-center">
-                            <div class="flex-1">
-                                <Label for="tax_inclusive">Tax Inclusive</Label>
-                                <p class="text-xs text-muted-foreground">Prices include tax by default</p>
-                            </div>
-                            <Switch
-                                id="tax_inclusive"
-                                :model-value="Boolean(formValues.tax_inclusive)"
-                                @update:model-value="(checked: boolean) => (formValues.tax_inclusive = checked)"
-                            />
-                            <input
-                                name="settings[tax_inclusive]"
-                                type="hidden"
-                                :value="formValues.tax_inclusive ? '1' : '0'"
-                            />
-                        </div>
-                        <div class="space-y-2 flex items-center">
-                            <div class="flex-1">
-                                <Label for="show_line_item_tax">Show Line Item Tax</Label>
-                            </div>
-                            <Switch
-                                id="show_line_item_tax"
-                                :model-value="Boolean(formValues.show_line_item_tax)"
-                                @update:model-value="(checked: boolean) => (formValues.show_line_item_tax = checked)"
-                            />
-                            <input
-                                name="settings[show_line_item_tax]"
-                                type="hidden"
-                                :value="formValues.show_line_item_tax ? '1' : '0'"
-                            />
-                        </div>
-                        <div class="space-y-2 flex items-center">
-                            <div class="flex-1">
-                                <Label for="show_unit_prices">Show Unit Prices</Label>
-                            </div>
-                            <Switch
-                                id="show_unit_prices"
-                                :model-value="Boolean(formValues.show_unit_prices)"
-                                @update:model-value="(checked: boolean) => (formValues.show_unit_prices = checked)"
-                            />
-                            <input
-                                name="settings[show_unit_prices]"
-                                type="hidden"
-                                :value="formValues.show_unit_prices ? '1' : '0'"
-                            />
-                        </div>
-                        <div class="space-y-2 flex items-center">
-                            <div class="flex-1">
-                                <Label for="show_cost_price">Show Cost Price</Label>
-                            </div>
-                            <Switch
-                                id="show_cost_price"
-                                :model-value="Boolean(formValues.show_cost_price)"
-                                @update:model-value="(checked: boolean) => (formValues.show_cost_price = checked)"
-                            />
-                            <input
-                                name="settings[show_cost_price]"
-                                type="hidden"
-                                :value="formValues.show_cost_price ? '1' : '0'"
-                            />
                         </div>
                     </div>
                 </div>

@@ -16,7 +16,7 @@ class QuoteApprovalRejectedNotification extends QuoteNotification implements Sho
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return $this->getChannelsFromSettings($notifiable, 'notify_approval_rejected', 'notify_approval_rejected_channel');
     }
 
     public function toMail(object $notifiable): MailMessage

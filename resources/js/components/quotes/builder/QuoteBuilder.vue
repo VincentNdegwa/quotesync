@@ -32,6 +32,7 @@ import type {
     SignatureBlockConfig,
     TermsBlockConfig,
     TemplateLayout,
+    WorkspaceSettings,
 } from '@/types';
 import { watch } from 'vue';
 
@@ -47,18 +48,15 @@ const props = withDefaults(
         catalogItems: BuilderCatalogItem[];
         taxes: BuilderTaxOption[];
         units: BuilderConfigurationUnit[];
-        branding?: BuilderBranding | null;
+        settings: WorkspaceSettings;
         processing?: boolean;
         systemLocked?: boolean;
-        defaultCurrency?: string;
     }>(),
     {
         clients: () => [],
         templates: () => [],
-        branding: null,
         processing: false,
         systemLocked: false,
-        defaultCurrency: 'USD',
     },
 );
 
@@ -69,11 +67,6 @@ const emit = defineEmits<{
 }>();
 
 const localState = model;
-
-// Ensure base_currency is set to defaultCurrency if not present
-if (!localState.value.base_currency) {
-    localState.value.base_currency = props.defaultCurrency;
-}
 
 const currentLayout = ref<TemplateLayout>(
     ensureTemplateLayout(
@@ -673,14 +666,14 @@ const updateSignatureContent = (
 
 const brandingData = computed<BrandingData>(() => {
     return {
-        company_name: props.branding?.company_name ?? null,
-        logo_url: props.branding?.logo_url ?? null,
-        primary_color: props.branding?.primary_color ?? '#2563EB',
-        accent_color: props.branding?.accent_color ?? '#F59E0B',
-        company_email: props.branding?.company_email ?? null,
-        company_phone: props.branding?.company_phone ?? null,
-        company_address: props.branding?.company_address ?? null,
-        company_tagline: props.branding?.company_tagline ?? null,
+        company_name: props.settings.workspace.name ?? null,
+        logo_url: props.settings.workspace.logo_url ?? null,
+        primary_color: props.settings.workspace.primary_color ?? '#2563EB',
+        accent_color: props.settings.workspace.accent_color ?? '#F59E0B',
+        company_email: props.settings.workspace.company_email ?? null,
+        company_phone: props.settings.workspace.company_phone ?? null,
+        company_address: props.settings.workspace.company_address ?? null,
+        company_tagline: null,
     };
 });
 
@@ -791,7 +784,7 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                 :clients="clients"
                 :templates="templates"
                 :system-locked="systemLocked"
-                :default-currency="defaultCurrency"
+                :default-currency="settings.workspace.currency"
             />
         </div>
 
@@ -836,6 +829,7 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                             :quote="localState"
                             :layout="currentLayout"
                             :branding="brandingData"
+                            :settings="props.settings"
                             :preview-mode="canvasMode === 'preview'"
                             :edit-mode="canvasMode === 'edit'"
                             :selected-block-id="selectedBlockId"
@@ -972,7 +966,7 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
             :catalog-items="catalogItems"
             :taxes="taxes"
             :units="units"
-            :currency="defaultCurrency"
+            :currency="settings.workspace.currency"
             @close="closeLineItemDrawer()"
             @remove="removeEditingLineItem()"
         />

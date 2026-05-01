@@ -101,10 +101,8 @@ class QuoteController extends Controller
                 ->find($clientId);
         }
 
-        /** @var Collection<int, array<string, mixed>> $quoteFields */
-        $quoteFields = collect($workspaceSettingsService->groupForFrontend($workspace, 'quotes')['fields'] ?? [])->keyBy('key');
-        $defaultCurrency = (string) ($quoteFields->get('default_currency')['value'] ?? 'USD');
-        $validityDays = max(1, (int) ($quoteFields->get('quote_validity_days')['value'] ?? 30));
+        $settings = $workspaceSettingsService->builderSettings($workspace);
+        $validityDays = max(1, $settings['quotes']['quote_validity_days']);
 
         $initialState = [
             'id' => null,
@@ -113,18 +111,18 @@ class QuoteController extends Controller
             'status' => 'draft',
             'client_id' => $client?->id,
             'assigned_to' => $request->user()?->id,
-            'currency' => $defaultCurrency,
-            'base_currency' => $defaultCurrency,
+            'currency' => $settings['workspace']['currency'],
+            'base_currency' => $settings['workspace']['currency'],
             'fx_rate' => null,
             'base_total' => null,
             'valid_until' => now()->addDays($validityDays)->toDateString(),
-            'cover_message' => null,
-            'terms' => null,
-            'notes' => null,
+            'cover_message' => $settings['quotes']['default_cover_message'],
+            'terms' => $settings['quotes']['default_terms'],
+            'notes' => $settings['quotes']['default_notes'],
             'template_id' => $template?->id,
             'layout' => null,
             'layout_snapshot' => null,
-            'requires_deposit' => false,
+            'requires_deposit' => $settings['quotes']['require_deposit'],
             'deposit_amount' => null,
             'subtotal' => 0,
             'discount_amount' => 0,
@@ -149,7 +147,7 @@ class QuoteController extends Controller
 
         return Inertia::render('quotes/Create', [
             'initialState' => $initialState,
-            'defaultCurrency' => $defaultCurrency,
+            'settings' => $settings,
             ...$this->builderLookups($workspace, $workspaceSettingsService),
         ]);
     }
@@ -254,7 +252,7 @@ class QuoteController extends Controller
 
         return Inertia::render('quotes/Edit', [
             'initialState' => $quoteService->toBuilderPayload($quote),
-            'defaultCurrency' => $this->builderLookups($workspace, $workspaceSettingsService)['defaultCurrency'],
+            'settings' => $workspaceSettingsService->builderSettings($workspace),
             ...$this->builderLookups($workspace, $workspaceSettingsService),
             'quoteId' => $quote->id,
         ]);
@@ -299,88 +297,35 @@ class QuoteController extends Controller
      */
     private function builderLookups(Workspace $workspace, WorkspaceSettingsService $workspaceSettingsService): array
     {
-        $branding = $this->brandingPayload($workspace, $workspaceSettingsService);
-
-        /** @var Collection<int, array<string, mixed>> $quoteFields */
-        $quoteFields = collect($workspaceSettingsService->groupForFrontend($workspace, 'quotes')['fields'] ?? [])->keyBy('key');
-        $defaultCurrency = (string) ($quoteFields->get('default_currency')['value'] ?? 'USD');
-
         return [
-            'branding' => $branding,
-            'defaultCurrency' => $defaultCurrency,
             'clients' => Client::query()
                 ->where('workspace_id', $workspace->id)
                 ->orderByRaw('LOWER(company_name)')
-                ->get(['id', 'company_name', 'currency'])
-                ->map(fn (Client $client): array => [
-                    'id' => $client->id,
-                    'company_name' => $client->company_name,
-                    'email' => $client->email,
-                    'currency' => $client->currency,
-                ])
-                ->values(),
+                ->get(),
             'catalogItems' => CatalogItem::query()
                 ->where('workspace_id', $workspace->id)
                 ->where('is_active', true)
-                ->with(['taxes:id,name,rate', 'configurationUnit:id,name,symbol'])
+                ->with(['taxes', 'configurationUnit'])
                 ->orderByRaw('LOWER(name)')
                 ->limit(300)
-                ->get(['id', 'name', 'description', 'sku', 'unit_id', 'unit_price'])
-                ->map(fn (CatalogItem $item): array => [
-                    'id' => $item->id,
-                    'name' => $item->name,
-                    'description' => $item->description,
-                    'sku' => $item->sku,
-                    'unit_id' => $item->unit_id,
-                    'unit_price' => (float) $item->unit_price,
-                    'configuration_unit' => $item->configurationUnit ? [
-                        'id' => $item->configurationUnit->id,
-                        'name' => $item->configurationUnit->name,
-                        'symbol' => $item->configurationUnit->symbol,
-                    ] : null,
-                    'taxes' => $item->taxes->map(fn (Tax $tax): array => [
-                        'id' => $tax->id,
-                        'name' => $tax->name,
-                        'rate' => (float) $tax->rate,
-                    ])->values()->all(),
-                ])
-                ->values(),
+                ->get(),
             'templates' => QuoteTemplate::query()
                 ->where('workspace_id', $workspace->id)
                 ->where('is_active', true)
                 ->orderByDesc('is_system')
                 ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'description', 'is_system'])
-                ->map(fn (QuoteTemplate $template): array => [
-                    'id' => $template->id,
-                    'name' => $template->name,
-                    'description' => $template->description,
-                    'is_system' => (bool) $template->is_system,
-                ])
-                ->values(),
+                ->get(),
             'taxes' => Tax::query()
                 ->where('workspace_id', $workspace->id)
                 ->where('is_active', true)
                 ->orderByDesc('is_default')
                 ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'rate'])
-                ->map(fn (Tax $tax): array => [
-                    'id' => $tax->id,
-                    'name' => $tax->name,
-                    'rate' => (float) $tax->rate,
-                ])
-                ->values(),
+                ->get(),
             'units' => ConfigurationUnit::query()
                 ->where('workspace_id', $workspace->id)
                 ->where('is_active', true)
                 ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'symbol', 'is_active', 'created_at'])
-                ->map(fn (ConfigurationUnit $unit): array => [
-                    'id' => $unit->id,
-                    'name' => $unit->name,
-                    'symbol' => $unit->symbol,
-                ])
-                ->values(),
+                ->get(),
         ];
     }
 

@@ -113,18 +113,10 @@ const props = defineProps<{
     generated_at: string;
 }>();
 
-const { formatCurrency, formatRelativeTime } = useFormat(usePage().props.workspace_currency as string || undefined);
+const { formatCurrency, formatNumber, formatRelativeTime } = useFormat(usePage().props.workspace_currency as string || undefined);
 
-const formatNumber = (value: number): string =>
-    new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(
-        value,
-    );
-const formatPercent = (value: number): string =>
-    `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(value)}%`;
-const formatTrendValue = (value: number): string =>
-    new Intl.NumberFormat(undefined, {
-        maximumFractionDigits: Math.abs(value) < 10 ? 1 : 0,
-    }).format(value);
+const formatPercent = (value: number): string => `${formatNumber(value, 0)}%`;
+const formatTrendValue = (value: number): string => formatNumber(value, Math.abs(value) < 10 ? 1 : 0);
 
 type StatCard = {
     key: string;

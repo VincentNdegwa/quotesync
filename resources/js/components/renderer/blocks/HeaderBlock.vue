@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { blockBaseStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
-import type { BrandingData, HeaderBlockConfig, QuoteData } from '@/types';
+import { useFormat } from '@/composables/useFormat';
+import type { HeaderBlockConfig, QuoteData, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     config: HeaderBlockConfig;
     quote: QuoteData;
-    branding: BrandingData;
+    settings: WorkspaceSettings;
     previewMode: boolean;
 }>();
+
+const effectiveBranding = computed(() => props.settings.workspace);
+
+const { formatDate } = useFormat();
 
 const daysLeft = computed(() => {
     if (!props.quote.valid_until) {
@@ -19,18 +24,6 @@ const daysLeft = computed(() => {
 
     return Math.ceil(diff / 86400000);
 });
-
-const formatDate = (dateStr: string | null): string => {
-    if (!dateStr) {
-        return '-';
-    }
-
-    return new Date(dateStr).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
-};
 </script>
 
 <template>
@@ -38,13 +31,13 @@ const formatDate = (dateStr: string | null): string => {
         <div v-if="config.layout === 'logo-left-details-right'" class="flex items-start justify-between gap-6">
             <div class="flex flex-col gap-2">
                 <img
-                    v-if="config.showLogo && branding.logo_url"
-                    :src="branding.logo_url"
+                    v-if="config.showLogo && effectiveBranding.logo_url"
+                    :src="effectiveBranding.logo_url"
                     alt="Company logo"
                     class="h-12 w-auto object-contain"
                 />
-                <span v-if="!branding.logo_url || !config.showLogo" class="text-lg font-bold" :style="{ color: branding.primary_color }">
-                    {{ branding.company_name }}
+                <span v-if="!effectiveBranding.logo_url || !config.showLogo" class="text-lg font-bold" :style="{ color: effectiveBranding.primary_color }">
+                    {{ effectiveBranding.company_name }}
                 </span>
             </div>
 
@@ -56,8 +49,8 @@ const formatDate = (dateStr: string | null): string => {
                     v-if="config.showExpiryCountdown && daysLeft > 0"
                     class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
                     :style="{
-                        backgroundColor: daysLeft <= 7 ? '#FEF3C7' : `color-mix(in oklab, ${branding.primary_color} 10%, white)`,
-                        color: daysLeft <= 7 ? '#92400E' : branding.primary_color,
+                        backgroundColor: daysLeft <= 7 ? '#FEF3C7' : `color-mix(in oklab, ${effectiveBranding.primary_color} 10%, white)`,
+                        color: daysLeft <= 7 ? '#92400E' : effectiveBranding.primary_color,
                     }"
                 >
                     Expires in {{ daysLeft }} day{{ daysLeft === 1 ? '' : 's' }}
@@ -73,19 +66,19 @@ const formatDate = (dateStr: string | null): string => {
             </div>
             <div>
                 <img
-                    v-if="config.showLogo && branding.logo_url"
-                    :src="branding.logo_url"
+                    v-if="config.showLogo && effectiveBranding.logo_url"
+                    :src="effectiveBranding.logo_url"
                     alt="Company logo"
                     class="h-12 w-auto object-contain"
                 />
-                <span v-else class="text-lg font-bold" :style="{ color: branding.primary_color }">{{ branding.company_name }}</span>
+                <span v-else class="text-lg font-bold" :style="{ color: effectiveBranding.primary_color }">{{ effectiveBranding.company_name }}</span>
             </div>
         </div>
 
         <div v-else-if="config.layout === 'centered'" class="flex flex-col items-center gap-3 text-center">
             <img
-                v-if="config.showLogo && branding.logo_url"
-                :src="branding.logo_url"
+                v-if="config.showLogo && effectiveBranding.logo_url"
+                :src="effectiveBranding.logo_url"
                 alt="Company logo"
                 class="h-14 w-auto object-contain"
             />
@@ -97,7 +90,7 @@ const formatDate = (dateStr: string | null): string => {
         </div>
 
         <div v-else class="flex items-center gap-3">
-            <span class="font-semibold" :style="{ color: branding.primary_color }">{{ branding.company_name }}</span>
+            <span class="font-semibold" :style="{ color: effectiveBranding.primary_color }">{{ effectiveBranding.company_name }}</span>
             <span v-if="config.showQuoteNumber" class="text-sm text-gray-500">· {{ quote.number ?? 'Draft' }}</span>
         </div>
     </div>

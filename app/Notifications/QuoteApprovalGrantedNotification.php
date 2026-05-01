@@ -18,7 +18,7 @@ class QuoteApprovalGrantedNotification extends QuoteNotification implements Shou
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return $this->getChannelsFromSettings($notifiable, 'notify_approval_granted', 'notify_approval_granted_channel');
     }
 
     public function toMail(object $notifiable): MailMessage

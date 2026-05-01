@@ -80,7 +80,7 @@ export const getClientColumns = (options: ClientColumnOptions): ColumnDef<Client
     {
         accessorKey: 'created_at',
         header: ({ column }) => h('div', { class: 'text-center' }, sortableHeader('Date added', column, 'right')),
-        cell: ({ row }) => h('div', { class: 'text-center' }, new Date(row.original.created_at).toLocaleDateString()),
+        cell: ({ row }) => h('div', { class: 'text-center' }, useFormat().formatDate(row.original.created_at)),
     },
     {
         id: 'actions',

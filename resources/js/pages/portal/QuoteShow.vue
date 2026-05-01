@@ -25,12 +25,7 @@ const props = defineProps<{
     }>;
 }>();
 
-const { formatCurrency } = useFormat(props.quote.currency || props.quote.base_currency || undefined);
-
-const formatDate = (date: string | null): string => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString();
-};
+const { formatCurrency, formatDate } = useFormat(props.quote.currency || props.quote.base_currency || undefined);
 
 const acceptForm = useForm({});
 const declineForm = useForm({

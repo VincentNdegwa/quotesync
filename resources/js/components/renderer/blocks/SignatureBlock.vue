@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { inject } from 'vue';
+import { inject, computed } from 'vue';
 import { blockBaseStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
 import { Button } from '@/components/ui/button';
-import type { BrandingData, QuoteData, SignatureBlockConfig } from '@/types';
+import { useFormat } from '@/composables/useFormat';
+import type { QuoteData, SignatureBlockConfig, WorkspaceSettings } from '@/types';
 
-defineProps<{
+const props = defineProps<{
     config: SignatureBlockConfig;
     quote: QuoteData & { status?: string; signature_path?: string | null; signer_name?: string | null; accepted_at?: string | null };
-    branding: BrandingData;
+    settings: WorkspaceSettings;
     previewMode: boolean;
     editMode?: boolean;
 }>();
@@ -17,8 +18,14 @@ const emit = defineEmits<{
     (e: 'update-signature-content', payload: { acceptButtonText?: string | null; declineButtonText?: string | null; contextText?: string | null }): void;
 }>();
 
+const effectiveContextText = computed(() => {
+    return props.config.contextText ?? props.settings.quotes.default_notes ?? null;
+});
+
 const openApproveModal = inject('openApproveModal', () => {});
 const openDeclineModal = inject('openDeclineModal', () => {});
+
+const { formatDateTime } = useFormat();
 
 const updateAcceptText = (value: string | null): void => {
     emit('update-signature-content', { acceptButtonText: value });
@@ -30,17 +37,6 @@ const updateDeclineText = (value: string | null): void => {
 
 const updateContextText = (value: string | null): void => {
     emit('update-signature-content', { contextText: value });
-};
-
-const formatDate = (dateString?: string | null) => {
-    if (!dateString) {
-return '';
-}
-
-    return new Date(dateString).toLocaleString(undefined, { 
-        year: 'numeric', month: 'long', day: 'numeric', 
-        hour: '2-digit', minute: '2-digit' 
-    });
 };
 </script>
 
@@ -80,7 +76,7 @@ return '';
                     <span v-if="quote.signer_name" class="mt-1 text-sm" style="font-family: 'Dancing Script', cursive; font-size: 1.25rem; line-height: 1;">{{ quote.signer_name }}</span>
                 </div>
                 <div class="text-sm text-muted-foreground">
-                    <p>Signed on {{ formatDate(quote.accepted_at) }}</p>
+                    <p>Signed on {{ formatDateTime(quote.accepted_at) }}</p>
                 </div>
             </div>
         </template>
@@ -102,7 +98,7 @@ return '';
 
         <InlineEditableText
             v-if="config.showContextText || editMode"
-            :model-value="config.contextText"
+            :model-value="effectiveContextText"
             :edit-mode="editMode"
             :rows="2"
             placeholder="By signing you agree to the terms listed above."

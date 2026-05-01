@@ -68,12 +68,11 @@ const props = defineProps<{
 }>();
 
 const { getQuoteStatus } = useEnums();
-const { formatCurrency, formatDateTime, formatRelativeTime } = useFormat();
+const { formatCurrency, formatDateTime, formatRelativeTime, formatNumber } = useFormat();
 
 type TimelineIconKey = 'send' | 'eye' | 'mail' | 'clock' | 'x-circle' | 'check-circle' | 'message-square';
 type DeviceIconKey = 'mobile' | 'desktop' | 'tablet' | 'unknown';
 
-const formatNumber = (value: number): string => new Intl.NumberFormat().format(value);
 const formatTime = (seconds: number): string => {
   if (seconds <= 0) {
     return '0s';

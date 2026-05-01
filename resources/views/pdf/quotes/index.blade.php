@@ -21,6 +21,7 @@
                     'theme' => $theme,
                     'branding' => $branding,
                     'signatureDataUri' => $signatureDataUri,
+                    'settings' => $settings ?? [],
                 ])
             @endif
         @endforeach

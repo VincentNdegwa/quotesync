@@ -44,6 +44,7 @@ class StoreTaxRequest extends FormRequest
                         ->whereNull('deleted_at')),
             ],
             'rate' => ['required', 'numeric', 'min:0', 'max:100'],
+            'inclusive' => ['nullable', 'boolean'],
             'is_default' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
         ];

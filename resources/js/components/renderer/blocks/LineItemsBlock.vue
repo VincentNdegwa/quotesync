@@ -4,15 +4,25 @@ import { blockBaseStyle } from '@/composables/useBlockStyles';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useFormat } from '@/composables/useFormat';
-import type { BrandingData, LineItemsBlockConfig, QuoteData } from '@/types';
+import { calculateLineItemTotals } from '@/composables/useTaxCalculation';
+import type { LineItemsBlockConfig, QuoteData, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     config: LineItemsBlockConfig;
     quote: QuoteData;
-    branding: BrandingData;
+    settings: WorkspaceSettings;
     previewMode: boolean;
     editMode?: boolean;
 }>();
+
+const effectiveSettings = computed(() => props.settings.quotes);
+
+// Use config for display options
+const showUnitPrice = computed(() => props.config.showUnitPrice ?? true);
+const showTax = computed(() => props.config.showTax ?? true);
+
+// Use settings for tax calculation (fallback to quote state)
+const taxInclusive = computed(() => (props.quote as any).tax_inclusive ?? false);
 
 const emit = defineEmits<{
     (e: 'add-section'): void;
@@ -38,13 +48,47 @@ const borderedCellClass = computed(() => (props.config.tableStyle === 'bordered'
 const columnCount = computed(() => {
     return 1
         + Number(props.config.showQuantity)
-        + Number(props.config.showUnitPrice)
+        + Number(showUnitPrice.value)
         + Number(props.config.showDiscount)
-        + Number(props.config.showTax)
+        + Number(showTax.value)
         + Number(props.config.showLineTotal);
 });
 
-const sectionSubtotal = (section: Section): number => section.line_items.reduce((sum, item) => sum + Number(item.total || 0), 0);
+const itemTax = (item: LineItem): number => {
+    if (!item.taxes?.length) return 0;
+    
+    const taxes = item.taxes.map((tax: any) => ({
+        tax_rate: Number(tax.tax_rate || tax.rate || 0),
+        inclusive: Boolean(tax.inclusive),
+    }));
+
+    const result = calculateLineItemTotals(
+        Number(item.quantity || 0),
+        Number(item.unit_price || 0),
+        Number(item.discount_percent || 0),
+        taxes,
+    );
+
+    return result.taxAmount;
+};
+
+const itemTotal = (item: LineItem): number => {
+    const taxes = (item.taxes || []).map((tax: any) => ({
+        tax_rate: Number(tax.tax_rate || tax.rate || 0),
+        inclusive: Boolean(tax.inclusive),
+    }));
+
+    const result = calculateLineItemTotals(
+        Number(item.quantity || 0),
+        Number(item.unit_price || 0),
+        Number(item.discount_percent || 0),
+        taxes,
+    );
+
+    return result.total;
+};
+
+const sectionSubtotal = (section: Section): number => section.line_items.reduce((sum, item) => sum + itemTotal(item), 0);
 
 const itemMeta = (item: LineItem): string => {
     const parts: string[] = [];
@@ -53,7 +97,7 @@ const itemMeta = (item: LineItem): string => {
         parts.push(`${item.quantity}${props.config.showUnit && item.unit ? ` ${item.unit}` : ''}`);
     }
 
-    if (props.config.showUnitPrice) {
+    if (showUnitPrice.value) {
         parts.push(fmt(item.unit_price));
     }
 
@@ -61,8 +105,11 @@ const itemMeta = (item: LineItem): string => {
         parts.push(`${item.discount_percent}% disc`);
     }
 
-    if (props.config.showTax && Number(item.tax_amount || 0) > 0) {
-        parts.push(`tax ${fmt(item.tax_amount)}`);
+    if (showTax.value) {
+        const taxAmount = itemTax(item);
+        if (taxAmount > 0) {
+            parts.push(`tax ${fmt(taxAmount)}`);
+        }
     }
 
     return parts.join(' · ');
@@ -99,7 +146,7 @@ const stripeClass = (index: number): string => {
                     empty-text="Section name"
                     @update:model-value="(value) => emit('update-section-title', { sectionIndex, title: value ?? '' })"
                 />
-                <h4 v-else-if="config.showSectionTitles && section.title" class="font-semibold tracking-tight" :class="titleClass" :style="{ color: branding.primary_color }">
+                <h4 v-else-if="config.showSectionTitles && section.title" class="font-semibold tracking-tight" :class="titleClass" :style="{ color: settings.workspace.primary_color }">
                     {{ section.title }}
                 </h4>
 
@@ -128,9 +175,9 @@ const stripeClass = (index: number): string => {
                         <colgroup>
                             <col>
                             <col v-if="config.showQuantity" :style="{ width: `${config.columnWidths.quantity}%` }">
-                            <col v-if="config.showUnitPrice" :style="{ width: `${config.columnWidths.unitPrice}%` }">
+                            <col v-if="showUnitPrice" :style="{ width: `${config.columnWidths.unitPrice}%` }">
                             <col v-if="config.showDiscount" :style="{ width: `${config.columnWidths.discount}%` }">
-                            <col v-if="config.showTax" :style="{ width: `${config.columnWidths.tax}%` }">
+                            <col v-if="showTax" :style="{ width: `${config.columnWidths.tax}%` }">
                             <col v-if="config.showLineTotal" :style="{ width: `${config.columnWidths.total}%` }">
                         </colgroup>
 
@@ -146,7 +193,7 @@ const stripeClass = (index: number): string => {
                                     Qty
                                 </TableHead>
                                 <TableHead
-                                    v-if="config.showUnitPrice"
+                                    v-if="showUnitPrice"
                                     class="text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
                                     :class="[cellPad, borderedCellClass]"
                                     :style="{ borderColor: config.border.color ?? undefined }"
@@ -162,7 +209,7 @@ const stripeClass = (index: number): string => {
                                     Disc
                                 </TableHead>
                                 <TableHead
-                                    v-if="config.showTax"
+                                    v-if="showTax"
                                     class="text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
                                     :class="[cellPad, borderedCellClass]"
                                     :style="{ borderColor: config.border.color ?? undefined }"
@@ -195,11 +242,13 @@ const stripeClass = (index: number): string => {
                                         <p v-if="config.showItemDescription && item.description" class="mt-0.5 text-xs text-muted-foreground">{{ item.description }}</p>
                                         <p v-if="config.showSku && item.catalog_item?.sku" class="mt-0.5 text-[10px] text-muted-foreground/70">SKU {{ item.catalog_item?.sku }}</p>
                                     </TableCell>
-                                    <TableCell v-if="config.showQuantity" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">{{ item.quantity }}</TableCell>
-                                    <TableCell v-if="config.showUnitPrice" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">{{ fmt(item.unit_price) }}</TableCell>
-                                    <TableCell v-if="config.showDiscount" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">{{ item.discount_percent || 0 }}%</TableCell>
-                                    <TableCell v-if="config.showTax" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">{{ fmt(item.tax_amount) }}</TableCell>
-                                    <TableCell v-if="config.showLineTotal" class="text-right font-semibold tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">{{ fmt(item.total) }}</TableCell>
+                                    <TableCell v-if="config.showQuantity" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">
+                                        {{ item.quantity }}{{ config.showUnit && item.unit ? ` ${item.unit}` : '' }}
+                                    </TableCell>
+                                    <TableCell v-if="showUnitPrice" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">{{ fmt(item.unit_price) }}</TableCell>
+                                    <TableCell v-if="config.showDiscount" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">{{ item.discount_percent ? `${item.discount_percent}%` : '' }}</TableCell>
+                                    <TableCell v-if="showTax" class="text-right tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">{{ fmt(itemTax(item)) }}</TableCell>
+                                    <TableCell v-if="config.showLineTotal" class="text-right font-semibold tabular-nums" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">{{ fmt(itemTotal(item)) }}</TableCell>
                                 </TableRow>
 
                                 <TableRow v-if="showCheckbox(item)" :style="{ borderColor: config.border.color ?? undefined }">
@@ -239,7 +288,7 @@ const stripeClass = (index: number): string => {
                                 <span class="font-medium" :class="titleClass">{{ item.name || 'Line item' }}</span>
                                 <span v-if="showBadge(item)" class="rounded-full border px-1.5 py-px text-[10px] uppercase tracking-wide text-muted-foreground">Optional</span>
                             </div>
-                            <span v-if="config.showLineTotal" class="shrink-0 font-semibold tabular-nums">{{ fmt(item.total) }}</span>
+                            <span v-if="config.showLineTotal" class="shrink-0 font-semibold tabular-nums">{{ fmt(itemTotal(item)) }}</span>
                         </div>
                         <p v-if="config.showItemDescription && item.description" class="mt-0.5 text-xs text-muted-foreground">{{ item.description }}</p>
                         <p v-if="itemMeta(item)" class="mt-0.5 text-xs text-muted-foreground/70">{{ itemMeta(item) }}</p>

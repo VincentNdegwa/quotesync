@@ -16,13 +16,13 @@ import TermsBlock from '@/components/renderer/blocks/TermsBlock.vue';
 import TimelineBlock from '@/components/renderer/blocks/TimelineBlock.vue';
 import TotalsBlock from '@/components/renderer/blocks/TotalsBlock.vue';
 import { BLOCK_EDITABILITY } from '@/types';
-import type { Block, BlockType, BrandingData, QuoteData, TemplateLayout } from '@/types';
+import type { Block, BlockType, BrandingData, QuoteData, TemplateLayout, WorkspaceSettings } from '@/types';
 
 const props = withDefaults(
     defineProps<{
         quote: QuoteData;
         layout: TemplateLayout;
-        branding: BrandingData;
+        settings: WorkspaceSettings;
         previewMode?: boolean;
         editMode?: boolean;
         selectedBlockId?: string | null;
@@ -33,6 +33,8 @@ const props = withDefaults(
         selectedBlockId: null,
     },
 );
+
+const effectiveBranding = computed<BrandingData>(() => props.settings.workspace);
 
 const emit = defineEmits<{
     (e: 'select-block', blockId: string): void;
@@ -199,7 +201,8 @@ const handleUpdateSignatureContent = (
                     :is="components[block.type]"
                     :config="block.config"
                     :quote="quote"
-                    :branding="branding"
+                    :branding="effectiveBranding"
+                    :settings="settings"
                     :edit-mode="editMode"
                     :preview-mode="false"
                     @add-section="emit('add-line-items-section', block.id)"
@@ -221,7 +224,8 @@ const handleUpdateSignatureContent = (
                 v-else
                 :config="block.config"
                 :quote="quote"
-                :branding="branding"
+                :branding="effectiveBranding"
+                :settings="settings"
                 :edit-mode="false"
                 :preview-mode="previewMode"
             />

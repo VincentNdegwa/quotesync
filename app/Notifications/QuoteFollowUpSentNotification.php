@@ -16,7 +16,7 @@ class QuoteFollowUpSentNotification extends QuoteNotification implements ShouldQ
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return $this->getChannelsFromSettings($notifiable, 'notify_follow_up_sent', 'notify_follow_up_sent_channel');
     }
 
     public function toMail(object $notifiable): MailMessage

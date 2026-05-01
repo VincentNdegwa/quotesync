@@ -100,6 +100,7 @@ class UpdateQuoteRequest extends FormRequest
             ],
             'sections.*.line_items.*.taxes.*.tax_label' => ['required', 'string', 'max:120'],
             'sections.*.line_items.*.taxes.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
+            'sections.*.line_items.*.taxes.*.inclusive' => ['nullable', 'boolean'],
         ];
     }
 }

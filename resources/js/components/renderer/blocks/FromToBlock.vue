@@ -1,13 +1,16 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { blockBaseStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
-import type { BrandingData, FromToBlockConfig, QuoteData } from '@/types';
+import type { FromToBlockConfig, QuoteData, WorkspaceSettings } from '@/types';
 
-defineProps<{
+const props = defineProps<{
     config: FromToBlockConfig;
     quote: QuoteData;
-    branding: BrandingData;
+    settings: WorkspaceSettings;
     previewMode: boolean;
 }>();
+
+const effectiveBranding = computed(() => props.settings.workspace);
 </script>
 
 <template>
@@ -17,9 +20,9 @@ defineProps<{
     >
         <div>
             <p v-if="config.showLabels" class="text-xs uppercase tracking-wide text-muted-foreground">From</p>
-            <p class="font-semibold">{{ branding.company_name || 'Your company' }}</p>
-            <p v-if="config.showCompanyAddress && branding.company_address" class="text-muted-foreground">{{ branding.company_address }}</p>
-            <p v-if="branding.company_email" class="text-muted-foreground">{{ branding.company_email }}</p>
+            <p class="font-semibold">{{ effectiveBranding.company_name || 'Your company' }}</p>
+            <p v-if="config.showCompanyAddress && effectiveBranding.company_address" class="text-muted-foreground">{{ effectiveBranding.company_address }}</p>
+            <p v-if="effectiveBranding.company_email" class="text-muted-foreground">{{ effectiveBranding.company_email }}</p>
         </div>
         <div :class="config.layout === 'split' ? 'text-right' : ''">
             <p v-if="config.showLabels" class="text-xs uppercase tracking-wide text-muted-foreground">To</p>

@@ -25,6 +25,7 @@ class TaxFactory extends Factory
             'workspace_id' => fn (array $attributes): int => User::query()->findOrFail($attributes['created_by'])->current_workspace_id,
             'name' => fake()->randomElement(['VAT', 'GST', 'Withholding Tax', 'Service Charge']),
             'rate' => fake()->randomFloat(2, 0, 20),
+            'inclusive' => false,
             'is_default' => false,
             'is_active' => true,
         ];
