@@ -53,7 +53,6 @@ class PublicQuoteController extends Controller
             ->firstOrFail();
 
         $quote->loadMissing(['client:id,company_name,contact_name,email', 'workspace:id,name,display_name']);
-        $quote->signature_path = Storage::url($quote->signature_path);
 
         $currentUser = $request->user();
         $isWorkspaceMember = false;
@@ -98,11 +97,14 @@ class PublicQuoteController extends Controller
             }
         }
 
+        $quote->signature_path = Storage::url($quote->signature_path);
+
+
         return Inertia::render('public/QuoteView', [
             'quote' => $quote->makeHidden(['internal_notes', 'profit_margin', 'deleted_at']),
             'quote_uuid' => $quote->quote_uuid,
             'layout' => $this->quoteLayoutPayload($quote),
-            'branding' => $this->brandingPayload($quote->workspace, $workspaceSettingsService),
+            'settings' => $workspaceSettingsService->builderSettings($quote->workspace),
             'clientState' => $this->resolveClientState($quote),
             'isWorkspaceMember' => $isWorkspaceMember,
         ]);

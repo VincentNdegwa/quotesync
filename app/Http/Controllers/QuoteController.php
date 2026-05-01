@@ -197,7 +197,7 @@ class QuoteController extends Controller
 
         return Inertia::render('quotes/Show', [
             'quote' => $quote,
-            'branding' => $this->brandingPayload($workspace, $workspaceSettingsService),
+            'settings' => $workspaceSettingsService->builderSettings($workspace),
             'quoteStatuses' => QuoteStatus::all(),
         ]);
     }

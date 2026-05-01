@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
-import { CheckCircle2, XCircle } from 'lucide-vue-next';
+import { CheckCircle2, XCircle, AlertCircle } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref, provide } from 'vue';
 import { toast } from 'vue-sonner';
 import PublicQuoteController from '@/actions/App/Http/Controllers/PublicQuoteController';
@@ -12,14 +12,14 @@ import { Label } from '@/components/ui/label';
 import SignaturePad from '@/components/ui/SignaturePad.vue';
 import { Textarea } from '@/components/ui/textarea';
 import { ensureTemplateLayout } from '@/types';
-import type { BrandingData, QuoteData, TemplateLayout } from '@/types';
+import type { WorkspaceSettings, QuoteData, TemplateLayout } from '@/types';
 import { useQuoteTracking } from '@/composables/useQuoteTracking';
 
 const props = defineProps<{
     quote: QuoteData;
     quote_uuid: string;
     layout: TemplateLayout | null;
-    branding: BrandingData;
+    settings: WorkspaceSettings;
     clientState: 'open' | 'accepted' | 'closed';
     isWorkspaceMember: boolean;
 }>();
@@ -117,12 +117,12 @@ onUnmounted(() => {
             <div v-if="clientState === 'closed'" class="rounded-lg bg-card p-8 text-center shadow-sm ring-1 ring-border">
                 <AlertCircle class="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <h2 class="text-xl font-semibold mb-2">This quote is no longer available</h2>
-                <p class="text-muted-foreground">Please contact {{ branding.company_name }} for an updated quote.</p>
+                <p class="text-muted-foreground">Please contact {{ settings.workspace.company_name }} for an updated quote.</p>
             </div>
 
             <QuoteRenderer
                 v-else
-                :branding="branding"
+                :settings="settings"
                 :layout="renderedLayout"
                 :quote="quote"
                 :preview-mode="false"

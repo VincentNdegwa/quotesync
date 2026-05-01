@@ -41,7 +41,7 @@ class StoreQuoteRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'status' => ['nullable', Rule::in(['draft', 'sent', 'viewed', 'won', 'lost', 'expired'])],
             'client_id' => [
-                'nullable',
+                'required',
                 'integer',
                 Rule::exists('clients', 'id')->where(fn ($query) => $query
                     ->where('workspace_id', $workspace?->id)

@@ -9,15 +9,16 @@ import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
 import QuoteChat from '@/components/quotes/QuoteChat.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
-import type { BrandingData, QuoteData, QuoteStatusEnum } from '@/types';
+import type { WorkspaceSettings, QuoteData, QuoteStatusEnum } from '@/types';
 import QuoteActions from './components/QuoteActions.vue';
 import QuoteFollowUps from '@/components/quotes/QuoteFollowUps.vue';
 
 const props = defineProps<{
     quote: QuoteData;
-    branding: BrandingData;
+    settings: WorkspaceSettings;
     quoteStatuses: QuoteStatusEnum[];
 }>();
 
@@ -142,10 +143,10 @@ const rejectApproval = () => {
 
                 <div class="overflow-hidden rounded-xl border bg-white shadow-sm">
                     <QuoteRenderer
-                        v-if="quote.layout_snapshot && branding"
+                        v-if="quote.layout_snapshot && settings"
                         :quote="quote"
                         :layout="quote.layout_snapshot"
-                        :branding="branding"
+                        :settings="settings"
                         :preview-mode="true"
                         :edit-mode="false"
                     />

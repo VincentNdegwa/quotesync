@@ -42,7 +42,7 @@ class UpdateQuoteRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'status' => ['nullable', Rule::in(array_column(QuoteStatus::cases(), 'value'))],
             'client_id' => [
-                'nullable',
+                'required',
                 'integer',
                 Rule::exists('clients', 'id')->where(fn ($query) => $query
                     ->where('workspace_id', $workspace?->id)

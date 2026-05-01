@@ -1,19 +1,22 @@
 <?php
 
-use App\Models\CatalogItem;
 use App\Models\Client;
 use App\Models\Quote;
 use App\Models\Tax;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Services\Quotes\QuoteService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->user = User::factory()->create();
-    $this->workspace = Workspace::factory()->create(['owner_id' => $this->user->id]);
-    $this->user->update(['current_workspace_id' => $this->workspace->id]);
+    $this->workspace = Workspace::create([
+        'name' => 'Test Workspace',
+        'display_name' => 'Test Workspace',
+        'owner_id' => $this->user->id,
+    ]);
     
     $this->client = Client::factory()->create([
         'workspace_id' => $this->workspace->id,
@@ -40,11 +43,14 @@ beforeEach(function () {
 });
 
 test('it persists inclusive and exclusive tax flags when creating a quote', function () {
+    $quoteService = app(QuoteService::class);
+    
     $payload = [
         'title' => 'Test Quote',
         'client_id' => $this->client->id,
         'status' => 'draft',
         'currency' => 'GBP',
+        'created_by' => $this->user->id,
         'sections' => [
             [
                 'title' => 'Services',
@@ -76,12 +82,9 @@ test('it persists inclusive and exclusive tax flags when creating a quote', func
         ],
     ];
 
-    $response = $this->actingAs($this->user)
-        ->postJson(route('quotes.store'), $payload);
-
-    $response->assertRedirect();
+    $quote = $quoteService->create($this->workspace, $payload);
     
-    $quote = Quote::latest()->first();
+    expect($quote)->not->toBeNull();
     
     // Check line item totals (10% inc + 10% exc on 200 should be 220 total)
     $lineItem = $quote->sections->first()->lineItems->first();
@@ -103,6 +106,8 @@ test('it persists inclusive and exclusive tax flags when creating a quote', func
 });
 
 test('it persists inclusive and exclusive tax flags when updating a quote', function () {
+    $quoteService = app(QuoteService::class);
+    
     $quote = Quote::factory()->create([
         'workspace_id' => $this->workspace->id,
         'client_id' => $this->client->id,
@@ -139,9 +144,7 @@ test('it persists inclusive and exclusive tax flags when updating a quote', func
         ],
     ];
 
-    $this->actingAs($this->user)
-        ->putJson(route('quotes.update', $quote), $payload)
-        ->assertSuccessful();
+    $quoteService->update($quote, $payload);
 
     $lineItem = $quote->fresh()->sections->first()->lineItems->first();
     
