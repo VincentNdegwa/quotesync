@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ChevronDown, Layers3 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -12,7 +13,6 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
 import type {
     BuilderClientOption,
     BuilderTemplateOption,
@@ -26,7 +26,7 @@ const state = defineModel<QuoteBuilderState>('state', {
 
 const props = withDefaults(
     defineProps<{
-        mode: 'quote' | 'template';
+        mode: 'quote' | 'template' | 'invoice';
         clients?: BuilderClientOption[];
         templates?: BuilderTemplateOption[];
         systemLocked?: boolean;
@@ -104,10 +104,10 @@ const fxRateValue = computed({
             class="flex w-full items-center gap-4 px-4 py-3 text-left text-sm hover:bg-muted/40"
             @click="expanded = !expanded"
         >
-            <span class="font-medium text-muted-foreground">Quote settings</span>
+            <span class="font-medium text-muted-foreground">{{ mode === 'invoice' ? 'Invoice settings' : 'Quote settings' }}</span>
             <span v-if="mode === 'quote'">Client: <strong>{{ selectedClientName }}</strong></span>
-            <span>Valid: <strong>{{ state.valid_until || '—' }}</strong></span>
-            <span>Currency: <strong>{{ state.currency || '—' }}</strong></span>
+            <span>{{ mode === 'invoice' ? 'Due: ' : 'Valid: ' }}<strong>{{ state.valid_until || '—' }}</strong></span>
+            <span v-if="mode !== 'invoice'">Currency: <strong>{{ state.currency || '—' }}</strong></span>
             <span v-if="mode === 'quote' && state.requires_deposit" class="text-primary">
                 Deposit: {{ state.deposit_amount ?? 0 }}
             </span>
@@ -141,6 +141,22 @@ const fxRateValue = computed({
                         :disabled="systemLocked"
                         @update:model-value="(checked: boolean) => (state.is_active = checked)"
                     />
+                </div>
+            </div>
+
+            <div v-else-if="mode === 'invoice'" class="grid gap-4 lg:grid-cols-2">
+                <div v-if="state.description" class="space-y-2">
+                    <Label>Description</Label>
+                    <Input
+                        v-model="state.description"
+                        placeholder="Invoice description"
+                        :disabled="systemLocked"
+                    />
+                </div>
+
+                <div class="space-y-2">
+                    <Label>Due date</Label>
+                    <Input v-model="state.valid_until" type="date" :disabled="systemLocked" />
                 </div>
             </div>
 

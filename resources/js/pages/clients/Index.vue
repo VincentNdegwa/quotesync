@@ -2,8 +2,8 @@
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import ClientSlideOver from '@/components/clients/ClientSlideOver.vue';
-import Heading from '@/components/Heading.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import Heading from '@/components/Heading.vue';
 import CountryCombobox from '@/components/location/CountryCombobox.vue';
 import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
 import { Button } from '@/components/ui/button';

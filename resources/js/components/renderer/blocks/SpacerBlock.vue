@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { blockBaseStyle } from '@/composables/useBlockStyles';
-import type { BrandingData, QuoteData, SpacerBlockConfig } from '@/types';
+import type { BrandingData, DocumentData, SpacerBlockConfig } from '@/types';
 
 const props = defineProps<{
     config: SpacerBlockConfig;
-    quote: QuoteData;
+    data: DocumentData;
     branding: BrandingData;
     previewMode: boolean;
 }>();

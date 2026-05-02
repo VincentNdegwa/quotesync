@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form } from '@inertiajs/vue3';
+import { Mail, Server, Key, FileText, Settings as SettingsIcon } from 'lucide-vue-next';
 import { computed, reactive, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -15,7 +16,6 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import TiptapEditor from '@/components/ui/tiptap-editor/TiptapEditor.vue';
-import { Mail, Server, Key, FileText, Settings as SettingsIcon } from 'lucide-vue-next';
 import type { WorkspaceSettingsField, WorkspaceSettingsPageProps } from '@/types';
 
 const props = defineProps<WorkspaceSettingsPageProps>();
@@ -40,31 +40,37 @@ const buildFormValues = (
         (values, field) => {
             if (field.encrypted) {
                 values[field.key] = '';
+
                 return values;
             }
 
             if (field.type === 'boolean') {
                 values[field.key] = Boolean(field.value);
+
                 return values;
             }
 
             if (field.type === 'array') {
                 values[field.key] = Array.isArray(field.value) ? field.value : [];
+
                 return values;
             }
 
             if (field.value === null || field.value === undefined) {
                 values[field.key] = '';
+
                 return values;
             }
 
             // For text fields (rich content), preserve the HTML as-is
             if (field.type === 'text' || field.type === 'string') {
                 values[field.key] = field.value;
+
                 return values;
             }
 
             values[field.key] = Array.isArray(field.value) ? field.value.join(',') : field.value;
+
             return values;
         },
         {} as Record<string, any>,
@@ -84,9 +90,18 @@ watch(
 );
 
 const inputType = (field: WorkspaceSettingsField): string => {
-    if (field.type === 'email') return 'email';
-    if (field.type === 'url') return 'url';
-    if (field.encrypted) return 'password';
+    if (field.type === 'email') {
+return 'email';
+}
+
+    if (field.type === 'url') {
+return 'url';
+}
+
+    if (field.encrypted) {
+return 'password';
+}
+
     return 'text';
 };
 </script>

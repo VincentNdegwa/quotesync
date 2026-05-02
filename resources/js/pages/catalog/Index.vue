@@ -3,8 +3,8 @@ import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import CatalogHeaderActions from '@/components/catalog/CatalogHeaderActions.vue';
 import CatalogItemForm from '@/components/catalog/CatalogItemForm.vue';
-import Heading from '@/components/Heading.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,11 +23,11 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { useFormat } from '@/composables/useFormat';
 import CatalogDataTable from '@/pages/catalog/components/CatalogDataTable.vue';
 import ConfigurationCategoryCreateDialog from '@/pages/configuration/categories/components/CreateDialog.vue';
 import ConfigurationTaxCreateDialog from '@/pages/configuration/taxes/components/CreateDialog.vue';
-import { useFormat } from '@/composables/useFormat';
-import {
+import type {
     CatalogCategoryRecord,
     CatalogItemRecord,
     ConfigurationUnitRecord,
@@ -176,6 +176,7 @@ const runBulkAction = (action: 'activate' | 'deactivate' | 'delete' | 'change_ca
         bulkActionToRun.value = action;
         categoryIdForAction.value = categoryId;
         deleteDialogOpen.value = true;
+
         return;
     }
 
@@ -192,7 +193,9 @@ const runBulkAction = (action: 'activate' | 'deactivate' | 'delete' | 'change_ca
 };
 
 const executeBulkAction = (): void => {
-    if (!bulkActionToRun.value) return;
+    if (!bulkActionToRun.value) {
+return;
+}
 
     router.post('/catalog/bulk-action', {
         ids: selectedIds.value,

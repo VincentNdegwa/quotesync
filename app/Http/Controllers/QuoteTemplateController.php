@@ -4,10 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreQuoteTemplateRequest;
 use App\Http\Requests\UpdateQuoteTemplateRequest;
-use App\Models\CatalogItem;
 use App\Models\QuoteTemplate;
-use App\Models\Tax;
 use App\Models\Workspace;
+use App\Services\BuilderLookupService;
 use App\Services\Quotes\QuoteTemplateService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\JsonResponse;
@@ -54,7 +53,7 @@ class QuoteTemplateController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(Request $request, WorkspaceSettingsService $workspaceSettingsService): Response
+    public function create(Request $request, WorkspaceSettingsService $workspaceSettingsService, BuilderLookupService $builderLookupService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -65,23 +64,8 @@ class QuoteTemplateController extends Controller
         return Inertia::render('configuration/templates/Create', [
             'initialState' => [
                 'id' => null,
-                'number' => null,
-                'title' => '',
-                'status' => 'draft',
-                'client_id' => null,
-                'assigned_to' => null,
-                'currency' => $settings['workspace']['currency'],
-                'valid_until' => null,
-                'description' => null,
-                'industry' => null,
-                'cover_message' => $settings['quotes']['default_cover_message'],
-                'terms' => $settings['quotes']['default_terms'],
-                'notes' => $settings['quotes']['default_notes'],
-                'template_id' => null,
-                'requires_deposit' => $settings['quotes']['require_deposit'],
-                'deposit_amount' => null,
-                'subtotal' => 0,
-                'discount_amount' => 0,
+                'description' => '',
+                'industry' => '',
                 'tax_amount' => 0,
                 'total' => 0,
                 'is_active' => true,
@@ -145,12 +129,8 @@ class QuoteTemplateController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(
-        Request $request,
-        QuoteTemplate $quoteTemplate,
-        QuoteTemplateService $quoteTemplateService,
-        WorkspaceSettingsService $workspaceSettingsService,
-    ): Response {
+    public function edit(Request $request, QuoteTemplate $quoteTemplate, WorkspaceSettingsService $workspaceSettingsService, BuilderLookupService $builderLookupService): Response
+    {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace && $quoteTemplate->workspace_id === $workspace->id, 404);
@@ -159,7 +139,7 @@ class QuoteTemplateController extends Controller
             'templateId' => $quoteTemplate->id,
             'initialState' => $quoteTemplateService->toBuilderPayload($quoteTemplate),
             'settings' => $workspaceSettingsService->builderSettings($workspace),
-            ...$this->builderLookups($workspace, $workspaceSettingsService),
+            ...$builderLookupService->getTemplateLookups($workspace, $workspaceSettingsService),
         ]);
     }
 
@@ -240,53 +220,5 @@ class QuoteTemplateController extends Controller
             'layout' => $quoteTemplate->layout,
             'sections' => $sections,
         ]);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function builderLookups(Workspace $workspace, WorkspaceSettingsService $workspaceSettingsService): array
-    {
-        $branding = $this->brandingPayload($workspace, $workspaceSettingsService);
-
-        return [
-            'branding' => $branding,
-            'catalogItems' => CatalogItem::query()
-                ->where('workspace_id', $workspace->id)
-                ->where('is_active', true)
-                ->with('taxes')
-                ->orderByRaw('LOWER(name)')
-                ->limit(300)
-                ->get(),
-            'taxes' => Tax::query()
-                ->where('workspace_id', $workspace->id)
-                ->where('is_active', true)
-                ->orderByDesc('is_default')
-                ->orderByRaw('LOWER(name)')
-                ->get(),
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function brandingPayload(Workspace $workspace, WorkspaceSettingsService $workspaceSettingsService): array
-    {
-        /** @var Collection<int, array<string, mixed>> $fields */
-        $fields = collect($workspaceSettingsService->groupForFrontend($workspace, 'brand')['fields'] ?? []);
-        $brandFields = $fields->keyBy('key');
-
-        $logoUrl = $brandFields->get('logo_path')['value'] ?? null;
-
-        return [
-            'company_name' => $brandFields->get('company_name')['value'] ?? null,
-            'logo_url' => $logoUrl,
-            'primary_color' => $brandFields->get('primary_color')['value'] ?? '#4F46E5',
-            'accent_color' => $brandFields->get('accent_color')['value'] ?? '#F5A623',
-            'company_email' => $brandFields->get('company_email')['value'] ?? null,
-            'company_phone' => $brandFields->get('company_phone')['value'] ?? null,
-            'company_address' => $brandFields->get('company_address')['value'] ?? null,
-            'company_tagline' => $brandFields->get('company_tagline')['value'] ?? null,
-        ];
     }
 }

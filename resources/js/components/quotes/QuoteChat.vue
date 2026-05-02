@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import { MessageSquare, Send, X, Minimize2, Maximize2 } from 'lucide-vue-next';
 import { ref } from 'vue';
+import { store, storeFromPortal, index, indexFromPortal } from '@/actions/App/Http/Controllers/QuoteMessageController';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { MessageSquare, Send, X, Minimize2, Maximize2 } from 'lucide-vue-next';
-import { store, storeFromPortal, index, indexFromPortal } from '@/actions/App/Http/Controllers/QuoteMessageController';
 
 const props = defineProps<{
     quoteId: string;
@@ -54,6 +54,7 @@ const formatTime = (date: string) => {
 
 const toggleChat = () => {
     isOpen.value = !isOpen.value;
+
     if (isOpen.value) {
         isMinimized.value = false;
         loadMessages();
@@ -65,7 +66,9 @@ const toggleMinimize = () => {
 };
 
 const sendMessage = () => {
-    if (!newMessage.value.trim()) return;
+    if (!newMessage.value.trim()) {
+return;
+}
 
     sendingMessage.value = true;
     const endpoint = props.endpoint || (props.isClient ? storeFromPortal(props.quoteId).url : store(Number(props.quoteId)).url);

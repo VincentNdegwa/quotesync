@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import { Bell, Mail, Clock, Zap, Shield } from 'lucide-vue-next';
 import { computed, reactive, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -16,7 +17,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Bell, Mail, Clock, Zap, Shield } from 'lucide-vue-next';
 import type { WorkspaceSettingsField, WorkspaceSettingsPageProps } from '@/types';
 
 const props = defineProps<WorkspaceSettingsPageProps>();
@@ -41,20 +41,24 @@ const buildFormValues = (
         (values, field) => {
             if (field.type === 'array') {
                 values[field.key] = Array.isArray(field.value) ? field.value : [];
+
                 return values;
             }
 
             if (field.type === 'boolean') {
                 values[field.key] = Boolean(field.value);
+
                 return values;
             }
 
             if (field.value === null || field.value === undefined) {
                 values[field.key] = '';
+
                 return values;
             }
 
             values[field.key] = Array.isArray(field.value) ? field.value.join(',') : field.value;
+
             return values;
         },
         {} as Record<string, any>,
@@ -74,8 +78,14 @@ watch(
 );
 
 const optionDisplayLabel = (option: string): string => {
-    if (option === 'in_app') return 'In-app notifications';
-    if (option === 'mail') return 'Email';
+    if (option === 'in_app') {
+return 'In-app notifications';
+}
+
+    if (option === 'mail') {
+return 'Email';
+}
+
     return option.split('_').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
 };
 </script>

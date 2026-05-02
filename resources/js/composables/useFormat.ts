@@ -72,21 +72,27 @@ export function useFormat(defaultCurrency?: string) {
         if (dateFormat === 'DD/MM/YYYY') {
             return `${day}/${month}/${year}`;
         }
+
         if (dateFormat === 'MM/DD/YYYY') {
             return `${month}/${day}/${year}`;
         }
+
         if (dateFormat === 'YYYY-MM-DD') {
             return `${year}-${month}-${day}`;
         }
+
         if (dateFormat === 'MMM d, yyyy') {
             return `${monthName} ${day}, ${year}`;
         }
+
         if (dateFormat === 'MMMM d, yyyy') {
             return `${monthNameLong} ${day}, ${year}`;
         }
+
         if (dateFormat === 'd MMM yyyy') {
             return `${day} ${monthName} ${year}`;
         }
+
         if (dateFormat === 'd MMMM yyyy') {
             return `${day} ${monthNameLong} ${year}`;
         }
@@ -113,6 +119,7 @@ export function useFormat(defaultCurrency?: string) {
         // 12h format
         const displayHours = hours % 12 || 12;
         const ampm = hours >= 12 ? 'PM' : 'AM';
+
         return `${displayHours}:${minutes} ${ampm}`;
     };
 
@@ -136,6 +143,7 @@ export function useFormat(defaultCurrency?: string) {
             const usesCommaForThousands = numberFormat.includes(',');
             const thousandsSeparator = usesCommaForThousands ? ',' : '.';
             const formattedInteger = Math.floor(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSeparator);
+
             return formattedInteger;
         }
 
@@ -153,6 +161,7 @@ export function useFormat(defaultCurrency?: string) {
         const decimalSeparator = usesPeriodForDecimal ? '.' : ',';
 
         const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSeparator);
+
         return `${formattedInteger}${decimalSeparator}${decimalPart}`;
     };
 
@@ -224,6 +233,7 @@ export function useFormat(defaultCurrency?: string) {
         const year = dateObj.getFullYear();
         
         let formattedDate;
+
         if (dateFormat === 'DD/MM/YYYY') {
             formattedDate = `${day}/${month}/${year}`;
         } else if (dateFormat === 'MM/DD/YYYY') {

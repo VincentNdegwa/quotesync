@@ -62,7 +62,7 @@ const brandingData = computed<BrandingData>(() => {
 
                 <div class="mx-auto max-w-4xl rounded-lg border bg-white p-6 shadow-sm">
                     <QuoteRenderer
-                        :quote="state"
+                        :data="{ ...state, documentType: 'quote' }"
                         :layout="currentLayout"
                         :branding="brandingData"
                         :preview-mode="true"

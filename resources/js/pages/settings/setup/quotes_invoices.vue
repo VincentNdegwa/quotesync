@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form } from '@inertiajs/vue3';
+import { FileText, Settings, FileCheck } from 'lucide-vue-next';
 import { computed, reactive, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -15,7 +16,6 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import TiptapEditor from '@/components/ui/tiptap-editor/TiptapEditor.vue';
-import { FileText, Settings, FileCheck } from 'lucide-vue-next';
 import type { WorkspaceSettingsField, WorkspaceSettingsPageProps } from '@/types';
 
 const props = defineProps<WorkspaceSettingsPageProps>();
@@ -40,35 +40,42 @@ const buildFormValues = (
         (values, field) => {
             if (field.type === 'array') {
                 values[field.key] = Array.isArray(field.value) ? field.value : [];
+
                 return values;
             }
 
             if (field.type === 'json') {
                 values[field.key] = Array.isArray(field.value) ? field.value.join('\n') : '';
+
                 return values;
             }
 
             if (field.encrypted) {
                 values[field.key] = '';
+
                 return values;
             }
 
             if (field.type === 'boolean') {
                 values[field.key] = Boolean(field.value);
+
                 return values;
             }
 
             if (field.value === null || field.value === undefined) {
                 values[field.key] = '';
+
                 return values;
             }
 
            if (field.type === 'text' || field.type === 'string') {
                 values[field.key] = field.value;
+
                 return values;
             }
 
             values[field.key] = Array.isArray(field.value) ? field.value.join(',') : field.value;
+
             return values;
         },
         {} as Record<string, any>,
@@ -88,16 +95,34 @@ watch(
 );
 
 const inputType = (field: WorkspaceSettingsField): string => {
-    if (field.type === 'email') return 'email';
-    if (field.type === 'url') return 'url';
-    if (field.type === 'color') return 'color';
-    if (field.encrypted) return 'password';
+    if (field.type === 'email') {
+return 'email';
+}
+
+    if (field.type === 'url') {
+return 'url';
+}
+
+    if (field.type === 'color') {
+return 'color';
+}
+
+    if (field.encrypted) {
+return 'password';
+}
+
     return 'text';
 };
 
 const optionDisplayLabel = (option: string): string => {
-    if (option === 'in_app') return 'In-app notifications';
-    if (option === 'mail') return 'Email';
+    if (option === 'in_app') {
+return 'In-app notifications';
+}
+
+    if (option === 'mail') {
+return 'Email';
+}
+
     return option.split('_').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
 };
 

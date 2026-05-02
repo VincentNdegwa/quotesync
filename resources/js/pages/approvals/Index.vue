@@ -12,8 +12,8 @@ import {
     XCircle,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-import Heading from '@/components/Heading.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -101,8 +101,15 @@ const { formatCurrency: fmt, formatDate } = useFormat(props.currency);
 
 const daysAgo = (val: string): string => {
     const diff = Math.floor((Date.now() - new Date(val).getTime()) / 86400000);
-    if (diff === 0) return 'today';
-    if (diff === 1) return 'yesterday';
+
+    if (diff === 0) {
+return 'today';
+}
+
+    if (diff === 1) {
+return 'yesterday';
+}
+
     return `${diff} days ago`;
 };
 
@@ -111,13 +118,22 @@ type RuleLabelContext = Pick<Rule, 'trigger_type' | 'threshold_value' | 'client'
 };
 
 const triggerLabel = (rule: RuleLabelContext): string => {
-    if (rule.trigger_type === 'value_above')
-        return `Quote value above ${fmt(rule.threshold_value ?? 0)}`;
-    if (rule.trigger_type === 'value_below')
-        return `Quote value below ${fmt(rule.threshold_value ?? 0)}`;
-    if (rule.trigger_type === 'client')
-        return `Client: ${rule.client?.company_name ?? '—'}`;
-    if (rule.trigger_type === 'all_quotes') return 'All quotes';
+    if (rule.trigger_type === 'value_above') {
+return `Quote value above ${fmt(rule.threshold_value ?? 0)}`;
+}
+
+    if (rule.trigger_type === 'value_below') {
+return `Quote value below ${fmt(rule.threshold_value ?? 0)}`;
+}
+
+    if (rule.trigger_type === 'client') {
+return `Client: ${rule.client?.company_name ?? '—'}`;
+}
+
+    if (rule.trigger_type === 'all_quotes') {
+return 'All quotes';
+}
+
     return rule.trigger_type;
 };
 
@@ -140,7 +156,10 @@ const openReject = (approval: Approval): void => {
 };
 
 const submitApprove = (send: boolean): void => {
-    if (!selectedApproval.value) return;
+    if (!selectedApproval.value) {
+return;
+}
+
     approveForm.transform(() => ({ send })).post(`/approvals/${selectedApproval.value.id}/approve`, {
         preserveScroll: true,
         onSuccess: () => {
@@ -150,7 +169,10 @@ const submitApprove = (send: boolean): void => {
 };
 
 const submitReject = (): void => {
-    if (!selectedApproval.value) return;
+    if (!selectedApproval.value) {
+return;
+}
+
     rejectForm.post(`/approvals/${selectedApproval.value.id}/reject`, {
         preserveScroll: true,
         onSuccess: () => {

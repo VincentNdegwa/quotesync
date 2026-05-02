@@ -1,9 +1,17 @@
 <script setup lang="ts">
 import { Link, useForm } from '@inertiajs/vue3';
+import { usePage } from '@inertiajs/vue3';
 import { FileText, LogOut, LayoutGrid, ChevronDown, ChevronsUpDown } from 'lucide-vue-next';
 import { computed } from 'vue';
-import { usePage } from '@inertiajs/vue3';
-import { getInitials } from '@/composables/useInitials';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
     Sidebar,
     SidebarContent,
@@ -16,15 +24,7 @@ import {
     SidebarGroupContent,
     useSidebar,
 } from '@/components/ui/sidebar';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getInitials } from '@/composables/useInitials';
 
 const page = usePage();
 const portalUser = computed(() => page.props.auth?.portal_user);

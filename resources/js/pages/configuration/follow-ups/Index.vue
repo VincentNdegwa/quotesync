@@ -2,8 +2,8 @@
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ChevronRight, Clock, Mail, MessageCircle, Phone, Plus, Trash2, Zap } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-import Heading from '@/components/Heading.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,8 +16,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import TiptapEditor from '@/components/ui/tiptap-editor/TiptapEditor.vue';
 import {
     Sheet,
     SheetClose,
@@ -27,6 +25,8 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { Switch } from '@/components/ui/switch';
+import TiptapEditor from '@/components/ui/tiptap-editor/TiptapEditor.vue';
 import { useEnums } from '@/composables/useEnums';
 import ConfigurationLayout from '@/layouts/configuration/Layout.vue';
 
@@ -136,17 +136,22 @@ const addStep = (): void => {
 
 const removeStep = (index: number): void => {
     form.steps.splice(index, 1);
+
     if (activeStepIndex.value !== null && activeStepIndex.value >= form.steps.length) {
         activeStepIndex.value = form.steps.length - 1;
     }
 };
 
 const insertPlaceholder = (key: string): void => {
-    if (activeStepIndex.value === null) return;
+    if (activeStepIndex.value === null) {
+return;
+}
+
     const token = `{${key}}`;
 
     // Check if subject input is currently focused (use $el to get native DOM element from component)
     const inputEl = subjectInputRef.value?.$el as HTMLInputElement | null;
+
     if (inputEl && document.activeElement === inputEl) {
         const start = inputEl.selectionStart ?? 0;
         const end = inputEl.selectionEnd ?? 0;

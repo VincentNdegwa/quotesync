@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { Head, setLayoutProps, useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { watchEffect } from 'vue';
 import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
+import quoteTemplates from '@/routes/quote-templates';
 import type {
     BuilderCatalogItem,
     BuilderConfigurationUnit,
@@ -9,9 +12,6 @@ import type {
     QuoteBuilderState,
     WorkspaceSettings,
 } from '@/types';
-import { computed } from 'vue';
-import { watchEffect } from 'vue';
-import quoteTemplates from '@/routes/quote-templates';
 
 const props = defineProps<{
     initialState: QuoteBuilderState;

@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import { Loader2, Sparkles, Palette, CheckCircle2, AlertCircle, Circle } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Sparkles, Palette, CheckCircle2, AlertCircle, Circle } from 'lucide-vue-next';
+import { Textarea } from '@/components/ui/textarea';
 import type { TemplateLayout } from '@/types/builder';
 
 const open = defineModel<boolean>('open', { default: false });
@@ -31,7 +31,9 @@ const industries = [
 ];
 
 const generate = async () => {
-    if (!description.value.trim()) return;
+    if (!description.value.trim()) {
+return;
+}
 
     loading.value = true;
     error.value = null;
@@ -55,6 +57,7 @@ const generate = async () => {
 
         if (!response.ok) {
             error.value = data.message || 'Failed to generate template. Please try again.';
+
             return;
         }
 
@@ -99,8 +102,12 @@ const blockTypeLabel: Record<string, string> = {
 };
 
 const themePreview = computed(() => {
-    if (!generated.value?.layout?.theme) return null;
+    if (!generated.value?.layout?.theme) {
+return null;
+}
+
     const t = generated.value.layout.theme;
+
     return {
         primary: t.primaryColor,
         accent: t.accentColor,

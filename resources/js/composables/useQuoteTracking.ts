@@ -23,13 +23,16 @@ export function useQuoteTracking(options: TrackingOptions) {
 
     const enqueue = (event: TrackingEvent): void => {
         queue.push(event);
+
         if (queue.length >= BATCH_MAX) {
             flush();
         }
     };
 
     const flush = (): void => {
-        if (queue.length === 0) return;
+        if (queue.length === 0) {
+return;
+}
 
         const batch = queue.splice(0, queue.length);
 
@@ -87,6 +90,7 @@ export function useQuoteTracking(options: TrackingOptions) {
             clearInterval(timer);
             timer = null;
         }
+
         trackTimeSpent();
         flush();
         document.removeEventListener('visibilitychange', handleVisibilityChange);

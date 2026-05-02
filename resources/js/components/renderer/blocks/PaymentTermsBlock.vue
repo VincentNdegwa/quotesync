@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { blockContentStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
-import type { PaymentTermsBlockConfig, QuoteData, WorkspaceSettings } from '@/types';
+import { blockContentStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
+import type { DocumentData, PaymentTermsBlockConfig, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     config: PaymentTermsBlockConfig;
-    quote: QuoteData;
+    data: DocumentData;
     settings: WorkspaceSettings;
     previewMode: boolean;
     editMode?: boolean;
@@ -17,7 +17,9 @@ const emit = defineEmits<{
 }>();
 
 const effectiveContextText = computed(() => {
-    return props.config.contextText ?? props.settings.quotes.default_payment_terms ?? null;
+    const data = props.data as QuoteData | InvoiceData;
+
+    return data.terms ?? props.config.contextText ?? props.settings.quotes.default_payment_terms;
 });
 
 const methodLabelMap: Record<PaymentTermsBlockConfig['paymentMethods'][number], string> = {

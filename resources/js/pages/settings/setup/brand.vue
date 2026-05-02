@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Form, useForm } from '@inertiajs/vue3';
+import { Globe } from 'lucide-vue-next';
+import { Building2, Mail, Phone, Globe as GlobeIcon, Palette, FileImage } from 'lucide-vue-next';
 import { computed } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -8,12 +10,10 @@ import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { Globe } from 'lucide-vue-next';
-import { Building2, Mail, Phone, Globe as GlobeIcon, Palette, FileImage } from 'lucide-vue-next';
 import type { IndustryModel } from '@/types';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const props = defineProps<{
     industries: IndustryModel[];
@@ -69,6 +69,7 @@ const logoPreview = computed(() => {
     if (brandForm.logo_path instanceof File) {
         return URL.createObjectURL(brandForm.logo_path);
     }
+
     return props.business.logo_url;
 });
 

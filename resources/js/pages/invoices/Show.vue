@@ -2,9 +2,12 @@
 import { Head, setLayoutProps } from '@inertiajs/vue3';
 import { computed, watchEffect } from 'vue';
 import Heading from '@/components/Heading.vue';
+import InvoiceActivityTimeline from '@/components/invoices/InvoiceActivityTimeline.vue';
+import InvoiceRenderer from '@/components/renderer/InvoiceRenderer.vue';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useEnums } from '@/composables/useEnums';
+import { useFormat } from '@/composables/useFormat';
 import type { WorkspaceSettings, InvoiceData, InvoiceStatusEnum } from '@/types';
 import InvoiceActions from './components/InvoiceActions.vue';
 
@@ -26,6 +29,7 @@ watchEffect(() => {
 });
 
 const { getInvoiceStatus } = useEnums();
+const { formatCurrency: fmt, formatDate: fmtDate } = useFormat(props.invoice.base_currency || props.invoice.currency || undefined);
 </script>
 
 <template>
@@ -57,31 +61,138 @@ const { getInvoiceStatus } = useEnums();
             </div>
         </div>
 
-        <Separator />
+        <div class="grid gap-6 xl:grid-cols-[1fr_340px]">
 
-        <div class="rounded-lg border p-6">
             <div class="space-y-4">
-                <div>
-                    <h3 class="text-lg font-semibold">Invoice Details</h3>
-                    <p class="text-sm text-muted-foreground">Invoice Number: {{ invoice.invoice_number }}</p>
-                    <p class="text-sm text-muted-foreground">Status: {{ invoice.status }}</p>
-                    <p class="text-sm text-muted-foreground">Total: {{ invoice.total }}</p>
-                    <p class="text-sm text-muted-foreground">Due Date: {{ invoice.due_date }}</p>
-                </div>
-                <div v-if="invoice.client">
-                    <h3 class="text-lg font-semibold">Client</h3>
-                    <p class="text-sm text-muted-foreground">{{ invoice.client.company_name }}</p>
-                </div>
-                <div v-if="invoice.sections && invoice.sections.length > 0">
-                    <h3 class="text-lg font-semibold">Line Items</h3>
-                    <div v-for="section in invoice.sections" :key="section.id" class="mt-4">
-                        <h4 class="font-medium">{{ section.title }}</h4>
-                        <div v-for="item in section.line_items" :key="item.id" class="ml-4 mt-2 text-sm">
-                            {{ item.name }} - {{ item.total }}
-                        </div>
+
+                <div class="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border bg-muted/30 px-5 py-3 text-sm">
+                    <div>
+                        <span class="text-muted-foreground">Client&ensp;</span>
+                        <span class="font-semibold">{{ invoice.client?.company_name || '—' }}</span>
+                    </div>
+                    <div>
+                        <span class="text-muted-foreground">Total&ensp;</span>
+                        <span class="font-semibold">{{ fmt(invoice.base_total) }}</span>
+                    </div>
+                    <div>
+                        <span class="text-muted-foreground">Due Date&ensp;</span>
+                        <span class="font-semibold">{{ fmtDate(invoice.due_date) }}</span>
+                    </div>
+                    <div v-if="invoice.sent_at">
+                        <span class="text-muted-foreground">Sent&ensp;</span>
+                        <span class="font-semibold">{{ fmtDate(invoice.sent_at) }}</span>
+                    </div>
+                    <div v-if="invoice.paid_amount > 0">
+                        <span class="text-muted-foreground">Paid&ensp;</span>
+                        <span class="font-semibold">{{ fmt(invoice.paid_amount) }}</span>
+                    </div>
+                    <div v-if="invoice.balance_due > 0">
+                        <span class="text-muted-foreground">Balance&ensp;</span>
+                        <span class="font-semibold">{{ fmt(invoice.balance_due) }}</span>
                     </div>
                 </div>
+
+                <div class="overflow-hidden rounded-xl border bg-white shadow-sm">
+                    <InvoiceRenderer
+                        v-if="invoice.layout_snapshot && settings"
+                        :data="{ ...invoice, documentType: 'invoice' }"
+                        :layout="invoice.layout_snapshot"
+                        :settings="settings"
+                        :preview-mode="true"
+                        :edit-mode="false"
+                        :is-internal-view="true"
+                    />
+
+                    <template v-else>
+                        <div class="border-b bg-muted/20 px-6 py-4">
+                            <h3 class="font-semibold text-foreground">Invoice Details</h3>
+                        </div>
+
+                        <div class="divide-y">
+                            <div class="px-6 py-4">
+                                <h4 class="mb-3 text-sm font-semibold text-foreground">
+                                    Line Items
+                                </h4>
+
+                                <div class="space-y-1">
+                                    <div
+                                        v-for="item in invoice.line_items"
+                                        :key="item.id"
+                                        class="grid grid-cols-[1fr_auto_auto] items-start gap-4 rounded-lg px-3 py-2.5 hover:bg-muted/30"
+                                    >
+                                        <div class="space-y-1">
+                                            <div class="text-sm font-medium text-foreground">
+                                                {{ item.name }}
+                                            </div>
+                                            <div v-if="item.description" class="text-xs text-muted-foreground">
+                                                {{ item.description }}
+                                            </div>
+                                        </div>
+                                        <div class="text-sm text-muted-foreground">
+                                            {{ item.quantity }}
+                                        </div>
+                                        <div class="text-sm font-medium text-foreground">
+                                            {{ fmt(item.total) }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 space-y-2 border-t pt-4">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-muted-foreground">Subtotal</span>
+                                        <span class="font-medium">{{ fmt(invoice.subtotal) }}</span>
+                                    </div>
+                                    <div v-if="invoice.tax_amount > 0" class="flex justify-between text-sm">
+                                        <span class="text-muted-foreground">Tax</span>
+                                        <span class="font-medium">{{ fmt(invoice.tax_amount) }}</span>
+                                    </div>
+                                    <div v-if="invoice.discount_amount > 0" class="flex justify-between text-sm">
+                                        <span class="text-muted-foreground">Discount</span>
+                                        <span class="font-medium text-green-600">-{{ fmt(invoice.discount_amount) }}</span>
+                                    </div>
+                                    <div class="flex justify-between text-base font-semibold">
+                                        <span>Total</span>
+                                        <span>{{ fmt(invoice.total) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-if="invoice.cover_message" class="px-6 py-4">
+                                <h4 class="mb-2 text-sm font-semibold text-foreground">
+                                    Cover Message
+                                </h4>
+                                <p class="text-sm text-muted-foreground whitespace-pre-wrap">
+                                    {{ invoice.cover_message }}
+                                </p>
+                            </div>
+
+                            <div v-if="invoice.terms" class="px-6 py-4">
+                                <h4 class="mb-2 text-sm font-semibold text-foreground">
+                                    Terms
+                                </h4>
+                                <p class="text-sm text-muted-foreground whitespace-pre-wrap">
+                                    {{ invoice.terms }}
+                                </p>
+                            </div>
+
+                            <div v-if="invoice.notes" class="px-6 py-4">
+                                <h4 class="mb-2 text-sm font-semibold text-foreground">
+                                    Notes
+                                </h4>
+                                <p class="text-sm text-muted-foreground whitespace-pre-wrap">
+                                    {{ invoice.notes }}
+                                </p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
             </div>
+
+            <div class="space-y-4">
+                <InvoiceActivityTimeline :activities="invoice.activities ?? []" />
+            </div>
+
         </div>
     </div>
 </template>

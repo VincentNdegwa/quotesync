@@ -16,17 +16,18 @@ import TermsBlock from '@/components/renderer/blocks/TermsBlock.vue';
 import TimelineBlock from '@/components/renderer/blocks/TimelineBlock.vue';
 import TotalsBlock from '@/components/renderer/blocks/TotalsBlock.vue';
 import { BLOCK_EDITABILITY } from '@/types';
-import type { Block, BlockType, BrandingData, QuoteData, TemplateLayout, WorkspaceSettings } from '@/types';
+import type { Block, BlockType, BrandingData, BuilderCatalogItem, DocumentData, TemplateLayout, WorkspaceSettings } from '@/types';
 
 const props = withDefaults(
     defineProps<{
-        quote: QuoteData;
+        data: DocumentData;
         layout: TemplateLayout;
         settings: WorkspaceSettings;
         previewMode?: boolean;
         editMode?: boolean;
         selectedBlockId?: string | null;
         isInternalView?: boolean;
+        catalogItems?: BuilderCatalogItem[];
     }>(),
     {
         previewMode: false,
@@ -47,11 +48,14 @@ const emit = defineEmits<{
     (e: 'insert-up', payload: { blockId: string; type: BlockType }): void;
     (e: 'insert-down', payload: { blockId: string; type: BlockType }): void;
     (e: 'move-block', payload: { fromIndex: number; toIndex: number }): void;
-    (e: 'add-line-items-section', blockId: string): void;
-    (e: 'remove-line-items-section', payload: { blockId: string; sectionIndex: number }): void;
-    (e: 'add-line-item', payload: { blockId: string; sectionIndex: number }): void;
-    (e: 'edit-line-item', payload: { blockId: string; sectionIndex: number; lineItemIndex: number }): void;
-    (e: 'update-line-items-section-title', payload: { blockId: string; sectionIndex: number; title: string }): void;
+    (e: 'add-section'): void;
+    (e: 'remove-section', sectionIndex: number): void;
+    (e: 'add-line-item', sectionIndex: number): void;
+    (e: 'edit-line-item', payload: { sectionIndex: number; lineItemIndex: number }): void;
+    (e: 'update-line-item', payload: { sectionIndex: number; lineItemIndex: number; field: string; value: any }): void;
+    (e: 'remove-line-item', payload: { sectionIndex: number; lineItemIndex: number }): void;
+    (e: 'select-catalog-item', payload: { sectionIndex: number; lineItemIndex: number; catalogItem: BuilderCatalogItem }): void;
+    (e: 'update-line-items-section-title', payload: { sectionIndex: number; title: string }): void;
     (e: 'update-cover-message', payload: { blockId: string; value: string | null }): void;
     (e: 'update-cover-label', payload: { blockId: string; value: string | null }): void;
     (e: 'update-terms', payload: { blockId: string; value: string | null }): void;
@@ -121,61 +125,6 @@ const handleDrop = (targetBlockId: string): void => {
 const handleDragEnd = (): void => {
     draggedBlockId.value = null;
 };
-
-const handleAddLineItem = (blockId: string, sectionIndex: number): void => {
-    emit('add-line-item', { blockId, sectionIndex });
-};
-
-const handleEditLineItem = (blockId: string, payload: { sectionIndex: number; lineItemIndex: number }): void => {
-    emit('edit-line-item', {
-        blockId,
-        sectionIndex: payload.sectionIndex,
-        lineItemIndex: payload.lineItemIndex,
-    });
-};
-
-const handleUpdateSectionTitle = (blockId: string, payload: { sectionIndex: number; title: string }): void => {
-    emit('update-line-items-section-title', {
-        blockId,
-        sectionIndex: payload.sectionIndex,
-        title: payload.title,
-    });
-};
-
-const handleUpdatePaymentTerms = (blockId: string, payload: { labelText: string; contextText: string | null }): void => {
-    emit('update-payment-terms', {
-        blockId,
-        labelText: payload.labelText,
-        contextText: payload.contextText,
-    });
-};
-
-const handleRemoveSection = (blockId: string, sectionIndex: number): void => {
-    emit('remove-line-items-section', { blockId, sectionIndex });
-};
-
-const handleUpdateCoverMessage = (blockId: string, value: string | null): void => {
-    emit('update-cover-message', { blockId, value });
-};
-
-const handleUpdateCoverLabel = (blockId: string, value: string | null): void => {
-    emit('update-cover-label', { blockId, value });
-};
-
-const handleUpdateTerms = (blockId: string, value: string | null): void => {
-    emit('update-terms', { blockId, value });
-};
-
-const handleUpdateTermsLabel = (blockId: string, value: string | null): void => {
-    emit('update-terms-label', { blockId, value });
-};
-
-const handleUpdateSignatureContent = (
-    blockId: string,
-    payload: { acceptButtonText?: string | null; declineButtonText?: string | null; contextText?: string | null },
-): void => {
-    emit('update-signature-content', { blockId, ...payload });
-};
 </script>
 
 <template>
@@ -204,22 +153,26 @@ const handleUpdateSignatureContent = (
                 <component
                     :is="components[block.type]"
                     :config="block.config"
-                    :quote="quote"
+                    :data="data"
                     :branding="effectiveBranding"
                     :settings="settings"
                     :edit-mode="editMode"
                     :preview-mode="false"
-                    @add-section="emit('add-line-items-section', block.id)"
-                    @remove-section="handleRemoveSection(block.id, $event)"
-                    @add-line-item="handleAddLineItem(block.id, $event)"
-                    @edit-line-item="handleEditLineItem(block.id, $event)"
-                    @update-section-title="handleUpdateSectionTitle(block.id, $event)"
-                    @update-cover-message="handleUpdateCoverMessage(block.id, $event)"
-                    @update-cover-label="handleUpdateCoverLabel(block.id, $event)"
-                    @update-terms="handleUpdateTerms(block.id, $event)"
-                    @update-terms-label="handleUpdateTermsLabel(block.id, $event)"
-                    @update-payment-terms="handleUpdatePaymentTerms(block.id, $event)"
-                    @update-signature-content="handleUpdateSignatureContent(block.id, $event)"
+                    :catalog-items="catalogItems"
+                    @add-section="emit('add-section')"
+                    @remove-section="emit('remove-section', $event)"
+                    @add-line-item="emit('add-line-item', $event)"
+                    @edit-line-item="emit('edit-line-item', $event)"
+                    @update-line-item="emit('update-line-item', $event)"
+                    @remove-line-item="emit('remove-line-item', $event)"
+                    @select-catalog-item="emit('select-catalog-item', $event)"
+                    @update-section-title="emit('update-line-items-section-title', $event)"
+                    @update-cover-message="emit('update-cover-message', $event)"
+                    @update-cover-label="emit('update-cover-label', $event)"
+                    @update-terms="emit('update-terms', $event)"
+                    @update-terms-label="emit('update-terms-label', $event)"
+                    @update-payment-terms="emit('update-payment-terms', $event)"
+                    @update-signature-content="emit('update-signature-content', $event)"
                 />
             </EditableBlock>
 
@@ -227,7 +180,7 @@ const handleUpdateSignatureContent = (
                 :is="components[block.type]"
                 v-else
                 :config="block.config"
-                :quote="quote"
+                :data="data"
                 :branding="effectiveBranding"
                 :settings="settings"
                 :edit-mode="false"

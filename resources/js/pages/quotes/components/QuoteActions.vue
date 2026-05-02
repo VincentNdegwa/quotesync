@@ -17,6 +17,9 @@ import {
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
+import InvoiceController from '@/actions/App/Http/Controllers/InvoiceController';
+import Portal from '@/actions/App/Http/Controllers/Portal';
+import PortalDashboardController from '@/actions/App/Http/Controllers/Portal/PortalDashboardController';
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
@@ -28,13 +31,10 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import portal from '@/routes/portal';
 import publicQuotesShow from '@/routes/public-quotes';
 import { analytics as quotesAnalytics } from '@/routes/quotes';
 import type { QuoteListRecord, QuoteStatusEnum } from '@/types';
-import InvoiceController from '@/actions/App/Http/Controllers/InvoiceController';
-import Portal from '@/actions/App/Http/Controllers/Portal';
-import portal from '@/routes/portal';
-import PortalDashboardController from '@/actions/App/Http/Controllers/Portal/PortalDashboardController';
 
 const props = defineProps<{
     quote: QuoteListRecord;
@@ -640,7 +640,9 @@ const convertToInvoice = (): void => {
                         <span>Reopen</span>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem v-if="canConvertToInvoice" class="gap-2">
+                    <DropdownMenuItem v-if="canConvertToInvoice"     
+                      @select="convertToInvoice" 
+                      class="gap-2">
                         <Edit3 class="h-4 w-4" />
                         <span>Convert to invoice</span>
                     </DropdownMenuItem>

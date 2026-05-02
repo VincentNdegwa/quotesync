@@ -19,6 +19,7 @@ const progressPercentage = computed(() => {
     if (props.importHistory.total_rows === 0) {
         return 0;
     }
+
     return Math.round((props.importHistory.processed_rows / props.importHistory.total_rows) * 100);
 });
 

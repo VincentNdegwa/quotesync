@@ -1,13 +1,13 @@
-import type { ColumnDef } from '@tanstack/vue-table';
-import { h } from 'vue';
 import { usePage } from '@inertiajs/vue3';
+import type { ColumnDef } from '@tanstack/vue-table';
+import { ArrowUpDown } from 'lucide-vue-next';
+import { h } from 'vue';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
 import type { InvoiceListRecord, InvoiceStatusEnum } from '@/types';
 import InvoiceTableRowActions from './InvoiceTableRowActions.vue';
-import { Button } from '@/components/ui/button';
-import { ArrowUpDown } from 'lucide-vue-next';
 
 type InvoiceColumnOptions = {
     invoiceStatuses: InvoiceStatusEnum[];
@@ -68,6 +68,7 @@ export const getInvoiceColumns = (options: InvoiceColumnOptions): ColumnDef<Invo
             header: 'Status',
             cell: ({ row }) => {
                 const status = getInvoiceStatus(row.original.status);
+
                 return h(Badge, {
                     variant: status?.badgeColor ?? 'outline',
                     class: ['px-3 py-1 text-xs font-semibold', status?.cssColor],

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { computed, type Component } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { CurveType, Orientation } from '@unovis/ts';
 import {
@@ -10,25 +9,6 @@ import {
     VisLine,
     VisXYContainer,
 } from '@unovis/vue';
-import type { ChartConfig } from '@/components/ui/chart';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import {
-    ChartContainer,
-    ChartCrosshair,
-    ChartLegendContent,
-    ChartTooltip,
-    ChartTooltipContent,
-    componentToString,
-} from '@/components/ui/chart';
-import { Button } from '@/components/ui/button';
-import { useFormat } from '@/composables/useFormat';
 import {
     AlertTriangle,
     CheckCircle,
@@ -40,6 +20,27 @@ import {
     TrendingDown,
     TrendingUp,
 } from 'lucide-vue-next';
+import { computed  } from 'vue';
+import type {Component} from 'vue';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import type { ChartConfig } from '@/components/ui/chart';
+import {
+    ChartContainer,
+    ChartCrosshair,
+    ChartLegendContent,
+    ChartTooltip,
+    ChartTooltipContent,
+    componentToString,
+} from '@/components/ui/chart';
+import { useFormat } from '@/composables/useFormat';
 import { dashboard } from '@/routes';
 
 const props = defineProps<{
@@ -175,6 +176,7 @@ const revenueTickValues = computed(() =>
 
 const formatRevenueTick = (value: number): string => {
     const match = revenueChartData.value.find((point) => point.order === value);
+
     return match?.month ?? '';
 };
 

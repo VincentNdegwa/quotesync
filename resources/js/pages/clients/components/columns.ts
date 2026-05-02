@@ -1,12 +1,12 @@
+import { usePage } from '@inertiajs/vue3';
 import type { ColumnDef } from '@tanstack/vue-table';
 import { ArrowUpDown } from 'lucide-vue-next';
 import { h } from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useFormat } from '@/composables/useFormat';
 import type { ClientRecord } from '@/types';
 import ClientTableRowActions from './ClientTableRowActions.vue';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 
 type ClientColumnOptions = {
     onEdit: (client: ClientRecord) => void;

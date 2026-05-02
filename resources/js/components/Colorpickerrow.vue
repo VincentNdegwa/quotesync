@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
 import { XIcon } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -28,7 +28,11 @@ watch(
 
 const swatchColor = computed<string>(() => {
     const v = modelValue.value;
-    if (!v) return 'transparent';
+
+    if (!v) {
+return 'transparent';
+}
+
     return isValidHex(v) ? v : 'transparent';
 });
 
@@ -41,7 +45,11 @@ function isValidHex(value: string): boolean {
 
 function normalizeHex(value: string): string {
     let v = value.trim();
-    if (v && !v.startsWith('#')) v = `#${v}`;
+
+    if (v && !v.startsWith('#')) {
+v = `#${v}`;
+}
+
     return v.toUpperCase();
 }
 
@@ -58,10 +66,12 @@ function onTextInput(e: Event): void {
 
     if (raw === '' || raw === '#') {
         modelValue.value = null;
+
         return;
     }
 
     const normalized = normalizeHex(raw);
+
     if (isValidHex(normalized)) {
         modelValue.value = normalized;
         inputValue.value = normalized;
@@ -71,12 +81,16 @@ function onTextInput(e: Event): void {
 // Text input blur — normalize whatever is there or clear
 function onTextBlur(): void {
     const raw = inputValue.value.trim();
+
     if (!raw || raw === '#') {
         inputValue.value = '';
         modelValue.value = null;
+
         return;
     }
+
     const normalized = normalizeHex(raw);
+
     if (isValidHex(normalized)) {
         inputValue.value = normalized;
         modelValue.value = normalized;

@@ -98,4 +98,9 @@ enum InvoiceStatus: string
             self::Void => ['duplicate', 'preview'],
         };
     }
+
+    public function canBeEdited(): bool
+    {
+        return $this === self::Draft;
+    }
 }

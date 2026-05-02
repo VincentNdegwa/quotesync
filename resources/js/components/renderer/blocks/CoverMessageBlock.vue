@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { blockContentStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
-import type { CoverMessageBlockConfig, QuoteData, WorkspaceSettings } from '@/types';
+import { blockContentStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
+import type { CoverMessageBlockConfig, DocumentData, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     config: CoverMessageBlockConfig;
-    quote: QuoteData;
+    data: DocumentData;
     settings: WorkspaceSettings;
     previewMode: boolean;
     editMode?: boolean;
@@ -14,16 +14,20 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     (e: 'update-cover-message', value: string | null): void;
-    (e: 'update-cover-label', value: string | null): void;
+    (e: 'update-cover-label', value: string): void;
 }>();
 
 const effectiveContextText = computed(() => {
-    return props.config.contextText ?? props.settings.quotes.default_cover_message ?? null;
+    const data = props.data as QuoteData | InvoiceData;
+
+    return data.cover_message ?? props.config.contextText ?? props.settings.quotes.default_cover_message;
 });
 
 const fontSizeClass = computed(() => {
     const size = props.config.fontSize ?? 'md';
-    return { sm: 'text-sm leading-6', md: 'text-base leading-7', lg: 'text-lg leading-8' }[size] ?? 'text-base leading-7';
+    const sizeMap: Record<string, string> = { sm: 'text-sm leading-6', md: 'text-base leading-7', lg: 'text-lg leading-8' };
+
+    return sizeMap[size];
 });
 
 const showBlock = computed(() => !!effectiveContextText.value?.trim() || props.previewMode || props.editMode);

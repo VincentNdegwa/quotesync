@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useFormat } from '@/composables/useFormat';
+import { calculateLineItemTotals } from '@/composables/useTaxCalculation';
 import type {
     BuilderCatalogItem,
     BuilderConfigurationUnit,
     BuilderTaxOption,
     QuoteBuilderLineItem,
 } from '@/types';
-import { calculateLineItemTotals } from '@/composables/useTaxCalculation';
 
 const props = defineProps<{
     open: boolean;
@@ -34,7 +34,9 @@ const currencyCode = computed(() => props.currency || 'USD');
 const { formatCurrency: fmt } = useFormat();
 
 const lineTotal = computed(() => {
-    if (!item.value) return 0;
+    if (!item.value) {
+return 0;
+}
 
     console.log(item.value);
     
@@ -55,15 +57,25 @@ const selectedCatalogId = computed<string>({
     get: () =>
         item.value?.catalog_item_id ? String(item.value.catalog_item_id) : '',
     set: (value) => {
-        if (!item.value) return;
+        if (!item.value) {
+return;
+}
+
         const nextId = Number(value);
+
         if (!Number.isFinite(nextId) || nextId <= 0) {
             item.value.catalog_item_id = null;
+
             return;
         }
+
         const catalog = props.catalogItems.find((entry) => entry.id === nextId);
         item.value.catalog_item_id = catalog ? nextId : null;
-        if (!catalog) return;
+
+        if (!catalog) {
+return;
+}
+
         item.value.name = catalog.name;
         item.value.description = catalog.description;
         item.value.unit = catalog.configuration_unit?.symbol || '';
@@ -81,13 +93,19 @@ const selectedCatalogId = computed<string>({
 const selectedUnitId = computed<string>({
     get: () => (item.value?.unit_id ? String(item.value.unit_id) : ''),
     set: (value) => {
-        if (!item.value) return;
+        if (!item.value) {
+return;
+}
+
         const nextId = Number(value);
+
         if (!Number.isFinite(nextId) || nextId <= 0) {
             item.value.unit_id = null;
             item.value.unit = '';
+
             return;
         }
+
         const unit = props.units.find((entry) => entry.id === nextId);
         item.value.unit_id = unit ? nextId : null;
         item.value.unit = unit ? unit.symbol : '';
@@ -99,13 +117,18 @@ const hasTax = (taxId: number): boolean => {
 };
 
 const toggleTax = (tax: BuilderTaxOption): void => {
-    if (!item.value) return;
+    if (!item.value) {
+return;
+}
+
     if (hasTax(tax.id)) {
         item.value.taxes = item.value.taxes.filter(
             (entry) => entry.tax_id !== tax.id,
         );
+
         return;
     }
+
     item.value.taxes.push({
         tax_id: tax.id,
         tax_label: tax.name,

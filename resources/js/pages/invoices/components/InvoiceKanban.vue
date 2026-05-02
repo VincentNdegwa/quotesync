@@ -4,9 +4,9 @@ import { Calendar, Lock, User } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 import InvoiceController from '@/actions/App/Http/Controllers/InvoiceController';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import { useFormat } from '@/composables/useFormat';
 import type { InvoiceListRecord, InvoiceStatusEnum } from '@/types';
 import InvoiceActions from './InvoiceActions.vue';
-import { useFormat } from '@/composables/useFormat';
 
 const props = defineProps<{
     invoiceStatuses: InvoiceStatusEnum[];
@@ -17,6 +17,7 @@ const loading = ref(true);
 
 const loadInvoices = async (): Promise<void> => {
     loading.value = true;
+
     try {
         const res = await fetch('/invoices/kanban', {
             headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
@@ -79,8 +80,12 @@ const dragOverStatus = ref<string | null>(null);
 const hoveredInvoiceId = ref<number | null>(null);
 
 const canDrop = (toStatus: string): boolean => {
-    if (!dragging.value || dragging.value.fromStatus === toStatus) return false;
+    if (!dragging.value || dragging.value.fromStatus === toStatus) {
+return false;
+}
+
     const from = dragging.value.fromStatus as StatusKey;
+
     return (ALLOWED_TRANSITIONS[from] ?? []).includes(toStatus as StatusKey);
 };
 
@@ -91,6 +96,7 @@ const isTerminal = (status: StatusKey): boolean => ALLOWED_TRANSITIONS[status].l
 const onDragStart = (e: DragEvent, invoice: InvoiceListRecord): void => {
     hoveredInvoiceId.value = null;
     dragging.value = { invoice, fromStatus: invoice.status };
+
     if (e.dataTransfer) {
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', String(invoice.id));
@@ -100,7 +106,11 @@ const onDragStart = (e: DragEvent, invoice: InvoiceListRecord): void => {
 const onDragOver = (e: DragEvent, status: string): void => {
     if (canDrop(status)) {
         e.preventDefault();
-        if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+
+        if (e.dataTransfer) {
+e.dataTransfer.dropEffect = 'move';
+}
+
         dragOverStatus.value = status;
     }
 };
@@ -108,7 +118,10 @@ const onDragOver = (e: DragEvent, status: string): void => {
 const onDragLeave = (e: DragEvent): void => {
     const target = e.currentTarget as HTMLElement;
     const related = e.relatedTarget as Node | null;
-    if (!target.contains(related)) dragOverStatus.value = null;
+
+    if (!target.contains(related)) {
+dragOverStatus.value = null;
+}
 };
 
 const onDragEnd = (): void => {
@@ -119,7 +132,9 @@ const onDragEnd = (): void => {
 const showToDraftDialog = ref(false);
 const pendingDraftInvoice = ref<{ invoiceId: number; fromStatus: StatusKey } | null>(null);
 
-const reloadKanban = (): void => { loadInvoices(); };
+const reloadKanban = (): void => {
+ loadInvoices(); 
+};
 
 const applyStatusChange = (invoiceId: number, toStatus: StatusKey, extra?: Record<string, string>): void => {
     router.patch(InvoiceController.updateStatus(invoiceId).url, { status: toStatus, ...extra }, {
@@ -130,7 +145,10 @@ const applyStatusChange = (invoiceId: number, toStatus: StatusKey, extra?: Recor
 };
 
 const executeToDraft = (): void => {
-    if (!pendingDraftInvoice.value) return;
+    if (!pendingDraftInvoice.value) {
+return;
+}
+
     applyStatusChange(pendingDraftInvoice.value.invoiceId, 'draft');
     showToDraftDialog.value = false;
     pendingDraftInvoice.value = null;
@@ -138,15 +156,22 @@ const executeToDraft = (): void => {
 
 const toDraftDescription = computed<string>(() => {
     const status = pendingDraftInvoice.value?.fromStatus;
+
     if (status === 'overdue') {
         return 'This invoice is overdue. Move it back to draft to revise before resending.';
     }
+
     return 'The client may have already received this invoice. Move it back to draft to revise before resending.';
 });
 
 const onDrop = (e: DragEvent, toStatus: string): void => {
     e.preventDefault();
-    if (!dragging.value || !canDrop(toStatus)) { onDragEnd(); return; }
+
+    if (!dragging.value || !canDrop(toStatus)) {
+ onDragEnd();
+
+ return; 
+}
 
     const invoiceId = dragging.value.invoice.id;
     const fromStatus = dragging.value.fromStatus as StatusKey;
@@ -156,6 +181,7 @@ const onDrop = (e: DragEvent, toStatus: string): void => {
     if (target === 'draft') {
         pendingDraftInvoice.value = { invoiceId, fromStatus };
         showToDraftDialog.value = true;
+
         return;
     }
 

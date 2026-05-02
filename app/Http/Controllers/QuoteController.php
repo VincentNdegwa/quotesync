@@ -8,15 +8,13 @@ use App\Http\Requests\StoreQuoteRequest;
 use App\Http\Requests\UpdateQuoteRequest;
 use App\Http\Requests\UpdateQuoteStatusRequest;
 use App\Jobs\SendFollowUpJob;
-use App\Models\CatalogItem;
 use App\Models\Client;
-use App\Models\ConfigurationUnit;
 use App\Models\Quote;
 use App\Models\QuoteFollowUp;
 use App\Models\QuoteTemplate;
-use App\Models\Tax;
 use App\Models\Workspace;
 use App\Services\Quotes\QuoteAnalyticsService;
+use App\Services\BuilderLookupService;
 use App\Services\Quotes\QuoteService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\JsonResponse;
@@ -74,7 +72,7 @@ class QuoteController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(Request $request, QuoteService $quoteService, WorkspaceSettingsService $workspaceSettingsService): Response
+    public function create(Request $request, QuoteService $quoteService, WorkspaceSettingsService $workspaceSettingsService, BuilderLookupService $builderLookupService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -85,29 +83,19 @@ class QuoteController extends Controller
 
         if ($templateId > 0) {
             $template = QuoteTemplate::query()
+                ->where('id', $templateId)
                 ->where('workspace_id', $workspace->id)
-                ->where('is_active', true)
-                ->find($templateId);
-        }
-
-        $clientId = $request->integer('client_id');
-        $client = null;
-
-        if ($clientId > 0) {
-            $client = Client::query()
-                ->where('workspace_id', $workspace->id)
-                ->find($clientId);
+                ->first();
         }
 
         $settings = $workspaceSettingsService->builderSettings($workspace);
-        $validityDays = max(1, $settings['quotes']['quote_validity_days']);
-
+        $validityDays = $settings['quotes']['validity_days'] ?? 30;
         $initialState = [
             'id' => null,
             'number' => null,
             'title' => '',
             'status' => 'draft',
-            'client_id' => $client?->id,
+            'client_id' => null,
             'assigned_to' => $request->user()?->id,
             'currency' => $settings['workspace']['currency'],
             'base_currency' => $settings['workspace']['currency'],
@@ -146,7 +134,7 @@ class QuoteController extends Controller
         return Inertia::render('quotes/Create', [
             'initialState' => $initialState,
             'settings' => $settings,
-            ...$this->builderLookups($workspace, $workspaceSettingsService),
+            ...$builderLookupService->getFullLookups($workspace),
         ]);
     }
 
@@ -271,7 +259,7 @@ class QuoteController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Request $request, Quote $quote, QuoteService $quoteService, WorkspaceSettingsService $workspaceSettingsService): Response
+    public function edit(Request $request, Quote $quote, QuoteService $quoteService, WorkspaceSettingsService $workspaceSettingsService, BuilderLookupService $builderLookupService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -280,7 +268,7 @@ class QuoteController extends Controller
         return Inertia::render('quotes/Edit', [
             'initialState' => $quoteService->toBuilderPayload($quote),
             'settings' => $workspaceSettingsService->builderSettings($workspace),
-            ...$this->builderLookups($workspace, $workspaceSettingsService),
+            ...$builderLookupService->getFullLookups($workspace),
             'quoteId' => $quote->id,
         ]);
     }
@@ -318,44 +306,6 @@ class QuoteController extends Controller
 
         return to_route('quotes.index');
     }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function builderLookups(Workspace $workspace, WorkspaceSettingsService $workspaceSettingsService): array
-    {
-        return [
-            'clients' => Client::query()
-                ->where('workspace_id', $workspace->id)
-                ->orderByRaw('LOWER(company_name)')
-                ->get(),
-            'catalogItems' => CatalogItem::query()
-                ->where('workspace_id', $workspace->id)
-                ->where('is_active', true)
-                ->with(['taxes', 'configurationUnit'])
-                ->orderByRaw('LOWER(name)')
-                ->limit(300)
-                ->get(),
-            'templates' => QuoteTemplate::query()
-                ->where('workspace_id', $workspace->id)
-                ->where('is_active', true)
-                ->orderByDesc('is_system')
-                ->orderByRaw('LOWER(name)')
-                ->get(),
-            'taxes' => Tax::query()
-                ->where('workspace_id', $workspace->id)
-                ->where('is_active', true)
-                ->orderByDesc('is_default')
-                ->orderByRaw('LOWER(name)')
-                ->get(),
-            'units' => ConfigurationUnit::query()
-                ->where('workspace_id', $workspace->id)
-                ->where('is_active', true)
-                ->orderByRaw('LOWER(name)')
-                ->get(),
-        ];
-    }
-
 
     public function kanban(Request $request, QuoteService $quoteService): JsonResponse
     {

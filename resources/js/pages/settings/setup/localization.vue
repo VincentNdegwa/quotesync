@@ -1,20 +1,11 @@
 <script setup lang="ts">
 import { Form } from '@inertiajs/vue3';
-import { computed, reactive, ref, watch } from 'vue';
 import { Check, ChevronsUpDown } from 'lucide-vue-next';
+import { Clock, DollarSign } from 'lucide-vue-next';
+import { computed, reactive, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import {
     Command,
     CommandEmpty,
@@ -23,12 +14,21 @@ import {
     CommandItem,
     CommandList,
 } from '@/components/ui/command';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
-import { Clock, DollarSign } from 'lucide-vue-next';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import type { WorkspaceSettingsField, WorkspaceSettingsPageProps } from '@/types';
 
 const props = defineProps<WorkspaceSettingsPageProps & { timezones?: string[] }>();
@@ -53,15 +53,18 @@ const buildFormValues = (
         (values, field) => {
             if (field.type === 'boolean') {
                 values[field.key] = Boolean(field.value);
+
                 return values;
             }
 
             if (field.value === null || field.value === undefined) {
                 values[field.key] = '';
+
                 return values;
             }
 
             values[field.key] = Array.isArray(field.value) ? field.value.join(',') : field.value;
+
             return values;
         },
         {} as Record<string, any>,

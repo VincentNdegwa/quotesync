@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { ref } from 'vue';
 import { Eye, MoreHorizontal, Pencil, Mail } from 'lucide-vue-next';
+import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -9,8 +9,8 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import InvitePortalDialog from './InvitePortalDialog.vue';
 import type { ClientRecord } from '@/types';
+import InvitePortalDialog from './InvitePortalDialog.vue';
 
 const props = defineProps<{
     client: ClientRecord;

@@ -5,9 +5,9 @@ import { computed, onMounted, ref } from 'vue';
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import { useFormat } from '@/composables/useFormat';
 import type { QuoteListRecord, QuoteStatusEnum } from '@/types';
 import QuoteActions from './QuoteActions.vue';
-import { useFormat } from '@/composables/useFormat';
 
 const props = defineProps<{
     quoteStatuses: QuoteStatusEnum[];
@@ -18,6 +18,7 @@ const loading = ref(true);
 
 const loadQuotes = async (): Promise<void> => {
     loading.value = true;
+
     try {
         const res = await fetch('/quotes/kanban', {
             headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
@@ -86,8 +87,12 @@ const dragOverStatus = ref<string | null>(null);
 const hoveredQuoteId = ref<number | null>(null);
 
 const canDrop = (toStatus: string): boolean => {
-    if (!dragging.value || dragging.value.fromStatus === toStatus) return false;
+    if (!dragging.value || dragging.value.fromStatus === toStatus) {
+return false;
+}
+
     const from = dragging.value.fromStatus as StatusKey;
+
     return (ALLOWED_TRANSITIONS[from] ?? []).includes(toStatus as StatusKey);
 };
 
@@ -98,6 +103,7 @@ const isTerminal = (status: StatusKey): boolean => ALLOWED_TRANSITIONS[status].l
 const onDragStart = (e: DragEvent, quote: QuoteListRecord): void => {
     hoveredQuoteId.value = null;
     dragging.value = { quote, fromStatus: quote.status };
+
     if (e.dataTransfer) {
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', String(quote.id));
@@ -107,7 +113,11 @@ const onDragStart = (e: DragEvent, quote: QuoteListRecord): void => {
 const onDragOver = (e: DragEvent, status: string): void => {
     if (canDrop(status)) {
         e.preventDefault();
-        if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+
+        if (e.dataTransfer) {
+e.dataTransfer.dropEffect = 'move';
+}
+
         dragOverStatus.value = status;
     }
 };
@@ -115,7 +125,10 @@ const onDragOver = (e: DragEvent, status: string): void => {
 const onDragLeave = (e: DragEvent): void => {
     const target = e.currentTarget as HTMLElement;
     const related = e.relatedTarget as Node | null;
-    if (!target.contains(related)) dragOverStatus.value = null;
+
+    if (!target.contains(related)) {
+dragOverStatus.value = null;
+}
 };
 
 const onDragEnd = (): void => {
@@ -130,7 +143,9 @@ const showMarkLostDialog = ref(false);
 const showToDraftDialog = ref(false);
 const pendingDraftQuote = ref<{ quoteId: number; fromStatus: StatusKey } | null>(null);
 
-const reloadKanban = (): void => { loadQuotes(); };
+const reloadKanban = (): void => {
+ loadQuotes(); 
+};
 
 const applyStatusChange = (quoteId: number, toStatus: StatusKey, extra?: Record<string, string>): void => {
     router.patch(QuoteController.updateStatus(quoteId).url, { status: toStatus, ...extra }, {
@@ -141,7 +156,10 @@ const applyStatusChange = (quoteId: number, toStatus: StatusKey, extra?: Record<
 };
 
 const executeSend = (): void => {
-    if (!pendingDrop.value) return;
+    if (!pendingDrop.value) {
+return;
+}
+
     router.post(QuoteSendController.store(pendingDrop.value.quoteId).url, {}, {
         preserveScroll: true,
         preserveUrl: true,
@@ -154,21 +172,30 @@ const executeSend = (): void => {
 };
 
 const executeMarkWon = (): void => {
-    if (!pendingDrop.value) return;
+    if (!pendingDrop.value) {
+return;
+}
+
     applyStatusChange(pendingDrop.value.quoteId, 'won');
     showMarkWonDialog.value = false;
     pendingDrop.value = null;
 };
 
 const executeMarkLost = (reason?: string): void => {
-    if (!pendingDrop.value) return;
+    if (!pendingDrop.value) {
+return;
+}
+
     applyStatusChange(pendingDrop.value.quoteId, 'lost', { reason: reason ?? '' });
     showMarkLostDialog.value = false;
     pendingDrop.value = null;
 };
 
 const executeToDraft = (): void => {
-    if (!pendingDraftQuote.value) return;
+    if (!pendingDraftQuote.value) {
+return;
+}
+
     applyStatusChange(pendingDraftQuote.value.quoteId, 'draft');
     showToDraftDialog.value = false;
     pendingDraftQuote.value = null;
@@ -176,18 +203,26 @@ const executeToDraft = (): void => {
 
 const toDraftDescription = computed<string>(() => {
     const status = pendingDraftQuote.value?.fromStatus;
+
     if (status === 'viewed') {
         return 'The client has already opened this quote. Moving to draft does not revoke their link. You should revise and resend.';
     }
+
     if (status === 'declined') {
         return 'The client declined this quote. Move it back to draft to revise and try again.';
     }
+
     return 'The client may have already received this quote. Move it back to draft to revise before resending.';
 });
 
 const onDrop = (e: DragEvent, toStatus: string): void => {
     e.preventDefault();
-    if (!dragging.value || !canDrop(toStatus)) { onDragEnd(); return; }
+
+    if (!dragging.value || !canDrop(toStatus)) {
+ onDragEnd();
+
+ return; 
+}
 
     const quoteId = dragging.value.quote.id;
     const fromStatus = dragging.value.fromStatus as StatusKey;
@@ -197,24 +232,28 @@ const onDrop = (e: DragEvent, toStatus: string): void => {
     if (target === 'sent') {
         pendingDrop.value = { quoteId, toStatus: target };
         showSendDialog.value = true;
+
         return;
     }
 
     if (target === 'won') {
         pendingDrop.value = { quoteId, toStatus: target };
         showMarkWonDialog.value = true;
+
         return;
     }
 
     if (target === 'lost') {
         pendingDrop.value = { quoteId, toStatus: target };
         showMarkLostDialog.value = true;
+
         return;
     }
 
     if (target === 'draft') {
         pendingDraftQuote.value = { quoteId, fromStatus };
         showToDraftDialog.value = true;
+
         return;
     }
 
@@ -226,13 +265,22 @@ const formatAmount = (amount: number, currency: string | null): string => {
 };
 
 const formatDate = (date: string | null): string => {
-    if (!date) return '—';
+    if (!date) {
+return '—';
+}
+
     return useFormat().formatDate(date);
 };
 
 const getWinProbabilityBgColor = (probability: number) => {
-    if (probability >= 70) return 'bg-green-500';
-    if (probability >= 40) return 'bg-yellow-500';
+    if (probability >= 70) {
+return 'bg-green-500';
+}
+
+    if (probability >= 40) {
+return 'bg-yellow-500';
+}
+
     return 'bg-red-500';
 };
 </script>

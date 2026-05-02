@@ -74,6 +74,7 @@ const selectedUnitId = computed<string | null>({
         if (form.unit_id === null || form.unit_id === undefined) {
             return null;
         }
+
         return String(form.unit_id);
     },
     set: (value) => {

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { blockContentStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
-import type { QuoteData, TermsBlockConfig, WorkspaceSettings } from '@/types';
+import { blockContentStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
+import type { DocumentData, TermsBlockConfig, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     config: TermsBlockConfig;
-    quote: QuoteData;
+    data: DocumentData;
     settings: WorkspaceSettings;
     previewMode: boolean;
     editMode?: boolean;
@@ -18,10 +18,10 @@ const emit = defineEmits<{
 }>();
 
 const effectiveContextText = computed(() => {
-    return props.config.contextText ?? props.settings.quotes.default_terms ?? null;
-});
+    const data = props.data as QuoteData | InvoiceData;
 
-</script>
+    return data.terms ?? props.config.contextText ?? props.settings.quotes.default_terms;
+});</script>
 
 <template>
     <div :style="blockContentStyle(config)" :class="blockFontSizeClass(config.fontSize)">

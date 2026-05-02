@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, Link, useForm } from '@inertiajs/vue3';
+import { Globe } from 'lucide-vue-next';
 import { computed, reactive, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -20,7 +21,6 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { Globe } from 'lucide-vue-next';
 import type { IndustryModel, WorkspaceSettingsField, WorkspaceSettingsPageProps } from '@/types';
 import {
     translationLanguageOptions,

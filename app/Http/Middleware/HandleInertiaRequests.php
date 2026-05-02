@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Enums\FollowUpChannel;
+use App\Enums\InvoiceActivityType;
 use App\Enums\InvoiceStatus;
 use App\Enums\QuoteActivityType;
 use App\Enums\QuoteFollowUpStatus;
@@ -255,6 +256,7 @@ class HandleInertiaRequests extends Middleware
             'quoteFollowUpStatus' => QuoteFollowUpStatus::all(),
             'trackingEventType' => TrackingEventType::all(),
             'invoiceStatus' => InvoiceStatus::all(),
+            'invoiceActivityType' => InvoiceActivityType::all(),
             'winProbabilityConfidence' => WinProbabilityConfidence::all(),
             'signalDirection' => SignalDirection::all(),
         ];

@@ -30,6 +30,10 @@ export function useEnums() {
         return enums.invoiceStatus.find((status) => status.value === value);
     };
 
+    const getInvoiceActivityType = (value: string): InvoiceActivityTypeEnum | undefined => {
+        return enums.invoiceActivityType?.find((type) => type.value === value);
+    };
+
     const getWinProbabilityConfidence = (value: string): WinProbabilityConfidenceEnum | undefined => {
         return enums.winProbabilityConfidence?.find((confidence) => confidence.value === value);
     };
@@ -44,6 +48,7 @@ export function useEnums() {
 
     const getFollowUpChannelColor = (channel: string): string => {
         const channelEnum = getFollowUpChannel(channel);
+
         return channelEnum?.color ?? 'text-muted-foreground bg-muted';
     };
 
@@ -55,6 +60,7 @@ export function useEnums() {
         getQuoteFollowUpStatus,
         getTrackingEventType,
         getInvoiceStatus,
+        getInvoiceActivityType,
         getWinProbabilityConfidence,
         getSignalDirection,
         getFollowUpChannelIcon,

@@ -17,19 +17,27 @@ const formattedValue = computed(() => {
   if (props.format === 'currency') {
     return formatCurrency(props.value as number);
   }
+
   if (props.format === 'percent') {
     return `${props.value}%`;
   }
+
   return props.value;
 });
 
 const trendColor = computed(() => {
-  if (props.trend === null || props.trend === undefined) return 'text-muted-foreground';
+  if (props.trend === null || props.trend === undefined) {
+return 'text-muted-foreground';
+}
+
   return props.trend > 0 ? 'text-green-600' : props.trend < 0 ? 'text-red-600' : 'text-muted-foreground';
 });
 
 const trendSign = computed(() => {
-  if (props.trend === null || props.trend === undefined) return '';
+  if (props.trend === null || props.trend === undefined) {
+return '';
+}
+
   return props.trend > 0 ? '+' : '';
 });
 

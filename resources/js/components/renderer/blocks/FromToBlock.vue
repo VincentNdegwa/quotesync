@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { blockBaseStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
-import type { FromToBlockConfig, QuoteData, WorkspaceSettings } from '@/types';
+import type { DocumentData, FromToBlockConfig, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     config: FromToBlockConfig;
-    quote: QuoteData;
+    data: DocumentData;
     settings: WorkspaceSettings;
     previewMode: boolean;
 }>();
@@ -26,9 +26,9 @@ const effectiveBranding = computed(() => props.settings.workspace);
         </div>
         <div :class="config.layout === 'split' ? 'text-right' : ''">
             <p v-if="config.showLabels" class="text-xs uppercase tracking-wide text-muted-foreground">To</p>
-            <p class="font-semibold">{{ quote.client?.company_name || 'Client' }}</p>
+            <p class="font-semibold">{{ data.client?.company_name || 'Client' }}</p>
             <p v-if="config.showClientAddress" class="text-muted-foreground">
-                {{ quote.client?.address || 'No client address available' }}
+                {{ data.client?.address || 'No client address available' }}
             </p>
         </div>
     </div>

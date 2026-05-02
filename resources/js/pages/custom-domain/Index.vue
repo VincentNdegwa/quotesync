@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { Head, useForm, router } from '@inertiajs/vue3';
+import { Plus, Check, X, Globe, RefreshCw, Trash2, Star } from 'lucide-vue-next';
 import { ref } from 'vue';
-import Heading from '@/components/Heading.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import Heading from '@/components/Heading.vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Check, X, Globe, RefreshCw, Trash2, Star } from 'lucide-vue-next';
 import { useFormat } from '@/composables/useFormat';
 
 const { formatDate } = useFormat();
@@ -31,7 +31,9 @@ const deleteOpen = ref(false);
 const domainToDelete = ref<number | null>(null);
 
 const addDomain = () => {
-    if (!newDomain.value.trim()) return;
+    if (!newDomain.value.trim()) {
+return;
+}
 
     adding.value = true;
     useForm({ domain: newDomain.value }).post('/custom-domains', {

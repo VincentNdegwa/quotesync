@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { Head, setLayoutProps } from '@inertiajs/vue3';
-import { computed, ref, watchEffect } from 'vue';
 import { router } from '@inertiajs/vue3';
+import { computed, ref, watchEffect } from 'vue';
 import Heading from '@/components/Heading.vue';
 import QuoteActivityTimeline from '@/components/quotes/QuoteActivityTimeline.vue';
+import QuoteChat from '@/components/quotes/QuoteChat.vue';
+import QuoteFollowUps from '@/components/quotes/QuoteFollowUps.vue';
 import QuoteStatsPanel from '@/components/quotes/QuoteStatsPanel.vue';
 import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
-import QuoteChat from '@/components/quotes/QuoteChat.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -14,7 +15,6 @@ import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
 import type { WorkspaceSettings, QuoteData, QuoteStatusEnum } from '@/types';
 import QuoteActions from './components/QuoteActions.vue';
-import QuoteFollowUps from '@/components/quotes/QuoteFollowUps.vue';
 
 const props = defineProps<{
     quote: QuoteData;
@@ -37,14 +37,26 @@ const { getQuoteStatus } = useEnums();
 const { formatCurrency: fmt, formatDate: fmtDate } = useFormat(props.quote.base_currency || props.quote.currency || undefined);
 
 const getWinProbabilityColor = (probability: number) => {
-    if (probability >= 70) return 'text-green-600';
-    if (probability >= 40) return 'text-yellow-600';
+    if (probability >= 70) {
+return 'text-green-600';
+}
+
+    if (probability >= 40) {
+return 'text-yellow-600';
+}
+
     return 'text-red-600';
 };
 
 const getWinProbabilityBgColor = (probability: number) => {
-    if (probability >= 70) return 'bg-green-500';
-    if (probability >= 40) return 'bg-yellow-500';
+    if (probability >= 70) {
+return 'bg-green-500';
+}
+
+    if (probability >= 40) {
+return 'bg-yellow-500';
+}
+
     return 'bg-red-500';
 };
 
@@ -144,7 +156,7 @@ const rejectApproval = () => {
                 <div class="overflow-hidden rounded-xl border bg-white shadow-sm">
                     <QuoteRenderer
                         v-if="quote.layout_snapshot && settings"
-                        :quote="quote"
+                        :data="{ ...quote, documentType: 'quote' }"
                         :layout="quote.layout_snapshot"
                         :settings="settings"
                         :preview-mode="true"

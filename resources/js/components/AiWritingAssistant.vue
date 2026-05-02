@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { Loader2, Sparkles, X, Check } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Loader2, Sparkles, X, Check } from 'lucide-vue-next';
 
 const props = defineProps<{
     content: string;
@@ -34,6 +34,7 @@ const improveText = async (action: string) => {
         if (event.data === '[DONE]') {
             isStreaming.value = false;
             eventSource.value?.close();
+
             return;
         }
 

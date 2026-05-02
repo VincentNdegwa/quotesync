@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { blockBaseStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
-import type { BrandingData, ImageBlockConfig, QuoteData } from '@/types';
+import type { BrandingData, DocumentData, ImageBlockConfig } from '@/types';
 
 defineProps<{
     config: ImageBlockConfig;
-    quote: QuoteData;
+    data: DocumentData;
     branding: BrandingData;
     previewMode: boolean;
 }>();

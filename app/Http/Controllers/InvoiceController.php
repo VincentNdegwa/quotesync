@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\InvoiceActivityType;
 use App\Enums\InvoiceStatus;
 use App\Enums\QuoteStatus;
 use App\Http\Requests\StoreInvoiceRequest;
+use App\Http\Requests\UpdateInvoiceRequest;
 use App\Models\Invoice;
 use App\Models\InvoiceActivity;
 use App\Models\Quote;
 use App\Models\Workspace;
 use App\Services\Invoices\InvoiceNumberingService;
+use App\Services\BuilderLookupService;
 use App\Services\Invoices\InvoiceService;
+use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -87,20 +91,45 @@ class InvoiceController extends Controller
         return response()->json($invoices);
     }
 
-    public function show(Request $request, Invoice $invoice): Response
+    public function show(Request $request, Invoice $invoice, WorkspaceSettingsService $workspaceSettingsService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
         abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
 
-        $invoice->load(['client', 'quote', 'lineItems', 'createdBy']);
-
-        $settings = $workspace->settings()->pluck('value', 'key')->toArray();
+        $invoice->load(['client', 'quote', 'lineItems', 'createdBy', 'activities.user']);
 
         return Inertia::render('invoices/Show', [
             'invoice' => $invoice,
             'invoiceStatuses' => InvoiceStatus::all(),
-            'settings' => $settings,
+            'settings' => $workspaceSettingsService->builderSettings($workspace),
         ]);
+    }
+
+    public function edit(Request $request, Invoice $invoice, InvoiceService $invoiceService, WorkspaceSettingsService $workspaceSettingsService, BuilderLookupService $builderLookupService): Response
+    {
+        $workspace = $request->user()?->currentWorkspace;
+        abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
+
+        return Inertia::render('invoices/Edit', [
+            'initialState' => $invoiceService->toBuilderPayload($invoice),
+            'settings' => $workspaceSettingsService->builderSettings($workspace),
+            ...$builderLookupService->getBasicLookups($workspace),
+            'invoiceId' => $invoice->id,
+        ]);
+    }
+
+    public function update(UpdateInvoiceRequest $request, Invoice $invoice, InvoiceService $invoiceService): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+        abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
+
+        abort_unless($invoice->status->canBeEdited(), 403, 'Only draft invoices can be edited.');
+
+        $invoiceService->update($invoice, $request->validated());
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice updated.')]);
+
+        return back();
     }
 
     public function updateStatus(Request $request, Invoice $invoice): RedirectResponse
@@ -121,6 +150,27 @@ class InvoiceController extends Controller
         }
 
         $invoice->update(['status' => $newStatus->value]);
+
+        // Track activity based on status change
+        $activityType = match ($newStatus) {
+            InvoiceStatus::Sent => InvoiceActivityType::Sent,
+            InvoiceStatus::Paid => InvoiceActivityType::Paid,
+            InvoiceStatus::Void => InvoiceActivityType::Voided,
+            default => null,
+        };
+
+        if ($activityType) {
+            InvoiceActivity::query()->create([
+                'invoice_id' => $invoice->id,
+                'workspace_id' => $workspace->id,
+                'user_id' => $request->user()?->id,
+                'type' => $activityType->value,
+                'description' => "Invoice status changed from {$currentStatus->value} to {$newStatus->value}",
+                'metadata' => ['previous_status' => $currentStatus->value, 'new_status' => $newStatus->value],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice status updated.')]);
 
@@ -170,7 +220,19 @@ class InvoiceController extends Controller
             ]);
         }
 
-        return redirect()->route('invoices.show', $invoice)->with('toast', ['type' => 'success', 'message' => 'Invoice created.']);
+        InvoiceActivity::query()->create([
+            'invoice_id' => $invoice->id,
+            'workspace_id' => $workspace->id,
+            'user_id' => $request->user()?->id,
+            'type' => InvoiceActivityType::Created->value,
+            'description' => 'Invoice created',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        Inertia::flash('toast', ['type'=> 'success', 'message'=> __("Invoice created successfully")]);
+
+        return redirect()->route('invoices.show', $invoice);
     }
 
     public function convertFromQuote(Request $request, Quote $quote, InvoiceService $invoiceService): RedirectResponse
@@ -181,7 +243,20 @@ class InvoiceController extends Controller
 
         $invoice = $invoiceService->convertFromQuote($quote, $request->user()?->id);
 
-        return redirect()->route('invoices.show', $invoice)->with('toast', ['type' => 'success', 'message' => 'Invoice created from quote.']);
+        InvoiceActivity::query()->create([
+            'invoice_id' => $invoice->id,
+            'workspace_id' => $workspace->id,
+            'user_id' => $request->user()?->id,
+            'type' => InvoiceActivityType::Created->value,
+            'description' => 'Invoice created from quote',
+            'metadata' => ['quote_id' => $quote->id],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice created from quote..')]);
+
+        return redirect()->route('invoices.show', $invoice);
     }
 
     public function duplicate(Request $request, Invoice $invoice, InvoiceService $invoiceService): RedirectResponse
@@ -190,6 +265,17 @@ class InvoiceController extends Controller
         abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
 
         $newInvoice = $invoiceService->duplicate($invoice);
+
+        InvoiceActivity::query()->create([
+            'invoice_id' => $newInvoice->id,
+            'workspace_id' => $workspace->id,
+            'user_id' => $request->user()?->id,
+            'type' => InvoiceActivityType::Created->value,
+            'description' => 'Invoice duplicated',
+            'metadata' => ['original_invoice_id' => $invoice->id],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice duplicated successfully.')]);
 
@@ -207,8 +293,10 @@ class InvoiceController extends Controller
             'invoice_id' => $invoice->id,
             'workspace_id' => $invoice->workspace_id,
             'user_id' => $request->user()?->id,
-            'type' => 'created',
+            'type' => InvoiceActivityType::Voided->value,
             'description' => 'Invoice archived',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
         ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice archived successfully.')]);

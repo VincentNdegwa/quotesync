@@ -1,4 +1,4 @@
-import type { QuoteModel } from './models';
+import type { InvoiceModel, QuoteModel } from './models';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PRIMITIVE TYPES
@@ -330,11 +330,15 @@ export type TemplateLayout = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// QUOTE DATA + BRANDING
-// Props passed to every block renderer.
+// DOCUMENT DATA + BRANDING
+// Props passed to every block renderer. Can be QuoteData or InvoiceData.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type QuoteData = QuoteModel;
+export type QuoteData = QuoteModel & { documentType: 'quote' };
+
+export type InvoiceData = InvoiceModel & { documentType: 'invoice' };
+
+export type DocumentData = QuoteData | InvoiceData;
 
 export type BrandingData = {
     company_name: string | null;
@@ -466,6 +470,7 @@ const uid = (): string => {
     if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
         return crypto.randomUUID();
     }
+
     return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 };
 
@@ -692,6 +697,7 @@ export const createDefaultLayout = (): TemplateLayout => ({
 
 const ensureBaseConfig = (config: Record<string, unknown>): Record<string, unknown> => {
     const base = defaultBaseConfig();
+
     return {
         ...base,
         // Migrate old field names to new ones

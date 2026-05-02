@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
+import { Calendar, Clock, Send, X, List } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,9 +15,7 @@ import {
     DrawerTitle,
     DrawerTrigger,
 } from '@/components/ui/drawer';
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { useFormat } from '@/composables/useFormat';
-import { Calendar, Clock, Send, X, List } from 'lucide-vue-next';
 
 const props = defineProps<{
     quoteId: number;
@@ -77,7 +77,10 @@ const handleSendNow = (id: number) => {
 };
 
 const confirmCancel = () => {
-    if (!selectedFollowUpId.value) return;
+    if (!selectedFollowUpId.value) {
+return;
+}
+
     processing.value = true;
     router.post(`/quotes/${props.quoteId}/follow-ups/${selectedFollowUpId.value}/cancel`, {}, {
         preserveScroll: true,
@@ -90,7 +93,10 @@ const confirmCancel = () => {
 };
 
 const confirmSendNow = () => {
-    if (!selectedFollowUpId.value) return;
+    if (!selectedFollowUpId.value) {
+return;
+}
+
     processing.value = true;
     router.post(`/quotes/${props.quoteId}/follow-ups/${selectedFollowUpId.value}/send-now`, {}, {
         preserveScroll: true,

@@ -172,7 +172,7 @@ export type GroupedActivity = {
     user?: { name: string } | null;
     isGroup?: boolean;
     groupCount?: number;
-    groupItems?: QuoteActivity[];
+    groupItems?: QuoteActivity[] | InvoiceActivity[];
 };
 
 export type Quote = {
@@ -222,6 +222,66 @@ export type QuoteStatusEnum = {
 };
 
 export type QuoteActivityTypeEnum = EnumOption<'created' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'follow_up_sent' | 'scheduled' | 'approval_requested' | 'approval_approved' | 'approval_rejected' | 'approval_granted'>;
+
+export type InvoiceActivity = {
+    id: number;
+    type: string;
+    description: string;
+    metadata: Record<string, unknown> | null;
+    created_at: string | null;
+    user: { id: number; name: string } | null;
+};
+
+export type InvoiceActivityTypeEnum = EnumOption<'created' | 'sent' | 'viewed' | 'paid' | 'overdue' | 'partial' | 'voided' | 'scheduled'>;
+
+export type InvoiceBuilderLineItemTax = {
+    tax_id: number | null;
+    tax_label: string;
+    tax_rate: number;
+    inclusive: boolean;
+};
+
+export type InvoiceBuilderLineItem = {
+    id: number | null;
+    catalog_item_id: number | null;
+    name: string;
+    description: string | null;
+    quantity: number;
+    unit: string | null;
+    unit_price: number;
+    tax_rate: number;
+    discount_percent: number;
+    subtotal: number;
+    tax_amount: number;
+    total: number;
+    notes: string | null;
+    sort_order: number;
+    taxes: InvoiceBuilderLineItemTax[];
+};
+
+export type InvoiceBuilderState = {
+    id: number | null;
+    invoice_number: string | null;
+    title: string;
+    status: string;
+    client_id: number | null;
+    quote_id: number | null;
+    currency: string;
+    base_currency: string | null;
+    fx_rate: number | null;
+    base_total: number | null;
+    issue_date: string | null;
+    due_date: string | null;
+    cover_message: string | null;
+    terms: string | null;
+    notes: string | null;
+    subtotal: number;
+    discount_amount: number;
+    tax_amount: number;
+    total: number;
+    layout_snapshot: any | null;
+    line_items: InvoiceBuilderLineItem[];
+};
 
 export type FollowUpChannelEnum = {
     value: 'email' | 'whatsapp' | 'sms';

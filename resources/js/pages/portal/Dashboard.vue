@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Eye, CheckCircle2, XCircle, Clock } from 'lucide-vue-next';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useFormat } from '@/composables/useFormat';
 import { show as showQuote } from '@/routes/portal/quotes';
 
@@ -27,6 +27,7 @@ const getStatusBadge = (status: string): 'default' | 'outline' | 'destructive' |
         accepted: 'default',
         declined: 'destructive',
     };
+
     return colors[status] || 'secondary';
 };
 
@@ -37,6 +38,7 @@ const getStatusIcon = (status: string) => {
         accepted: CheckCircle2,
         declined: XCircle,
     };
+
     return icons[status] || FileText;
 };
 </script>

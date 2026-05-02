@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ArrowLeft, AlertCircle, MessageSquare } from 'lucide-vue-next';
 import { ref } from 'vue';
+import QuoteChat from '@/components/quotes/QuoteChat.vue';
+import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, AlertCircle, MessageSquare } from 'lucide-vue-next';
 import { useFormat } from '@/composables/useFormat';
-import { accept as acceptQuote, decline as declineQuote } from '@/routes/public-quotes';
 import { dashboard } from '@/routes/portal';
-import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
-import QuoteChat from '@/components/quotes/QuoteChat.vue';
+import { accept as acceptQuote, decline as declineQuote } from '@/routes/public-quotes';
 import type { WorkspaceSettings, TemplateLayout } from '@/types';
 
 const props = defineProps<{
@@ -107,7 +107,7 @@ const decline = () => {
                 <div v-else class="overflow-hidden rounded-xl border shadow-sm">
                     <QuoteRenderer
                         v-if="layout && settings"
-                        :quote="quote"
+                        :data="{ ...quote, documentType: 'quote' }"
                         :layout="layout"
                         :settings="settings"
                         :preview-mode="true"

@@ -30,13 +30,17 @@ export function blockBorderStyle(border: BlockBorder): Record<string, string> {
   if (border.sides === 'none') {
     return {}
   }
+
   const widthMap: Record<string, string> = { thin: '1px', medium: '2px', thick: '3px' }
   const w = widthMap[border.width] ?? '1px'
   const value = `${w} ${border.style} ${border.color ?? 'currentColor'}`
+
   if (border.sides === 'all') {
     return { border: value }
   }
+
   const cap = border.sides.charAt(0).toUpperCase() + border.sides.slice(1)
+
   return { [`border${cap}`]: value }
 }
 

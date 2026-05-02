@@ -1,13 +1,13 @@
-import type { ColumnDef } from '@tanstack/vue-table';
-import { h } from 'vue';
 import { usePage } from '@inertiajs/vue3';
+import type { ColumnDef } from '@tanstack/vue-table';
+import { ArrowUpDown } from 'lucide-vue-next';
+import { h } from 'vue';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useEnums } from '@/composables/useEnums';
+import { useFormat } from '@/composables/useFormat';
 import type { QuoteListRecord, QuoteStatusEnum } from '@/types';
 import QuoteTableRowActions from './QuoteTableRowActions.vue';
-import { Button } from '@/components/ui/button';
-import { ArrowUpDown } from 'lucide-vue-next';
-import { useFormat } from '@/composables/useFormat';
 
 type QuoteColumnOptions = {
     quoteStatuses: QuoteStatusEnum[];
@@ -82,6 +82,7 @@ export const getQuoteColumns = (options: QuoteColumnOptions): ColumnDef<QuoteLis
             header: ({ column }) => h('div', { class: 'text-center' }, sortableHeader('Total', column, 'right')),
             cell: ({ row }) => {
                 const total = typeof row.original.base_total === 'string' ? parseFloat(row.original.base_total) : row.original.base_total;
+
                 return h('div', { class: 'text-center tabular-nums' }, useFormat().formatCurrency(total ?? 0, row.original.base_currency || (usePage().props.workspace_currency as string) || undefined));
             },
         },
@@ -99,13 +100,22 @@ export const getQuoteColumns = (options: QuoteColumnOptions): ColumnDef<QuoteLis
             header: ({ column }) => sortableHeader('Win Probability', column),
             cell: ({ row }) => {
                 const winProb = row.original.win_probability;
-                if (!winProb || winProb.probability === null || winProb.probability === undefined) return '—';
+
+                if (!winProb || winProb.probability === null || winProb.probability === undefined) {
+return '—';
+}
 
                 const probability = winProb.probability;
 
                 const getColor = (p: number) => {
-                    if (p >= 70) return 'text-green-600';
-                    if (p >= 40) return 'text-yellow-600';
+                    if (p >= 70) {
+return 'text-green-600';
+}
+
+                    if (p >= 40) {
+return 'text-yellow-600';
+}
+
                     return 'text-red-600';
                 };
 

@@ -1,14 +1,14 @@
 #resources/js/components/quotes/builder/QuoteBuilder.vue
 <script setup lang="ts">
 import { useEventListener } from '@vueuse/core';
-import { computed, ref, toRaw } from 'vue';
+import { computed, ref, watch } from 'vue';
 import BlockConfigPanel from '@/components/builder/BlockConfigPanel.vue';
 import BlockList from '@/components/builder/BlockList.vue';
 import BuilderHeader from '@/components/quotes/builder/BuilderHeader.vue';
 import LineItemDrawer from '@/components/quotes/builder/LineItemDrawer.vue';
 import QuoteSettingsBar from '@/components/quotes/builder/QuoteSettingsBar.vue';
 import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
-import { useQuoteBuilder } from '@/composables/useQuoteBuilder';
+// import { useQuoteBuilder } from '@/composables/useQuoteBuilder';
 import {
     ADDABLE_BLOCK_TYPES,
     createBlock,
@@ -20,7 +20,6 @@ import type {
     BlockType,
     BuilderCatalogItem,
     BuilderConfigurationUnit,
-    BuilderBranding,
     BuilderClientOption,
     BuilderTaxOption,
     BuilderTemplateOption,
@@ -34,15 +33,11 @@ import type {
     TemplateLayout,
     WorkspaceSettings,
 } from '@/types';
-import { watch } from 'vue';
-
-const model = defineModel<QuoteBuilderState>({
-    required: true,
-});
 
 const props = withDefaults(
     defineProps<{
-        mode: 'quote' | 'template';
+        modelValue: QuoteBuilderState;
+        mode: 'quote' | 'template' | 'invoice';
         clients?: BuilderClientOption[];
         templates?: BuilderTemplateOption[];
         catalogItems: BuilderCatalogItem[];
@@ -61,12 +56,13 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-    (e: 'save'): void;
+    (e: 'update:modelValue', value: QuoteBuilderState): void;
+    (e: 'save', value: QuoteBuilderState): void;
     (e: 'apply-ai-generation', data: any): void;
     (e: 'apply-ai-template', data: any): void;
 }>();
 
-const localState = model;
+const localState = ref<QuoteBuilderState>(JSON.parse(JSON.stringify(props.modelValue)));
 
 const currentLayout = ref<TemplateLayout>(
     ensureTemplateLayout(
@@ -144,7 +140,6 @@ const aiGeneratorOpen = ref(false);
 const aiTemplateOpen = ref(false);
 
 const applyAiGeneration = (data: any) => {
-    // Apply sections to quote state
     if (data.sections && data.sections.length > 0) {
         const newSections = data.sections.map((section: any, index: number) => ({
             id: null,
@@ -175,30 +170,51 @@ const applyAiGeneration = (data: any) => {
     // Apply cover message
     if (data.cover_message) {
         const coverBlock = currentLayout.value.blocks.find(b => b.type === 'cover_message');
+
         if (coverBlock) {
             const config = coverBlock.config as CoverMessageBlockConfig;
-            if (data.cover_message.label_text) config.labelText = data.cover_message.label_text;
-            if (data.cover_message.context_text) config.contextText = data.cover_message.context_text;
+
+            if (data.cover_message.label_text) {
+config.labelText = data.cover_message.label_text;
+}
+
+            if (data.cover_message.context_text) {
+config.contextText = data.cover_message.context_text;
+}
         }
     }
 
     // Apply payment terms
     if (data.payment_terms) {
         const paymentBlock = currentLayout.value.blocks.find(b => b.type === 'payment_terms');
+
         if (paymentBlock) {
             const config = paymentBlock.config as PaymentTermsBlockConfig;
-            if (data.payment_terms.label_text) config.labelText = data.payment_terms.label_text;
-            if (data.payment_terms.context_text) config.contextText = data.payment_terms.context_text;
+
+            if (data.payment_terms.label_text) {
+config.labelText = data.payment_terms.label_text;
+}
+
+            if (data.payment_terms.context_text) {
+config.contextText = data.payment_terms.context_text;
+}
         }
     }
 
     // Apply terms
     if (data.terms) {
         const termsBlock = currentLayout.value.blocks.find(b => b.type === 'terms');
+
         if (termsBlock) {
             const config = termsBlock.config as TermsBlockConfig;
-            if (data.terms.label_text) config.labelText = data.terms.label_text;
-            if (data.terms.context_text) config.contextText = data.terms.context_text;
+
+            if (data.terms.label_text) {
+config.labelText = data.terms.label_text;
+}
+
+            if (data.terms.context_text) {
+config.contextText = data.terms.context_text;
+}
         }
     }
 
@@ -215,13 +231,21 @@ const applyAiGeneration = (data: any) => {
 
         if (timelineBlock) {
             const config = timelineBlock.config as any;
-            if (data.timeline.label_text) config.labelText = data.timeline.label_text;
+
+            if (data.timeline.label_text) {
+config.labelText = data.timeline.label_text;
+}
+
             config.rows = timelineRows;
         } else {
             // Add timeline block if it doesn't exist
             const newTimelineBlock = createBlock('timeline');
             const config = newTimelineBlock.config as any;
-            if (data.timeline.label_text) config.labelText = data.timeline.label_text;
+
+            if (data.timeline.label_text) {
+config.labelText = data.timeline.label_text;
+}
+
             config.rows = timelineRows;
             currentLayout.value.blocks.push(newTimelineBlock);
         }
@@ -248,6 +272,7 @@ const applyAiTemplate = (data: any) => {
         localState.value.industry = data.industry;
     }
 };
+
 
 const blockListOpen = ref(false);
 const editingLineItem = ref<{
@@ -287,7 +312,7 @@ const selectedBlockModel = computed<Block | null>({
     },
 });
 
-const { recompute } = useQuoteBuilder(localState);
+// const { recompute } = useQuoteBuilder(localState);
 
 const moveBlock = (fromIndex: number, toIndex: number): void => {
     if (
@@ -488,7 +513,6 @@ const drawerItem = computed({
         return section.line_items[editingLineItem.value.lineItemIndex] ?? null;
     },
     set: () => {
-        // mutations happen on the referenced line item object itself
     },
 });
 
@@ -500,6 +524,7 @@ const addLineItem = (sectionIndex: number): void => {
     }
 
     section.line_items.push(createEmptyLineItem(section.line_items.length + 1));
+    recompute();
 };
 
 const removeLineItem = (sectionIndex: number, lineItemIndex: number): void => {
@@ -513,7 +538,70 @@ const removeLineItem = (sectionIndex: number, lineItemIndex: number): void => {
         return;
     }
 
-    section.line_items.splice(lineItemIndex, 1);
+    const newState = { ...localState.value };
+    newState.sections = newState.sections.map((s, idx) => {
+        if (idx === sectionIndex) {
+            return {
+                ...s,
+                line_items: s.line_items.filter((_, index) => index !== lineItemIndex),
+            };
+        }
+        return s;
+    });
+    localState.value = newState;
+    recompute();
+};
+
+const updateLineItemField = (sectionIndex: number, lineItemIndex: number, field: string, value: any): void => {
+    const section = localState.value.sections[sectionIndex];
+
+    if (
+        !section ||
+        lineItemIndex < 0 ||
+        lineItemIndex >= section.line_items.length
+    ) {
+        return;
+    }
+
+    const item = section.line_items[lineItemIndex];
+    if (!item) {
+        return;
+    }
+
+    item[field] = value;
+    recompute();
+};
+
+const selectCatalogItem = (sectionIndex: number, lineItemIndex: number, catalogItem: BuilderCatalogItem): void => {
+    const section = localState.value.sections[sectionIndex];
+
+    if (
+        !section ||
+        lineItemIndex < 0 ||
+        lineItemIndex >= section.line_items.length
+    ) {
+        return;
+    }
+
+    const item = section.line_items[lineItemIndex];
+    if (!item) {
+        return;
+    }
+
+    // Autofill data from catalog item
+    item.catalog_item_id = catalogItem.id;
+    item.name = catalogItem.name;
+    item.description = catalogItem.description;
+    item.unit_price = Number(catalogItem.unit_price || 0);
+    item.unit = catalogItem.configuration_unit?.symbol || '';
+    item.unit_id = catalogItem.configuration_unit?.id || null;
+    item.taxes = catalogItem.taxes.map((tax) => ({
+        tax_id: tax.id,
+        tax_label: tax.name,
+        tax_rate: tax.rate,
+        inclusive: tax.inclusive ?? false,
+    }));
+    recompute();
 };
 
 const addBlock = (type: BlockType): void => {
@@ -677,10 +765,16 @@ const brandingData = computed<BrandingData>(() => {
     };
 });
 
-const persistLayoutToState = (): void => {
-    localState.value.layout = currentLayout.value;
-    localState.value.layout_snapshot = currentLayout.value;
-};
+const resolvedClient = computed(() => {
+    if (localState.value.client) {
+        return localState.value.client;
+    }
+    if (!localState.value.client_id || !props.clients) {
+        return null;
+    }
+    return props.clients.find((c) => c.id === localState.value.client_id) ?? null;
+});
+
 
 const builderTitle = computed({
     get: () => localState.value.title,
@@ -689,10 +783,51 @@ const builderTitle = computed({
     },
 });
 
+const recompute = (): void => {
+    let subtotal = 0;
+    let taxAmount = 0;
+
+    localState.value.sections.forEach((section) => {
+        section.line_items.forEach((item) => {
+            const lineSubtotal = item.quantity * item.unit_price * (1 - item.discount_percent / 100);
+            const lineTaxAmount = item.taxes.reduce((sum, tax) => {
+                const taxRate = Number(tax.tax_rate);
+                if (tax.inclusive) {
+                    return sum + (lineSubtotal * taxRate) / (100 + taxRate);
+                }
+                return sum + lineSubtotal * (taxRate / 100);
+            }, 0);
+
+            item.subtotal = lineSubtotal;
+            item.tax_amount = lineTaxAmount;
+            item.total = lineSubtotal + lineTaxAmount;
+
+            subtotal += lineSubtotal;
+            taxAmount += lineTaxAmount;
+        });
+    });
+
+    localState.value.subtotal = subtotal;
+    localState.value.tax_amount = taxAmount;
+    localState.value.total = subtotal + taxAmount - localState.value.discount_amount;
+};
+
+const rendererData = computed(() => {
+    return {
+        ...localState.value,
+        documentType: 'quote',
+        client: resolvedClient.value,
+    };
+});
+
+const persistLayoutToState = (): void => {
+    localState.value.layout = currentLayout.value;
+    localState.value.layout_snapshot = currentLayout.value;
+};
+
 const onSave = (): void => {
-    recompute();
     persistLayoutToState();
-    emit('save');
+    emit('save', JSON.parse(JSON.stringify(localState.value)));
 };
 
 const isTypingTarget = (target: EventTarget | null): boolean => {
@@ -826,10 +961,11 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                         class="mx-auto p-1 w-full max-w-4xl rounded-lg border bg-white shadow-sm"
                     >
                         <QuoteRenderer
-                            :quote="localState"
+                            :data="rendererData"
                             :layout="currentLayout"
                             :branding="brandingData"
                             :settings="props.settings"
+                            :catalog-items="props.catalogItems"
                             :preview-mode="canvasMode === 'preview'"
                             :edit-mode="canvasMode === 'edit'"
                             :selected-block-id="selectedBlockId"
@@ -864,13 +1000,9 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                                         'down',
                                     )
                             "
-                            @add-line-items-section="addSection()"
-                            @remove-line-items-section="
-                                (payload) => removeSection(payload.sectionIndex)
-                            "
-                            @add-line-item="
-                                (payload) => addLineItem(payload.sectionIndex)
-                            "
+                            @add-section="addSection"
+                            @remove-section="removeSection"
+                            @add-line-item="addLineItem"
                             @edit-line-item="
                                 (payload) =>
                                     openLineItemDrawer(
@@ -878,7 +1010,31 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                                         payload.lineItemIndex,
                                     )
                             "
-                            @update-line-items-section-title="
+                            @update-line-item="
+                                (payload) =>
+                                    updateLineItemField(
+                                        payload.sectionIndex,
+                                        payload.lineItemIndex,
+                                        payload.field,
+                                        payload.value
+                                    )
+                            "
+                            @remove-line-item="
+                                (payload) =>
+                                    removeLineItem(
+                                        payload.sectionIndex,
+                                        payload.lineItemIndex
+                                    )
+                            "
+                            @select-catalog-item="
+                                (payload) =>
+                                    selectCatalogItem(
+                                        payload.sectionIndex,
+                                        payload.lineItemIndex,
+                                        payload.catalogItem
+                                    )
+                            "
+                            @update-section-title="
                                 (payload) =>
                                     updateSectionTitle(
                                         payload.sectionIndex,
@@ -952,8 +1108,8 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                     class="h-full w-[320px] p-2 shrink-0 overflow-y-auto border-l custom-scrollbar"
                 >
                     <BlockConfigPanel
+                        v-if="selectedBlockModel"
                         v-model:block="selectedBlockModel"
-                        v-model:quote-state="localState"
                         :catalog-items="catalogItems"
                         :taxes="taxes"
                     />

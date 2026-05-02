@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { spacingToCssPadding } from '@/composables/useBlockStyles';
-import type { BrandingData, DividerBlockConfig, QuoteData } from '@/types';
+import type { BrandingData, DocumentData, DividerBlockConfig } from '@/types';
 
 defineProps<{
     config: DividerBlockConfig;
-    quote: QuoteData;
+    data: DocumentData;
     branding: BrandingData;
     previewMode: boolean;
 }>();
@@ -16,7 +16,6 @@ const borderWidthMap: Record<string, string> = { thin: '1px', medium: '2px', thi
     <div
         :style="{
             backgroundColor: config.background ?? undefined,
-            color: config.textColor ?? undefined,
             padding: spacingToCssPadding(config.padding),
         }"
     >

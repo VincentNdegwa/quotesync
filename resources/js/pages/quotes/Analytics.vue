@@ -1,31 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, setLayoutProps } from '@inertiajs/vue3';
-import { computed, watchEffect, type Component } from 'vue';
 import { CurveType, Orientation } from '@unovis/ts';
 import { VisAxis, VisGroupedBar, VisLine, VisXYContainer, VisDonut, VisSingleContainer } from '@unovis/vue';
-import type { ChartConfig } from '@/components/ui/chart';
-import {
-  ChartContainer,
-  ChartCrosshair,
-  ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
-  componentToString,
-} from '@/components/ui/chart';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { useEnums } from '@/composables/useEnums';
-import { useFormat } from '@/composables/useFormat';
-import QuoteActions from './components/QuoteActions.vue';
-import type { QuoteListRecord, QuoteStatusEnum } from '@/types';
 import {
   ArrowLeft,
   BarChart3,
@@ -43,7 +19,32 @@ import {
   Sparkles,
   XCircle,
 } from 'lucide-vue-next';
+import { computed, watchEffect  } from 'vue';
+import type {Component} from 'vue';
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import type { ChartConfig } from '@/components/ui/chart';
+import {
+  ChartContainer,
+  ChartCrosshair,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+  componentToString,
+} from '@/components/ui/chart';
+import { useEnums } from '@/composables/useEnums';
+import { useFormat } from '@/composables/useFormat';
+import type { QuoteListRecord, QuoteStatusEnum } from '@/types';
+import QuoteActions from './components/QuoteActions.vue';
 
 type AnalyticsData = {
   opened_count: number;
@@ -159,6 +160,7 @@ const deviceChartConfig = computed<ChartConfig>(() =>
       color: devicePalette[key] ?? 'var(--chart-4)',
       icon: getDeviceIcon(item.device),
     };
+
     return config;
   }, {} as ChartConfig),
 );

@@ -1,9 +1,20 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { CurveType, Orientation } from '@unovis/ts';
 import { VisAxis, VisLine, VisXYContainer, VisDonut, VisSingleContainer, VisGroupedBar } from '@unovis/vue';
+import { BarChart3, CalendarClock, Flame, Globe, TrendingDown, TrendingUp, Users } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import type { ChartConfig } from '@/components/ui/chart';
 import {
   ChartContainer,
@@ -13,18 +24,7 @@ import {
   ChartTooltipContent,
   componentToString,
 } from '@/components/ui/chart';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { BarChart3, CalendarClock, Flame, Globe, TrendingDown, TrendingUp, Users } from 'lucide-vue-next';
 import { useFormat } from '@/composables/useFormat';
 
 const props = defineProps<{
@@ -97,17 +97,20 @@ type RevenueData = typeof revenueChartData.value[number];
 const revenueTickValues = computed(() => revenueChartData.value.map(point => point.order));
 const formatRevenueTick = (value: number): string => {
   const match = revenueChartData.value.find(point => point.order === value);
+
   return match?.month ?? '';
 };
 
 const revenueTrendChange = computed(() => {
   const data = revenueChartData.value;
+
   if (data.length < 2) {
     return null;
   }
 
   const latest = data[data.length - 1]?.won ?? 0;
   const previous = data[data.length - 2]?.won ?? 0;
+
   if (previous === 0) {
     return latest > 0 ? 100 : null;
   }

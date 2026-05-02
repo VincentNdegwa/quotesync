@@ -1,26 +1,26 @@
 <script setup lang="ts">
 import { inject, computed } from 'vue';
-import { blockBaseStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
 import { Button } from '@/components/ui/button';
+import { blockBaseStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
 import { useFormat } from '@/composables/useFormat';
-import type { QuoteData, SignatureBlockConfig, WorkspaceSettings } from '@/types';
+import type { DocumentData, SignatureBlockConfig, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     config: SignatureBlockConfig;
-    quote: QuoteData & { status?: string; signature_url?: string | null; signer_name?: string | null; accepted_at?: string | null };
+    data: DocumentData;
     settings: WorkspaceSettings;
     previewMode: boolean;
     editMode?: boolean;
 }>();
 
+const isQuote = computed(() => props.data.documentType === 'quote');
+
 const emit = defineEmits<{
     (e: 'update-signature-content', payload: { acceptButtonText?: string | null; declineButtonText?: string | null; contextText?: string | null }): void;
 }>();
 
-const effectiveContextText = computed(() => {
-    return props.config.contextText ?? props.settings.quotes.default_notes ?? null;
-});
+const effectiveContextText = computed(() => props.config.contextText);
 
 const openApproveModal = inject('openApproveModal', () => {});
 const openDeclineModal = inject('openDeclineModal', () => {});
@@ -69,19 +69,19 @@ const updateContextText = (value: string | null): void => {
             </div>
         </template>
 
-        <template v-else-if="quote.status === 'accepted' || quote.status === 'won' ">
+        <template v-else-if="isQuote && (data.status === 'accepted' || data.status === 'won')">
             <div class="flex flex-col items-start gap-6">
                 <div class="flex flex-col">
-                    <img v-if="quote.signature_url" :src="quote.signature_url" alt="Signature" class="h-20 w-auto object-contain" />
-                    <span v-if="quote.signer_name" class="mt-1 text-sm" style="font-family: 'Dancing Script', cursive; font-size: 1.25rem; line-height: 1;">{{ quote.signer_name }}</span>
+                    <img v-if="data.signature_url" :src="data.signature_url" alt="Signature" class="h-20 w-auto object-contain" />
+                    <span v-if="data.signer_name" class="mt-1 text-sm" style="font-family: 'Dancing Script', cursive; font-size: 1.25rem; line-height: 1;">{{ data.signer_name }}</span>
                 </div>
                 <div class="text-sm text-muted-foreground">
-                    <p>Signed on {{ formatDateTime(quote.accepted_at) }}</p>
+                    <p>Signed on {{ formatDateTime(data.accepted_at) }}</p>
                 </div>
             </div>
         </template>
 
-        <template v-else-if="quote.status === 'declined'">
+        <template v-else-if="isQuote && data.status === 'declined'">
             <p class="text-sm text-muted-foreground">This quote was declined.</p>
         </template>
 

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { Eye, List, Sparkles, Palette } from 'lucide-vue-next';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import AiQuoteGenerator from '@/components/quotes/AiQuoteGenerator.vue';
 import AiTemplateGenerator from '@/components/quotes/AiTemplateGenerator.vue';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 defineProps<{
-    mode: 'quote' | 'template';
+    mode: 'quote' | 'template' | 'invoice';
     canvasMode: 'edit' | 'preview';
     blockListOpen?: boolean;
     systemLocked?: boolean;
@@ -85,7 +85,7 @@ const handleAiTemplateApply = (data: any) => {
                 </div>
 
                 <Button :disabled="processing || systemLocked" @click="emit('save')">
-                    {{ mode === 'quote' ? 'Save quote' : 'Save template' }}
+                    {{ mode === 'quote' ? 'Save quote' : mode=== 'invoice'? 'Save Invoice': 'Save template' }}
                 </Button>
             </div>
         </div>

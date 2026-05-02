@@ -14,12 +14,6 @@ export const calculateLineItemTotals = (
     total: number;
 } => {
 
-    console.log({
-        "quonatity": quantity,
-        "unitPrice": unitPrice,
-        "discount": discountPercent,
-        "taxes": taxes
-    });
     
     const qty = Math.max(quantity, 0);
     const price = Math.max(unitPrice, 0);
@@ -33,6 +27,7 @@ export const calculateLineItemTotals = (
         .filter((tax) => tax.inclusive)
         .reduce((sum, tax) => {
             const rate = Math.max(tax.tax_rate, 0);
+
             return sum + (baseAmount * rate) / (100 + rate);
         }, 0);
 
@@ -44,6 +39,7 @@ export const calculateLineItemTotals = (
         .filter((tax) => !tax.inclusive)
         .reduce((sum, tax) => {
             const rate = Math.max(tax.tax_rate, 0);
+
             return sum + (netPrice * rate) / 100;
         }, 0);
 

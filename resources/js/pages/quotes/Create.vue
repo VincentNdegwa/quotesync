@@ -38,7 +38,14 @@ defineOptions({
 
 const form = useForm<QuoteBuilderState>(JSON.parse(JSON.stringify(props.initialState)) as QuoteBuilderState);
 
-const save = (): void => {
+const save = (updatedState?: QuoteBuilderState): void => {
+    if (updatedState) {
+        Object.keys(updatedState).forEach((key) => {
+            if (key in form) {
+                form[key] = updatedState[key];
+            }
+        });
+    }
     form.post('/quotes', {
         preserveScroll: true,
     });
@@ -49,7 +56,7 @@ const save = (): void => {
     <Head title="Create quote" />
 
     <QuoteBuilder
-        v-model="form"
+        :model-value="form"
         mode="quote"
         :clients="clients"
         :templates="templates"

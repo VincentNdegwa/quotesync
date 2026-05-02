@@ -31,9 +31,9 @@ import {
     TabsList,
     TabsTrigger,
 } from '@/components/ui/tabs';
-import InvitePortalDialog from './components/InvitePortalDialog.vue';
 import { useFormat } from '@/composables/useFormat';
 import type { ClientRecord, ClientStats } from '@/types';
+import InvitePortalDialog from './components/InvitePortalDialog.vue';
 
 const props = defineProps<{
     client: ClientRecord;

@@ -1,24 +1,45 @@
 <script setup lang="ts">
 import { computed, inject } from 'vue';
+import type { ComputedRef } from 'vue';
 import { blockBaseStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
 import { useFormat } from '@/composables/useFormat';
 import { calculateLineItemTotals } from '@/composables/useTaxCalculation';
-import type { QuoteData, TotalsBlockConfig, WorkspaceSettings } from '@/types';
+import type { DocumentData, InvoiceData, QuoteData, TotalsBlockConfig, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     config: TotalsBlockConfig;
-    quote: QuoteData;
+    data: DocumentData;
     settings: WorkspaceSettings;
     previewMode: boolean;
 }>();
 
+const isQuote = computed(() => props.data.documentType === 'quote');
+
 const isInternalView = inject<ComputedRef<boolean>>('isInternalView', computed(() => false));
 
-const effectiveSettings = computed(() => props.settings.quotes);
+const effectiveCurrency = computed(() => {
+    const data = props.data as QuoteData| InvoiceData;
 
-const effectiveCurrency = computed(() => isInternalView.value ? (props.quote.base_currency || props.quote.currency) : props.quote.currency);
+    return isInternalView.value ? (data.base_currency || data.currency) : data.currency;
+});
 
 const { formatCurrency } = useFormat(effectiveCurrency.value);
+
+const sections = computed(() => {
+    const data = props.data as QuoteData | InvoiceData;
+
+    if (isQuote.value) {
+        return data.sections || [];
+    }
+
+    return [
+        {
+            id: 'default',
+            title: 'Items',
+            line_items: data.line_items || [],
+        },
+    ];
+});
 
 const alignmentClass = computed(() => {
     if (props.config.alignment === 'center') {
@@ -39,11 +60,11 @@ const taxLines = computed(() => {
 
     const breakdown = new Map<string, { label: string; amount: number }>();
 
-    props.quote.sections.forEach((section) => {
+    sections.value.forEach((section) => {
         section.line_items
             .filter((item) => !item.is_optional)
             .forEach((item) => {
-                if (item.taxes.length > 0) {
+                if (Array.isArray(item.taxes) && item.taxes.length > 0) {
                     item.taxes.forEach((tax) => {
                         const key = `${tax.tax_label}-${tax.tax_rate}`;
                         // If tax_amount is present, use it; otherwise calculate locally
@@ -51,6 +72,7 @@ const taxLines = computed(() => {
                         const hasTaxAmount = amount > 0;
 
                         let taxAmount = amount;
+
                         if (!hasTaxAmount) {
                             // Calculate locally for this specific tax
                             const unitPrice = Number(item.unit_price || 0);
@@ -68,6 +90,7 @@ const taxLines = computed(() => {
                         }
 
                         const existing = breakdown.get(key);
+
                         if (existing) {
                             existing.amount += taxAmount;
                         } else {
@@ -85,21 +108,23 @@ const taxLines = computed(() => {
 });
 
 const calculatedSubtotal = computed(() => {
-    // If subtotal is present and non-zero, use it
-    if (props.quote.subtotal && props.quote.subtotal > 0) {
-        return Number(props.quote.subtotal);
+    const data = props.data as QuoteData | InvoiceData;
+
+    if (data.subtotal && data.subtotal > 0) {
+        return Number(data.subtotal);
     }
 
-    // Otherwise, calculate locally using composable
-    return props.quote.sections.reduce((sum, section) => {
+    return sections.value.reduce((sum, section) => {
         return sum + section.line_items.reduce((sectionSum, item) => {
-            if (item.is_optional) return sectionSum;
+            if (item.is_optional) {
+return sectionSum;
+}
 
             const { subtotal } = calculateLineItemTotals(
                 Number(item.quantity || 0),
                 Number(item.unit_price || 0),
                 Number(item.discount_percent || 0),
-                item.taxes?.map((tax: any) => ({
+                item.taxes?.map((tax) => ({
                     tax_rate: Number(tax.tax_rate || 0),
                     inclusive: tax.inclusive || false,
                 })) || [],
@@ -111,25 +136,27 @@ const calculatedSubtotal = computed(() => {
 });
 
 const calculatedTaxAmount = computed(() => {
-    // If tax_amount is present and non-zero, use it
-    if (props.quote.tax_amount && props.quote.tax_amount > 0) {
-        return Number(props.quote.tax_amount);
+    const data = props.data as QuoteData | InvoiceData;
+
+    if (data.tax_amount && data.tax_amount > 0) {
+        return Number(data.tax_amount);
     }
 
-    // Otherwise, sum up tax lines
     return taxLines.value.reduce((sum, line) => sum + line.amount, 0);
 });
 
 const calculatedDiscountAmount = computed(() => {
-    // If discount_amount is present and non-zero, use it
-    if (props.quote.discount_amount && props.quote.discount_amount > 0) {
-        return Number(props.quote.discount_amount);
+    const data = props.data as QuoteData | InvoiceData;
+
+    if (data.discount_amount && data.discount_amount > 0) {
+        return Number(data.discount_amount);
     }
 
-    // Otherwise, calculate locally
-    return props.quote.sections.reduce((sum, section) => {
+    return sections.value.reduce((sum, section) => {
         return sum + section.line_items.reduce((sectionSum, item) => {
-            if (item.is_optional) return sectionSum;
+            if (item.is_optional) {
+return sectionSum;
+}
 
             const unitPrice = Number(item.unit_price || 0);
             const quantity = Number(item.quantity || 0);
@@ -144,21 +171,23 @@ const calculatedDiscountAmount = computed(() => {
 });
 
 const calculatedTotal = computed(() => {
-    // If total is present and non-zero, use it
-    if (props.quote.total && props.quote.total > 0) {
-        return Number(props.quote.total);
+    const data = props.data as QuoteData | InvoiceData;
+
+    if (data.total && data.total > 0) {
+        return Number(data.total);
     }
 
-    // Otherwise, calculate locally using composable
-    return props.quote.sections.reduce((sum, section) => {
+    return sections.value.reduce((sum, section) => {
         return sum + section.line_items.reduce((sectionSum, item) => {
-            if (item.is_optional) return sectionSum;
+            if (item.is_optional) {
+return sectionSum;
+}
 
             const { total } = calculateLineItemTotals(
                 Number(item.quantity || 0),
                 Number(item.unit_price || 0),
                 Number(item.discount_percent || 0),
-                item.taxes?.map((tax: any) => ({
+                item.taxes?.map((tax) => ({
                     tax_rate: Number(tax.tax_rate || 0),
                     inclusive: tax.inclusive || false,
                 })) || [],

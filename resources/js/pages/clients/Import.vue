@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
+import { computed, onUnmounted, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -18,7 +19,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { computed, onUnmounted, ref } from 'vue';
 
 const props = defineProps<{
     detectedColumns?: string[];
@@ -71,6 +71,7 @@ const uploadForm = useForm({
 
 const handleFileUpload = (event: Event): void => {
     const target = event.target as HTMLInputElement;
+
     if (target.files && target.files[0]) {
         uploadForm.file = target.files[0];
     }

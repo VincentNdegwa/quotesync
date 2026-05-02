@@ -11,9 +11,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import SignaturePad from '@/components/ui/SignaturePad.vue';
 import { Textarea } from '@/components/ui/textarea';
+import { useQuoteTracking } from '@/composables/useQuoteTracking';
 import { ensureTemplateLayout } from '@/types';
 import type { WorkspaceSettings, QuoteData, TemplateLayout } from '@/types';
-import { useQuoteTracking } from '@/composables/useQuoteTracking';
 
 const props = defineProps<{
     quote: QuoteData;
@@ -91,6 +91,7 @@ onUnmounted(() => {
     if (scrollHandler) {
         window.removeEventListener('scroll', scrollHandler);
     }
+
     if (tracking) {
         tracking.stop();
     }
@@ -124,7 +125,7 @@ onUnmounted(() => {
                 v-else
                 :settings="settings"
                 :layout="renderedLayout"
-                :quote="quote"
+                :data="{ ...quote, documentType: 'quote' }"
                 :preview-mode="false"
                 :edit-mode="false"
                 :is-internal-view="false"

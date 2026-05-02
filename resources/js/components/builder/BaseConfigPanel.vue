@@ -17,9 +17,16 @@ const borderRadiusOptions: BorderRadius[] = ['none', 'sm', 'md', 'lg', 'full'];
 const borderRadiusClass: Record<BorderRadius, string> = { none: '', sm: 'rounded-sm', md: 'rounded', lg: 'rounded-lg', full: 'rounded-full' };
 
 function sidePreviewStyle(side: BorderSide): Record<string, string> {
-    if (side === 'none') { return {} }
-    if (side === 'all') { return { border: '2px solid currentColor' } }
+    if (side === 'none') {
+ return {} 
+}
+
+    if (side === 'all') {
+ return { border: '2px solid currentColor' } 
+}
+
     const cap = side.charAt(0).toUpperCase() + side.slice(1);
+
     return { [`border${cap}`]: '2px solid currentColor' };
 }
 </script>

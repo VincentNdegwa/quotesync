@@ -2,8 +2,8 @@ import { createInertiaApp } from '@inertiajs/vue3';
 import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
-import PortalLayout from '@/layouts/PortalLayout.vue';
 import BusinessSetupLayout from '@/layouts/business-setup/Layout.vue';
+import PortalLayout from '@/layouts/PortalLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 

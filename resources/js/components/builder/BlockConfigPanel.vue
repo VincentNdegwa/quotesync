@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { MousePointerClick } from 'lucide-vue-next';
 import BaseConfigPanel from '@/components/builder/BaseConfigPanel.vue';
-import ContentConfigSection from '@/components/builder/ContentConfigSection.vue';
 import CoverMessageConfig from '@/components/builder/config-panels/CoverMessageConfig.vue';
 import FromToConfig from '@/components/builder/config-panels/FromToConfig.vue';
 import HeaderConfig from '@/components/builder/config-panels/HeaderConfig.vue';
@@ -15,6 +14,7 @@ import SpacerConfig from '@/components/builder/config-panels/SpacerConfig.vue';
 import TermsConfig from '@/components/builder/config-panels/TermsConfig.vue';
 import TimelineConfig from '@/components/builder/config-panels/TimelineConfig.vue';
 import TotalsConfig from '@/components/builder/config-panels/TotalsConfig.vue';
+import ContentConfigSection from '@/components/builder/ContentConfigSection.vue';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import type {

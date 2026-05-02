@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Loader2, Sparkles, CheckCircle2, AlertCircle } from 'lucide-vue-next';
+import { ref } from 'vue';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 const open = defineModel<boolean>('open', { default: false });
 const emit = defineEmits<{
@@ -23,7 +23,9 @@ const generated = ref<any>(null);
 const error = ref<string | null>(null);
 
 const generate = async () => {
-    if (!description.value.trim()) return;
+    if (!description.value.trim()) {
+return;
+}
 
     loading.value = true;
     error.value = null;
@@ -44,6 +46,7 @@ const generate = async () => {
 
         if (!response.ok) {
             error.value = data.message || 'Failed to generate quote. Please try again.';
+
             return;
         }
 
@@ -71,12 +74,18 @@ const apply = () => {
 };
 
 const getMatchIcon = (item: any) => {
-    if (item.catalog_item_id) return CheckCircle2;
+    if (item.catalog_item_id) {
+return CheckCircle2;
+}
+
     return AlertCircle;
 };
 
 const getMatchColor = (item: any) => {
-    if (item.catalog_item_id) return 'text-green-500';
+    if (item.catalog_item_id) {
+return 'text-green-500';
+}
+
     return 'text-amber-500';
 };
 </script>
