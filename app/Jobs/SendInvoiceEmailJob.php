@@ -24,6 +24,7 @@ class SendInvoiceEmailJob implements ShouldQueue
         public string $messageBody,
         public string $companyName,
         public ?string $logoUrl,
+        public ?string $publicInvoiceUrl = null,
     ) {}
 
     /**
@@ -53,12 +54,13 @@ class SendInvoiceEmailJob implements ShouldQueue
             messageBody: $this->messageBody,
             companyName: $this->companyName,
             logoUrl: $this->logoUrl,
-            invoiceNumber: $invoice->number ?? 'Draft',
+            invoiceNumber: $invoice->invoice_number ?? 'Draft',
             invoiceTitle: $invoice->title,
             invoiceTotal: number_format((float) $invoice->total, 2).' '.($invoice->currency ?? ''),
             dueDate: $invoice->due_date?->toDateString(),
             notes: $invoice->notes,
             lineItems: $lineItems,
+            publicInvoiceUrl: $this->publicInvoiceUrl,
         );
 
         $mailer = Mail::to($this->to);

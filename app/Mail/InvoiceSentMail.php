@@ -28,6 +28,7 @@ class InvoiceSentMail extends Mailable
         public ?string $notes,
         /** @var array<int, array{name: string, quantity: string, total: string}> */
         public array $lineItems,
+        public ?string $publicInvoiceUrl = null,
     ) {}
 
     /**
@@ -58,6 +59,7 @@ class InvoiceSentMail extends Mailable
                 'dueDate' => $this->dueDate,
                 'notes' => $this->notes,
                 'lineItems' => $this->lineItems,
+                'publicInvoiceUrl' => $this->publicInvoiceUrl,
             ],
         );
     }

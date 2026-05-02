@@ -28,9 +28,11 @@
 
 ---
 
-<x-mail::button :url="url('/invoices')">
-View Invoices
+@if($publicInvoiceUrl)
+<x-mail::button :url="$publicInvoiceUrl">
+View Invoice Online
 </x-mail::button>
+@endif
 
 Thanks,<br>
 {{ $companyName }}

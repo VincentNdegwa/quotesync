@@ -6,6 +6,7 @@ use App\Enums\InvoiceStatus;
 use App\Enums\QuoteStatus;
 use App\Http\Requests\StoreInvoiceRequest;
 use App\Models\Invoice;
+use App\Models\InvoiceActivity;
 use App\Models\Quote;
 use App\Models\Workspace;
 use App\Services\Invoices\InvoiceNumberingService;
@@ -22,8 +23,50 @@ class InvoiceController extends Controller
         $workspace = $request->user()?->currentWorkspace;
         abort_unless($workspace instanceof Workspace, 404);
 
+        $search = $request->get('search');
+        $status = $request->get('status');
+        $sort = $request->get('sort', 'newest');
+
+        $query = $workspace->invoices()
+            ->with(['client:id,company_name,email', 'quote:id,number']);
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                    ->orWhere('title', 'like', "%{$search}%");
+            });
+        }
+
+        if ($status && $status !== '__all__') {
+            $query->where('status', $status);
+        }
+
+        match ($sort) {
+            'number' => $query->orderBy('invoice_number'),
+            'amount' => $query->orderBy('total', 'desc'),
+            'due_date' => $query->orderBy('due_date'),
+            default => $query->orderByDesc('created_at'),
+        };
+
+        $invoices = $query->paginate(15);
+
+        return Inertia::render('invoices/Index', [
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+                'sort' => $sort,
+            ],
+            'invoices' => $invoices,
+        ]);
+    }
+
+    public function kanban(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+        abort_unless($workspace instanceof Workspace, 404);
+
         $invoices = $workspace->invoices()
-            ->with(['client:id,company_name', 'quote:id,number'])
+            ->with(['client:id,company_name,email', 'quote:id,number'])
             ->orderByDesc('created_at')
             ->get()
             ->map(fn (Invoice $invoice): array => [
@@ -32,16 +75,16 @@ class InvoiceController extends Controller
                 'title' => $invoice->title,
                 'status' => $invoice->status->value,
                 'total' => $invoice->total,
-                'balance_due' => $invoice->balance_due,
-                'issue_date' => $invoice->issue_date?->toDateString(),
+                'base_total' => $invoice->base_total,
+                'currency' => $invoice->currency,
+                'base_currency' => $invoice->base_currency,
                 'due_date' => $invoice->due_date?->toDateString(),
                 'client' => $invoice->client?->company_name,
                 'quote_number' => $invoice->quote?->number,
-            ])->all();
+                'client' => $invoice->client,
+            ])->toArray();
 
-        return Inertia::render('invoices/Index', [
-            'invoices' => $invoices,
-        ]);
+        return response()->json($invoices);
     }
 
     public function show(Request $request, Invoice $invoice): Response
@@ -51,10 +94,37 @@ class InvoiceController extends Controller
 
         $invoice->load(['client', 'quote', 'lineItems', 'createdBy']);
 
+        $settings = $workspace->settings()->pluck('value', 'key')->toArray();
+
         return Inertia::render('invoices/Show', [
             'invoice' => $invoice,
             'invoiceStatuses' => InvoiceStatus::all(),
+            'settings' => $settings,
         ]);
+    }
+
+    public function updateStatus(Request $request, Invoice $invoice): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+        abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
+
+        $validated = $request->validate(['status' => 'required|string']);
+        $newStatus = InvoiceStatus::from($validated['status']);
+
+        $currentStatus = $invoice->status;
+        if (! in_array($newStatus, $currentStatus->allowedTransitions(), true)) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __("Invalid status transition from {$currentStatus->value} to {$newStatus->value}."),
+            ]);
+            return back();
+        }
+
+        $invoice->update(['status' => $newStatus->value]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice status updated.')]);
+
+        return back();
     }
 
     public function store(StoreInvoiceRequest $request, InvoiceNumberingService $numberingService): RedirectResponse
@@ -112,5 +182,49 @@ class InvoiceController extends Controller
         $invoice = $invoiceService->convertFromQuote($quote, $request->user()?->id);
 
         return redirect()->route('invoices.show', $invoice)->with('toast', ['type' => 'success', 'message' => 'Invoice created from quote.']);
+    }
+
+    public function duplicate(Request $request, Invoice $invoice, InvoiceService $invoiceService): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+        abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
+
+        $newInvoice = $invoiceService->duplicate($invoice);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice duplicated successfully.')]);
+
+        return to_route('invoices.edit', $newInvoice);
+    }
+
+    public function archive(Request $request, Invoice $invoice): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+        abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
+
+        $invoice->delete();
+
+        InvoiceActivity::query()->create([
+            'invoice_id' => $invoice->id,
+            'workspace_id' => $invoice->workspace_id,
+            'user_id' => $request->user()?->id,
+            'type' => 'created',
+            'description' => 'Invoice archived',
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice archived successfully.')]);
+
+        return to_route('invoices.index');
+    }
+
+    public function destroy(Request $request, Invoice $invoice): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+        abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
+
+        $invoice->forceDelete();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice deleted successfully.')]);
+
+        return to_route('invoices.index');
     }
 }

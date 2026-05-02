@@ -242,7 +242,79 @@ export type TrackingEventTypeEnum = {
 export type InvoiceStatusEnum = {
     value: 'draft' | 'sent' | 'viewed' | 'partial' | 'paid' | 'overdue' | 'void';
     label: string;
+    badgeColor: 'default' | 'secondary' | 'destructive' | 'outline';
+    cssColor: string;
+    availableActions: string[];
 };
+
+export type InvoiceBase = {
+    id: number;
+    invoice_number: string | null;
+    title: string;
+    status: string;
+    total: string | number;
+    base_total: string | number | null;
+    currency: string | null;
+    base_currency: string;
+    due_date: string | null;
+    created_at: string | null;
+    client: { id: number; company_name: string; email?: string | null } | null;
+    assignee: { id: number; name: string } | null;
+};
+
+export type InvoiceListRecord = InvoiceBase;
+
+export type InvoiceData = InvoiceBase & {
+    workspace_id: number;
+    client_id: number | null;
+    quote_id: number | null;
+    assigned_to: number | null;
+    base_currency: string;
+    fx_rate: number | null;
+    base_subtotal: string | number | null;
+    base_discount_amount: string | number | null;
+    base_tax_amount: string | number | null;
+    cover_message: string | null;
+    notes: string | null;
+    terms: string | null;
+    subtotal: string | number;
+    discount_amount: string | number;
+    tax_amount: string | number;
+    paid_amount: string | number;
+    balance_due: string | number;
+    issue_date: string | null;
+    paid_date: string | null;
+    sent_at: string | null;
+    layout_snapshot: unknown | null;
+    created_by: number | null;
+    updated_at: string | null;
+    deleted_at: string | null;
+    workspace: { id: number; name: string; display_name: string; owner_id: number } | null;
+    assignee: { id: number; name: string; email: string } | null;
+    creator: { id: number; name: string; email: string } | null;
+    quote: { id: number; number: string | null; title: string } | null;
+    sections: Array<{
+        id: number;
+        title: string;
+        line_items: Array<{
+            id: number;
+            name: string;
+            description: string | null;
+            quantity: string | number;
+            unit_price: string | number;
+            total: string | number;
+            is_optional: boolean;
+        }>;
+    }>;
+    activities: Array<{
+        id: number;
+        type: string;
+        description: string;
+        created_at: string | null;
+        user: { id: number; name: string } | null;
+    }>;
+};
+
 
 export type WinProbabilityConfidenceEnum = {
     value: 'none' | 'low' | 'medium' | 'high';

@@ -32,6 +32,7 @@ return new class extends Migration
             $table->date('paid_date')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index(['workspace_id', 'status']);
             $table->index(['client_id', 'status']);

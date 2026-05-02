@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { BarChart3, Building2, FileText, LayoutGrid, ShieldCheck, SlidersHorizontal, Tags, Users } from 'lucide-vue-next';
+import { BarChart3, Building2, FileText, LayoutGrid, Receipt, ShieldCheck, SlidersHorizontal, Tags, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
@@ -40,14 +40,14 @@ const mainNavItems = computed<NavItem[]>(() => [
         icon: FileText,
     },
     {
+        title: 'Invoices',
+        href: '/invoices',
+        icon: Receipt,
+    },
+    {
         title: 'Catalog',
         href: '/catalog',
         icon: Tags,
-    },
-    {
-        title: 'Configuration',
-        href: '/configuration',
-        icon: SlidersHorizontal,
     },
     {
         title: 'Analytics',
@@ -59,6 +59,11 @@ const mainNavItems = computed<NavItem[]>(() => [
         href: '/approvals',
         icon: ShieldCheck,
         badge: pendingApprovalsCount.value > 0 ? pendingApprovalsCount.value : undefined,
+    },
+    {
+        title: 'Configuration',
+        href: '/configuration',
+        icon: SlidersHorizontal,
     },
 ]);
 

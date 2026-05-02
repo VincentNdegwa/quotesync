@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class InvoiceSendController extends Controller
@@ -60,6 +61,13 @@ class InvoiceSendController extends Controller
         $subjectLine = strtr($subjectTemplate, $merge);
         $messageBody = strtr($bodyTemplate, $merge);
 
+        if (empty($invoice->invoice_uuid)) {
+            $invoice->invoice_uuid = (string) Str::uuid();
+            $invoice->save();
+        }
+
+        $publicInvoiceUrl = url("/i/{$invoice->invoice_uuid}");
+
         $sendAt = now();
 
         SendInvoiceEmailJob::dispatch(
@@ -70,6 +78,7 @@ class InvoiceSendController extends Controller
             messageBody: $messageBody,
             companyName: $companyName,
             logoUrl: $logoUrl,
+            publicInvoiceUrl: $publicInvoiceUrl,
         )->delay($sendAt);
 
         $invoice->forceFill([

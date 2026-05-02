@@ -88,6 +88,16 @@ class Workspace extends LaratrustTeam
     }
 
     /**
+     * Get all invoices for this workspace.
+     *
+     * @return HasMany<Invoice, $this>
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    /**
      * @return HasMany<FollowUpSequence, $this>
      */
     public function followUpSequences(): HasMany

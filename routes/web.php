@@ -26,6 +26,7 @@ use App\Http\Controllers\Settings\MembersController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PortalInvitationController;
 use App\Http\Controllers\PublicQuoteController;
+use App\Http\Controllers\PublicInvoiceController;
 use App\Http\Controllers\QuoteBulkExportController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\QuoteMessageController;
@@ -76,6 +77,9 @@ Route::post('q/{quoteUuid}/decline', [PublicQuoteController::class, 'decline'])
 Route::post('q/{quoteUuid}/tracking', [QuoteTrackingController::class, 'store'])
     ->name('public-quotes.tracking');
 
+Route::get('i/{invoiceUuid}', [PublicInvoiceController::class, 'show'])
+    ->name('public-invoices.show');
+
 Route::middleware(['auth'])->group(function () {
     Route::post('workspaces/{workspace}/switch', WorkspaceSwitchController::class)
         ->name('workspaces.switch');
@@ -109,6 +113,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('catalog/bulk-action', [CatalogItemController::class, 'bulkAction'])->name('catalog.bulk-action');
 
         Route::get('quotes/kanban', [QuoteController::class, 'kanban'])->name('quotes.kanban');
+        Route::get('invoices/kanban', [InvoiceController::class, 'kanban'])->name('invoices.kanban');
         Route::resource('quotes', QuoteController::class);
         Route::get('quotes/{quote}/analytics', [QuoteController::class, 'analytics'])->name('quotes.analytics');
         Route::post('quotes/{quote}/send', [QuoteSendController::class, 'store'])->name('quotes.send');
@@ -119,7 +124,10 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('quotes/{quote}/status', [QuoteController::class, 'updateStatus'])->name('quotes.status');
 
         Route::resource('invoices', InvoiceController::class);
+        Route::patch('invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('invoices.status');
         Route::post('invoices/{invoice}/send', [InvoiceSendController::class, 'store'])->name('invoices.send');
+        Route::post('invoices/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])->name('invoices.duplicate');
+        Route::post('invoices/{invoice}/archive', [InvoiceController::class, 'archive'])->name('invoices.archive');
         Route::post('quotes/{quote}/duplicate', [QuoteController::class, 'duplicate'])->name('quotes.duplicate');
         Route::post('quotes/{quote}/revise', [QuoteController::class, 'revise'])->name('quotes.revise');
         Route::post('quotes/{quote}/reopen', [QuoteController::class, 'reopen'])->name('quotes.reopen');
@@ -133,8 +141,6 @@ Route::middleware(['auth'])->group(function () {
 
         Route::resource('quote-templates', QuoteTemplateController::class);
         Route::get('quote-templates/{quote_template}/layout', [QuoteTemplateController::class, 'getLayout'])->name('quote-templates.layout');
-
-        Route::resource('invoices', InvoiceController::class);
 
         Route::get('catalog/import', [CatalogImportController::class, 'create'])->name('catalog.import.create');
         Route::get('catalog/import/template', [CatalogImportController::class, 'template'])->name('catalog.import.template');

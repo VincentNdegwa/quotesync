@@ -3,6 +3,7 @@
 namespace App\Services\Invoices;
 
 use App\Models\Invoice;
+use App\Models\InvoiceActivity;
 use App\Models\InvoiceLineItem;
 use App\Models\InvoiceLineItemTax;
 use App\Models\Quote;
@@ -89,5 +90,54 @@ class InvoiceService
 
             return $invoice->refresh();
         });
+    }
+
+    private function replicateInvoice(Invoice $invoice, string $suffix, string $activityDescription): Invoice
+    {
+        return DB::transaction(function () use ($invoice, $suffix, $activityDescription): Invoice {
+            $invoice->load(['lineItems.taxes', 'workspace']);
+
+            $workspace = $invoice->workspace;
+
+            $newInvoice = $invoice->replicate();
+            $newInvoice->invoice_number = $this->invoiceNumberingService->generateNextNumber($workspace);
+            $newInvoice->title = $invoice->title . ' ' . $suffix;
+            $newInvoice->status = 'draft';
+            $newInvoice->issue_date = now();
+            $newInvoice->due_date = now()->addDays(30);
+            $newInvoice->paid_amount = 0;
+            $newInvoice->balance_due = $invoice->total;
+            $newInvoice->sent_at = null;
+            $newInvoice->paid_date = null;
+            $newInvoice->save();
+
+            foreach ($invoice->lineItems as $lineItem) {
+                $newLineItem = $lineItem->replicate();
+                $newLineItem->invoice_id = $newInvoice->id;
+                $newLineItem->save();
+
+                foreach ($lineItem->taxes as $tax) {
+                    $newTax = $tax->replicate();
+                    $newTax->invoice_line_item_id = $newLineItem->id;
+                    $newTax->save();
+                }
+            }
+
+            InvoiceActivity::query()->create([
+                'invoice_id' => $newInvoice->id,
+                'workspace_id' => $newInvoice->workspace_id,
+                'user_id' => auth()->id(),
+                'type' => 'created',
+                'description' => $activityDescription,
+                'metadata' => ['parent_invoice_id' => $invoice->id],
+            ]);
+
+            return $newInvoice->refresh();
+        });
+    }
+
+    public function duplicate(Invoice $invoice): Invoice
+    {
+        return $this->replicateInvoice($invoice, '(Copy)', "Invoice duplicated from #{$invoice->invoice_number}");
     }
 }
