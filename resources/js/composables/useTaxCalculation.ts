@@ -36,23 +36,26 @@ export const calculateLineItemTotals = (
             return sum + (baseAmount * rate) / (100 + rate);
         }, 0);
 
-    // 2. Calculate Exclusive Taxes (Added on top of the baseAmount)
+    // 2. Net price after extracting inclusive taxes
+    const netPrice = baseAmount - inclusiveTaxAmount;
+
+    // 3. Calculate Exclusive Taxes (Applied to net price, not baseAmount)
     const exclusiveTaxAmount = taxes
         .filter((tax) => !tax.inclusive)
         .reduce((sum, tax) => {
             const rate = Math.max(tax.tax_rate, 0);
-            return sum + (baseAmount * rate) / 100;
+            return sum + (netPrice * rate) / 100;
         }, 0);
 
-    // 3. Final Calculations
+    // 4. Final Calculations
     // Total Tax is the sum of both
     const taxAmount = inclusiveTaxAmount + exclusiveTaxAmount;
 
     // Total is Stated Price + Exclusive Taxes
     const total = baseAmount + exclusiveTaxAmount;
 
-    // Subtotal is Total - Total Tax (which is also baseAmount - inclusiveTaxAmount)
-    const subtotal = total - taxAmount;
+    // Subtotal is net price (baseAmount - inclusive taxes)
+    const subtotal = netPrice;
 
     return {
         subtotal,

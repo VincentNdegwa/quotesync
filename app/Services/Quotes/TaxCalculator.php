@@ -36,25 +36,6 @@ class TaxCalculator
 
         $baseAmount = $qty * $price * (1 - $discount / 100);
 
-        // Calculate individual tax amounts for each tax type
-        $taxBreakdown = [];
-        foreach ($taxes as $tax) {
-            $rate = max($tax['tax_rate'] ?? 0, 0);
-            $isInclusive = ($tax['inclusive'] ?? false) === true;
-
-            if ($isInclusive) {
-                $taxAmount = $baseAmount * $rate / (100 + $rate);
-            } else {
-                $taxAmount = $baseAmount * $rate / 100;
-            }
-
-            $taxBreakdown[] = [
-                'tax_rate' => $rate,
-                'inclusive' => $isInclusive,
-                'tax_amount' => round($taxAmount, 2),
-            ];
-        }
-
         // 1. Calculate inclusive taxes (extracted from the baseAmount)
         $inclusiveTaxAmount = collect($taxes)
             ->filter(fn ($tax) => ($tax['inclusive'] ?? false) === true)
@@ -64,23 +45,46 @@ class TaxCalculator
                 return $sum + $baseAmount * $rate / (100 + $rate);
             }, 0);
 
-        // 2. Calculate exclusive taxes (added on top of the baseAmount)
+        // 2. Net price after extracting inclusive taxes
+        $netPrice = $baseAmount - $inclusiveTaxAmount;
+
+        // 3. Calculate exclusive taxes (applied to net price, not baseAmount)
         $exclusiveTaxAmount = collect($taxes)
             ->filter(fn ($tax) => ($tax['inclusive'] ?? false) === false)
-            ->reduce(function ($sum, $tax) use ($baseAmount) {
+            ->reduce(function ($sum, $tax) use ($netPrice) {
                 $rate = max($tax['tax_rate'] ?? 0, 0);
 
-                return $sum + $baseAmount * $rate / 100;
+                return $sum + $netPrice * $rate / 100;
             }, 0);
 
+        // Calculate individual tax amounts for each tax type
+        $taxBreakdown = [];
+        foreach ($taxes as $tax) {
+            $rate = max($tax['tax_rate'] ?? 0, 0);
+            $isInclusive = ($tax['inclusive'] ?? false) === true;
+
+            if ($isInclusive) {
+                $taxAmount = $baseAmount * $rate / (100 + $rate);
+            } else {
+                $taxAmount = $netPrice * $rate / 100;
+            }
+
+            $taxBreakdown[] = [
+                'tax_rate' => $rate,
+                'inclusive' => $isInclusive,
+                'tax_amount' => round($taxAmount, 2),
+            ];
+        }
+
+        // 4. Final Calculations
         // Total Tax is the sum of both
         $taxAmount = $inclusiveTaxAmount + $exclusiveTaxAmount;
 
         // Total is Stated Price + Exclusive Taxes
         $total = $baseAmount + $exclusiveTaxAmount;
 
-        // Subtotal is Total - Total Tax (which is also baseAmount - inclusiveTaxAmount)
-        $subtotal = $total - $taxAmount;
+        // Subtotal is net price (baseAmount - inclusive taxes)
+        $subtotal = $netPrice;
 
         return [
             'subtotal' => $subtotal,
