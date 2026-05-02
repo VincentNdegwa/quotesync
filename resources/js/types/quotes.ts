@@ -327,6 +327,7 @@ export type InvoiceListRecord = InvoiceBase;
 export type InvoiceData = InvoiceBase & {
     workspace_id: number;
     client_id: number | null;
+    invoice_uuid: string;
     quote_id: number | null;
     assigned_to: number | null;
     base_currency: string;

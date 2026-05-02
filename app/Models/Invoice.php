@@ -39,6 +39,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'paid_date',
     'sent_at',
     'created_by',
+    'pdf_url',
 ])]
 class Invoice extends Model
 {

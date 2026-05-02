@@ -21,6 +21,7 @@ use App\Http\Controllers\CustomDomainController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\InvoicePdfController;
 use App\Http\Controllers\InvoiceSendController;
 use App\Http\Controllers\Settings\MembersController;
 use App\Http\Controllers\NotificationController;
@@ -128,6 +129,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('invoices/{invoice}/send', [InvoiceSendController::class, 'store'])->name('invoices.send');
         Route::post('invoices/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])->name('invoices.duplicate');
         Route::post('invoices/{invoice}/archive', [InvoiceController::class, 'archive'])->name('invoices.archive');
+        Route::post('invoices/{invoice}/pdf', [InvoicePdfController::class, 'generate'])->name('invoices.pdf.generate');
+        Route::get('invoices/{invoice}/pdf/download', [InvoicePdfController::class, 'download'])->name('invoices.pdf.download');
         Route::post('quotes/{quote}/duplicate', [QuoteController::class, 'duplicate'])->name('quotes.duplicate');
         Route::post('quotes/{quote}/revise', [QuoteController::class, 'revise'])->name('quotes.revise');
         Route::post('quotes/{quote}/reopen', [QuoteController::class, 'reopen'])->name('quotes.reopen');
