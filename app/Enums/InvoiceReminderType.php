@@ -4,18 +4,16 @@ namespace App\Enums;
 
 enum InvoiceReminderType: string
 {
-    case First = 'first';
-    case Second = 'second';
-    case Third = 'third';
-    case Final = 'final';
+    case BeforeDue = 'before_due';
+    case OnDue = 'on_due';
+    case AfterDue = 'after_due';
 
     public function label(): string
     {
         return match ($this) {
-            self::First => 'First Reminder',
-            self::Second => 'Second Reminder',
-            self::Third => 'Third Reminder',
-            self::Final => 'Final Reminder',
+            self::BeforeDue => 'Before Due Date',
+            self::OnDue => 'On Due Date',
+            self::AfterDue => 'After Due Date',
         };
     }
 

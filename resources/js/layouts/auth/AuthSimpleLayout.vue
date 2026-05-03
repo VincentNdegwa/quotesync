@@ -34,7 +34,7 @@ const name = usePage().props.name
                             class="size-10 fill-current text-[var(--foreground)] dark:text-white"
                         />
                     </div>
-                    <div class="font-bold text-2xl" >{{ name }}</div>
+                    <!-- <div class="font-bold text-2xl" >{{ name }}</div> -->
 
                 </div>
                     <span class="sr-only">{{ title }}</span>

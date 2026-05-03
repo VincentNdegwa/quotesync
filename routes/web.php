@@ -24,7 +24,9 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoicePdfController;
+use App\Http\Controllers\InvoiceReminderSequenceController;
 use App\Http\Controllers\InvoiceSendController;
+use App\Http\Controllers\CreditNoteController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PortalInvitationController;
 use App\Http\Controllers\PublicQuoteController;
@@ -141,6 +143,11 @@ Route::middleware(['auth'])->group(function () {
         Route::post('invoices/{invoice}/archive', [InvoiceController::class, 'archive'])->name('invoices.archive');
         Route::post('invoices/{invoice}/pdf', [InvoicePdfController::class, 'generate'])->name('invoices.pdf.generate');
         Route::get('invoices/{invoice}/pdf/download', [InvoicePdfController::class, 'download'])->name('invoices.pdf.download');
+        Route::get('invoices/{invoice}/credit-notes/create', [CreditNoteController::class, 'create'])->name('invoices.credit-notes.create');
+        Route::resource('credit-notes', CreditNoteController::class)->only(['index', 'show', 'store', 'update']);
+        Route::post('credit-notes/{creditNote}/issue', [CreditNoteController::class, 'issue'])->name('credit-notes.issue');
+        Route::post('credit-notes/{creditNote}/apply', [CreditNoteController::class, 'apply'])->name('credit-notes.apply');
+        Route::post('credit-notes/{creditNote}/void', [CreditNoteController::class, 'void'])->name('credit-notes.void');
         Route::post('quotes/{quote}/duplicate', [QuoteController::class, 'duplicate'])->name('quotes.duplicate');
         Route::post('quotes/{quote}/revise', [QuoteController::class, 'revise'])->name('quotes.revise');
         Route::post('quotes/{quote}/versions/{version}/restore', [QuoteController::class, 'restoreVersion'])->name('quotes.versions.restore');
@@ -207,6 +214,11 @@ Route::middleware(['auth'])->group(function () {
         Route::post('configuration/follow-ups', [ConfigFollowUpSequenceController::class, 'store'])->name('configuration.follow-ups.store');
         Route::put('configuration/follow-ups/{followUpSequence}', [ConfigFollowUpSequenceController::class, 'update'])->name('configuration.follow-ups.update');
         Route::delete('configuration/follow-ups/{followUpSequence}', [ConfigFollowUpSequenceController::class, 'destroy'])->name('configuration.follow-ups.destroy');
+
+        Route::get('configuration/invoice-reminders', [InvoiceReminderSequenceController::class, 'index'])->name('configuration.invoice-reminders');
+        Route::post('configuration/invoice-reminders', [InvoiceReminderSequenceController::class, 'store'])->name('configuration.invoice-reminders.store');
+        Route::put('configuration/invoice-reminders/{sequence}', [InvoiceReminderSequenceController::class, 'update'])->name('configuration.invoice-reminders.update');
+        Route::delete('configuration/invoice-reminders/{sequence}', [InvoiceReminderSequenceController::class, 'destroy'])->name('configuration.invoice-reminders.destroy');
 
         Route::get('configuration/templates', [QuoteTemplateController::class, 'index'])->name('configuration.templates');
 

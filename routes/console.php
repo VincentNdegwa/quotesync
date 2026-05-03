@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\DispatchInvoiceReminders;
 use App\Console\Commands\MarkExpiredQuotesCommand;
 use App\Console\Commands\ProcessFollowUpsCommand;
 use App\Console\Commands\SendPaymentReminders;
@@ -14,3 +15,4 @@ Artisan::command('inspire', function () {
 Schedule::command(MarkExpiredQuotesCommand::class)->daily();
 Schedule::command(ProcessFollowUpsCommand::class)->everyFifteenMinutes();
 Schedule::command(SendPaymentReminders::class)->daily();
+Schedule::command(DispatchInvoiceReminders::class)->daily();

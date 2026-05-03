@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Portal;
 
 use App\Enums\QuoteStatus;
 use App\Events\QuoteViewed;
+use App\Models\CreditNote;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
@@ -247,5 +248,44 @@ class PortalDashboardController
         return Inertia::render('portal/InvoiceShow', [
             'invoice' => $invoice,
         ])->withViewData('title', 'Invoice Details');
+    }
+
+    public function creditNotes(Request $request): Response
+    {
+        $portalUser = Auth::guard('portal')->user();
+        abort_unless($portalUser, 401);
+
+        $workspaceId = $request->attributes->get('portal_workspace_id');
+        $clientId = $request->attributes->get('portal_client_id');
+
+        $creditNotes = CreditNote::where('client_id', $clientId)
+            ->where('workspace_id', $workspaceId)
+            ->where('status', '!=', 'draft')
+            ->with(['workspace', 'invoice', 'client'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        return Inertia::render('portal/CreditNotes', [
+            'creditNotes' => $creditNotes,
+        ])->withViewData('title', 'Credit Notes');
+    }
+
+    public function showCreditNote(Request $request, string $uuid): Response
+    {
+        $portalUser = Auth::guard('portal')->user();
+        abort_unless($portalUser, 401);
+
+        $workspaceId = $request->attributes->get('portal_workspace_id');
+        $clientId = $request->attributes->get('portal_client_id');
+
+        $creditNote = CreditNote::where('credit_note_number', $uuid)
+            ->where('client_id', $clientId)
+            ->where('workspace_id', $workspaceId)
+            ->with(['workspace', 'invoice', 'client', 'lineItems', 'createdBy'])
+            ->firstOrFail();
+
+        return Inertia::render('portal/CreditNoteShow', [
+            'creditNote' => $creditNote,
+        ])->withViewData('title', 'Credit Note Details');
     }
 }

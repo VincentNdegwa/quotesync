@@ -117,8 +117,8 @@ const submit = (): void => {
 
                 <div class="grid gap-2">
                     <Label for="task_edit_assigned_to" required>Assign To</Label>
-                    <Select class='w-full' v-model="form.assigned_to as number | undefined">
-                        <SelectTrigger id="task_edit_assigned_to">
+                    <Select  v-model="form.assigned_to as number | undefined">
+                        <SelectTrigger class='w-full' id="task_edit_assigned_to">
                             <SelectValue placeholder="Select a team member" />
                         </SelectTrigger>
                         <SelectContent>
@@ -136,8 +136,8 @@ const submit = (): void => {
 
                 <div class="grid gap-2">
                     <Label for="task_edit_task_status">Status</Label>
-                    <Select class='w-full' v-model="form.task_status_id">
-                        <SelectTrigger id="task_edit_task_status">
+                    <Select  v-model="form.task_status_id">
+                        <SelectTrigger class='w-full' id="task_edit_task_status">
                             <SelectValue placeholder="Select status" />
                         </SelectTrigger>
                         <SelectContent>

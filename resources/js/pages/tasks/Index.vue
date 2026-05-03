@@ -18,6 +18,7 @@ import TaskCreateDialog from '@/pages/tasks/components/CreateDialog.vue';
 import TaskEditDialog from '@/pages/tasks/components/EditDialog.vue';
 import type { Paginator } from '@/types';
 import type { TaskModel, TaskStatusModel, UserModel } from '@/types/models';
+import TaskStatusController from '@/actions/App/Http/Controllers/TaskStatusController';
 
 type Filters = {
     search: string;
@@ -42,6 +43,15 @@ const query = ref({
 });
 
 let handle: ReturnType<typeof setTimeout> | null = null;
+
+
+defineOptions({
+    layout: {
+        breadcrumbs: [
+            {title:"Tasks", href: TaskController.index().url}
+        ],
+    },
+});
 
 watch(
     () => query.value,
@@ -107,11 +117,6 @@ const openEditDialog = (taskId: number): void => {
     }
 };
 
-const closeDialogs = (): void => {
-    showCreateDialog.value = false;
-    showEditDialog.value = false;
-    editingTask.value = null;
-};
 </script>
 
 <template>

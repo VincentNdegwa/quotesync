@@ -34,6 +34,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'base_discount_amount',
     'base_total',
     'paid_amount',
+    'amount_credited',
     'balance_due',
     'status',
     'issue_date',
@@ -119,6 +120,7 @@ class Invoice extends Model
             'base_discount_amount' => 'decimal:2',
             'base_total' => 'decimal:2',
             'paid_amount' => 'decimal:2',
+            'amount_credited' => 'decimal:2',
             'balance_due' => 'decimal:2',
             'fx_rate' => 'decimal:6',
             'issue_date' => 'date',
@@ -126,5 +128,17 @@ class Invoice extends Model
             'paid_date' => 'date',
             'sent_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Get the balance due attribute (computed from payments + credit notes).
+     */
+    public function getBalanceDueAttribute(): float
+    {
+        $credited = $this->creditNotes()
+            ->where('status', 'applied')
+            ->sum('total');
+
+        return max(0, $this->total - $this->paid_amount - $credited);
     }
 }

@@ -445,6 +445,18 @@ export type CreditNoteModel = {
   created_by_user: Pick<UserModel, 'id' | 'name'> | null;
 };
 
+export type CreditNoteListRecord = {
+  id: number;
+  credit_note_number: string;
+  title: string;
+  status: string;
+  currency: string;
+  total: number | string;
+  issue_date: string | null;
+  client: Pick<ClientModel, 'id' | 'company_name'>;
+  invoice: Pick<InvoiceModel, 'id' | 'invoice_number'> | null;
+};
+
 export type TaskStatusModel = {
   id: number;
   workspace_id: number;

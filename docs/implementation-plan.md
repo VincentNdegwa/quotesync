@@ -85,29 +85,46 @@
 ### Step 2.3: Quote Heatmap Visualization (3-4 days) - **SKIPPED**
 - Skipped due to uncertainty about country/city tracking from IP addresses
 
-### Step 2.4: Invoice Payment Tracking (3-4 days) - **COMPLETED**
-- Manual payment recording
-- Payment history display
-- Payment status (partial/paid/overdue)
-- Payment reminders automation
-- Refund processing
+### Step 2.4: Invoice Payment Tracking (3-4 days) - **PARTIALLY COMPLETED - NEEDS UI**
+- ~~Manual payment recording~~
+- ~~Payment history display~~
+- ~~Payment status (partial/paid/overdue)~~
+- ~~Payment reminders automation~~
+- ~~Refund processing~~
+- ~~UI for recording payments~~
+- ~~UI for payment history~~
+- ~~UI for refunds~~
+- ~~Routes and controllers for payment operations~~
 
 **DB Changes:** Created `invoice_reminders` table, added refund support to `invoice_payments` table
 
-### Step 2.5: Recurring Invoices (4-5 days) - **COMPLETED**
-- Recurring flag and schedule (monthly/quarterly/yearly)
-- Auto-create next invoice
-- Recurrence history
-- Pause/resume recurrence
+### Step 2.5: Recurring Invoices (4-5 days) - **PARTIALLY COMPLETED - NEEDS UI**
+- ~~Recurring flag and schedule (monthly/quarterly/yearly)~~
+- ~~Auto-create next invoice~~
+- ~~Recurrence history~~
+- ~~Pause/resume recurrence~~
+- ~~UI for recurring invoices management~~
+- ~~UI for creating/editing recurring invoices~~
+- ~~UI for pausing/resuming recurring invoices~~
+- ~~UI for viewing recurrence history~~
+- ~~Routes and controllers for recurring invoice operations~~
 
 **DB Changes:** Created `recurring_invoices` table
 
-### Step 2.6: Credit Notes (2-3 days) - **COMPLETED**
-- Credit note generation from invoice
-- Credit note PDF
-- Credit note tracking
+### Step 2.6: Credit Notes (2-3 days) - **PARTIALLY COMPLETED - NEEDS UI AND FULL IMPLEMENTATION**
+- ~~Credit note generation from invoice~~
+- ~~Credit note PDF~~
+- ~~Credit note tracking~~
+- ~~Line item credit notes~~
+- ~~Credit note document renderer (same block system as invoice)~~
+- ~~Email delivery of credit note to client~~
+- ~~Client portal visibility of credit notes~~
+- ~~UI for creating/editing credit notes~~
+- ~~UI for credit notes management (Index, Show, Edit pages)~~
+- ~~UI for credit notes in invoice show page~~
+- ~~Routes and controllers for credit note operations~~
 
-**DB Changes:** Created `credit_notes` table
+**DB Changes:** Created `credit_notes` table, needs additional columns for full implementation
 
 ### Step 2.7: Portal Messages (3-4 days) - **COMPLETED**
 - Message thread per quote (client ↔ sender)
@@ -117,41 +134,101 @@
 
 **DB Changes:** Added `is_internal`, `attachments`, `typing_status` to quote_messages
 
-### Step 2.8: Portal Invoice History (2-3 days) - **COMPLETED**
-- Invoice/payment history in portal
-- Invoice download from portal
-- Payment status display
-- Notification preferences
+### Step 2.8: Portal Invoice History (2-3 days) - **PARTIALLY COMPLETED - NEEDS UI**
+- ~~Invoice/payment history in portal~~
+- ~~Invoice download from portal~~
+- ~~Payment status display~~
+- ~~Notification preferences~~
+- ~~UI for invoice/payment history in portal~~
+- ~~UI for notification preferences in portal~~
 
 **DB Changes:** None (used existing invoice structure)
+
+### Step 2.9: Invoice Reminders Configuration (3-4 days) - **NEW - NOT STARTED**
+- Configuration page for invoice reminder schedule (similar to follow-ups configuration)
+- Create InvoiceReminderSequence model (similar to FollowUpSequence)
+- Create InvoiceReminderStep model (similar to FollowUpStep)
+- Users can create custom reminder steps with days offset (before/after due date)
+- Message template customization with variables (invoice number, amount, due date, client name, etc.)
+- Channel: email-only for now (future: WhatsApp/SMS)
+- Master toggle per step: Send automatically vs Require manual approval
+- Observer to schedule reminders when invoice is sent
+- Observer to cancel reminders when invoice is paid
+- Daily scheduled job to dispatch due reminders
+- Manual "Send reminder now" button on invoice show page
+- ReminderType enum (before_due, on_due, after_due)
+- Routes and controllers for reminder sequence management
+- UI for creating/editing reminder sequences and steps
+
+**DB Changes:**
+- Create `invoice_reminder_sequences` table (similar to `follow_up_sequences`)
+- Create `invoice_reminder_steps` table (similar to `follow_up_steps`)
+- Add `days_offset`, `channel`, `reminder_type`, `send_automatically` to `invoice_reminder_steps` table
+- Add `invoice_reminders_config` to workspace settings JSON
+
+### Step 2.10: Credit Notes Full Implementation (4-5 days) - **NEW - NOT STARTED**
+- Line item credit notes support (not just full/partial amount)
+- CreditNoteLineItems table for line item credits
+- Type column (full, partial, line_item)
+- Applied_at column
+- fx_rate, base_amount, base_total columns for multi-currency
+- CreditNoteStatus enum (draft, issued, applied, voided)
+- Invoice.amount_credited column
+- Accessor for balance_due (computed from payments + credit notes, not stored)
+- InvoiceObserver to recompute balance_due on payment/credit changes
+- Credit note number generation (CN-YYYY-XXX pattern)
+- Credit note document renderer (same block system as invoice)
+- Email delivery of credit note to client
+- Client portal visibility of credit notes
+- UI for creating credit notes from invoice show page
+- UI for credit notes management (Index, Show, Edit pages)
+- UI for credit notes in invoice show page
+
+**DB Changes:**
+- Add `type`, `applied_at`, `fx_rate`, `base_amount`, `base_total` to `credit_notes` table
+- Add `amount_credited` to `invoices` table
+- Create `credit_note_line_items` table (for line item credits)
+- Add `credit_note_prefix`, `credit_note_sequence` to workspace settings
+
+### Step 2.11: Recurring Invoices UI (3-4 days) - **NEW - NOT STARTED**
+- UI for recurring invoices management (Index page)
+- UI for creating/editing recurring invoices
+- UI for pausing/resuming recurring invoices
+- UI for viewing recurrence history
+- Integration with existing RecurringInvoice model
+
+**DB Changes:** None (model already exists)
 
 ---
 
 ## PHASE 2 SUMMARY
-**Status:** COMPLETED (except side-by-side comparison and heatmap visualization)
+**Status:** PARTIALLY COMPLETED (backend infrastructure exists, UI/routes/controllers missing)
 
-**Completed Features:**
+**Completed Features (fully implemented):**
 - Quote version history with restore capability
 - Internal collaboration with @mentions in Tiptap editor
 - Task assignment system for quotes
-- Invoice payment tracking with manual recording
-- Payment reminders automation with scheduled command
-- Refund processing for invoice payments
-- Recurring invoices infrastructure
-- Credit notes infrastructure
 - Portal message thread with file sharing, chat history, and typing indicators
-- Portal invoice/payment history
+
+**Partially Completed (backend infrastructure only, no UI/routes/controllers):**
+- Invoice payment tracking (model, migrations exist, no UI for recording payments/refunds)
+- Invoice payment refund processing (table structure exists, no UI)
+- Recurring invoices infrastructure (model exists, no UI for management)
+- Credit notes infrastructure (model exists, no UI, needs line item support)
+- Portal invoice/payment history (infrastructure exists, no UI)
 
 **Skipped Features:**
 - Side-by-side comparison for quote versions (as requested by user)
 - Quote heatmap visualization (as requested by user due to uncertainty about country/city tracking)
 
 **Remaining Work:**
-- UI components for recurring invoices management
-- UI components for credit notes generation
-- Portal invoice/payment history UI components
-- Notification preferences UI in portal
-**Timeline: 6-8 weeks**
+- Invoice Reminders Configuration page and automation (Step 2.9) - NEW
+- Credit Notes full implementation with line items and UI (Step 2.10)
+- Recurring Invoices UI (Step 2.11) - UI only
+- Invoice Payment Tracking UI (Step 2.4) - UI only
+- Portal invoice/payment history UI (Step 2.8) - UI only
+- Portal notification preferences UI (Step 2.8) - UI only
+**Timeline: 4-5 weeks**
 
 ### Step 3.1: Multi-Language Quote Output (1-2 weeks)  -> SKIPP THIS AND PUT IT LAST AFTER EXTERNAL INTEGRATIONS
 - Multi-language support in builder 

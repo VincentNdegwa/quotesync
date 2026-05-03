@@ -400,6 +400,14 @@ export type SignalDirectionEnum = {
     cssColor: string;
 };
 
+export type CreditNoteStatusEnum = {
+    value: 'draft' | 'issued' | 'applied' | 'voided';
+    label: string;
+    badgeColor: 'default' | 'secondary' | 'destructive' | 'outline';
+    cssColor: string;
+    availableActions: string[];
+};
+
 export type GlobalEnums = {
     quoteStatus: QuoteStatusEnum[];
     quoteActivityType: QuoteActivityTypeEnum[];
@@ -409,4 +417,5 @@ export type GlobalEnums = {
     invoiceStatus: InvoiceStatusEnum[];
     winProbabilityConfidence: WinProbabilityConfidenceEnum[];
     signalDirection: SignalDirectionEnum[];
+    creditNoteStatus: CreditNoteStatusEnum[];
 };

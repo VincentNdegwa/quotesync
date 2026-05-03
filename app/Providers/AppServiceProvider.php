@@ -9,6 +9,7 @@ use App\Listeners\UpdateWinProbabilityOnView;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Observers\InvoiceObserver;
+use App\Observers\InvoiceReminderObserver;
 use App\Observers\QuoteObserver;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -36,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
 
         Quote::observe(QuoteObserver::class);
         Invoice::observe(InvoiceObserver::class);
+        Invoice::observe(InvoiceReminderObserver::class);
 
         Event::listen(
             QuoteViewed::class,

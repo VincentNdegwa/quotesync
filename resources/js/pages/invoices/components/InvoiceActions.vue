@@ -12,6 +12,7 @@ import {
     Send,
     Trash2,
     DollarSign,
+    FileText,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
@@ -248,6 +249,19 @@ const openPaymentDialog = (): void => {
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
+                    :as-child="true"
+                    class="gap-2"
+                >
+                    <Link
+                        :href="`/invoices/${invoice.id}/credit-notes/create`"
+                        class="flex w-full items-center gap-2"
+                    >
+                        <FileText class="h-4 w-4" />
+                        <span>Create Credit Note</span>
+                    </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
                     v-if="canPreview"
                     class="gap-2"
                     @select="downloadPDF"
@@ -310,6 +324,18 @@ const openPaymentDialog = (): void => {
         >
             <DollarSign class="h-3.5 w-3.5" />
             Record Payment
+        </Button>
+
+        <Button
+            as-child
+            size="sm"
+            variant="outline"
+            class="gap-1.5"
+        >
+            <Link :href="`/invoices/${invoice.id}/credit-notes/create`">
+                <FileText class="h-3.5 w-3.5" />
+                Credit Note
+            </Link>
         </Button>
 
         <Button

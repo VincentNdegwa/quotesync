@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { NavItem } from '@/types';
+import configuration from '@/routes/configuration';
 
 const navItems: NavItem[] = [
     { title: 'Taxes', href: '/configuration/taxes' },
@@ -16,6 +17,7 @@ const navItems: NavItem[] = [
     { title: 'Follow-ups', href: '/configuration/follow-ups' },
     { title: 'Templates', href: '/configuration/templates' },
     { title: 'Task Statuses', href: '/configuration/task-status' },
+    {title: 'Invoice Reminders', href: configuration.invoiceReminders().url}
 ];
 
 const { isCurrentOrParentUrl } = useCurrentUrl();
