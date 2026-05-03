@@ -34,6 +34,8 @@ import {
 import { useFormat } from '@/composables/useFormat';
 import type { ClientRecord, ClientStats } from '@/types';
 import InvitePortalDialog from './components/InvitePortalDialog.vue';
+import ContactDialog from './components/ContactDialog.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 
 const props = defineProps<{
     client: ClientRecord;
@@ -42,6 +44,12 @@ const props = defineProps<{
 }>();
 
 const inviteDialogOpen = ref(false);
+const contactDialogOpen = ref(false);
+const editingContact = ref<{ id: number; name: string; email: string | null; phone: string | null; position: string | null; is_primary: boolean } | null>(null);
+
+const deleteClientDialogOpen = ref(false);
+const deleteContactDialogOpen = ref(false);
+const contactToDelete = ref<number | null>(null);
 
 const { formatCurrency, formatDate } = useFormat(usePage().props.workspace_currency as string || undefined);
 
@@ -111,12 +119,44 @@ const statusBadgeVariant = (status: string | null | undefined): 'secondary' | 'd
 const quoteHistory = computed(() => props.stats.quote_history ?? []);
 
 const deleteClient = (): void => {
+    deleteClientDialogOpen.value = true;
+};
+
+const confirmDeleteClient = (): void => {
     router.delete(`/clients/${props.client.id}`, {
         onSuccess: () => {
             router.visit('/clients');
         },
     });
 };
+
+const deleteContact = (contactId: number): void => {
+    contactToDelete.value = contactId;
+    deleteContactDialogOpen.value = true;
+};
+
+const confirmDeleteContact = (): void => {
+    if (contactToDelete.value) {
+        router.delete(`/clients/${props.client.id}/contacts/${contactToDelete.value}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                deleteContactDialogOpen.value = false;
+                contactToDelete.value = null;
+            },
+        });
+    }
+};
+
+const openContactDialog = (contact: { id: number; name: string; email: string | null; phone: string | null; position: string | null; is_primary: boolean } | null = null): void => {
+    editingContact.value = contact;
+    contactDialogOpen.value = true;
+};
+
+const closeContactDialog = (): void => {
+    editingContact.value = null;
+    contactDialogOpen.value = false;
+};
+
 </script>
 
 <template>
@@ -164,6 +204,7 @@ const deleteClient = (): void => {
         <Tabs default-value="profile" class="space-y-4">
             <TabsList>
                 <TabsTrigger value="profile">Profile</TabsTrigger>
+                <TabsTrigger value="contacts">Contacts</TabsTrigger>
                 <TabsTrigger value="history">Quote history</TabsTrigger>
             </TabsList>
 
@@ -224,6 +265,46 @@ const deleteClient = (): void => {
                 </div>
             </TabsContent>
 
+            <TabsContent value="contacts" class="space-y-4 rounded-md border p-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold">Contacts</h3>
+                    <Button @click="openContactDialog()">Add Contact</Button>
+                </div>
+
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Phone</TableHead>
+                            <TableHead>Position</TableHead>
+                            <TableHead>Primary</TableHead>
+                            <TableHead class="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow v-if="client.contacts && client.contacts.length > 0" v-for="contact in client.contacts" :key="contact.id">
+                            <TableCell>{{ contact.name }}</TableCell>
+                            <TableCell>{{ contact.email || '-' }}</TableCell>
+                            <TableCell>{{ contact.phone || '-' }}</TableCell>
+                            <TableCell>{{ contact.position || '-' }}</TableCell>
+                            <TableCell>
+                                <Badge v-if="contact.is_primary" variant="default">Primary</Badge>
+                            </TableCell>
+                            <TableCell class="text-right">
+                                <Button variant="ghost" size="sm" @click="openContactDialog(contact)">Edit</Button>
+                                <Button variant="ghost" size="sm" class="text-destructive" @click="deleteContact(contact.id)">Delete</Button>
+                            </TableCell>
+                        </TableRow>
+                        <TableRow v-else>
+                            <TableCell colspan="6" class="text-center text-muted-foreground">
+                                No contacts added yet. Click "Add Contact" to create one.
+                            </TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
+            </TabsContent>
+
             <TabsContent value="history" class="rounded-md border">
                 <Table>
                     <TableHeader>
@@ -256,5 +337,29 @@ const deleteClient = (): void => {
         </Tabs>
 
         <InvitePortalDialog v-model:open="inviteDialogOpen" :client="client" />
+        <ContactDialog
+            v-model:open="contactDialogOpen"
+            :client="client"
+            :contact="editingContact"
+            @success="closeContactDialog"
+        />
+        <ConfirmDialog
+            v-model:open="deleteClientDialogOpen"
+            title="Delete Client"
+            description="Are you sure you want to delete this client? This action cannot be undone."
+            confirmText="Delete"
+            cancelText="Cancel"
+            variant="destructive"
+            @confirm="confirmDeleteClient"
+        />
+        <ConfirmDialog
+            v-model:open="deleteContactDialogOpen"
+            title="Delete Contact"
+            description="Are you sure you want to delete this contact? This action cannot be undone."
+            confirmText="Delete"
+            cancelText="Cancel"
+            variant="destructive"
+            @confirm="confirmDeleteContact"
+        />
     </div>
 </template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, Link, setLayoutProps, useForm, usePage } from '@inertiajs/vue3';
-import { computed, watchEffect } from 'vue';
+import { Head, Link, router, setLayoutProps, useForm, usePage } from '@inertiajs/vue3';
+import { computed, ref, watchEffect } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,17 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useFormat } from '@/composables/useFormat';
 import type { CatalogItemRecord, ConfigurationUnitRecord } from '@/types';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import CatalogItemVariantDialog from './components/CatalogItemVariantDialog.vue';
+import CatalogItemPriceTierDialog from './components/CatalogItemPriceTierDialog.vue';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 
 const props = defineProps<{
     item: CatalogItemRecord;
@@ -87,6 +98,72 @@ const save = (): void => {
         forceFormData: true,
         preserveScroll: true,
     });
+};
+
+const variantDialogOpen = ref(false);
+const editingVariant = ref<{ id: number; name: string; sku: string | null; unit_price: number; cost_price: number; is_default: boolean } | null>(null);
+
+const priceTierDialogOpen = ref(false);
+const editingPriceTier = ref<{ id: number; variant_id: number | null; min_quantity: number; max_quantity: number | null; pricing_type: string; unit_price: number; discount_percent: number } | null>(null);
+
+const deleteVariantDialogOpen = ref(false);
+const variantToDelete = ref<number | null>(null);
+
+const deletePriceTierDialogOpen = ref(false);
+const priceTierToDelete = ref<number | null>(null);
+
+const openVariantDialog = (variant: { id: number; name: string; sku: string | null; unit_price: number; cost_price: number; is_default: boolean } | null = null): void => {
+    editingVariant.value = variant;
+    variantDialogOpen.value = true;
+};
+
+const closeVariantDialog = (): void => {
+    editingVariant.value = null;
+    variantDialogOpen.value = false;
+};
+
+const deleteVariant = (variantId: number): void => {
+    variantToDelete.value = variantId;
+    deleteVariantDialogOpen.value = true;
+};
+
+const confirmDeleteVariant = (): void => {
+    if (variantToDelete.value) {
+        router.delete(`/catalog/${props.item.id}/variants/${variantToDelete.value}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                deleteVariantDialogOpen.value = false;
+                variantToDelete.value = null;
+            },
+        });
+    }
+};
+
+const openPriceTierDialog = (priceTier: { id: number; variant_id: number | null; min_quantity: number; max_quantity: number | null; pricing_type: string; unit_price: number; discount_percent: number } | null = null): void => {
+    editingPriceTier.value = priceTier;
+    priceTierDialogOpen.value = true;
+};
+
+const closePriceTierDialog = (): void => {
+    editingPriceTier.value = null;
+    priceTierDialogOpen.value = false;
+};
+
+const deletePriceTier = (priceTierId: number): void => {
+    priceTierToDelete.value = priceTierId;
+    deletePriceTierDialogOpen.value = true;
+};
+
+const confirmDeletePriceTier = (): void => {
+    if (priceTierToDelete.value) {
+        router.delete(`/catalog/${props.item.id}/price-tiers/${priceTierToDelete.value}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                deletePriceTierDialogOpen.value = false;
+                priceTierToDelete.value = null;
+            },
+        });
+    }
 };
 </script>
 
@@ -209,10 +286,131 @@ const save = (): void => {
         </div>
 
         <div class="rounded-md border p-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-sm font-semibold">Variants</h2>
+                <Button size="sm" @click="openVariantDialog()">Add Variant</Button>
+            </div>
+
+            <Table class="mt-4">
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>SKU</TableHead>
+                        <TableHead>Unit Price</TableHead>
+                        <TableHead>Cost Price</TableHead>
+                        <TableHead>Default</TableHead>
+                        <TableHead class="text-right">Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    <TableRow v-if="item.variants && item.variants.length > 0" v-for="variant in item.variants" :key="variant.id">
+                        <TableCell>{{ variant.name }}</TableCell>
+                        <TableCell>{{ variant.sku || '-' }}</TableCell>
+                        <TableCell>{{ formatCurrency(variant.unit_price) }}</TableCell>
+                        <TableCell>{{ formatCurrency(variant.cost_price) }}</TableCell>
+                        <TableCell>
+                            <Badge v-if="variant.is_default" variant="default">Default</Badge>
+                        </TableCell>
+                        <TableCell class="text-right">
+                            <Button variant="ghost" size="sm" @click="openVariantDialog(variant)">Edit</Button>
+                            <Button variant="ghost" size="sm" class="text-destructive" @click="deleteVariant(variant.id)">Delete</Button>
+                        </TableCell>
+                    </TableRow>
+                    <TableRow v-else>
+                        <TableCell colspan="6" class="text-center text-muted-foreground">
+                            No variants added yet. Click "Add Variant" to create one.
+                        </TableCell>
+                    </TableRow>
+                </TableBody>
+            </Table>
+        </div>
+
+        <div class="rounded-md border p-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-sm font-semibold">Price Tiers</h2>
+                <Button size="sm" @click="openPriceTierDialog()">Add Price Tier</Button>
+            </div>
+
+            <Table class="mt-4">
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Min Qty</TableHead>
+                        <TableHead>Max Qty</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Variant</TableHead>
+                        <TableHead>Value</TableHead>
+                        <TableHead class="text-right">Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    <TableRow v-if="item.priceTiers && item.priceTiers.length > 0" v-for="tier in item.priceTiers" :key="tier.id">
+                        <TableCell>{{ tier.min_quantity }}</TableCell>
+                        <TableCell>{{ tier.max_quantity || 'Unlimited' }}</TableCell>
+                        <TableCell>
+                            <span v-if="tier.pricing_type === 'fixed_price'" class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                                Fixed Price
+                            </span>
+                            <span v-else class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                                % Off
+                            </span>
+                        </TableCell>
+                        <TableCell>
+                            {{ tier.variant_id ? (item.variants?.find(v => v.id === tier.variant_id)?.name || 'Unknown') : 'All variants' }}
+                        </TableCell>
+                        <TableCell>
+                            <span v-if="tier.pricing_type === 'fixed_price'">{{ formatCurrency(tier.unit_price) }}</span>
+                            <span v-else>{{ tier.discount_percent }}%</span>
+                        </TableCell>
+                        <TableCell class="text-right">
+                            <Button variant="ghost" size="sm" @click="openPriceTierDialog(tier)">Edit</Button>
+                            <Button variant="ghost" size="sm" class="text-destructive" @click="deletePriceTier(tier.id)">Delete</Button>
+                        </TableCell>
+                    </TableRow>
+                    <TableRow v-else>
+                        <TableCell colspan="6" class="text-center text-muted-foreground">
+                            No price tiers added yet. Click "Add Price Tier" to create one.
+                        </TableCell>
+                    </TableRow>
+                </TableBody>
+            </Table>
+        </div>
+
+        <div class="rounded-md border p-4">
             <h2 class="text-sm font-semibold">Usage history</h2>
             <p class="mt-2 text-sm text-muted-foreground">
                 Usage insights will appear here as quote line item tracking is added in the quote builder module.
             </p>
         </div>
+
+        <CatalogItemVariantDialog
+            v-model:open="variantDialogOpen"
+            :catalog-item-id="item.id"
+            :variant="editingVariant"
+            @success="closeVariantDialog"
+        />
+        <CatalogItemPriceTierDialog
+            v-model:open="priceTierDialogOpen"
+            :catalog-item-id="item.id"
+            :price-tier="editingPriceTier"
+            @success="closePriceTierDialog"
+        />
+        <ConfirmDialog
+            v-model:open="deleteVariantDialogOpen"
+            title="Delete Variant"
+            description="Are you sure you want to delete this variant? This action cannot be undone."
+            confirmText="Delete"
+            cancelText="Cancel"
+            variant="destructive"
+            @confirm="confirmDeleteVariant"
+        />
+        <ConfirmDialog
+            v-model:open="deletePriceTierDialogOpen"
+            title="Delete Price Tier"
+            description="Are you sure you want to delete this price tier? This action cannot be undone."
+            confirmText="Delete"
+            cancelText="Cancel"
+            variant="destructive"
+            @confirm="confirmDeletePriceTier"
+        />
     </div>
 </template>

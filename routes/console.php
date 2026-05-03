@@ -2,6 +2,7 @@
 
 use App\Console\Commands\MarkExpiredQuotesCommand;
 use App\Console\Commands\ProcessFollowUpsCommand;
+use App\Console\Commands\SendPaymentReminders;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -12,3 +13,4 @@ Artisan::command('inspire', function () {
 
 Schedule::command(MarkExpiredQuotesCommand::class)->daily();
 Schedule::command(ProcessFollowUpsCommand::class)->everyFifteenMinutes();
+Schedule::command(SendPaymentReminders::class)->daily();

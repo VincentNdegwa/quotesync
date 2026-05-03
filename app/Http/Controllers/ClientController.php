@@ -81,7 +81,7 @@ class ClientController extends Controller
         abort_unless($workspace instanceof Workspace && $client->workspace_id === $workspace->id, 404);
 
         return Inertia::render('clients/Show', [
-            'client' => $client->load(['tags:id,name']),
+            'client' => $client->load(['tags:id,name', 'contacts']),
             'stats' => $clientService->quoteStatsForClient($client),
             'availableTags' => ConfigurationTag::query()
                 ->where('workspace_id', $workspace->id)

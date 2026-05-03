@@ -205,6 +205,25 @@ const fxRateValue = computed({
                     <Label>Valid until</Label>
                     <Input v-model="state.valid_until" type="date" :disabled="systemLocked" />
                 </div>
+
+                <div class="space-y-2">
+                    <Label>Deposit amount</Label>
+                    <Input v-model.number="state.deposit_amount" type="number" step="0.01" min="0" :disabled="systemLocked" placeholder="0.00" />
+                </div>
+
+                <div class="space-y-2">
+                    <Label>Deposit percent (%)</Label>
+                    <Input v-model.number="state.deposit_percent" type="number" step="0.01" min="0" max="100" :disabled="systemLocked" placeholder="0.00" />
+                </div>
+
+                <div class="flex items-center justify-between rounded-md border px-3 py-2">
+                    <span class="text-sm">Lock quote</span>
+                    <Switch
+                        :model-value="Boolean(state.is_locked)"
+                        :disabled="systemLocked"
+                        @update:model-value="(checked: boolean) => (state.is_locked = checked)"
+                    />
+                </div>
             </div>
         </div>
     </div>

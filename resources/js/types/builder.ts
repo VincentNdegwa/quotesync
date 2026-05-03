@@ -777,10 +777,33 @@ export type BuilderCatalogItem = {
     id: number;
     name: string;
     description: string | null;
+    sku: string | null;
     unit_id: number | null;
     unit_price: number;
+    cost_price: number | null;
     configuration_unit: BuilderConfigurationUnit | null;
     taxes: BuilderTaxOption[];
+    variants: BuilderCatalogItemVariant[];
+    priceTiers: BuilderCatalogItemPriceTier[];
+};
+
+export type BuilderCatalogItemVariant = {
+    id: number;
+    name: string;
+    sku: string | null;
+    unit_price: number;
+    cost_price: number | null;
+    is_default: boolean;
+};
+
+export type BuilderCatalogItemPriceTier = {
+    id: number;
+    variant_id: number | null;
+    min_quantity: number;
+    max_quantity: number | null;
+    pricing_type: 'fixed_price' | 'discount_percent';
+    unit_price: number;
+    discount_percent: number;
 };
 
 export type BuilderClientOption = {
@@ -857,13 +880,16 @@ export type QuoteBuilderLineItemTax = {
 export type QuoteBuilderLineItem = {
     id: number | null;
     catalog_item_id: number | null;
+    catalog_item_variant_id: number | null;
     name: string;
     description: string | null;
     quantity: number;
     unit: string | null;
     unit_id: number | null;
     unit_price: number;
+    cost_price: number | null;
     discount_percent: number;
+    price_tier_applied: boolean;
     subtotal: number;
     tax_amount: number;
     total: number;
@@ -903,14 +929,23 @@ export type QuoteBuilderState = {
     total: number;
     requires_deposit: boolean;
     deposit_amount: number | null;
+    deposit_percent: number | null;
+    is_locked: boolean;
 
     // Dates
     valid_until: string | null;
+    scheduled_at: string | null;
+    delivered_at: string | null;
+    bounced_at: string | null;
 
     // Content
     cover_message: string | null;
     terms: string | null;
     notes: string | null;
+
+    // Sending
+    cc_recipients: string[] | null;
+    bcc_recipients: string[] | null;
 
     // Sections
     sections: QuoteBuilderSection[];

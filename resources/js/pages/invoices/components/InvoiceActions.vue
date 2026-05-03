@@ -11,6 +11,7 @@ import {
     RefreshCw,
     Send,
     Trash2,
+    DollarSign,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
@@ -25,6 +26,9 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import RecordPaymentDialog from '@/components/invoices/RecordPaymentDialog.vue';
 import type { InvoiceListRecord, InvoiceStatusEnum } from '@/types';
 
 const props = defineProps<{
@@ -41,6 +45,7 @@ const emit = defineEmits<{
 const showDeleteDialog = ref(false);
 const showArchiveDialog = ref(false);
 const showSendDialog = ref(false);
+const showPaymentDialog = ref(false);
 
 const statusData = computed(() =>
     props.invoiceStatuses.find((s) => s.value === props.invoice.status),
@@ -146,6 +151,10 @@ const viewAsClient = (): void => {
         window.open(`/i/${props.invoice.invoice_uuid}`, '_blank');
     }
 };
+
+const openPaymentDialog = (): void => {
+    showPaymentDialog.value = true;
+};
 </script>
 
 <template>
@@ -231,6 +240,14 @@ const viewAsClient = (): void => {
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
+                    class="gap-2"
+                    @select="openPaymentDialog"
+                >
+                    <DollarSign class="h-4 w-4" />
+                    <span>Record Payment</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
                     v-if="canPreview"
                     class="gap-2"
                     @select="downloadPDF"
@@ -283,6 +300,16 @@ const viewAsClient = (): void => {
         >
             <Send class="h-3.5 w-3.5" />
             Resend
+        </Button>
+
+        <Button
+            size="sm"
+            variant="outline"
+            class="gap-1.5"
+            @click="openPaymentDialog"
+        >
+            <DollarSign class="h-3.5 w-3.5" />
+            Record Payment
         </Button>
 
         <Button
@@ -370,5 +397,12 @@ const viewAsClient = (): void => {
         description="Are you sure you want to archive this invoice? It will be hidden from the main list."
         confirm-text="Archive"
         @confirm="executeArchive"
+    />
+
+    <RecordPaymentDialog
+        :open="showPaymentDialog"
+        :invoice-id="invoice.id"
+        @update:open="showPaymentDialog = $event"
+        @success="emit('success')"
     />
 </template>

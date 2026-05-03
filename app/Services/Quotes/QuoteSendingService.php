@@ -27,6 +27,8 @@ class QuoteSendingService
         bool $attachPdf = false,
         ?string $ipAddress = null,
         ?string $userAgent = null,
+        array $ccRecipients = [],
+        array $bccRecipients = [],
     ): void {
         $quote->loadMissing(['client', 'sections.lineItems']);
 
@@ -83,7 +85,8 @@ class QuoteSendingService
         SendQuoteEmailJob::dispatch(
             quoteId: $quote->id,
             to: $to,
-            cc: [],
+            cc: $ccRecipients,
+            bcc: $bccRecipients,
             subjectLine: $subjectLine,
             messageBody: $messageBody,
             companyName: $companyName,
@@ -97,7 +100,8 @@ class QuoteSendingService
 
         $metadata = [
             'to' => $to,
-            'cc' => [],
+            'cc' => $ccRecipients,
+            'bcc' => $bccRecipients,
             'channel' => 'email',
             'scheduled_at' => null,
         ];

@@ -9,12 +9,15 @@ use App\Http\Requests\StoreInvoiceRequest;
 use App\Http\Requests\UpdateInvoiceRequest;
 use App\Models\Invoice;
 use App\Models\InvoiceActivity;
+use App\Models\InvoicePayment;
 use App\Models\Quote;
 use App\Models\Workspace;
+use App\Models\Comment;
 use App\Services\Invoices\InvoiceNumberingService;
 use App\Services\BuilderLookupService;
 use App\Services\Invoices\InvoiceService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -22,7 +25,7 @@ use Inertia\Response;
 
 class InvoiceController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request): Response | JsonResponse
     {
         $workspace = $request->user()?->currentWorkspace;
         abort_unless($workspace instanceof Workspace, 404);
@@ -53,6 +56,10 @@ class InvoiceController extends Controller
         };
 
         $invoices = $query->paginate(15);
+
+        if ($request->wantsJson()) {
+            return response()->json($invoices);
+        }
 
         return Inertia::render('invoices/Index', [
             'filters' => [
@@ -96,7 +103,15 @@ class InvoiceController extends Controller
         $workspace = $request->user()?->currentWorkspace;
         abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
 
-        $invoice->load(['client', 'quote', 'lineItems', 'createdBy', 'activities.user']);
+        $invoice->load([
+            'client',
+            'quote',
+            'lineItems',
+            'createdBy',
+            'activities.user',
+            'payments.createdBy:id,name',
+            'comments.user:id,name',
+        ]);
 
         return Inertia::render('invoices/Show', [
             'invoice' => $invoice,
@@ -314,5 +329,92 @@ class InvoiceController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice deleted successfully.')]);
 
         return to_route('invoices.index');
+    }
+
+    public function recordPayment(Request $request, Invoice $invoice): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+        abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
+
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'payment_date' => 'required|date',
+            'payment_method' => 'nullable|string|max:255',
+            'reference_number' => 'nullable|string|max:255',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $payment = $invoice->payments()->create([
+            'workspace_id' => $workspace->id,
+            'created_by' => auth()->id(),
+            'amount' => $validated['amount'],
+            'currency' => $invoice->currency,
+            'payment_date' => $validated['payment_date'],
+            'payment_method' => $validated['payment_method'] ?? null,
+            'reference_number' => $validated['reference_number'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        $totalPaid = $invoice->payments()->sum('amount');
+        $invoice->update([
+            'paid_amount' => $totalPaid,
+            'balance_due' => $invoice->total - $totalPaid,
+        ]);
+
+        if ($totalPaid >= $invoice->total) {
+            $invoice->update(['status' => InvoiceStatus::Paid->value]);
+
+            InvoiceActivity::query()->create([
+                'invoice_id' => $invoice->id,
+                'workspace_id' => $workspace->id,
+                'user_id' => $request->user()?->id,
+                'type' => InvoiceActivityType::Paid->value,
+                'description' => 'Payment recorded: ' . number_format($validated['amount'], 2),
+                'metadata' => ['payment_id' => $payment->id, 'amount' => $validated['amount']],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+        } else {
+            InvoiceActivity::query()->create([
+                'invoice_id' => $invoice->id,
+                'workspace_id' => $workspace->id,
+                'user_id' => $request->user()?->id,
+                'type' => InvoiceActivityType::Partial->value,
+                'description' => 'Partial payment recorded: ' . number_format($validated['amount'], 2),
+                'metadata' => ['payment_id' => $payment->id, 'amount' => $validated['amount']],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+        }
+
+        return back()->with('success', 'Payment recorded successfully');
+    }
+
+    public function refundPayment(Request $request, InvoicePayment $payment): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+        abort_unless($workspace instanceof Workspace && $payment->invoice->workspace_id === $workspace->id, 404);
+        abort_if($payment->is_refund, 403, 'This payment is already a refund');
+
+        $validated = $request->validate([
+            'refund_reason' => 'required|string|max:1000',
+        ]);
+
+        $payment->update([
+            'is_refund' => true,
+            'refunded_at' => now(),
+            'refund_reason' => $validated['refund_reason'],
+            'refunded_by' => auth()->id(),
+        ]);
+
+        // Recalculate invoice totals
+        $invoice = $payment->invoice;
+        $totalPaid = $invoice->payments()->where('is_refund', false)->sum('amount');
+        $invoice->update([
+            'paid_amount' => $totalPaid,
+            'balance_due' => $invoice->total - $totalPaid,
+        ]);
+
+        return back()->with('success', 'Payment refunded successfully');
     }
 }

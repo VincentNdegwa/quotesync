@@ -1,20 +1,22 @@
 <script setup lang="ts">
-import { Head, setLayoutProps } from '@inertiajs/vue3';
+import { Head, setLayoutProps, router } from '@inertiajs/vue3';
 import { computed, watchEffect } from 'vue';
 import Heading from '@/components/Heading.vue';
-import InvoiceActivityTimeline from '@/components/invoices/InvoiceActivityTimeline.vue';
 import InvoiceRenderer from '@/components/renderer/InvoiceRenderer.vue';
+import PaymentHistory from '@/components/PaymentHistory.vue';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
 import type { WorkspaceSettings, InvoiceData, InvoiceStatusEnum } from '@/types';
 import InvoiceActions from './components/InvoiceActions.vue';
+import QuoteActivityFeed from '@/components/quotes/QuoteActivityFeed.vue';
 
 const props = defineProps<{
     invoice: InvoiceData;
     settings: WorkspaceSettings;
     invoiceStatuses: InvoiceStatusEnum[];
+    teamMembers?: Array<{ id: number; name: string; email: string }>;
 }>();
 
 const breadcrumbs = computed(() => [
@@ -30,6 +32,14 @@ watchEffect(() => {
 
 const { getInvoiceStatus } = useEnums();
 const { formatCurrency: fmt, formatDate: fmtDate } = useFormat(props.invoice.base_currency || props.invoice.currency || undefined);
+
+const handleCommentCreated = () => {
+    router.reload();
+};
+
+const handleCommentDeleted = () => {
+    router.reload();
+};
 </script>
 
 <template>
@@ -187,10 +197,26 @@ const { formatCurrency: fmt, formatDate: fmtDate } = useFormat(props.invoice.bas
                     </template>
                 </div>
 
+                <QuoteActivityFeed
+                    :activities="invoice.activities ?? []"
+                    :comments="(invoice as any).comments ?? []"
+                    :commentable-id="invoice.id"
+                    commentable-type="invoice"
+                    :team-members="teamMembers"
+                    @comment-created="handleCommentCreated"
+                    @comment-deleted="handleCommentDeleted"
+                />
+
             </div>
 
             <div class="space-y-4">
-                <InvoiceActivityTimeline :activities="invoice.activities ?? []" />
+                <PaymentHistory
+                    v-if="(invoice as any).payments"
+                    :payments="(invoice as any).payments"
+                    :invoice-id="invoice.id"
+                    :currency="invoice.currency || 'USD'"
+                    :total="Number(invoice.total)"
+                />
             </div>
 
         </div>

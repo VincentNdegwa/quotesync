@@ -6,6 +6,7 @@ use App\Models\CatalogCategory;
 use App\Models\ConfigIndustry;
 use App\Models\ConfigurationTag;
 use App\Models\ConfigurationUnit;
+use App\Models\TaskStatus;
 use App\Models\Tax;
 use App\Models\Workspace;
 use App\Services\Quotes\QuotePlaceholderService;
@@ -107,6 +108,19 @@ class ConfigurationController extends Controller
                     ])->all(),
                 ])->all(),
             'placeholders' => QuotePlaceholderService::getPlaceholderDescriptions(),
+        ]);
+    }
+
+    public function taskStatuses(Request $request): Response
+    {
+        $workspace = $this->workspaceFromRequest($request);
+
+        return Inertia::render('configuration/task-status/Index', [
+            'taskStatuses' => TaskStatus::query()
+                ->where('workspace_id', $workspace->id)
+                ->orderBy('sort_order')
+                ->orderByRaw('LOWER(name)')
+                ->get(['id', 'name', 'slug', 'color', 'sort_order', 'is_default', 'is_system', 'created_at']),
         ]);
     }
 

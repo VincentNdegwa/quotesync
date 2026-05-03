@@ -35,6 +35,13 @@ class StoreQuoteRequest extends FormRequest
     {
         /** @var Workspace|null $workspace */
         $workspace = $this->user()?->currentWorkspace;
+        $user = $this->user();
+
+        $maxDiscount = null;
+        if ($user && $workspace) {
+            $pivot = $user->roles()->wherePivot('workspace_id', $workspace->id)->first()?->pivot;
+            $maxDiscount = $pivot->max_discount_percent ?? null;
+        }
 
         return [
             'number' => ['nullable', 'string', 'max:60'],
@@ -67,6 +74,8 @@ class StoreQuoteRequest extends FormRequest
             ],
             'requires_deposit' => ['nullable', 'boolean'],
             'deposit_amount' => ['nullable', 'numeric', 'min:0'],
+            'deposit_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'is_locked' => ['nullable', 'boolean'],
             'subtotal' => ['nullable', 'numeric', 'min:0'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'tax_amount' => ['nullable', 'numeric', 'min:0'],
@@ -87,7 +96,14 @@ class StoreQuoteRequest extends FormRequest
             'sections.*.line_items.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'sections.*.line_items.*.unit' => ['nullable', 'string', 'max:30'],
             'sections.*.line_items.*.unit_price' => ['required', 'numeric', 'min:0'],
-            'sections.*.line_items.*.discount_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'sections.*.line_items.*.cost_price' => ['nullable', 'numeric', 'min:0'],
+            'sections.*.line_items.*.discount_percent' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:100',
+            ],
+            'sections.*.line_items.*.price_tier_applied' => ['nullable', 'boolean'],
             'sections.*.line_items.*.subtotal' => ['nullable', 'numeric', 'min:0'],
             'sections.*.line_items.*.tax_amount' => ['nullable', 'numeric', 'min:0'],
             'sections.*.line_items.*.total' => ['nullable', 'numeric', 'min:0'],
@@ -105,6 +121,47 @@ class StoreQuoteRequest extends FormRequest
             'sections.*.line_items.*.taxes.*.tax_label' => ['required', 'string', 'max:120'],
             'sections.*.line_items.*.taxes.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'sections.*.line_items.*.taxes.*.inclusive' => ['nullable', 'boolean'],
+        ];
+    }
+
+    /**
+     * Configure the validator instance.
+     */
+    public function after(): array
+    {
+        return [
+            function ($validator) {
+                $workspace = $this->user()?->currentWorkspace;
+                $user = $this->user();
+
+                $maxDiscount = null;
+                if ($user && $workspace) {
+                    $pivot = $user->roles()->wherePivot('workspace_id', $workspace->id)->first()?->pivot;
+                    $maxDiscount = $pivot->max_discount_percent ?? null;
+                }
+
+                $sections = $this->input('sections', []);
+                foreach ($sections as $sectionIndex => $section) {
+                    if (!isset($section['line_items'])) {
+                        continue;
+                    }
+
+                    foreach ($section['line_items'] as $lineItemIndex => $lineItem) {
+                        // Skip validation if price tier was applied (admin-set pricing)
+                        if (isset($lineItem['price_tier_applied']) && $lineItem['price_tier_applied']) {
+                            continue;
+                        }
+
+                        // Only validate manual discounts against max discount limit
+                        if ($maxDiscount !== null && isset($lineItem['discount_percent']) && $lineItem['discount_percent'] > $maxDiscount) {
+                            $validator->errors()->add(
+                                "sections.{$sectionIndex}.line_items.{$lineItemIndex}.discount_percent",
+                                "Discount cannot exceed {$maxDiscount}%."
+                            );
+                        }
+                    }
+                }
+            },
         ];
     }
 }

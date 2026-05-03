@@ -1,9 +1,22 @@
 <script setup lang="ts">
-import { computed, ComputedRef, inject } from 'vue';
-import { Trash2, Plus } from 'lucide-vue-next';
+import { computed, ComputedRef, inject, ref } from 'vue';
+import { Trash2, Plus, CheckIcon, ChevronsUpDownIcon } from 'lucide-vue-next';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { blockBaseStyle } from '@/composables/useBlockStyles';
@@ -45,6 +58,11 @@ const isQuote = computed(() => props.data.documentType === 'quote');
 const { formatCurrency: fmt } = useFormat();
 
 const isInternalView = inject<ComputedRef<boolean>>('isInternalView', computed(() => false));
+
+const catalogComboboxOpen = ref<Record<string, boolean>>({});
+
+
+
 
 const effectiveCurrency = computed(() => {
     const data = props.data as QuoteData | InvoiceData;
@@ -287,32 +305,54 @@ const stripeClass = (index: number): string => {
                                 >
                                     <TableCell class="pr-4 align-top" :class="[cellPad, borderedCellClass, isGreyed(item) ? 'opacity-50' : '']" :style="{ borderColor: config.border.color ?? undefined }">
                                         <div class="flex flex-wrap items-center gap-2">
-                                            <Select
+                                            <Popover
                                                 v-if="editMode && props.catalogItems && props.catalogItems.length > 0"
-                                                :model-value="item.catalog_item_id ? String(item.catalog_item_id) : ''"
-                                                @update:model-value="(value) => {
-                                                    if (value) {
-                                                        const catalog = props.catalogItems?.find(c => String(c.id) === value);
-                                                        if (catalog) {
-                                                            emit('select-catalog-item', { sectionIndex, lineItemIndex, catalogItem: catalog });
-                                                        }
-                                                    }
-                                                }"
+                                                :model-value="catalogComboboxOpen[`${sectionIndex}-${lineItemIndex}`]"
+                                                @update:model-value="(value: boolean) => catalogComboboxOpen[`${sectionIndex}-${lineItemIndex}`] = value"
                                             >
-                                                <SelectTrigger class="h-8 w-48 text-sm">
-                                                    <SelectValue placeholder="Select item..." />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="__None__">None</SelectItem>
-                                                    <SelectItem
-                                                        v-for="catalog in props.catalogItems"
-                                                        :key="catalog.id"
-                                                        :value="String(catalog.id)"
+                                                <PopoverTrigger as-child>
+                                                    <Button
+                                                        variant="outline"
+                                                        role="combobox"
+                                                        :aria-expanded="catalogComboboxOpen[`${sectionIndex}-${lineItemIndex}`]"
+                                                        class="h-8 w-48 justify-between text-sm"
                                                     >
-                                                        {{ catalog.name }}
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                                        {{ item.catalog_item_id ? props.catalogItems.find((c) => c.id === item.catalog_item_id)?.name : 'Select item...' }}
+                                                        <ChevronsUpDownIcon class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent class="w-[300px] p-0">
+                                                    <Command>
+                                                        <CommandInput placeholder="Search catalog items..." />
+                                                        <CommandList>
+                                                            <CommandEmpty>No catalog item found.</CommandEmpty>
+                                                            <CommandGroup>
+                                                                <CommandItem
+                                                                    v-for="catalog in (props.catalogItems || []).slice(0, 19)"
+                                                                    :key="catalog.id"
+                                                                    :value="String(catalog.id)"
+                                                                    @select="() => {
+                                                                        const foundCatalog = props.catalogItems?.find(c => c.id === catalog.id);
+                                                                        if (foundCatalog) {
+                                                                            emit('select-catalog-item', { sectionIndex, lineItemIndex, catalogItem: foundCatalog });
+                                                                            catalogComboboxOpen[`${sectionIndex}-${lineItemIndex}`] = false;
+                                                                        }
+                                                                    }"
+                                                                >
+                                                                    <CheckIcon
+                                                                        :class="[
+                                                                            'mr-2 h-4 w-4',
+                                                                            item.catalog_item_id === catalog.id ? 'opacity-100' : 'opacity-0',
+                                                                        ]"
+                                                                    />
+                                                                    {{ catalog.name }}
+                                                                    <span v-if="catalog.sku" class="ml-2 text-xs text-muted-foreground">({{ catalog.sku }})</span>
+                                                                </CommandItem>
+                                                            </CommandGroup>
+                                                        </CommandList>
+                                                    </Command>
+                                                </PopoverContent>
+                                            </Popover>
                                             <Input
                                                 v-if="editMode && (!props.catalogItems || props.catalogItems.length === 0)"
                                                 :model-value="item.name || ''"

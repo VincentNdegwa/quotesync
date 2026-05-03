@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'invoice_uuid',
     'client_id',
     'quote_id',
+    'recurring_invoice_id',
     'invoice_number',
     'title',
     'cover_message',
@@ -73,6 +75,31 @@ class Invoice extends Model
     public function activities(): HasMany
     {
         return $this->hasMany(InvoiceActivity::class)->orderBy('created_at', 'desc');
+    }
+
+    public function comments(): MorphMany
+    {
+        return $this->morphMany(Comment::class, 'commentable')->latest();
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(InvoicePayment::class)->orderBy('payment_date', 'desc');
+    }
+
+    public function recurringInvoice(): BelongsTo
+    {
+        return $this->belongsTo(RecurringInvoice::class);
+    }
+
+    public function creditNotes(): HasMany
+    {
+        return $this->hasMany(CreditNote::class);
+    }
+
+    public function reminders(): HasMany
+    {
+        return $this->hasMany(InvoiceReminder::class)->orderBy('scheduled_at');
     }
 
     /**

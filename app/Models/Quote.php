@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -40,6 +41,7 @@ use Illuminate\Support\Str;
     'pdf_url',
     'template_id',
     'layout_snapshot',
+    'active_version_id',
     'parent_quote_id',
     'subtotal',
     'discount_amount',
@@ -47,6 +49,13 @@ use Illuminate\Support\Str;
     'total',
     'requires_deposit',
     'deposit_amount',
+    'deposit_percent',
+    'is_locked',
+    'scheduled_at',
+    'delivered_at',
+    'bounced_at',
+    'cc_recipients',
+    'bcc_recipients',
     'sent_at',
     'viewed_at',
     'accepted_at',
@@ -80,6 +89,14 @@ class Quote extends Model
                 $quote->quote_uuid = (string) Str::uuid();
             }
         });
+    }
+
+    /**
+     * Scope to exclude child quotes (versions) from main queries.
+     */
+    public function scopeParents(Builder $query): Builder
+    {
+        return $query->whereNull('parent_quote_id');
     }
 
     /**
@@ -222,6 +239,31 @@ class Quote extends Model
     public function quoteApprovals(): HasMany
     {
         return $this->hasMany(QuoteApproval::class);
+    }
+
+    public function versions(): HasMany
+    {
+        return $this->hasMany(Quote::class, 'parent_quote_id')->orderByDesc('version');
+    }
+
+    public function activeVersion(): BelongsTo
+    {
+        return $this->belongsTo(Quote::class, 'active_version_id');
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Quote::class, 'parent_quote_id');
+    }
+
+    public function comments(): MorphMany
+    {
+        return $this->morphMany(Comment::class, 'commentable')->latest();
+    }
+
+    public function tasks()
+    {
+        return $this->morphMany(Task::class, 'taskable');
     }
 
     /**

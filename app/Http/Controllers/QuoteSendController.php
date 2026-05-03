@@ -73,6 +73,29 @@ class QuoteSendController extends Controller
             return back();
         }
 
+        // Handle CC/BCC recipients
+        $ccRecipients = $request->input('cc_recipients', []);
+        $bccRecipients = $request->input('bcc_recipients', []);
+        $scheduledAt = $request->input('scheduled_at');
+
+        // Update quote with CC/BCC recipients
+        $quote->cc_recipients = is_array($ccRecipients) ? $ccRecipients : [];
+        $quote->bcc_recipients = is_array($bccRecipients) ? $bccRecipients : [];
+
+        // Handle scheduled send
+        if ($scheduledAt) {
+            $quote->scheduled_at = $scheduledAt;
+            $quote->save();
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('Quote scheduled to be sent at :date.', ['date' => $scheduledAt]),
+            ]);
+
+            return back();
+        }
+
+        // Send immediately
         $sendAt = now();
 
         $this->quoteSendingService->sendQuote(
@@ -82,6 +105,8 @@ class QuoteSendController extends Controller
             attachPdf: $request->boolean('attach_pdf', false),
             ipAddress: $request->ip(),
             userAgent: $request->userAgent(),
+            ccRecipients: $quote->cc_recipients,
+            bccRecipients: $quote->bcc_recipients,
         );
 
         $quote->forceFill([

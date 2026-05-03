@@ -2,6 +2,7 @@
 <script setup lang="ts">
 import { useEventListener } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
+import { router } from '@inertiajs/vue3';
 import BlockConfigPanel from '@/components/builder/BlockConfigPanel.vue';
 import BlockList from '@/components/builder/BlockList.vue';
 import BuilderHeader from '@/components/quotes/builder/BuilderHeader.vue';
@@ -63,6 +64,32 @@ const emit = defineEmits<{
 }>();
 
 const localState = ref<QuoteBuilderState>(JSON.parse(JSON.stringify(props.modelValue)));
+const initialState = ref<string>(JSON.stringify(props.modelValue));
+
+const hasUnsavedChanges = computed(() => {
+    return JSON.stringify(localState.value) !== initialState.value;
+});
+
+// Warn on page navigation with unsaved changes
+useEventListener(window, 'beforeunload', (e) => {
+    if (hasUnsavedChanges.value) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+
+// Warn on Inertia navigation with unsaved changes
+// router.on('before', (e) => {
+//     if (hasUnsavedChanges.value && !confirm('You have unsaved changes. Are you sure you want to leave?')) {
+//         e.cancel();
+//     }
+// });
+
+// Update initial state after save
+watch(() => props.modelValue, (newValue) => {
+    initialState.value = JSON.stringify(newValue);
+    localState.value = JSON.parse(JSON.stringify(newValue));
+}, { deep: true });
 
 const currentLayout = ref<TemplateLayout>(
     ensureTemplateLayout(

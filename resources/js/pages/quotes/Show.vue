@@ -3,11 +3,12 @@ import { Head, setLayoutProps } from '@inertiajs/vue3';
 import { router } from '@inertiajs/vue3';
 import { computed, ref, watchEffect } from 'vue';
 import Heading from '@/components/Heading.vue';
-import QuoteActivityTimeline from '@/components/quotes/QuoteActivityTimeline.vue';
+import QuoteActivityFeed from '@/components/quotes/QuoteActivityFeed.vue';
 import QuoteChat from '@/components/quotes/QuoteChat.vue';
 import QuoteFollowUps from '@/components/quotes/QuoteFollowUps.vue';
 import QuoteStatsPanel from '@/components/quotes/QuoteStatsPanel.vue';
 import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
+import QuoteVersionHistory from '@/components/quotes/QuoteVersionHistory.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -20,6 +21,7 @@ const props = defineProps<{
     quote: QuoteData;
     settings: WorkspaceSettings;
     quoteStatuses: QuoteStatusEnum[];
+    teamMembers: Array<{ id: number; name: string; email: string }>;
 }>();
 
 const breadcrumbs = computed(() => [
@@ -80,6 +82,14 @@ const rejectApproval = () => {
             approvalComments.value = '';
         },
     });
+};
+
+const handleCommentCreated = () => {
+    router.reload();
+};
+
+const handleCommentDeleted = () => {
+    router.reload();
 };
 </script>
 
@@ -241,16 +251,16 @@ const rejectApproval = () => {
                             </div>
                         </div>
                     </template>
+                    
                 </div>
-            </div>
 
-            <div class="space-y-4">
+                <!-- Pending Approval -->
                 <div v-if="quote.status === 'pending_approval' && quote.pending_approval" class="rounded-xl border border-yellow-200 bg-yellow-50 p-4">
                     <h3 class="font-semibold text-yellow-800 mb-3">PENDING YOUR APPROVAL</h3>
                     <div class="space-y-2 text-sm mb-4">
                         <p><span class="text-muted-foreground">Requested by:</span> {{ quote.pending_approval.requested_by?.name || 'Unknown' }}</p>
                         <p><span class="text-muted-foreground">Value:</span> {{ fmt(props.quote.base_total) }}</p>
-                        <p v-if="quote.discount_amount > 0"><span class="text-muted-foreground">Discount:</span> {{ fmt(quote.discount_amount) }} ({{ ((quote.discount_amount / quote.subtotal) * 100).toFixed(1) }}%)</p>
+                        <p v-if="quote.discount_amount > 0"><span class="text-muted-foreground">Discount:</span> {{ fmt(quote.discount_amount) }} ({{ ((Number(quote.discount_amount) / Number(quote.subtotal)) * 100).toFixed(1) }}%)</p>
                     </div>
                     <div class="mb-4">
                         <label class="text-sm font-medium mb-2 block">Comments (optional)</label>
@@ -271,13 +281,30 @@ const rejectApproval = () => {
                     </div>
                 </div>
 
+                <QuoteActivityFeed
+                    :activities="quote.activities ?? []"
+                    :comments="(quote as any).comments ?? []"
+                    :commentable-id="quote.id"
+                    commentable-type="quote"
+                    :team-members="teamMembers"
+                    @comment-created="handleCommentCreated"
+                    @comment-deleted="handleCommentDeleted"
+                />
+            </div>
+
+            <div class="space-y-4">
                 <QuoteStatsPanel :quote="quote" />
-                <QuoteActivityTimeline :activities="quote.activities ?? []" />
+                
+                <QuoteVersionHistory
+                    v-if="(quote as any).versions && (quote as any).versions.length > 0"
+                    :quote="quote"
+                    :versions="(quote as any).versions"
+                    @restore="(versionId) => {}"
+                />
             </div>
 
         </div>
 
-        <!-- Floating Chat -->
         <QuoteChat
             :quote-id="String(quote.id)"
             :messages="(quote as any).messages"

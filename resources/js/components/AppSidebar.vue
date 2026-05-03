@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { BarChart3, Building2, FileText, LayoutGrid, Receipt, ShieldCheck, SlidersHorizontal, Tags, Users } from 'lucide-vue-next';
+import { BarChart3, Building2, CheckSquare2, FileText, LayoutGrid, Receipt, ShieldCheck, SlidersHorizontal, Tags, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
@@ -43,6 +43,11 @@ const mainNavItems = computed<NavItem[]>(() => [
         title: 'Invoices',
         href: '/invoices',
         icon: Receipt,
+    },
+    {
+        title: 'Tasks',
+        href: '/tasks',
+        icon: CheckSquare2,
     },
     {
         title: 'Catalog',

@@ -57,6 +57,7 @@ class InvoiceService
                     $invoiceLineItem = InvoiceLineItem::query()->create([
                         'invoice_id' => $invoice->id,
                         'catalog_item_id' => $lineItem->catalog_item_id,
+                        'catalog_item_variant_id' => $lineItem->catalog_item_variant_id,
                         'name' => $lineItem->name,
                         'description' => $lineItem->description,
                         'quantity' => $lineItem->quantity,
@@ -185,6 +186,7 @@ class InvoiceService
                 return [
                     'id' => $lineItem->id,
                     'catalog_item_id' => $lineItem->catalog_item_id,
+                    'catalog_item_variant_id' => $lineItem->catalog_item_variant_id,
                     'name' => $lineItem->name,
                     'description' => $lineItem->description,
                     'quantity' => (float) $lineItem->quantity,
@@ -233,6 +235,7 @@ class InvoiceService
                 $invoiceLineItem = InvoiceLineItem::query()->create([
                     'invoice_id' => $invoice->id,
                     'catalog_item_id' => $item['catalog_item_id'] ?? null,
+                    'catalog_item_variant_id' => $item['catalog_item_variant_id'] ?? null,
                     'name' => $item['name'],
                     'description' => $item['description'] ?? null,
                     'quantity' => $item['quantity'],

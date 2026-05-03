@@ -15,6 +15,7 @@ const navItems: NavItem[] = [
     { title: 'Industries', href :'/configuration/industries' },
     { title: 'Follow-ups', href: '/configuration/follow-ups' },
     { title: 'Templates', href: '/configuration/templates' },
+    { title: 'Task Statuses', href: '/configuration/task-status' },
 ];
 
 const { isCurrentOrParentUrl } = useCurrentUrl();

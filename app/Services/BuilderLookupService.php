@@ -22,7 +22,7 @@ class BuilderLookupService
         return CatalogItem::query()
             ->where('workspace_id', $workspace->id)
             ->where('is_active', true)
-            ->with(['taxes', 'configurationUnit'])
+            ->with(['taxes', 'configurationUnit', 'variants', 'priceTiers'])
             ->orderByRaw('LOWER(name)')
             ->limit(300)
             ->get();

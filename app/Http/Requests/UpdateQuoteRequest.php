@@ -36,6 +36,13 @@ class UpdateQuoteRequest extends FormRequest
     {
         /** @var Workspace|null $workspace */
         $workspace = $this->user()?->currentWorkspace;
+        $user = $this->user();
+
+        $maxDiscount = null;
+        if ($user && $workspace) {
+            $pivot = $user->roles()->wherePivot('workspace_id', $workspace->id)->first()?->pivot;
+            $maxDiscount = $pivot->max_discount_percent ?? null;
+        }
 
         return [
             'number' => ['nullable', 'string', 'max:60'],
@@ -64,6 +71,8 @@ class UpdateQuoteRequest extends FormRequest
             ],
             'requires_deposit' => ['nullable', 'boolean'],
             'deposit_amount' => ['nullable', 'numeric', 'min:0'],
+            'deposit_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'is_locked' => ['nullable', 'boolean'],
             'subtotal' => ['nullable', 'numeric', 'min:0'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'tax_amount' => ['nullable', 'numeric', 'min:0'],
@@ -84,7 +93,18 @@ class UpdateQuoteRequest extends FormRequest
             'sections.*.line_items.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'sections.*.line_items.*.unit' => ['nullable', 'string', 'max:30'],
             'sections.*.line_items.*.unit_price' => ['required', 'numeric', 'min:0'],
-            'sections.*.line_items.*.discount_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'sections.*.line_items.*.cost_price' => ['nullable', 'numeric', 'min:0'],
+            'sections.*.line_items.*.discount_percent' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:100',
+                function ($attribute, $value, $fail) use ($maxDiscount) {
+                    if ($maxDiscount !== null && $value > $maxDiscount) {
+                        $fail("Discount cannot exceed {$maxDiscount}%.");
+                    }
+                },
+            ],
             'sections.*.line_items.*.subtotal' => ['nullable', 'numeric', 'min:0'],
             'sections.*.line_items.*.tax_amount' => ['nullable', 'numeric', 'min:0'],
             'sections.*.line_items.*.total' => ['nullable', 'numeric', 'min:0'],

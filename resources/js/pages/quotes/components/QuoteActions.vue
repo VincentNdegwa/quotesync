@@ -14,6 +14,7 @@ import {
     Send,
     Trash2,
     XCircle,
+    User,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
@@ -25,12 +26,30 @@ import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendControl
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { Button } from '@/components/ui/button';
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import portal from '@/routes/portal';
 import publicQuotesShow from '@/routes/public-quotes';
 import { analytics as quotesAnalytics } from '@/routes/quotes';
@@ -56,8 +75,18 @@ const showMarkLostDialog = ref(false);
 const showDeleteDialog = ref(false);
 const showApproveDialog = ref(false);
 const showRejectDialog = ref(false);
+const showChangeOwnerDialog = ref(false);
 const quoteToSend = ref<number | null>(null);
 const lostReason = ref('');
+const selectedUserId = ref<string | null>(null);
+const availableUsers = ref<{ id: number; name: string; email: string }[]>([]);
+
+// Send dialog state
+const ccRecipients = ref<string[]>([]);
+const bccRecipients = ref<string[]>([]);
+const scheduledAt = ref<string | null>(null);
+const ccRecipientInput = ref('');
+const bccRecipientInput = ref('');
 
 const statusData = computed(() =>
     props.quoteStatuses.find((s) => s.value === props.quote.status),
@@ -106,15 +135,48 @@ const canReject = computed(
 
 const openSendDialog = (): void => {
     quoteToSend.value = props.quote.id;
+    ccRecipients.value = [];
+    bccRecipients.value = [];
+    scheduledAt.value = null;
+    ccRecipientInput.value = '';
+    bccRecipientInput.value = '';
     showSendDialog.value = true;
 };
 
 const executeSend = (): void => {
-    router.post(QuoteSendController.store(props.quote.id).url, {}, {
+    router.post(QuoteSendController.store(props.quote.id).url, {
+        cc_recipients: ccRecipients.value,
+        bcc_recipients: bccRecipients.value,
+        scheduled_at: scheduledAt.value,
+    }, {
         onSuccess: ()=>{
             showSendDialog.value = false;
         }
     });
+};
+
+const addCcRecipient = (): void => {
+    const email = ccRecipientInput.value.trim();
+    if (email && !ccRecipients.value.includes(email)) {
+        ccRecipients.value.push(email);
+        ccRecipientInput.value = '';
+    }
+};
+
+const removeCcRecipient = (email: string): void => {
+    ccRecipients.value = ccRecipients.value.filter(e => e !== email);
+};
+
+const addBccRecipient = (): void => {
+    const email = bccRecipientInput.value.trim();
+    if (email && !bccRecipients.value.includes(email)) {
+        bccRecipients.value.push(email);
+        bccRecipientInput.value = '';
+    }
+};
+
+const removeBccRecipient = (email: string): void => {
+    bccRecipients.value = bccRecipients.value.filter(e => e !== email);
 };
 
 const approve = (): void => {
@@ -267,16 +329,137 @@ const convertToInvoice = (): void => {
         },
     );
 };
+
+const openChangeOwnerDialog = async (): Promise<void> => {
+    try {
+        const response = await fetch(`/api/quotes/${props.quote.id}/available-users`);
+        const data = await response.json();
+        availableUsers.value = data;
+        selectedUserId.value = (props.quote as any).assignee?.id?.toString() || null;
+        showChangeOwnerDialog.value = true;
+    } catch (error) {
+        console.error('Failed to fetch users:', error);
+        toast.error('Failed to load users');
+    }
+};
+
+const executeChangeOwner = (): void => {
+    if (!selectedUserId.value) {
+        toast.error('Please select a user');
+        return;
+    }
+
+    router.patch(
+        QuoteController.update(props.quote.id).url,
+        { assignee_id: selectedUserId.value },
+        {
+            onSuccess: () => {
+                showChangeOwnerDialog.value = false;
+                selectedUserId.value = null;
+                availableUsers.value = [];
+                emit('success');
+                toast.success('Owner changed successfully');
+            },
+            onError: () => {
+                toast.error('Failed to change owner');
+            },
+        },
+    );
+};
 </script>
 
 <template>
-    <ConfirmDialog
-        v-model:open="showSendDialog"
-        title="Send quote"
-        description="Are you sure you want to send this quote to the client?"
-        confirm-text="Send"
-        @confirm="executeSend"
-    />
+    <Dialog v-model:open="showSendDialog">
+        <DialogContent class="sm:max-w-[500px]">
+            <DialogHeader>
+                <DialogTitle>Send quote</DialogTitle>
+                <DialogDescription>
+                    Send this quote to the client via email
+                </DialogDescription>
+            </DialogHeader>
+            <div class="grid gap-4 py-4">
+                <div class="space-y-2">
+                    <Label>CC recipients</Label>
+                    <div class="flex gap-2">
+                        <Input
+                            v-model="ccRecipientInput"
+                            placeholder="Add CC email"
+                            @keyup.enter="addCcRecipient"
+                        />
+                        <Button type="button" variant="outline" @click="addCcRecipient">
+                            Add
+                        </Button>
+                    </div>
+                    <div v-if="ccRecipients.length > 0" class="flex flex-wrap gap-2">
+                        <Badge
+                            v-for="email in ccRecipients"
+                            :key="email"
+                            variant="secondary"
+                            class="gap-1"
+                        >
+                            {{ email }}
+                            <button
+                                type="button"
+                                @click="removeCcRecipient(email)"
+                                class="ml-1 hover:text-destructive"
+                            >
+                                ×
+                            </button>
+                        </Badge>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <Label>BCC recipients</Label>
+                    <div class="flex gap-2">
+                        <Input
+                            v-model="bccRecipientInput"
+                            placeholder="Add BCC email"
+                            @keyup.enter="addBccRecipient"
+                        />
+                        <Button type="button" variant="outline" @click="addBccRecipient">
+                            Add
+                        </Button>
+                    </div>
+                    <div v-if="bccRecipients.length > 0" class="flex flex-wrap gap-2">
+                        <Badge
+                            v-for="email in bccRecipients"
+                            :key="email"
+                            variant="secondary"
+                            class="gap-1"
+                        >
+                            {{ email }}
+                            <button
+                                type="button"
+                                @click="removeBccRecipient(email)"
+                                class="ml-1 hover:text-destructive"
+                            >
+                                ×
+                            </button>
+                        </Badge>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <Label>Schedule send (optional)</Label>
+                    <Input
+                        v-model="scheduledAt"
+                        type="datetime-local"
+                        placeholder="Leave empty to send now"
+                    />
+                    <p class="text-xs text-muted-foreground">
+                        Leave empty to send immediately
+                    </p>
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" @click="showSendDialog = false">
+                    Cancel
+                </Button>
+                <Button @click="executeSend">
+                    {{ scheduledAt ? 'Schedule' : 'Send' }}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
 
     <ConfirmDialog
         v-model:open="showMarkLostDialog"
@@ -295,6 +478,42 @@ const convertToInvoice = (): void => {
         confirm-text="Delete"
         @confirm="executeDelete"
     />
+
+    <Dialog v-model:open="showChangeOwnerDialog">
+        <DialogContent class="sm:max-w-[400px]">
+            <DialogHeader>
+                <DialogTitle>Change Owner</DialogTitle>
+                <DialogDescription>
+                    Assign this quote to a different team member
+                </DialogDescription>
+            </DialogHeader>
+            <div class="space-y-2 py-4">
+                <Label for="assignee">Assign to</Label>
+                <Select v-model="selectedUserId">
+                    <SelectTrigger id="assignee">
+                        <SelectValue placeholder="Select a user" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem
+                            v-for="user in availableUsers"
+                            :key="user.id"
+                            :value="user.id.toString()"
+                        >
+                            {{ user.name }} ({{ user.email }})
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" @click="showChangeOwnerDialog = false">
+                    Cancel
+                </Button>
+                <Button @click="executeChangeOwner">
+                    Change Owner
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
 
     <!-- Dropdown variant -->
     <template v-if="variant === 'dropdown' || !variant">
@@ -385,6 +604,16 @@ const convertToInvoice = (): void => {
                             <Pencil class="h-4 w-4" />
                             <span>Edit</span>
                         </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+
+                    <DropdownMenuItem
+                        class="gap-2"
+                        @select="openChangeOwnerDialog"
+                    >
+                        <User class="h-4 w-4" />
+                        <span>Change Owner</span>
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator />
@@ -573,6 +802,16 @@ const convertToInvoice = (): void => {
                         <Eye class="h-4 w-4" />
                         <span>View as client</span>
                     </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                        class="gap-2"
+                        @select="openChangeOwnerDialog"
+                    >
+                        <User class="h-4 w-4" />
+                        <span>Change Owner</span>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
 
                     <DropdownMenuItem :as-child="true" class="gap-2">
                         <Link

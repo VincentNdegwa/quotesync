@@ -9,9 +9,11 @@ use App\Http\Requests\UpdateQuoteRequest;
 use App\Http\Requests\UpdateQuoteStatusRequest;
 use App\Jobs\SendFollowUpJob;
 use App\Models\Client;
+use App\Models\Comment;
 use App\Models\Quote;
 use App\Models\QuoteFollowUp;
 use App\Models\QuoteTemplate;
+use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Quotes\QuoteAnalyticsService;
 use App\Services\BuilderLookupService;
@@ -28,7 +30,7 @@ class QuoteController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request, QuoteService $quoteService, WorkspaceSettingsService $workspaceSettingsService): Response
+    public function index(Request $request, QuoteService $quoteService, WorkspaceSettingsService $workspaceSettingsService): Response | JsonResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -40,32 +42,38 @@ class QuoteController extends Controller
             'sort' => $request->string('sort')->toString() ?: 'newest',
         ];
 
+        $quotes = $quoteService->paginateForIndex($workspace, $filters)
+            ->through(fn (Quote $quote): array => [
+                'id' => $quote->id,
+                'quote_uuid' => $quote->quote_uuid,
+                'number' => $quote->number,
+                'title' => $quote->title,
+                'status' => $quote->status,
+                'total' => (float) ($quote->base_total ?? $quote->total),
+                'base_total' => $quote->base_total ? (float) $quote->base_total : null,
+                'currency' => $quote->base_currency ?? $quote->currency,
+                'base_currency' => $quote->base_currency,
+                'valid_until' => $quote->valid_until?->toDateString(),
+                'created_at' => $quote->created_at?->toISOString(),
+                'win_probability' => $quote->winProbability?->toResponseArray(),
+                'client' => $quote->client ? [
+                    'id' => $quote->client->id,
+                    'company_name' => $quote->client->company_name,
+                    'email' => $quote->client->email,
+                ] : null,
+                'assignee' => $quote->assignee ? [
+                    'id' => $quote->assignee->id,
+                    'name' => $quote->assignee->name,
+                ] : null,
+            ]);
+
+        if ($request->wantsJson()) {
+            return response()->json($quotes);
+        }
+
         return Inertia::render('quotes/Index', [
             'filters' => $filters,
-            'quotes' => $quoteService->paginateForIndex($workspace, $filters)
-                ->through(fn (Quote $quote): array => [
-                    'id' => $quote->id,
-                    'quote_uuid' => $quote->quote_uuid,
-                    'number' => $quote->number,
-                    'title' => $quote->title,
-                    'status' => $quote->status,
-                    'total' => (float) ($quote->base_total ?? $quote->total),
-                    'base_total' => $quote->base_total ? (float) $quote->base_total : null,
-                    'currency' => $quote->base_currency ?? $quote->currency,
-                    'base_currency' => $quote->base_currency,
-                    'valid_until' => $quote->valid_until?->toDateString(),
-                    'created_at' => $quote->created_at?->toISOString(),
-                    'win_probability' => $quote->winProbability?->toResponseArray(),
-                    'client' => $quote->client ? [
-                        'id' => $quote->client->id,
-                        'company_name' => $quote->client->company_name,
-                        'email' => $quote->client->email,
-                    ] : null,
-                    'assignee' => $quote->assignee ? [
-                        'id' => $quote->assignee->id,
-                        'name' => $quote->assignee->name,
-                    ] : null,
-                ]),
+            'quotes' => $quotes,
         ]);
     }
 
@@ -163,18 +171,38 @@ class QuoteController extends Controller
 
         abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
 
+        $quote->load([
+            'client',
+            'assignee:id,name',
+            'workspace',
+            'sections.lineItems.taxes',
+            'comments.user:id,name',
+            'versions:id,version,number,created_at',
+            'tasks.assignedTo:id,name',
+            'tasks.assignedBy:id,name',
+            'tasks.status',
+        ]);
+
+        // Load task statuses for the workspace
+        $taskStatuses = \App\Models\TaskStatus::where('workspace_id', $workspace->id)
+            ->orderBy('sort_order')
+            ->get(['id', 'name', 'slug', 'color', 'sort_order']);
+
+        $quote->setRelation('task_statuses', $taskStatuses);
+
+        // Load versions without global scopes
+        $quote->setRelation('versions', $quote->versions()->withoutGlobalScopes()->get(['id', 'version', 'number', 'created_at']));
+
         $quote->loadMissing([
-            'client:id,company_name,address',
-            'workspace:id,name,display_name',
             'template:id,name,layout',
             'creator:id,name,email',
-            'assignee:id,name,email',
-            'sections.lineItems.catalogItem:id,sku',
-            'sections.lineItems.taxes',
-            'activities.user:id,name',
             'quoteFollowUps.step:id,follow_up_sequence_id,channel,subject,message_template,day_offset',
-            'winProbability.signals'
+            'winProbability.signals',
         ]);
+
+        $teamMembers = User::whereHas('workspaces', function ($query) use ($workspace) {
+            $query->where('workspace_id', $workspace->id);
+        })->select('id', 'name', 'email')->get();
 
         $quote = $this->transformForInternalView($quote);
 
@@ -182,7 +210,21 @@ class QuoteController extends Controller
             'quote' => $quote,
             'settings' => $workspaceSettingsService->builderSettings($workspace),
             'quoteStatuses' => QuoteStatus::all(),
+            'teamMembers' => $teamMembers,
         ]);
+    }
+
+    public function availableUsers(Request $request, Quote $quote): JsonResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+
+        $users = User::whereHas('workspaces', function ($query) use ($workspace) {
+            $query->where('workspace_id', $workspace->id);
+        })->select('id', 'name', 'email')->get();
+
+        return response()->json($users);
     }
 
     private function transformForInternalView(Quote $quote): array
@@ -372,6 +414,20 @@ class QuoteController extends Controller
         return to_route('quotes.edit', $newQuote);
     }
 
+    public function restoreVersion(Request $request, Quote $quote, Quote $version, QuoteService $quoteService): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+        abort_unless($version->parent_quote_id === $quote->id, 403, 'Invalid version.');
+
+        $quoteService->restoreVersion($quote, $version);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote restored to version :version.', ['version' => $version->version])]);
+
+        return to_route('quotes.show', $quote);
+    }
+
     public function reopen(Request $request, Quote $quote, QuoteService $quoteService): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
@@ -427,5 +483,22 @@ class QuoteController extends Controller
         SendFollowUpJob::dispatch($quoteFollowUp->id);
 
         return back()->with('toast', ['type' => 'success', 'message' => __('Follow-up will be sent shortly.')]);
+    }
+
+    public function handover(Request $request, Quote $quote, QuoteService $quoteService): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+
+        $validated = $request->validate([
+            'assigned_to' => 'required|integer|exists:users,id',
+        ]);
+
+        $quoteService->handover($quote, $validated['assigned_to']);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote ownership transferred successfully.')]);
+
+        return back();
     }
 }

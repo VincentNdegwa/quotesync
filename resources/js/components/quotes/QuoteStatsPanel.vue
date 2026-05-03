@@ -11,7 +11,6 @@ import {
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useFormat } from '@/composables/useFormat';
 import type { Quote } from '@/types';
@@ -117,27 +116,26 @@ const statusTimeline = computed(() => [
 </script>
 
 <template>
-    <Card class="border-none shadow-sm ring-1 ring-border/50">
-        <CardHeader class="pb-2">
-            <div class="flex items-center justify-between">
-                <CardTitle class="text-base">Quote Stats</CardTitle>
-                <Badge
-                    v-if="isHotLead"
-                    class="animate-pulse gap-1 bg-destructive/10 text-destructive hover:bg-destructive/10"
-                >
-                    <TrendingUp class="h-3 w-3" />
-                    Hot lead
-                </Badge>
-                <Badge v-else-if="expiryWarning" :variant="expiryWarning.variant" class="gap-1">
-                    <AlertCircle class="h-3 w-3" />
-                    {{ expiryWarning.text }}
-                </Badge>
+    <div class="space-y-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-semibold">Quote Stats</h3>
             </div>
-        </CardHeader>
+            <Badge
+                v-if="isHotLead"
+                class="animate-pulse gap-1 bg-destructive/10 text-destructive hover:bg-destructive/10"
+            >
+                <TrendingUp class="h-3 w-3" />
+                Hot lead
+            </Badge>
+            <Badge v-else-if="expiryWarning" :variant="expiryWarning.variant" class="gap-1">
+                <AlertCircle class="h-3 w-3" />
+                {{ expiryWarning.text }}
+            </Badge>
+        </div>
 
-        <CardContent class="space-y-5">
-
-            <div class="rounded-xl bg-muted/40 px-4 py-3">
+        <div class="space-y-5">
+            <div>
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2 text-muted-foreground">
                         <Eye class="h-4 w-4" />
@@ -164,6 +162,12 @@ const statusTimeline = computed(() => [
             </div>
 
             <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-0.5">
+                    <p class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Owner
+                    </p>
+                    <p class="text-sm font-medium">{{ (quote as any).assignee?.name || 'Unassigned' }}</p>
+                </div>
                 <div class="space-y-0.5">
                     <p class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                         Valid until
@@ -230,7 +234,6 @@ const statusTimeline = computed(() => [
                     </div>
                 </div>
             </div>
-
-        </CardContent>
-    </Card>
+        </div>
+    </div>
 </template>

@@ -12,7 +12,9 @@ use App\Http\Controllers\CatalogItemController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ClientExportController;
 use App\Http\Controllers\ClientImportController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ConfigIndustryController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\Configuration\FollowUpSequenceController as ConfigFollowUpSequenceController;
 use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\ConfigurationTagController;
@@ -23,7 +25,6 @@ use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoicePdfController;
 use App\Http\Controllers\InvoiceSendController;
-use App\Http\Controllers\Settings\MembersController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PortalInvitationController;
 use App\Http\Controllers\PublicQuoteController;
@@ -33,8 +34,11 @@ use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\QuoteMessageController;
 use App\Http\Controllers\QuotePdfController;
 use App\Http\Controllers\QuoteSendController;
+use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TaskStatusController;
 use App\Http\Controllers\QuoteTemplateController;
 use App\Http\Controllers\QuoteTrackingController;
+use App\Http\Controllers\Settings\MembersController;
 use App\Http\Controllers\TaxController;
 use App\Http\Controllers\WorkspaceSwitchController;
 use App\Http\Middleware\EnsureWorkspaceSettingsOnboarded;
@@ -110,6 +114,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('clients/import/confirm', [ClientImportController::class, 'store'])->name('clients.import.store');
         Route::resource('clients', ClientController::class)->except(['create', 'edit']);
         Route::post('clients/{client}/invite-portal', [PortalInvitationController::class, 'send'])->name('clients.invite-portal');
+        Route::get('clients/{client}/contacts', [ContactController::class, 'index'])->name('clients.contacts.index');
+        Route::post('clients/{client}/contacts', [ContactController::class, 'store'])->name('clients.contacts.store');
+        Route::put('clients/{client}/contacts/{contact}', [ContactController::class, 'update'])->name('clients.contacts.update');
+        Route::delete('clients/{client}/contacts/{contact}', [ContactController::class, 'destroy'])->name('clients.contacts.destroy');
 
         Route::post('catalog/bulk-action', [CatalogItemController::class, 'bulkAction'])->name('catalog.bulk-action');
 
@@ -125,6 +133,8 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('quotes/{quote}/status', [QuoteController::class, 'updateStatus'])->name('quotes.status');
 
         Route::resource('invoices', InvoiceController::class);
+        Route::post('invoices/{invoice}/record-payment', [InvoiceController::class, 'recordPayment'])->name('invoices.record-payment');
+        Route::post('invoices/payments/{payment}/refund', [InvoiceController::class, 'refundPayment'])->name('invoices.payments.refund');
         Route::patch('invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('invoices.status');
         Route::post('invoices/{invoice}/send', [InvoiceSendController::class, 'store'])->name('invoices.send');
         Route::post('invoices/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])->name('invoices.duplicate');
@@ -133,12 +143,21 @@ Route::middleware(['auth'])->group(function () {
         Route::get('invoices/{invoice}/pdf/download', [InvoicePdfController::class, 'download'])->name('invoices.pdf.download');
         Route::post('quotes/{quote}/duplicate', [QuoteController::class, 'duplicate'])->name('quotes.duplicate');
         Route::post('quotes/{quote}/revise', [QuoteController::class, 'revise'])->name('quotes.revise');
+        Route::post('quotes/{quote}/versions/{version}/restore', [QuoteController::class, 'restoreVersion'])->name('quotes.versions.restore');
         Route::post('quotes/{quote}/reopen', [QuoteController::class, 'reopen'])->name('quotes.reopen');
         Route::post('quotes/{quote}/archive', [QuoteController::class, 'archive'])->name('quotes.archive');
         Route::post('quotes/{quote}/follow-ups/{quoteFollowUp}/cancel', [QuoteController::class, 'cancelFollowUp'])->name('quotes.follow-ups.cancel');
         Route::post('quotes/{quote}/follow-ups/{quoteFollowUp}/send-now', [QuoteController::class, 'sendFollowUpNow'])->name('quotes.follow-ups.send-now');
+        Route::post('quotes/{quote}/handover', [QuoteController::class, 'handover'])->name('quotes.handover');
+        Route::get('quotes/{quote}/available-users', [QuoteController::class, 'availableUsers'])->name('quotes.available-users');
         Route::get('quotes/{quote}/messages', [QuoteMessageController::class, 'index'])->name('quotes.messages.index');
         Route::post('quotes/{quote}/messages', [QuoteMessageController::class, 'store'])->name('quotes.messages.store');
+        Route::resource('tasks', TaskController::class)->except(['index', 'show', 'create', 'edit']);
+        Route::get('tasks', [TaskController::class, 'index'])->name('tasks.index');
+
+        Route::get('comments/{type}/{id}', [CommentController::class, 'index'])->name('comments.index');
+        Route::post('comments/{type}/{id}', [CommentController::class, 'store'])->name('comments.store');
+        Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
         Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
         Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
@@ -152,6 +171,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('catalog/export', [CatalogExportController::class, 'export'])->name('catalog.export');
         Route::post('catalog/export/selected', [CatalogExportController::class, 'exportSelected'])->name('catalog.export.selected');
         Route::resource('catalog', CatalogItemController::class)->except(['create', 'edit']);
+        Route::post('catalog/{catalog}/variants', [CatalogItemController::class, 'storeVariant'])->name('catalog.variants.store');
+        Route::put('catalog/{catalog}/variants/{variant}', [CatalogItemController::class, 'updateVariant'])->name('catalog.variants.update');
+        Route::delete('catalog/{catalog}/variants/{variant}', [CatalogItemController::class, 'destroyVariant'])->name('catalog.variants.destroy');
+        Route::post('catalog/{catalog}/price-tiers', [CatalogItemController::class, 'storePriceTier'])->name('catalog.price-tiers.store');
+        Route::put('catalog/{catalog}/price-tiers/{priceTier}', [CatalogItemController::class, 'updatePriceTier'])->name('catalog.price-tiers.update');
+        Route::delete('catalog/{catalog}/price-tiers/{priceTier}', [CatalogItemController::class, 'destroyPriceTier'])->name('catalog.price-tiers.destroy');
 
         Route::get('configuration', [ConfigurationController::class, 'index'])->name('configuration.index');
         Route::get('configuration/taxes', [ConfigurationController::class, 'taxes'])->name('configuration.taxes');
@@ -184,6 +209,12 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('configuration/follow-ups/{followUpSequence}', [ConfigFollowUpSequenceController::class, 'destroy'])->name('configuration.follow-ups.destroy');
 
         Route::get('configuration/templates', [QuoteTemplateController::class, 'index'])->name('configuration.templates');
+
+        Route::get('configuration/task-status', [ConfigurationController::class, 'taskStatuses'])->name('configuration.task-status');
+        Route::post('configuration/task-status', [TaskStatusController::class, 'store'])->name('configuration.task-status.store');
+        Route::put('configuration/task-status/reorder', [TaskStatusController::class, 'reorder'])->name('configuration.task-status.reorder');
+        Route::put('configuration/task-status/{taskStatus}', [TaskStatusController::class, 'update'])->name('configuration.task-status.update');
+        Route::delete('configuration/task-status/{taskStatus}', [TaskStatusController::class, 'destroy'])->name('configuration.task-status.destroy');
 
         Route::get('taxes', [TaxController::class, 'index'])->name('taxes.index');
         Route::post('taxes', [TaxController::class, 'store'])->name('taxes.store');
