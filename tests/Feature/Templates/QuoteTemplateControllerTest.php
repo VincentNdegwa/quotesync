@@ -100,3 +100,30 @@ it('can get template layout via controller', function () {
 
     $response->assertStatus(200);
 });
+
+it('can render create page via controller', function () {
+    $user = User::factory()->create();
+    $workspace = $user->currentWorkspace;
+    $user->addRole('admin', $workspace);
+
+    $response = $this->actingAs($user)
+        ->get(route('quote-templates.create'));
+
+    $response->assertSuccessful();
+});
+
+it('can render edit page via controller', function () {
+    $user = User::factory()->create();
+    $workspace = $user->currentWorkspace;
+    $user->addRole('admin', $workspace);
+    $template = QuoteTemplate::create([
+        'workspace_id' => $workspace->id,
+        'name' => 'Test Template',
+        'is_active' => true,
+    ]);
+
+    $response = $this->actingAs($user)
+        ->get(route('quote-templates.edit', $template));
+
+    $response->assertSuccessful();
+});

@@ -80,7 +80,7 @@ class QuoteTemplateController extends Controller
                 ],
             ],
             'settings' => $settings,
-            ...$this->builderLookups($workspace, $workspaceSettingsService),
+            ...$builderLookupService->getTemplateLookups($workspace),
         ]);
     }
 
@@ -129,7 +129,7 @@ class QuoteTemplateController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Request $request, QuoteTemplate $quoteTemplate, WorkspaceSettingsService $workspaceSettingsService, BuilderLookupService $builderLookupService): Response
+    public function edit(Request $request, QuoteTemplate $quoteTemplate, WorkspaceSettingsService $workspaceSettingsService, BuilderLookupService $builderLookupService, QuoteTemplateService $quoteTemplateService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -139,7 +139,7 @@ class QuoteTemplateController extends Controller
             'templateId' => $quoteTemplate->id,
             'initialState' => $quoteTemplateService->toBuilderPayload($quoteTemplate),
             'settings' => $workspaceSettingsService->builderSettings($workspace),
-            ...$builderLookupService->getTemplateLookups($workspace, $workspaceSettingsService),
+            ...$builderLookupService->getTemplateLookups($workspace),
         ]);
     }
 

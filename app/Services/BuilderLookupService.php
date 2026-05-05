@@ -8,7 +8,6 @@ use App\Models\ConfigurationUnit;
 use App\Models\QuoteTemplate;
 use App\Models\Tax;
 use App\Models\Workspace;
-use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 
 class BuilderLookupService
 {
@@ -118,40 +117,16 @@ class BuilderLookupService
     }
 
     /**
-     * Get template builder lookups (includes branding)
+     * Get template builder lookups
      * Used for quote templates
      *
      * @return array<string, mixed>
      */
-    public function getTemplateLookups(Workspace $workspace, WorkspaceSettingsService $workspaceSettingsService): array
+    public function getTemplateLookups(Workspace $workspace): array
     {
-        $branding = $this->getBrandingPayload($workspace, $workspaceSettingsService);
-
         return [
-            'branding' => $branding,
             'catalogItems' => $this->getCatalogItems($workspace),
             'taxes' => $this->getTaxes($workspace),
-        ];
-    }
-
-    /**
-     * Get branding payload for templates
-     *
-     * @return array<string, mixed>
-     */
-    private function getBrandingPayload(Workspace $workspace, WorkspaceSettingsService $workspaceSettingsService): array
-    {
-        $branding = $workspaceSettingsService->groupForFrontend($workspace, 'branding')['fields'] ?? [];
-
-        return [
-            'company_name' => $branding['company_name']['value'] ?? null,
-            'logo_url' => $branding['logo_url']['value'] ?? null,
-            'primary_color' => $branding['primary_color']['value'] ?? '#2563EB',
-            'accent_color' => $branding['accent_color']['value'] ?? '#F59E0B',
-            'company_email' => $branding['company_email']['value'] ?? null,
-            'company_phone' => $branding['company_phone']['value'] ?? null,
-            'company_address' => $branding['company_address']['value'] ?? null,
-            'company_tagline' => $branding['company_tagline']['value'] ?? null,
         ];
     }
 }
