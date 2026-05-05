@@ -68,8 +68,8 @@ return [
                 'credit_notes' => [
                     'label' => 'Credit Notes',
                     'fields' => [
-                        'credit_note_prefix' => ['label' => 'Credit note prefix', 'type' => 'string', 'required' => true, 'default' => 'CN', 'max' => 20],
-                        'credit_note_number_sequence' => ['label' => 'Credit note sequence', 'type' => 'integer', 'required' => true, 'default' => 1, 'min' => 1],
+                        'credit_note_prefix' => ['label' => 'Credit note prefix', 'type' => 'string', 'required' => false, 'default' => 'CN', 'max' => 20],
+                        'credit_note_number_sequence' => ['label' => 'Credit note sequence', 'type' => 'integer', 'required' => false, 'default' => 1, 'min' => 1],
                         'credit_note_number_reset_yearly' => ['label' => 'Reset sequence yearly', 'type' => 'boolean', 'required' => false, 'default' => true],
                     ],
                 ],

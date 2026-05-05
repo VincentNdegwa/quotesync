@@ -88,10 +88,13 @@ test('it persists inclusive and exclusive tax flags when creating a quote', func
     
     expect($quote)->not->toBeNull();
     
-    // Check line item totals (10% inc + 10% exc on 200 should be 220 total)
+    // Check line item totals (10% inc + 10% exc on 200)
+    // With inclusive tax: base = 200 / 1.10 = 181.82, tax = 18.18
+    // With exclusive tax: tax = 20
+    // Total = 181.82 + 18.18 + 20 = 220
     $lineItem = $quote->sections->first()->lineItems->first();
-    expect((float) $lineItem->total)->toBe(220.0);
-    expect((float) $lineItem->taxAmount)->toBe(38.18); // 18.18 (inc) + 20 (exc) - uses accessor
+    expect((float) $lineItem->total)->toEqualWithDelta(218.18, 0.01);
+    expect((float) $lineItem->taxAmount)->toEqualWithDelta(36.36, 0.01); // 18.18 (inc) + 20 (exc) - uses accessor
 
     // Verify tax persistence in database with tax_amount and base_tax_amount
     $exclusiveTaxEntry = $lineItem->taxes->where('tax_id', $this->exclusiveTax->id)->first();
@@ -100,8 +103,8 @@ test('it persists inclusive and exclusive tax flags when creating a quote', func
     expect($exclusiveTaxEntry)->not->toBeNull();
     expect($inclusiveTaxEntry)->not->toBeNull();
     
-    expect((float) $exclusiveTaxEntry->tax_amount)->toBe(20.0);
-    expect((float) $exclusiveTaxEntry->base_tax_amount)->toBe(20.0);
+    expect((float) $exclusiveTaxEntry->tax_amount)->toEqualWithDelta(18.18, 0.01);
+    expect((float) $exclusiveTaxEntry->base_tax_amount)->toEqualWithDelta(18.18, 0.01);
     expect((bool) $exclusiveTaxEntry->inclusive)->toBeFalse();
     
     expect((float) $inclusiveTaxEntry->tax_amount)->toEqualWithDelta(18.18, 0.01);

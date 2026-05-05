@@ -239,7 +239,7 @@ const handleFormSuccess = (): void => {
         <Form
             v-bind="onboardingForm"
             @success="handleFormSuccess"
-            class="space-y-6 rounded-xl border bg-card p-8 shadow-sm"
+            class="space-y-6 md:w-lg rounded-xl border bg-card p-8 shadow-sm"
             v-slot="{ errors, processing }"
         >
             <input
