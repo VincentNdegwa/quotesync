@@ -64,7 +64,9 @@ const selectBlock = (id: string | null) => {
 };
 
 const addBlock = (type: BlockType) => {
-    if (!layout.value) return;
+    if (!layout.value) {
+return;
+}
 
     const newBlock = createBlock(type);
     layout.value.blocks.push(newBlock);
@@ -73,9 +75,12 @@ const addBlock = (type: BlockType) => {
 };
 
 const updateBlock = (block: Block) => {
-    if (!layout.value) return;
+    if (!layout.value) {
+return;
+}
 
     const index = layout.value.blocks.findIndex((b) => b.id === block.id);
+
     if (index !== -1) {
         layout.value.blocks[index] = block;
         model.value.layout_snapshot = layout.value;
@@ -83,7 +88,9 @@ const updateBlock = (block: Block) => {
 };
 
 const deleteBlock = (id: string) => {
-    if (!layout.value) return;
+    if (!layout.value) {
+return;
+}
 
     layout.value.blocks = layout.value.blocks.filter((b) => b.id !== id);
     model.value.layout_snapshot = layout.value;
@@ -105,6 +112,7 @@ watch(
         const taxAmount = lineItems.reduce((sum, item) => sum + (item.tax_amount || 0), 0);
         const discountAmount = lineItems.reduce((sum, item) => {
             const discount = (item.subtotal || 0) * ((item.discount_percent || 0) / 100);
+
             return sum + discount;
         }, 0);
         const total = subtotal + taxAmount - discountAmount;

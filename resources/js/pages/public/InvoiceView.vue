@@ -17,7 +17,7 @@ const props = defineProps<{
 
 const renderedLayout = computed(() => ensureTemplateLayout(props.layout));
 
-let scrollHandler: (() => void) | null = null;
+const scrollHandler: (() => void) | null = null;
 
 onMounted(() => {
     // Invoice tracking could be added here similar to quotes if needed

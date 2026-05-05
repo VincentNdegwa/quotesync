@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ref } from 'vue';
 import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
 import type { QuoteBuilderState, BuilderCatalogItem, BuilderTaxOption, BuilderConfigurationUnit, WorkspaceSettings } from '@/types';

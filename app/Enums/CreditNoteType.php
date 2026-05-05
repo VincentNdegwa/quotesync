@@ -6,7 +6,7 @@ enum CreditNoteType: string
 {
     case Full = 'full';
     case Partial = 'partial';
-    case LineItem = 'line_item';
+    case LineItem = 'line_items';
 
     public function label(): string
     {

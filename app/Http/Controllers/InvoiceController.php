@@ -111,6 +111,7 @@ class InvoiceController extends Controller
             'activities.user',
             'payments.createdBy:id,name',
             'comments.user:id,name',
+            'creditNotes',
         ]);
 
         return Inertia::render('invoices/Show', [

@@ -11,8 +11,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import CreditNotesDataTable from './components/CreditNotesDataTable.vue';
 import type { Paginator, CreditNoteListRecord } from '@/types';
+import CreditNotesDataTable from './components/CreditNotesDataTable.vue';
 
 type Filters = {
     search: string;
@@ -26,7 +26,7 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
-const creditNoteStatuses = computed(() => (page.props.enums as any)?.creditNoteStatus ?? []);
+const creditNoteStatuses = computed(() => (page.props.enums as { creditNoteStatus?: unknown[] }).creditNoteStatus ?? []);
 
 defineOptions({
     layout: {
@@ -42,7 +42,7 @@ defineOptions({
 const ALL = '__all__';
 
 const query = ref({
-    search: props.filters.search ?? '',
+    search: props.filters.search || '',
     status: props.filters.status || ALL,
     sort: props.filters.sort || 'newest',
 });
@@ -153,7 +153,6 @@ const executeDelete = (): void => {
         <CreditNotesDataTable
             v-if="hasCreditNotes"
             :data="creditNotes.data"
-            :credit-note-statuses="creditNoteStatuses"
             @delete="removeCreditNote"
         />
 

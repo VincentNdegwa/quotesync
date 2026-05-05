@@ -13,9 +13,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'quantity',
     'unit',
     'unit_price',
+    'base_unit_price',
     'tax_amount',
+    'base_tax_amount',
     'subtotal',
+    'base_subtotal',
     'total',
+    'base_total',
 ])]
 class CreditNoteLineItem extends Model
 {
@@ -35,9 +39,13 @@ class CreditNoteLineItem extends Model
         return [
             'quantity' => 'decimal:2',
             'unit_price' => 'decimal:2',
+            'base_unit_price' => 'decimal:2',
             'tax_amount' => 'decimal:2',
+            'base_tax_amount' => 'decimal:2',
             'subtotal' => 'decimal:2',
+            'base_subtotal' => 'decimal:2',
             'total' => 'decimal:2',
+            'base_total' => 'decimal:2',
         ];
     }
 }

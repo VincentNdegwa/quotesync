@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router, setLayoutProps, useForm, usePage } from '@inertiajs/vue3';
 import { computed, watchEffect, ref } from 'vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import CountryCombobox from '@/components/location/CountryCombobox.vue';
 import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
@@ -33,9 +34,8 @@ import {
 } from '@/components/ui/tabs';
 import { useFormat } from '@/composables/useFormat';
 import type { ClientRecord, ClientStats } from '@/types';
-import InvitePortalDialog from './components/InvitePortalDialog.vue';
 import ContactDialog from './components/ContactDialog.vue';
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import InvitePortalDialog from './components/InvitePortalDialog.vue';
 
 const props = defineProps<{
     client: ClientRecord;

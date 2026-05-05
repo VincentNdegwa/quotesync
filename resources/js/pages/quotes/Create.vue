@@ -46,6 +46,7 @@ const save = (updatedState?: QuoteBuilderState): void => {
             }
         });
     }
+
     form.post('/quotes', {
         preserveScroll: true,
     });

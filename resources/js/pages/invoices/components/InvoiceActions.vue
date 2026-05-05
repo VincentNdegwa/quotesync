@@ -19,6 +19,7 @@ import { toast } from 'vue-sonner';
 import InvoiceController from '@/actions/App/Http/Controllers/InvoiceController';
 import InvoiceSendController from '@/actions/App/Http/Controllers/InvoiceSendController';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import RecordPaymentDialog from '@/components/invoices/RecordPaymentDialog.vue';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -29,7 +30,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import RecordPaymentDialog from '@/components/invoices/RecordPaymentDialog.vue';
 import type { InvoiceListRecord, InvoiceStatusEnum } from '@/types';
 
 const props = defineProps<{
@@ -131,12 +131,14 @@ const downloadPDF = async (): Promise<void> => {
 
         if (response.status === 202) {
             toast.info(data?.message ?? 'PDF generation started. You can download it shortly.');
+
             return;
         }
 
         if (response.ok && data?.url) {
             window.open(String(data.url), '_blank');
             toast.success('PDF download ready.');
+
             return;
         }
 

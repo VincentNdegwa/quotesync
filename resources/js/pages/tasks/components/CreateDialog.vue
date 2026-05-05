@@ -1,8 +1,17 @@
 <script setup lang="ts">
 import { useForm, router } from '@inertiajs/vue3';
+import { Check, ChevronsUpDown } from 'lucide-vue-next';
 import { ref, watch, computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
 import {
     Dialog,
     DialogContent,
@@ -13,7 +22,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import {
     Select,
     SelectContent,
@@ -21,20 +34,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover';
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
-} from '@/components/ui/command';
-import { Check, ChevronsUpDown } from 'lucide-vue-next';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 
 const open = defineModel<boolean>('open', {
@@ -63,17 +63,23 @@ const selectedEntityText = computed(() => {
     if (!form.taskable_id) {
         return `Select ${form.taskable_type === 'quote' ? 'quote' : 'invoice'}`;
     }
+
     const entity = availableEntities.value.find(e => e.id === form.taskable_id);
+
     if (entity) {
         return entity.number ? `${entity.title} (${entity.number})` : entity.title;
     }
+
     return `Select ${form.taskable_type === 'quote' ? 'quote' : 'invoice'}`;
 });
 
 watch(
     () => form.taskable_type,
     async (newType) => {
-        if (!newType) return;
+        if (!newType) {
+return;
+}
+
         entitySearch.value = '';
         await fetchEntities();
     },
@@ -86,6 +92,7 @@ watch(
         if (searchTimeout) {
             clearTimeout(searchTimeout);
         }
+
         searchTimeout = setTimeout(() => {
             fetchEntities();
         }, 300);
@@ -93,7 +100,9 @@ watch(
 );
 
 async function fetchEntities() {
-    if (!form.taskable_type) return;
+    if (!form.taskable_type) {
+return;
+}
     
     try {
         const endpoint = form.taskable_type === 'quote' ? '/quotes' : '/invoices';

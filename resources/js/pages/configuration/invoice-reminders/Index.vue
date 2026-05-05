@@ -159,11 +159,9 @@ const insertPlaceholder = (key: string): void => {
             inputEl.setSelectionRange(start + token.length, start + token.length);
             inputEl.focus();
         }, 0);
-    }
-    else if (tiptapEditorRef.value) {
+    } else if (tiptapEditorRef.value) {
         tiptapEditorRef.value.insertText(token);
-    }
-    else {
+    } else {
         form.steps[activeStepIndex.value].message_template += token;
     }
 };
@@ -190,6 +188,7 @@ const reminderTypeLabel = (value: string): string => {
         on_due: 'On Due',
         after_due: 'After Due',
     };
+
     return labels[value] ?? value;
 };
 
@@ -199,6 +198,7 @@ const reminderTypeColor = (value: string): string => {
         on_due: 'text-amber-600 bg-amber-50 border-amber-200',
         after_due: 'text-red-600 bg-red-50 border-red-200',
     };
+
     return colors[value] ?? 'text-muted-foreground bg-muted';
 };
 

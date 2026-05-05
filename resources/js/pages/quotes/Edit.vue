@@ -52,6 +52,7 @@ const save = (updatedState?: QuoteBuilderState): void => {
             }
         });
     }
+
     form.put(QuoteController.update(props.quoteId).url, {
         preserveScroll: true,
     });

@@ -24,6 +24,7 @@ import PortalDashboardController from '@/actions/App/Http/Controllers/Portal/Por
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -49,7 +50,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import portal from '@/routes/portal';
 import publicQuotesShow from '@/routes/public-quotes';
 import { analytics as quotesAnalytics } from '@/routes/quotes';
@@ -157,6 +157,7 @@ const executeSend = (): void => {
 
 const addCcRecipient = (): void => {
     const email = ccRecipientInput.value.trim();
+
     if (email && !ccRecipients.value.includes(email)) {
         ccRecipients.value.push(email);
         ccRecipientInput.value = '';
@@ -169,6 +170,7 @@ const removeCcRecipient = (email: string): void => {
 
 const addBccRecipient = (): void => {
     const email = bccRecipientInput.value.trim();
+
     if (email && !bccRecipients.value.includes(email)) {
         bccRecipients.value.push(email);
         bccRecipientInput.value = '';
@@ -346,6 +348,7 @@ const openChangeOwnerDialog = async (): Promise<void> => {
 const executeChangeOwner = (): void => {
     if (!selectedUserId.value) {
         toast.error('Please select a user');
+
         return;
     }
 

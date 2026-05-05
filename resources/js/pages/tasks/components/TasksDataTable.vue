@@ -16,9 +16,9 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { valueUpdater } from '@/components/ui/table/utils';
+import type { TaskModel, TaskStatusModel } from '@/types/models';
 import { getTaskColumns } from './columns';
 import { tasksDataTableTheme } from './theme';
-import type { TaskModel, TaskStatusModel } from '@/types/models';
 
 const props = defineProps<{
     data: TaskModel[];

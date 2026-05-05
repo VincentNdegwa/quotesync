@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { MoreHorizontal, Pencil, Trash2 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -6,7 +7,6 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-vue-next';
 import type { TaskModel } from '@/types/models';
 
 const props = defineProps<{

@@ -329,7 +329,7 @@ export type InvoiceModel = {
   title: string;
   status: string;
   assigned_to: number | null;
-  currency: string | null;
+  currency: string;
   base_currency: string | null;
   fx_rate: number | null;
   base_total: number | null;
@@ -421,6 +421,25 @@ export type RecurringInvoiceModel = {
   created_by_user: Pick<UserModel, 'id' | 'name'> | null;
 };
 
+export type CreditNoteLineItemModel = {
+  id: number;
+  credit_note_id: number;
+  name: string;
+  description: string | null;
+  quantity: number | string;
+  unit: string | null;
+  unit_price: number | string;
+  base_unit_price: number | string;
+  tax_amount: number | string;
+  base_tax_amount: number | string;
+  subtotal: number | string;
+  base_subtotal: number | string;
+  total: number | string;
+  base_total: number | string;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
 export type CreditNoteModel = {
   id: number;
   workspace_id: number;
@@ -429,20 +448,44 @@ export type CreditNoteModel = {
   created_by: number | null;
   credit_note_number: string;
   title: string;
+  type: string;
   reason: string | null;
   currency: string;
-  amount: number | string;
+  base_currency: string | null;
+  subtotal: number | string;
   tax_amount: number | string;
   total: number | string;
+  base_subtotal: number | string;
+  base_tax_amount: number | string;
+  base_total: number | string;
   issue_date: string | null;
   due_date: string | null;
   status: string;
   pdf_url: string | null;
+  applied_at: string | null;
+  fx_rate: number | string;
+  issued_at: string | null;
+  voided_at: string | null;
+  void_reason: string | null;
   created_at: string | null;
   updated_at: string | null;
-  invoice: Pick<InvoiceModel, 'id' | 'invoice_number' | 'title'> | null;
+  invoice: Pick<InvoiceModel, 'id' | 'invoice_number' | 'title' | 'total' | 'currency'> | null;
   client: ClientModel | null;
   created_by_user: Pick<UserModel, 'id' | 'name'> | null;
+  line_items: CreditNoteLineItemModel[];
+};
+
+export type CreditNoteInvoiceModel = {
+  id: number;
+  invoice_number: string | null;
+  title: string;
+  total: number | string;
+  subtotal: number | string;
+  tax_amount: number | string;
+  currency: string;
+  base_currency: string | null;
+  client: Pick<ClientModel, 'id' | 'company_name'>;
+  line_items: InvoiceLineItemModel[];
 };
 
 export type CreditNoteListRecord = {

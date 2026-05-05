@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, watch, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { CheckIcon, ChevronsUpDownIcon, Trash2, X } from 'lucide-vue-next';
+import { computed, watch, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     Command,
@@ -11,13 +11,13 @@ import {
     CommandItem,
     CommandList,
 } from '@/components/ui/command';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFormat } from '@/composables/useFormat';
 import { calculateLineItemTotals } from '@/composables/useTaxCalculation';
@@ -55,7 +55,9 @@ const filteredCatalogItems = computed(() => {
     if (!catalogSearchQuery.value) {
         return props.catalogItems.slice(0, 19);
     }
+
     const query = catalogSearchQuery.value.toLowerCase();
+
     return props.catalogItems.filter((item) =>
         item.name.toLowerCase().includes(query) ||
         (item.sku && item.sku.toLowerCase().includes(query))
@@ -143,6 +145,7 @@ return;
 
         // Set default variant if available
         const defaultVariant = catalog.variants.find((v) => v.is_default);
+
         if (defaultVariant) {
             item.value.catalog_item_variant_id = defaultVariant.id;
             item.value.unit_price = Number(defaultVariant.unit_price);
@@ -204,6 +207,7 @@ const currentCatalog = computed(() => {
     if (!item.value?.catalog_item_id) {
 return null;
 }
+
     return props.catalogItems.find((entry) => entry.id === item.value.catalog_item_id);
 });
 
@@ -222,6 +226,7 @@ return;
 
             // Revert to base catalog item pricing
             const catalog = currentCatalog.value;
+
             if (catalog) {
                 item.value.unit_price = Number(catalog.unit_price || 0);
                 item.value.cost_price = Number(catalog.cost_price || 0);
@@ -256,6 +261,7 @@ const applicablePriceTier = computed(() => {
                    quantity >= tier.min_quantity &&
                    (tier.max_quantity === null || quantity <= tier.max_quantity);
         });
+
         if (variantTier) {
             return variantTier;
         }
@@ -275,6 +281,7 @@ watch(() => item.value?.quantity, (newQuantity) => {
     }
 
     const tier = applicablePriceTier.value;
+
     if (tier) {
         const basePrice = item.value.catalog_item_variant_id
             ? Number(currentCatalog.value.variants.find(v => v.id === item.value.catalog_item_variant_id)?.unit_price || 0)

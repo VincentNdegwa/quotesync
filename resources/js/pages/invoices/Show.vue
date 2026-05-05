@@ -2,15 +2,16 @@
 import { Head, setLayoutProps, router } from '@inertiajs/vue3';
 import { computed, watchEffect } from 'vue';
 import Heading from '@/components/Heading.vue';
-import InvoiceRenderer from '@/components/renderer/InvoiceRenderer.vue';
 import PaymentHistory from '@/components/PaymentHistory.vue';
+import CreditNotesHistory from '@/components/CreditNotesHistory.vue';
+import QuoteActivityFeed from '@/components/quotes/QuoteActivityFeed.vue';
+import InvoiceRenderer from '@/components/renderer/InvoiceRenderer.vue';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
 import type { WorkspaceSettings, InvoiceData, InvoiceStatusEnum } from '@/types';
 import InvoiceActions from './components/InvoiceActions.vue';
-import QuoteActivityFeed from '@/components/quotes/QuoteActivityFeed.vue';
 
 const props = defineProps<{
     invoice: InvoiceData;
@@ -213,6 +214,13 @@ const handleCommentDeleted = () => {
                 <PaymentHistory
                     v-if="(invoice as any).payments"
                     :payments="(invoice as any).payments"
+                    :invoice-id="invoice.id"
+                    :currency="invoice.currency || 'USD'"
+                    :total="Number(invoice.total)"
+                />
+                <CreditNotesHistory
+                    v-if="(invoice as any).credit_notes"
+                    :credit-notes="(invoice as any).credit_notes"
                     :invoice-id="invoice.id"
                     :currency="invoice.currency || 'USD'"
                     :total="Number(invoice.total)"

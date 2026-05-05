@@ -1,9 +1,9 @@
 import type { ColumnDef } from '@tanstack/vue-table';
 import { ArrowUpDown } from 'lucide-vue-next';
 import { h } from 'vue';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useFormat } from '@/composables/useFormat';
 import TaskTableRowActions from './TaskTableRowActions.vue';
 
@@ -73,7 +73,10 @@ export const getTaskColumns = (options: TaskColumnOptions): ColumnDef<TaskListRe
             header: 'Related to',
             cell: ({ row }) => {
                 const taskable = row.original.taskable;
-                if (!taskable) return '—';
+
+                if (!taskable) {
+return '—';
+}
                 
                 const type = row.original.taskable_type.split('\\').pop();
                 const identifier = taskable.number || taskable.title || taskable.company_name || `#${taskable.id}`;
@@ -86,7 +89,10 @@ export const getTaskColumns = (options: TaskColumnOptions): ColumnDef<TaskListRe
             header: 'Assigned to',
             cell: ({ row }) => {
                 const assignedTo = row.original.assigned_to;
-                if (!assignedTo) return '—';
+
+                if (!assignedTo) {
+return '—';
+}
                 
                 const initials = assignedTo.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
                 
@@ -103,7 +109,10 @@ export const getTaskColumns = (options: TaskColumnOptions): ColumnDef<TaskListRe
             header: 'Status',
             cell: ({ row }) => {
                 const status = row.original.status;
-                if (!status) return '—';
+
+                if (!status) {
+return '—';
+}
                 
                 return h(Badge, {
                     variant: 'outline',

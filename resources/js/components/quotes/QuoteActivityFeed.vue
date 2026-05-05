@@ -17,14 +17,14 @@ import {
 } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
 import TiptapEditor from '@/components/ui/tiptap-editor/TiptapEditor.vue';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
-import type { CommentModel } from '@/types/models';
 import type { QuoteActivity } from '@/types';
+import type { CommentModel } from '@/types/models';
 
 const editorRef = ref<InstanceType<typeof TiptapEditor> | null>(null);
 
@@ -74,9 +74,11 @@ const iconForType = (type: string) => {
 
 const colorForType = (type: string): string => {
     const typeConfig = getQuoteActivityType(type);
+
     if (typeConfig?.color) {
         return typeConfig.color;
     }
+
     return 'text-muted-foreground bg-muted';
 };
 
@@ -113,6 +115,7 @@ const timeline = computed(() => {
     return items.sort((a, b) => {
         const aT = a.timestamp ? Date.parse(a.timestamp) : 0;
         const bT = b.timestamp ? Date.parse(b.timestamp) : 0;
+
         return aT - bT;
     });
 });
@@ -121,14 +124,19 @@ const displayTimeline = computed(() => {
     if (showAllActivity.value) {
         return timeline.value;
     }
+
     // Show only recent items (last 10 - newest items)
     return timeline.value.slice(-10);
 });
 
 const submitComment = async () => {
-    if (editorRef.value?.isEmpty) return;
+    if (editorRef.value?.isEmpty) {
+return;
+}
 
-    if (!newComment.value.trim()) return;
+    if (!newComment.value.trim()) {
+return;
+}
 
     try {
         const response = await fetch(`/comments/${props.commentableType}/${props.commentableId}`, {
@@ -153,7 +161,9 @@ const submitComment = async () => {
 };
 
 const deleteComment = async (commentId: number) => {
-    if (!confirm('Are you sure you want to delete this comment?')) return;
+    if (!confirm('Are you sure you want to delete this comment?')) {
+return;
+}
 
     try {
         const response = await fetch(`/comments/${commentId}`, {

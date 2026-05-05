@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import AppLayout from '@/layouts/AppLayout.vue';
-import type { NavItem } from '@/types';
 import configuration from '@/routes/configuration';
+import type { NavItem } from '@/types';
 
 const navItems: NavItem[] = [
     { title: 'Taxes', href: '/configuration/taxes' },

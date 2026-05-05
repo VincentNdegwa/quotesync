@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Textarea } from '@/components/ui/textarea';
 import type { CommentModel } from '@/types/models';
 
 const props = defineProps<{
@@ -23,7 +23,9 @@ const mentionQuery = ref('');
 const mentionedUsers = ref<number[]>([]);
 
 const submitComment = async () => {
-    if (!newComment.value.trim()) return;
+    if (!newComment.value.trim()) {
+return;
+}
 
     try {
         const response = await fetch(`/comments/${props.commentableType}/${props.commentableId}`, {
@@ -49,7 +51,9 @@ const submitComment = async () => {
 };
 
 const deleteComment = async (commentId: number) => {
-    if (!confirm('Are you sure you want to delete this comment?')) return;
+    if (!confirm('Are you sure you want to delete this comment?')) {
+return;
+}
 
     try {
         const response = await fetch(`/comments/${commentId}`, {
@@ -77,7 +81,10 @@ const getInitials = (name: string) => {
 };
 
 const formatDate = (date: string | null) => {
-    if (!date) return '—';
+    if (!date) {
+return '—';
+}
+
     return new Date(date).toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',

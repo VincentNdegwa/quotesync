@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router, setLayoutProps, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref, watchEffect } from 'vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,12 +16,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { useFormat } from '@/composables/useFormat';
-import type { CatalogItemRecord, ConfigurationUnitRecord } from '@/types';
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
-import CatalogItemVariantDialog from './components/CatalogItemVariantDialog.vue';
-import CatalogItemPriceTierDialog from './components/CatalogItemPriceTierDialog.vue';
 import {
     Table,
     TableBody,
@@ -29,6 +24,11 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
+import { useFormat } from '@/composables/useFormat';
+import type { CatalogItemRecord, ConfigurationUnitRecord } from '@/types';
+import CatalogItemPriceTierDialog from './components/CatalogItemPriceTierDialog.vue';
+import CatalogItemVariantDialog from './components/CatalogItemVariantDialog.vue';
 
 const props = defineProps<{
     item: CatalogItemRecord;

@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
     Select,
     SelectContent,
@@ -21,6 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import type { TaskModel, TaskStatusModel, UserModel } from '@/types/models';
 
 const open = defineModel<boolean>('open', {
@@ -76,6 +76,7 @@ const submit = (): void => {
 
     form.transform(() => {
         const data = form.data();
+
         return {
             ...data,
             task_status_id: data.task_status_id === '__none__' ? null : data.task_status_id,

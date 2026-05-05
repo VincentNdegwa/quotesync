@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
+import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useFormat } from '@/composables/useFormat';
 import type { InvoicePaymentModel } from '@/types/models';
 
 const props = defineProps<{
@@ -10,6 +12,10 @@ const props = defineProps<{
     currency: string;
     total: number;
 }>();
+
+const page = usePage();
+const defaultCurrency: string = page.props.workspace_currency as string;
+const { formatCurrency: fmt, formatDate: fmtDate } = useFormat(defaultCurrency);
 
 const totalPaid = computed(() => {
     return props.payments.reduce((sum, p) => sum + Number(p.amount), 0);
@@ -20,12 +26,18 @@ const balanceDue = computed(() => {
 });
 
 const paymentStatus = computed(() => {
-    if (totalPaid.value >= props.total) return 'paid';
-    if (totalPaid.value > 0) return 'partial';
+    if (totalPaid.value >= props.total) {
+return 'paid';
+}
+
+    if (totalPaid.value > 0) {
+        return 'partial';
+    }
+
     return 'unpaid';
 });
 
-const getStatusColor = (status: string) => {
+const getStatusColor = (status: string): string => {
     switch (status) {
         case 'paid':
             return 'bg-green-100 text-green-800 border-green-200';
@@ -34,22 +46,6 @@ const getStatusColor = (status: string) => {
         default:
             return 'bg-gray-100 text-gray-800 border-gray-200';
     }
-};
-
-const formatDate = (date: string | null) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-    });
-};
-
-const formatCurrency = (amount: number | string) => {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: props.currency,
-    }).format(Number(amount));
 };
 </script>
 
@@ -65,28 +61,26 @@ const formatCurrency = (amount: number | string) => {
             </Badge>
         </div>
 
-        <!-- Payment Summary -->
         <div class="rounded-lg border bg-muted/30 p-4">
             <div class="grid grid-cols-3 gap-4 text-sm">
                 <div>
                     <p class="text-muted-foreground">Total</p>
-                    <p class="font-semibold">{{ formatCurrency(total) }}</p>
+                    <p class="font-semibold">{{ fmt(total, defaultCurrency) }}</p>
                 </div>
                 <div>
                     <p class="text-muted-foreground">Paid</p>
-                    <p class="font-semibold">{{ formatCurrency(totalPaid) }}</p>
+                    <p class="font-semibold">{{ fmt(totalPaid, defaultCurrency) }}</p>
                 </div>
                 <div>
                     <p class="text-muted-foreground">Balance</p>
                     <p class="font-semibold" :class="balanceDue > 0 ? 'text-red-600' : 'text-green-600'">
-                        {{ formatCurrency(balanceDue) }}
+                        {{ fmt(balanceDue, defaultCurrency) }}
                     </p>
                 </div>
             </div>
         </div>
 
-        <!-- Payments List -->
-        <ScrollArea class="h-[400px] pr-4">
+        <ScrollArea class="max-h-[400px] pr-4">
             <div v-if="payments.length > 0" class="space-y-3">
                 <div
                     v-for="payment in payments"
@@ -96,14 +90,14 @@ const formatCurrency = (amount: number | string) => {
                     <div class="flex items-start justify-between gap-4">
                         <div class="flex-1">
                             <div class="flex items-center gap-2 mb-1">
-                                <span class="font-semibold text-lg">{{ formatCurrency(payment.amount) }}</span>
+                                <span class="font-semibold text-lg">{{ fmt(payment.amount, defaultCurrency) }}</span>
                                 <Badge variant="outline" class="text-xs">
                                     {{ payment.payment_method || '—' }}
                                 </Badge>
                             </div>
                             <div class="text-sm text-muted-foreground space-y-1">
                                 <div class="flex items-center gap-2">
-                                    <span class="font-medium">{{ formatDate(payment.payment_date) }}</span>
+                                    <span class="font-medium">{{ fmtDate(payment.payment_date) }}</span>
                                 </div>
                                 <div v-if="payment.reference_number" class="text-xs">
                                     Ref: {{ payment.reference_number }}

@@ -1,8 +1,8 @@
 #resources/js/components/quotes/builder/QuoteBuilder.vue
 <script setup lang="ts">
+import { router } from '@inertiajs/vue3';
 import { useEventListener } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
-import { router } from '@inertiajs/vue3';
 import BlockConfigPanel from '@/components/builder/BlockConfigPanel.vue';
 import BlockList from '@/components/builder/BlockList.vue';
 import BuilderHeader from '@/components/quotes/builder/BuilderHeader.vue';
@@ -573,6 +573,7 @@ const removeLineItem = (sectionIndex: number, lineItemIndex: number): void => {
                 line_items: s.line_items.filter((_, index) => index !== lineItemIndex),
             };
         }
+
         return s;
     });
     localState.value = newState;
@@ -591,6 +592,7 @@ const updateLineItemField = (sectionIndex: number, lineItemIndex: number, field:
     }
 
     const item = section.line_items[lineItemIndex];
+
     if (!item) {
         return;
     }
@@ -611,6 +613,7 @@ const selectCatalogItem = (sectionIndex: number, lineItemIndex: number, catalogI
     }
 
     const item = section.line_items[lineItemIndex];
+
     if (!item) {
         return;
     }
@@ -796,9 +799,11 @@ const resolvedClient = computed(() => {
     if (localState.value.client) {
         return localState.value.client;
     }
+
     if (!localState.value.client_id || !props.clients) {
         return null;
     }
+
     return props.clients.find((c) => c.id === localState.value.client_id) ?? null;
 });
 
@@ -819,9 +824,11 @@ const recompute = (): void => {
             const lineSubtotal = item.quantity * item.unit_price * (1 - item.discount_percent / 100);
             const lineTaxAmount = item.taxes.reduce((sum, tax) => {
                 const taxRate = Number(tax.tax_rate);
+
                 if (tax.inclusive) {
                     return sum + (lineSubtotal * taxRate) / (100 + taxRate);
                 }
+
                 return sum + lineSubtotal * (taxRate / 100);
             }, 0);
 

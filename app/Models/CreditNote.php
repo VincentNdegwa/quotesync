@@ -19,17 +19,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'type',
     'reason',
     'currency',
-    'amount',
+    'base_currency',
+    'subtotal',
     'tax_amount',
     'total',
+    'base_subtotal',
+    'base_tax_amount',
+    'base_total',
     'issue_date',
     'due_date',
     'status',
     'pdf_url',
     'applied_at',
     'fx_rate',
-    'base_amount',
-    'base_total',
+    'issued_at',
+    'voided_at',
+    'void_reason',
 ])]
 class CreditNote extends Model
 {
@@ -38,15 +43,16 @@ class CreditNote extends Model
         return [
             'type' => CreditNoteType::class,
             'status' => CreditNoteStatus::class,
-            'amount' => 'decimal:2',
+            'subtotal' => 'decimal:2',
             'tax_amount' => 'decimal:2',
             'total' => 'decimal:2',
+            'base_subtotal' => 'decimal:2',
+            'base_tax_amount' => 'decimal:2',
+            'base_total' => 'decimal:2',
             'issue_date' => 'date',
             'due_date' => 'date',
             'applied_at' => 'datetime',
-            'fx_rate' => 'decimal:15,6',
-            'base_amount' => 'decimal:2',
-            'base_total' => 'decimal:2',
+            'fx_rate' => 'decimal:6',
         ];
     }
 

@@ -144,7 +144,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('invoices/{invoice}/pdf', [InvoicePdfController::class, 'generate'])->name('invoices.pdf.generate');
         Route::get('invoices/{invoice}/pdf/download', [InvoicePdfController::class, 'download'])->name('invoices.pdf.download');
         Route::get('invoices/{invoice}/credit-notes/create', [CreditNoteController::class, 'create'])->name('invoices.credit-notes.create');
-        Route::resource('credit-notes', CreditNoteController::class)->only(['index', 'show', 'store', 'update']);
+        Route::resource('credit-notes', CreditNoteController::class)->only(['index', 'show', 'edit', 'store', 'update']);
         Route::post('credit-notes/{creditNote}/issue', [CreditNoteController::class, 'issue'])->name('credit-notes.issue');
         Route::post('credit-notes/{creditNote}/apply', [CreditNoteController::class, 'apply'])->name('credit-notes.apply');
         Route::post('credit-notes/{creditNote}/void', [CreditNoteController::class, 'void'])->name('credit-notes.void');

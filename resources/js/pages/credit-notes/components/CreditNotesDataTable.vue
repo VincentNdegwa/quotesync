@@ -16,13 +16,12 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { valueUpdater } from '@/components/ui/table/utils';
-import type { CreditNoteListRecord, CreditNoteStatusEnum } from '@/types';
+import type { CreditNoteListRecord } from '@/types';
 import { getCreditNoteColumns } from './columns';
 import { creditNotesDataTableTheme } from './theme';
 
 const props = defineProps<{
     data: CreditNoteListRecord[];
-    creditNoteStatuses: CreditNoteStatusEnum[];
 }>();
 
 const emit = defineEmits<{
@@ -33,7 +32,6 @@ const sorting = ref<SortingState>([]);
 
 const columns = computed(() => getCreditNoteColumns({
     onDelete: (creditNoteId) => emit('delete', creditNoteId),
-    creditNoteStatuses: props.creditNoteStatuses,
 }));
 
 const table = useVueTable({

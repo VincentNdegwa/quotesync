@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
+import { GripVertical } from 'lucide-vue-next';
 import { ref } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +13,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { GripVertical } from 'lucide-vue-next';
 import ConfigurationLayout from '@/layouts/configuration/Layout.vue';
 import CreateDialog from './components/CreateDialog.vue';
 import EditDialog from './components/EditDialog.vue';
@@ -44,6 +44,7 @@ const openEdit = (taskStatus: TaskStatusRecord): void => {
     if (taskStatus.is_system) {
         return; // Prevent editing system statuses
     }
+
     editingTaskStatus.value = taskStatus;
     editOpen.value = true;
 };
@@ -52,6 +53,7 @@ const removeTaskStatus = (taskStatus: TaskStatusRecord): void => {
     if (taskStatus.is_system) {
         return; // Prevent deletion of system statuses
     }
+
     router.delete(`/configuration/task-status/${taskStatus.id}`, {
         preserveScroll: true,
     });

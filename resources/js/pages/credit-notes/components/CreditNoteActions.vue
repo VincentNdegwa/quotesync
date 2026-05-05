@@ -1,14 +1,10 @@
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import {
-    Archive,
-    Copy,
     Download,
-    Edit3,
     Eye,
     MoreHorizontal,
     Pencil,
-    RefreshCw,
     Send,
     Trash2,
     FileText,
@@ -18,18 +14,28 @@ import { toast } from 'vue-sonner';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { Button } from '@/components/ui/button';
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import type { CreditNoteListRecord, CreditNoteStatusEnum } from '@/types';
 
 const props = defineProps<{
     creditNote: CreditNoteListRecord;
-    creditNoteStatuses: CreditNoteStatusEnum[];
     variant?: 'dropdown' | 'buttons';
+    pdfUrl?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -37,10 +43,16 @@ const emit = defineEmits<{
     delete: [creditNoteId: number];
 }>();
 
+const page = usePage();
+const creditNoteStatuses = computed(() => (page.props.enums as { creditNoteStatus?: CreditNoteStatusEnum[] }).creditNoteStatus ?? []);
+
 const showDeleteDialog = ref(false);
+const showIssueDialog = ref(false);
+const showVoidDialog = ref(false);
+const voidReason = ref('');
 
 const statusData = computed(() =>
-    props.creditNoteStatuses.find((s) => s.value === props.creditNote.status),
+    creditNoteStatuses.value.find((s) => s.value === props.creditNote.status),
 );
 
 const availableActions = computed(
@@ -58,17 +70,35 @@ const executeDelete = (): void => {
         preserveScroll: true,
         onSuccess: () => {
             showDeleteDialog.value = false;
-            toast.success('Credit note deleted successfully');
             emit('success');
         },
     });
 };
 
 const handleIssue = (): void => {
+    showIssueDialog.value = true;
+};
+
+const executeIssue = (): void => {
     router.post(`/credit-notes/${props.creditNote.id}/issue`, {}, {
         preserveScroll: true,
         onSuccess: () => {
-            toast.success('Credit note issued successfully');
+            showIssueDialog.value = false;
+            emit('success');
+        },
+    });
+};
+
+const handleVoid = (): void => {
+    showVoidDialog.value = true;
+};
+
+const executeVoid = (): void => {
+    router.post(`/credit-notes/${props.creditNote.id}/void`, { void_reason: voidReason.value }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            showVoidDialog.value = false;
+            voidReason.value = '';
             emit('success');
         },
     });
@@ -78,17 +108,6 @@ const handleApply = (): void => {
     router.post(`/credit-notes/${props.creditNote.id}/apply`, {}, {
         preserveScroll: true,
         onSuccess: () => {
-            toast.success('Credit note applied successfully');
-            emit('success');
-        },
-    });
-};
-
-const handleVoid = (): void => {
-    router.post(`/credit-notes/${props.creditNote.id}/void`, {}, {
-        preserveScroll: true,
-        onSuccess: () => {
-            toast.success('Credit note voided successfully');
             emit('success');
         },
     });
@@ -104,6 +123,40 @@ const handleVoid = (): void => {
         variant="destructive"
         @confirm="executeDelete"
     />
+
+    <ConfirmDialog
+        v-model:open="showIssueDialog"
+        title="Issue credit note"
+        description="Are you sure you want to issue this credit note? This will send it to the client."
+        confirm-text="Issue"
+        @confirm="executeIssue"
+    />
+
+    <Dialog v-model:open="showVoidDialog">
+        <DialogContent class="sm:max-w-[425px]">
+            <DialogHeader>
+                <DialogTitle>Void credit note</DialogTitle>
+                <DialogDescription>
+                    Please provide a reason for voiding this credit note.
+                </DialogDescription>
+            </DialogHeader>
+            <div class="py-4">
+                <div class="space-y-2">
+                    <Label for="void-reason">Reason</Label>
+                    <Textarea
+                        id="void-reason"
+                        v-model="voidReason"
+                        placeholder="Enter the reason for voiding this credit note"
+                        rows="3"
+                    />
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" @click="showVoidDialog = false">Cancel</Button>
+                <Button @click="executeVoid" :disabled="!voidReason.trim()">Void</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
 
     <!-- Dropdown variant -->
     <template v-if="variant === 'dropdown' || !variant">
@@ -214,6 +267,19 @@ const handleVoid = (): void => {
             <Link :href="`/credit-notes/${creditNote.id}/edit`">
                 <Pencil class="h-3.5 w-3.5" />
                 Edit
+            </Link>
+        </Button>
+
+        <Button
+            v-if="pdfUrl"
+            size="sm"
+            variant="outline"
+            class="gap-1.5"
+            as-child
+        >
+            <Link :href="pdfUrl" target="_blank">
+                <Download class="h-3.5 w-3.5" />
+                PDF
             </Link>
         </Button>
 

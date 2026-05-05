@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, ComputedRef, inject, ref } from 'vue';
 import { Trash2, Plus, CheckIcon, ChevronsUpDownIcon } from 'lucide-vue-next';
+import type { ComputedRef} from 'vue';
+import { computed, inject, ref } from 'vue';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
     Command,
     CommandEmpty,
@@ -12,6 +12,7 @@ import {
     CommandItem,
     CommandList,
 } from '@/components/ui/command';
+import { Input } from '@/components/ui/input';
 import {
     Popover,
     PopoverContent,
@@ -22,8 +23,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { blockBaseStyle } from '@/composables/useBlockStyles';
 import { useFormat } from '@/composables/useFormat';
 import type { DocumentData, LineItemsBlockConfig, WorkspaceSettings, QuoteData, InvoiceData } from '@/types';
-import type { QuoteLineItemModel, InvoiceLineItemModel } from '@/types/models';
 import type { BuilderCatalogItem } from '@/types';
+import type { QuoteLineItemModel, InvoiceLineItemModel } from '@/types/models';
 
 type DocumentLineItem = QuoteLineItemModel | InvoiceLineItemModel;
 

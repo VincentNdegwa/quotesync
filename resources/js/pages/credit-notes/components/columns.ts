@@ -6,11 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
-import type { CreditNoteListRecord, CreditNoteStatusEnum } from '@/types';
+import type { CreditNoteListRecord } from '@/types';
 import CreditNoteTableRowActions from './CreditNoteTableRowActions.vue';
 
 type CreditNoteColumnOptions = {
-    creditNoteStatuses: CreditNoteStatusEnum[];
     onDelete: (creditNoteId: number) => void;
 };
 
@@ -18,7 +17,7 @@ const sortableHeader = (
     label: string,
     column: { getIsSorted: () => false | 'asc' | 'desc'; toggleSorting: (desc?: boolean) => void },
     align: 'left' | 'right' = 'left',
-) => h(
+): ReturnType<typeof h> => h(
     Button,
     {
         variant: 'ghost',
@@ -39,11 +38,11 @@ export const getCreditNoteColumns = (options: CreditNoteColumnOptions): ColumnDe
     const page = usePage();
     const defaultCurrency = (page.props.workspace_currency as string) || undefined;
 
-    const formatCurrency = (val: number | string, currency?: string | null) => {
+    const formatCurrency = (val: number | string, currency?: string | null): string => {
         return useFormat(currency || defaultCurrency).formatCurrency(val, currency || defaultCurrency);
     };
 
-    const formatDate = (val: string | null) => {
+    const formatDate = (val: string | null): string => {
         return useFormat().formatDate(val);
     };
 
@@ -61,7 +60,7 @@ export const getCreditNoteColumns = (options: CreditNoteColumnOptions): ColumnDe
         {
             accessorKey: 'client',
             header: 'Client',
-            cell: ({ row }) => row.original.client?.company_name || '—',
+            cell: ({ row }) => row.original.client.company_name || '—',
         },
         {
             accessorKey: 'invoice',
@@ -71,7 +70,7 @@ export const getCreditNoteColumns = (options: CreditNoteColumnOptions): ColumnDe
         {
             accessorKey: 'status',
             header: 'Status',
-            cell: ({ row }) => {
+            cell: ({ row }): ReturnType<typeof h> => {
                 const status = getCreditNoteStatus(row.original.status);
 
                 return h(Badge, {
@@ -83,7 +82,7 @@ export const getCreditNoteColumns = (options: CreditNoteColumnOptions): ColumnDe
         {
             accessorKey: 'total',
             header: ({ column }) => sortableHeader('Total', column, 'right'),
-            cell: ({ row }) => h('span', { class: 'text-right' }, formatCurrency(row.original.total, row.original.currency)),
+            cell: ({ row }) => h('span', { class: 'text-right' }, formatCurrency(Number(row.original.base_total), row.original.base_currency)),
         },
         {
             accessorKey: 'issue_date',
@@ -96,7 +95,6 @@ export const getCreditNoteColumns = (options: CreditNoteColumnOptions): ColumnDe
             cell: ({ row }) => h(CreditNoteTableRowActions, {
                 creditNoteId: row.original.id,
                 creditNote: row.original,
-                creditNoteStatuses: options.creditNoteStatuses,
                 onDelete: () => options.onDelete(row.original.id),
             }),
         },

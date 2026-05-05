@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { CheckCircle2, Clock, Circle, XCircle, Plus, Trash2, Calendar, User } from 'lucide-vue-next';
-import { Button } from '@/components/ui/button';
+import { ref, computed } from 'vue';
+import { toast } from 'vue-sonner';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'vue-sonner';
 
 const props = defineProps<{
     quoteId: number;
@@ -63,6 +63,7 @@ const statusColors = computed(() => {
     props.taskStatuses?.forEach(status => {
         colors[status.slug] = status.color;
     });
+
     return colors;
 });
 
@@ -111,6 +112,7 @@ const submitTask = async () => {
             toast.success('Task created successfully');
             emit('taskCreated');
         }
+
         showCreateDialog.value = false;
         showEditDialog.value = false;
         editingTask.value = null;

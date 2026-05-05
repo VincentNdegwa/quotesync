@@ -78,7 +78,7 @@ export const getInvoiceColumns = (options: InvoiceColumnOptions): ColumnDef<Invo
         {
             accessorKey: 'total',
             header: ({ column }) => sortableHeader('Total', column, 'right'),
-            cell: ({ row }) => h('span', { class: 'text-right' }, formatCurrency(row.original.total, row.original.currency)),
+            cell: ({ row }) => h('span', { class: 'text-right' }, formatCurrency(row.original.total, row.original.base_currency)),
         },
         {
             accessorKey: 'due_date',

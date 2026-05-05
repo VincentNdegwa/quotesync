@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { ref } from 'vue';
 import { Eye, Pencil, RotateCcw, CheckCircle2, Clock, MoreHorizontal } from 'lucide-vue-next';
-import { Button } from '@/components/ui/button';
+import { ref } from 'vue';
+import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import type { QuoteData } from '@/types';
 
 const props = defineProps<{

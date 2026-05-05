@@ -2,6 +2,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import TaskController from '@/actions/App/Http/Controllers/TaskController';
+import TaskStatusController from '@/actions/App/Http/Controllers/TaskStatusController';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import { Input } from '@/components/ui/input';
@@ -12,13 +13,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import TaskHeaderActions from '@/pages/tasks/components/TaskHeaderActions.vue';
-import TasksDataTable from '@/pages/tasks/components/TasksDataTable.vue';
 import TaskCreateDialog from '@/pages/tasks/components/CreateDialog.vue';
 import TaskEditDialog from '@/pages/tasks/components/EditDialog.vue';
+import TaskHeaderActions from '@/pages/tasks/components/TaskHeaderActions.vue';
+import TasksDataTable from '@/pages/tasks/components/TasksDataTable.vue';
 import type { Paginator } from '@/types';
 import type { TaskModel, TaskStatusModel, UserModel } from '@/types/models';
-import TaskStatusController from '@/actions/App/Http/Controllers/TaskStatusController';
 
 type Filters = {
     search: string;
@@ -111,6 +111,7 @@ const openCreateDialog = (): void => {
 
 const openEditDialog = (taskId: number): void => {
     const task = props.tasks.data.find(t => t.id === taskId);
+
     if (task) {
         editingTask.value = task;
         showEditDialog.value = true;
