@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ConfigIndustryFormRequest;
+use App\Http\Requests\Configuration\ConfigIndustryFormRequest;
 use App\Models\ConfigIndustry;
 use App\Models\Workspace;
 use Illuminate\Http\RedirectResponse;

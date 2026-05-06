@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\TaskStatusFormRequest;
+use App\Http\Requests\TaskStatuses\TaskStatusFormRequest;
 use App\Models\TaskStatus;
 use App\Models\Workspace;
 use Illuminate\Http\RedirectResponse;

@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreCatalogItemRequest;
-use App\Http\Requests\UpdateCatalogItemRequest;
+use App\Http\Requests\Catalog\CatalogItemBulkActionRequest;
+use App\Http\Requests\Catalog\CatalogItemPriceTierRequest;
+use App\Http\Requests\Catalog\CatalogItemVariantRequest;
+use App\Http\Requests\Catalog\StoreCatalogItemRequest;
+use App\Http\Requests\Catalog\UpdateCatalogItemRequest;
 use App\Models\CatalogCategory;
 use App\Models\CatalogItem;
 use App\Models\CatalogItemVariant;
@@ -157,18 +160,13 @@ class CatalogItemController extends Controller
         return back();
     }
 
-    public function bulkAction(Request $request, CatalogItemService $catalogItemService): RedirectResponse
+    public function bulkAction(CatalogItemBulkActionRequest $request, CatalogItemService $catalogItemService): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace, 404);
 
-        $validated = $request->validate([
-            'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['integer'],
-            'action' => ['required', 'string', 'in:activate,deactivate,delete,change_category'],
-            'category_id' => ['nullable', 'integer'],
-        ]);
+        $validated = $request->validated();
 
         $count = $catalogItemService->bulkAction(
             $workspace,
@@ -185,19 +183,13 @@ class CatalogItemController extends Controller
         return back();
     }
 
-    public function storeVariant(Request $request, CatalogItem $catalog): RedirectResponse
+    public function storeVariant(CatalogItemVariantRequest $request, CatalogItem $catalog): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace && $catalog->workspace_id === $workspace->id, 404);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'sku' => 'nullable|string|max:255',
-            'unit_price' => 'required|numeric|min:0',
-            'cost_price' => 'nullable|numeric|min:0',
-            'is_default' => 'nullable|boolean',
-        ]);
+        $validated = $request->validated();
 
         CatalogItemVariant::create([
             ...$validated,
@@ -210,7 +202,7 @@ class CatalogItemController extends Controller
         return back();
     }
 
-    public function updateVariant(Request $request, CatalogItem $catalog, CatalogItemVariant $variant): RedirectResponse
+    public function updateVariant(CatalogItemVariantRequest $request, CatalogItem $catalog, CatalogItemVariant $variant): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -221,13 +213,7 @@ class CatalogItemController extends Controller
             404
         );
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'sku' => 'nullable|string|max:255',
-            'unit_price' => 'required|numeric|min:0',
-            'cost_price' => 'nullable|numeric|min:0',
-            'is_default' => 'nullable|boolean',
-        ]);
+        $validated = $request->validated();
 
         $variant->update([
             ...$validated,
@@ -257,18 +243,13 @@ class CatalogItemController extends Controller
         return back();
     }
 
-    public function storePriceTier(Request $request, CatalogItem $catalog): RedirectResponse
+    public function storePriceTier(CatalogItemPriceTierRequest $request, CatalogItem $catalog): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace && $catalog->workspace_id === $workspace->id, 404);
 
-        $validated = $request->validate([
-            'min_quantity' => 'required|integer|min:1',
-            'max_quantity' => 'nullable|integer|min:1',
-            'unit_price' => 'required|numeric|min:0',
-            'discount_percent' => 'required|numeric|min:0|max:100',
-        ]);
+        $validated = $request->validated();
 
         CatalogItemPriceTier::create([
             ...$validated,
@@ -280,7 +261,7 @@ class CatalogItemController extends Controller
         return back();
     }
 
-    public function updatePriceTier(Request $request, CatalogItem $catalog, CatalogItemPriceTier $priceTier): RedirectResponse
+    public function updatePriceTier(CatalogItemPriceTierRequest $request, CatalogItem $catalog, CatalogItemPriceTier $priceTier): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -291,12 +272,7 @@ class CatalogItemController extends Controller
             404
         );
 
-        $validated = $request->validate([
-            'min_quantity' => 'required|integer|min:1',
-            'max_quantity' => 'nullable|integer|min:1',
-            'unit_price' => 'required|numeric|min:0',
-            'discount_percent' => 'required|numeric|min:0|max:100',
-        ]);
+        $validated = $request->validated();
 
         $priceTier->update($validated);
 

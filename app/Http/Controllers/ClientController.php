@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreClientRequest;
-use App\Http\Requests\UpdateClientRequest;
+use App\Http\Requests\Clients\BulkDestroyClientsRequest;
+use App\Http\Requests\Clients\StoreClientRequest;
+use App\Http\Requests\Clients\UpdateClientRequest;
 use App\Models\Client;
 use App\Models\ConfigurationTag;
 use App\Models\Workspace;
@@ -117,16 +118,13 @@ class ClientController extends Controller
         return back();
     }
 
-    public function bulkDestroy(Request $request, ClientService $clientService): RedirectResponse
+    public function bulkDestroy(BulkDestroyClientsRequest $request, ClientService $clientService): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace, 404);
 
-        $validated = $request->validate([
-            'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['integer'],
-        ]);
+        $validated = $request->validated();
 
         $deleted = $clientService->bulkDelete($workspace, $validated['ids']);
 

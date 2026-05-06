@@ -3,21 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Ai\Agents\QuoteGeneratorAgent;
+use App\Http\Requests\Ai\GenerateAiQuoteRequest;
 use App\Models\Workspace;
-use Illuminate\Http\Request;
 
 class AiQuoteController extends Controller
 {
-    public function generate(Request $request)
+    public function generate(GenerateAiQuoteRequest $request)
     {
         try {
-            $request->validate(['description' => 'required|string|max:2000']);
-
             $workspace = $request->user()?->currentWorkspace;
             abort_unless($workspace instanceof Workspace, 403);
 
             $agent = new QuoteGeneratorAgent($workspace);
-            $response = $agent->prompt($request->description);
+            $validated = $request->validated();
+            $response = $agent->prompt($validated['description']);
 
             return response()->json([
                 'sections' => $response['sections'] ?? [],

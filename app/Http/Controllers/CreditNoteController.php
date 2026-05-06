@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CreditNoteStatus;
-use App\Http\Requests\StoreCreditNoteRequest;
-use App\Http\Requests\UpdateCreditNoteRequest;
+use App\Http\Requests\CreditNotes\StoreCreditNoteRequest;
+use App\Http\Requests\CreditNotes\UpdateCreditNoteRequest;
 use App\Models\CreditNote;
 use App\Models\Invoice;
 use App\Models\Workspace;

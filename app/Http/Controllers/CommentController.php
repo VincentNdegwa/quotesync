@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Comments\StoreCommentRequest;
 use App\Models\Comment;
 use App\Models\Quote;
 use App\Models\Invoice;
@@ -9,8 +10,6 @@ use App\Models\Workspace;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Notification;
 
 class CommentController extends Controller
 {
@@ -50,7 +49,7 @@ class CommentController extends Controller
         ]));
     }
 
-    public function store(Request $request, string $type, int $id): JsonResponse
+    public function store(StoreCommentRequest $request, string $type, int $id): JsonResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -67,12 +66,7 @@ class CommentController extends Controller
             ->where('workspace_id', $workspace->id)
             ->firstOrFail();
 
-        $validated = $request->validate([
-            'content' => 'required|string|max:5000',
-            'mentions' => 'nullable|array',
-            'mentions.*' => 'integer',
-            'is_internal' => 'nullable|boolean',
-        ]);
+        $validated = $request->validated();
 
         $comment = $model->comments()->create([
             'workspace_id' => $workspace->id,

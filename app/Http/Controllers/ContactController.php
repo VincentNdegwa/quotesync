@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Contacts\ContactRequest;
 use App\Models\Client;
 use App\Models\Contact;
 use Illuminate\Http\Request;
@@ -23,17 +24,11 @@ class ContactController extends Controller
         ]);
     }
 
-    public function store(Request $request, Client $client): RedirectResponse
+    public function store(ContactRequest $request, Client $client): RedirectResponse
     {
         abort_unless($client->workspace_id === $request->user()?->current_workspace_id, 404);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:255',
-            'position' => 'nullable|string|max:255',
-            'is_primary' => 'nullable|boolean',
-        ]);
+        $validated = $request->validated();
 
         $contact = $client->contacts()->create([
             ...$validated,
@@ -47,7 +42,7 @@ class ContactController extends Controller
         return back();
     }
 
-    public function update(Request $request, Client $client, Contact $contact): RedirectResponse
+    public function update(ContactRequest $request, Client $client, Contact $contact): RedirectResponse
     {
         abort_unless(
             $client->workspace_id === $request->user()?->current_workspace_id
@@ -55,13 +50,7 @@ class ContactController extends Controller
             404
         );
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:255',
-            'position' => 'nullable|string|max:255',
-            'is_primary' => 'nullable|boolean',
-        ]);
+        $validated = $request->validated();
 
         $contact->update([
             ...$validated,

@@ -4,12 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Enums\QuoteFollowUpStatus;
 use App\Enums\QuoteStatus;
-use App\Http\Requests\StoreQuoteRequest;
-use App\Http\Requests\UpdateQuoteRequest;
-use App\Http\Requests\UpdateQuoteStatusRequest;
+use App\Http\Requests\Quotes\StoreQuoteRequest;
+use App\Http\Requests\Quotes\UpdateQuoteRequest;
+use App\Http\Requests\Quotes\UpdateQuoteStatusRequest;
 use App\Jobs\SendFollowUpJob;
-use App\Models\Client;
-use App\Models\Comment;
 use App\Models\Quote;
 use App\Models\QuoteFollowUp;
 use App\Models\QuoteTemplate;
