@@ -7298,16 +7298,16 @@
         },
         {
             "name": "vincentndegwa/eloquent-typegen",
-            "version": "v1.0.2",
+            "version": "v1.0.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/VincentNdegwa/eloquent-typegen.git",
-                "reference": "7decc36caeb2353e4b56ce828522a70b8acc2a54"
+                "reference": "ecd1fa58575dc2570d74f43709ec158b02316d4d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/VincentNdegwa/eloquent-typegen/zipball/7decc36caeb2353e4b56ce828522a70b8acc2a54",
-                "reference": "7decc36caeb2353e4b56ce828522a70b8acc2a54",
+                "url": "https://api.github.com/repos/VincentNdegwa/eloquent-typegen/zipball/ecd1fa58575dc2570d74f43709ec158b02316d4d",
+                "reference": "ecd1fa58575dc2570d74f43709ec158b02316d4d",
                 "shasum": ""
             },
             "require": {
@@ -7319,6 +7319,7 @@
             },
             "require-dev": {
                 "laravel/pint": "^1.0",
+                "nikic/php-parser": "^5.7",
                 "orchestra/testbench": "^8.0|^9.0|^10.0|^11.0|^12.0",
                 "pestphp/pest": "^3.0|^4.0",
                 "pestphp/pest-plugin-laravel": "^3.0|^4.0",
@@ -7351,9 +7352,9 @@
             "description": "Generate TypeScript types from Eloquent models",
             "support": {
                 "issues": "https://github.com/VincentNdegwa/eloquent-typegen/issues",
-                "source": "https://github.com/VincentNdegwa/eloquent-typegen/tree/v1.0.2"
+                "source": "https://github.com/VincentNdegwa/eloquent-typegen/tree/v1.0.5"
             },
-            "time": "2026-05-05T22:52:33+00:00"
+            "time": "2026-05-06T15:43:09+00:00"
         },
         {
             "name": "vlucas/phpdotenv",
