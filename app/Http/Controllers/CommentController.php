@@ -35,18 +35,7 @@ class CommentController extends Controller
             ->latest()
             ->get();
 
-        return response()->json($comments->map(fn ($comment) => [
-            'id' => $comment->id,
-            'content' => $comment->content,
-            'mentions' => $comment->mentions,
-            'is_internal' => $comment->is_internal,
-            'created_at' => $comment->created_at->toISOString(),
-            'updated_at' => $comment->updated_at->toISOString(),
-            'user' => $comment->user ? [
-                'id' => $comment->user->id,
-                'name' => $comment->user->name,
-            ] : null,
-        ]));
+        return response()->json($comments);
     }
 
     public function store(StoreCommentRequest $request, string $type, int $id): JsonResponse
@@ -89,18 +78,7 @@ class CommentController extends Controller
 
         $comment->load('user:id,name');
 
-        return response()->json([
-            'id' => $comment->id,
-            'content' => $comment->content,
-            'mentions' => $comment->mentions,
-            'is_internal' => $comment->is_internal,
-            'created_at' => $comment->created_at->toISOString(),
-            'updated_at' => $comment->updated_at->toISOString(),
-            'user' => $comment->user ? [
-                'id' => $comment->user->id,
-                'name' => $comment->user->name,
-            ] : null,
-        ], 201);
+        return response()->json($comment, 201);
     }
 
     public function destroy(Request $request, string $commentableType, int $commentableId, Comment $comment): JsonResponse

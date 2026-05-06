@@ -78,21 +78,7 @@ class InvoiceController extends Controller
         $invoices = $workspace->invoices()
             ->with(['client:id,company_name,email', 'quote:id,number'])
             ->orderByDesc('created_at')
-            ->get()
-            ->map(fn (Invoice $invoice): array => [
-                'id' => $invoice->id,
-                'invoice_number' => $invoice->invoice_number,
-                'title' => $invoice->title,
-                'status' => $invoice->status->value,
-                'total' => $invoice->total,
-                'base_total' => $invoice->base_total,
-                'currency' => $invoice->currency,
-                'base_currency' => $invoice->base_currency,
-                'due_date' => $invoice->due_date?->toDateString(),
-                'client' => $invoice->client?->company_name,
-                'quote_number' => $invoice->quote?->number,
-                'client' => $invoice->client,
-            ])->toArray();
+            ->get();
 
         return response()->json($invoices);
     }

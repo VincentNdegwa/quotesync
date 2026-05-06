@@ -40,30 +40,7 @@ class QuoteController extends Controller
             'sort' => $request->string('sort')->toString() ?: 'newest',
         ];
 
-        $quotes = $quoteService->paginateForIndex($workspace, $filters)
-            ->through(fn (Quote $quote): array => [
-                'id' => $quote->id,
-                'quote_uuid' => $quote->quote_uuid,
-                'number' => $quote->number,
-                'title' => $quote->title,
-                'status' => $quote->status,
-                'total' => (float) ($quote->base_total ?? $quote->total),
-                'base_total' => $quote->base_total ? (float) $quote->base_total : null,
-                'currency' => $quote->base_currency ?? $quote->currency,
-                'base_currency' => $quote->base_currency,
-                'valid_until' => $quote->valid_until?->toDateString(),
-                'created_at' => $quote->created_at?->toISOString(),
-                'win_probability' => $quote->winProbability?->toResponseArray(),
-                'client' => $quote->client ? [
-                    'id' => $quote->client->id,
-                    'company_name' => $quote->client->company_name,
-                    'email' => $quote->client->email,
-                ] : null,
-                'assignee' => $quote->assignee ? [
-                    'id' => $quote->assignee->id,
-                    'name' => $quote->assignee->name,
-                ] : null,
-            ]);
+        $quotes = $quoteService->paginateForIndex($workspace, $filters);
 
         if ($request->wantsJson()) {
             return response()->json($quotes);
@@ -202,8 +179,6 @@ class QuoteController extends Controller
             $query->where('workspace_id', $workspace->id);
         })->select('id', 'name', 'email')->get();
 
-        $quote = $this->transformForInternalView($quote);
-
         return Inertia::render('quotes/Show', [
             'quote' => $quote,
             'settings' => $workspaceSettingsService->builderSettings($workspace),
@@ -225,38 +200,6 @@ class QuoteController extends Controller
         return response()->json($users);
     }
 
-    private function transformForInternalView(Quote $quote): array
-    {
-        $data = $quote->toArray();
-
-        $data['subtotal'] = $quote->base_subtotal;
-        $data['discount_amount'] = $quote->base_discount_amount;
-        $data['tax_amount'] = $quote->base_tax_amount;
-        $data['total'] = $quote->base_total;
-        $data['currency'] = $quote->base_currency;
-
-        if (isset($data['sections'])) {
-            foreach ($data['sections'] as &$section) {
-                if (isset($section['line_items'])) {
-                    foreach ($section['line_items'] as &$lineItem) {
-                        $lineItem['unit_price'] = $lineItem['base_unit_price'] ?? $lineItem['unit_price'];
-                        $lineItem['subtotal'] = $lineItem['base_subtotal'] ?? $lineItem['subtotal'];
-                        $lineItem['tax_amount'] = $lineItem['base_tax_amount'] ?? $lineItem['tax_amount'];
-                        $lineItem['total'] = $lineItem['base_total'] ?? $lineItem['total'];
-
-                        if (isset($lineItem['taxes'])) {
-                            foreach ($lineItem['taxes'] as &$tax) {
-                                $tax['tax_amount'] = $tax['base_tax_amount'] ?? $tax['tax_amount'];
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return $data;
-    }
-
     public function analytics(Request $request, Quote $quote, QuoteAnalyticsService $analyticsService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
@@ -271,26 +214,7 @@ class QuoteController extends Controller
         ]);
 
         return Inertia::render('quotes/Analytics', [
-            'quote' => [
-                'id' => $quote->id,
-                'quote_uuid' => $quote->quote_uuid,
-                'number' => $quote->number,
-                'title' => $quote->title,
-                'status' => $quote->status instanceof QuoteStatus ? $quote->status->value : (string) $quote->status,
-                'total' => (float) $quote->total,
-                'currency' => $quote->currency,
-                'valid_until' => $quote->valid_until?->toIso8601String(),
-                'created_at' => $quote->created_at?->toIso8601String(),
-                'client' => $quote->client ? [
-                    'id' => $quote->client->id,
-                    'company_name' => $quote->client->company_name,
-                    'email' => $quote->client->email,
-                ] : null,
-                'assignee' => $quote->assignee ? [
-                    'id' => $quote->assignee->id,
-                    'name' => $quote->assignee->name,
-                ] : null,
-            ],
+            'quote' => $quote,
             'analytics' => $analyticsService->getAnalytics($quote),
             'quoteStatuses' => QuoteStatus::all(),
         ]);

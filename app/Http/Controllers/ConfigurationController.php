@@ -93,20 +93,7 @@ class ConfigurationController extends Controller
                 ->with(['steps' => fn ($query) => $query->orderBy('sort_order')])
                 ->orderByDesc('is_default')
                 ->orderBy('name')
-                ->get()
-                ->map(fn ($sequence): array => [
-                    'id' => $sequence->id,
-                    'name' => $sequence->name,
-                    'is_default' => $sequence->is_default,
-                    'steps' => $sequence->steps->map(fn ($step): array => [
-                        'id' => $step->id,
-                        'day_offset' => $step->day_offset,
-                        'channel' => $step->channel->value,
-                        'subject' => $step->subject,
-                        'message_template' => $step->message_template,
-                        'sort_order' => $step->sort_order,
-                    ])->all(),
-                ])->all(),
+                ->get(),
             'placeholders' => QuotePlaceholderService::getPlaceholderDescriptions(),
         ]);
     }

@@ -38,13 +38,7 @@ class CatalogItemController extends Controller
 
         return Inertia::render('catalog/Index', [
             'filters' => $filters,
-            'items' => $catalogItemService->paginateForIndex($workspace, $filters)
-                ->through(fn (CatalogItem $item): array => [
-                    ...$item->toArray(),
-                    'taxes' => $item->taxes,
-                    'tax_ids' => $item->taxes->pluck('id')->values()->all(),
-                    'configuration_unit' => $item->configurationUnit,
-                ]),
+            'items' => $catalogItemService->paginateForIndex($workspace, $filters),
             'categories' => CatalogCategory::query()
                 ->where('workspace_id', $workspace->id)
                 ->orderBy('sort_order')
@@ -97,14 +91,7 @@ class CatalogItemController extends Controller
         $catalog->load(['category:id,name', 'taxes:id,name,rate', 'configurationUnit:id,name,symbol', 'variants', 'priceTiers']);
 
         return Inertia::render('catalog/Show', [
-            'item' => [
-                ...$catalog->toArray(),
-                'taxes' => $catalog->taxes,
-                'tax_ids' => $catalog->taxes->pluck('id')->values()->all(),
-                'configuration_unit' => $catalog->configurationUnit,
-                'variants' => $catalog->variants,
-                'priceTiers' => $catalog->priceTiers,
-            ],
+            'item' => $catalog,
             'availableTaxes' => Tax::query()
                 ->where('workspace_id', $workspace->id)
                 ->where('is_active', true)
