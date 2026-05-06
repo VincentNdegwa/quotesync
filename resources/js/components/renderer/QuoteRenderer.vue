@@ -51,7 +51,8 @@ const emit = defineEmits<{
     (e: 'add-section'): void;
     (e: 'remove-section', sectionIndex: number): void;
     (e: 'add-line-item', sectionIndex: number): void;
-    (e: 'edit-line-item', payload: { sectionIndex: number; lineItemIndex: number }): void;
+    (e: 'edit-line-item', payload: { blockId: string; sectionIndex: number; lineItemIndex: number }): void;
+    (e: 'quick-add-line-item', payload: { blockId: string; sectionIndex: number; catalogItem: BuilderCatalogItem | null }): void;
     (e: 'update-line-item', payload: { sectionIndex: number; lineItemIndex: number; field: string; value: any }): void;
     (e: 'remove-line-item', payload: { sectionIndex: number; lineItemIndex: number }): void;
     (e: 'select-catalog-item', payload: { sectionIndex: number; lineItemIndex: number; catalogItem: BuilderCatalogItem }): void;
@@ -125,6 +126,43 @@ const handleDrop = (targetBlockId: string): void => {
 const handleDragEnd = (): void => {
     draggedBlockId.value = null;
 };
+
+const handleUpdateCoverMessage = (blockId: string, value: string | null): void => {
+    emit('update-cover-message', { blockId, value });
+};
+
+const handleUpdateCoverLabel = (blockId: string, value: string | null): void => {
+    emit('update-cover-label', { blockId, value });
+};
+
+const handleUpdateTerms = (blockId: string, value: string | null): void => {
+    emit('update-terms', { blockId, value });
+};
+
+const handleUpdateTermsLabel = (blockId: string, value: string | null): void => {
+    emit('update-terms-label', { blockId, value });
+};
+
+const handleUpdatePaymentTerms = (
+    blockId: string,
+    payload: { labelText: string; contextText: string | null },
+): void => {
+    emit('update-payment-terms', {
+        blockId,
+        labelText: payload.labelText,
+        contextText: payload.contextText,
+    });
+};
+
+const handleUpdateSignatureContent = (
+    blockId: string,
+    payload: { acceptButtonText?: string | null; declineButtonText?: string | null; contextText?: string | null },
+): void => {
+    emit('update-signature-content', {
+        blockId,
+        ...payload,
+    });
+};
 </script>
 
 <template>
@@ -162,17 +200,18 @@ const handleDragEnd = (): void => {
                     @add-section="emit('add-section')"
                     @remove-section="emit('remove-section', $event)"
                     @add-line-item="emit('add-line-item', $event)"
-                    @edit-line-item="emit('edit-line-item', $event)"
+                    @quick-add-line-item="(payload: { sectionIndex: number; catalogItem: BuilderCatalogItem | null }) => emit('quick-add-line-item', { ...payload, blockId: block.id })"
+                    @edit-line-item="(payload: { sectionIndex: number; lineItemIndex: number }) => emit('edit-line-item', { ...payload, blockId: block.id })"
                     @update-line-item="emit('update-line-item', $event)"
                     @remove-line-item="emit('remove-line-item', $event)"
                     @select-catalog-item="emit('select-catalog-item', $event)"
                     @update-section-title="emit('update-line-items-section-title', $event)"
-                    @update-cover-message="emit('update-cover-message', $event)"
-                    @update-cover-label="emit('update-cover-label', $event)"
-                    @update-terms="emit('update-terms', $event)"
-                    @update-terms-label="emit('update-terms-label', $event)"
-                    @update-payment-terms="emit('update-payment-terms', $event)"
-                    @update-signature-content="emit('update-signature-content', $event)"
+                    @update-cover-message="handleUpdateCoverMessage(block.id, $event)"
+                    @update-cover-label="handleUpdateCoverLabel(block.id, $event)"
+                    @update-terms="handleUpdateTerms(block.id, $event)"
+                    @update-terms-label="handleUpdateTermsLabel(block.id, $event)"
+                    @update-payment-terms="handleUpdatePaymentTerms(block.id, $event)"
+                    @update-signature-content="handleUpdateSignatureContent(block.id, $event)"
                 />
             </EditableBlock>
 

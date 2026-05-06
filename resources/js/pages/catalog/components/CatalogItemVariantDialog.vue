@@ -116,7 +116,7 @@ const saveVariant = () => {
                     />
                 </div>
                 <div class="flex items-center space-x-2">
-                    <Switch id="is_default" v-model:checked="variantForm.is_default" />
+                    <Switch id="is_default" v-model:modelValue="variantForm.is_default" />
                     <Label for="is_default">Default Variant</Label>
                 </div>
                 <div class="flex justify-end gap-2">

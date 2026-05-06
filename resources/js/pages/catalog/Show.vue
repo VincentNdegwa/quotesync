@@ -309,7 +309,7 @@ const confirmDeletePriceTier = (): void => {
                         <TableCell>{{ formatCurrency(variant.unit_price) }}</TableCell>
                         <TableCell>{{ formatCurrency(variant.cost_price) }}</TableCell>
                         <TableCell>
-                            <Badge v-if="variant.is_default" variant="default">Default</Badge>
+                            <Badge variant="default">{{ variant.is_default?"Yes": "No" }}</Badge>
                         </TableCell>
                         <TableCell class="text-right">
                             <Button variant="ghost" size="sm" @click="openVariantDialog(variant)">Edit</Button>

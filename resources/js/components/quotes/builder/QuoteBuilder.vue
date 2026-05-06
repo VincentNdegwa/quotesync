@@ -6,9 +6,9 @@ import { computed, ref, watch } from 'vue';
 import BlockConfigPanel from '@/components/builder/BlockConfigPanel.vue';
 import BlockList from '@/components/builder/BlockList.vue';
 import BuilderHeader from '@/components/quotes/builder/BuilderHeader.vue';
-import LineItemDrawer from '@/components/quotes/builder/LineItemDrawer.vue';
 import QuoteSettingsBar from '@/components/quotes/builder/QuoteSettingsBar.vue';
 import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
+import LineItemDetailPanel from '@/components/quotes/builder/LineItemDetailPanel.vue';
 // import { useQuoteBuilder } from '@/composables/useQuoteBuilder';
 import {
     ADDABLE_BLOCK_TYPES,
@@ -78,17 +78,12 @@ useEventListener(window, 'beforeunload', (e) => {
     }
 });
 
-// Warn on Inertia navigation with unsaved changes
-// router.on('before', (e) => {
-//     if (hasUnsavedChanges.value && !confirm('You have unsaved changes. Are you sure you want to leave?')) {
-//         e.cancel();
-//     }
-// });
 
-// Update initial state after save
 watch(() => props.modelValue, (newValue) => {
     initialState.value = JSON.stringify(newValue);
     localState.value = JSON.parse(JSON.stringify(newValue));
+
+    ensureDefaultVariants();
 }, { deep: true });
 
 const currentLayout = ref<TemplateLayout>(
@@ -96,6 +91,10 @@ const currentLayout = ref<TemplateLayout>(
         localState.value.layout_snapshot ?? localState.value.layout ?? null,
     ),
 );
+
+const catalogItemLookup = computed<Map<number, BuilderCatalogItem>>(() => {
+    return new Map(props.catalogItems.map((item) => [item.id, item]));
+});
 
 const isRealItem = (item: QuoteBuilderLineItem): boolean =>
     item.name.trim() !== '' || item.unit_price !== 0;
@@ -130,6 +129,8 @@ const applyTemplateSections = (templateSections: QuoteBuilderSection[]): void =>
             });
         }
     });
+
+    ensureDefaultVariants();
 };
 
 watch(
@@ -301,12 +302,14 @@ const applyAiTemplate = (data: any) => {
 };
 
 
-const blockListOpen = ref(false);
-const editingLineItem = ref<{
+type LineItemPointer = {
+    blockId: string;
     sectionIndex: number;
     lineItemIndex: number;
-} | null>(null);
-const lineItemDrawerOpen = ref(false);
+};
+
+const blockListOpen = ref(false);
+const selectedLineItemPointer = ref<LineItemPointer | null>(null);
 
 const selectedBlock = computed<Block | null>(() => {
     if (!selectedBlockId.value) {
@@ -492,66 +495,213 @@ const removeSection = (sectionIndex: number): void => {
     localState.value.sections.splice(sectionIndex, 1);
 };
 
-const openLineItemDrawer = (
-    sectionIndex: number,
-    lineItemIndex: number,
-): void => {
-    const section = localState.value.sections[sectionIndex];
-    const item = section?.line_items[lineItemIndex];
-
-    if (!section || !item) {
-        return;
+const selectedLineItem = computed(() => {
+    if (!selectedLineItemPointer.value) {
+        return null;
     }
 
-    editingLineItem.value = { sectionIndex, lineItemIndex };
-    lineItemDrawerOpen.value = true;
-};
+    const section = localState.value.sections[selectedLineItemPointer.value.sectionIndex];
 
-const closeLineItemDrawer = (): void => {
-    lineItemDrawerOpen.value = false;
-    editingLineItem.value = null;
-};
-
-const removeEditingLineItem = (): void => {
-    if (!editingLineItem.value) {
-        return;
+    if (!section) {
+        return null;
     }
 
-    removeLineItem(
-        editingLineItem.value.sectionIndex,
-        editingLineItem.value.lineItemIndex,
-    );
-    closeLineItemDrawer();
-};
-
-const drawerItem = computed({
-    get: () => {
-        if (!editingLineItem.value) {
-            return null;
-        }
-
-        const section =
-            localState.value.sections[editingLineItem.value.sectionIndex];
-
-        if (!section) {
-            return null;
-        }
-
-        return section.line_items[editingLineItem.value.lineItemIndex] ?? null;
-    },
-    set: () => {
-    },
+    return section.line_items[selectedLineItemPointer.value.lineItemIndex] ?? null;
 });
 
-const addLineItem = (sectionIndex: number): void => {
+const withLineItem = (
+    sectionIndex: number,
+    lineItemIndex: number,
+    callback: (item: QuoteBuilderLineItem) => void,
+): void => {
     const section = localState.value.sections[sectionIndex];
 
     if (!section) {
         return;
     }
 
-    section.line_items.push(createEmptyLineItem(section.line_items.length + 1));
+    const item = section.line_items[lineItemIndex];
+
+    if (!item) {
+        return;
+    }
+
+    callback(item);
     recompute();
+};
+
+const withSelectedLineItem = (callback: (pointer: LineItemPointer) => void): void => {
+    if (!selectedLineItemPointer.value) {
+        return;
+    }
+
+    callback(selectedLineItemPointer.value);
+};
+
+const selectLineItem = (payload: LineItemPointer): void => {
+    const section = localState.value.sections[payload.sectionIndex];
+
+    if (!section || !section.line_items[payload.lineItemIndex]) {
+        return;
+    }
+
+    selectedBlockId.value = payload.blockId;
+    selectedLineItemPointer.value = { ...payload };
+};
+
+const clearSelectedLineItem = (): void => {
+    selectedLineItemPointer.value = null;
+};
+
+watch(selectedBlockId, (blockId) => {
+    if (!blockId) {
+        clearSelectedLineItem();
+
+        return;
+    }
+
+    const block = currentLayout.value.blocks.find((entry) => entry.id === blockId);
+
+    if (!block || block.type !== 'line_items') {
+        clearSelectedLineItem();
+    }
+});
+
+const removeSelectedLineItem = (): void => {
+    withSelectedLineItem(({ sectionIndex, lineItemIndex }) => {
+        removeLineItem(sectionIndex, lineItemIndex);
+        selectedLineItemPointer.value = null;
+    });
+};
+
+const updateSelectedLineItemField = (field: keyof QuoteBuilderLineItem, value: any): void => {
+    withSelectedLineItem(({ sectionIndex, lineItemIndex }) => {
+        updateLineItemField(sectionIndex, lineItemIndex, field as string, value);
+    });
+};
+
+const selectCatalogItemForSelected = (catalogItem: BuilderCatalogItem): void => {
+    withSelectedLineItem(({ sectionIndex, lineItemIndex }) => {
+        selectCatalogItem(sectionIndex, lineItemIndex, catalogItem);
+    });
+};
+
+const selectLineItemUnit = (sectionIndex: number, lineItemIndex: number, unitId: number | null): void => {
+    const unit = props.units.find((entry) => entry.id === unitId);
+
+    withLineItem(sectionIndex, lineItemIndex, (item) => {
+        item.unit_id = unit ? unit.id : null;
+        item.unit = unit ? unit.symbol : '';
+    });
+};
+
+const selectLineItemUnitForSelected = (unitId: number | null): void => {
+    withSelectedLineItem(({ sectionIndex, lineItemIndex }) => {
+        selectLineItemUnit(sectionIndex, lineItemIndex, unitId);
+    });
+};
+
+const selectLineItemVariant = (sectionIndex: number, lineItemIndex: number, variantId: number | null): void => {
+    withLineItem(sectionIndex, lineItemIndex, (item) => {
+        if (!item.catalog_item_id) {
+            item.catalog_item_variant_id = null;
+
+            return;
+        }
+
+        const catalog = props.catalogItems.find((entry) => entry.id === item.catalog_item_id);
+
+        if (!variantId) {
+            item.catalog_item_variant_id = null;
+
+            if (catalog) {
+                item.unit_price = Number(catalog.unit_price || 0);
+                item.cost_price = Number(catalog.cost_price || 0);
+            }
+
+            item.price_tier_applied = false;
+
+            return;
+        }
+
+        const variant = catalog?.variants.find((entry) => entry.id === variantId);
+
+        if (!variant) {
+            item.catalog_item_variant_id = null;
+
+            return;
+        }
+
+        item.catalog_item_variant_id = variant.id;
+        item.unit_price = Number(variant.unit_price);
+        item.cost_price = Number(variant.cost_price);
+    });
+};
+
+const selectLineItemVariantForSelected = (variantId: number | null): void => {
+    withSelectedLineItem(({ sectionIndex, lineItemIndex }) => {
+        selectLineItemVariant(sectionIndex, lineItemIndex, variantId);
+    });
+};
+
+const toggleLineItemTax = (sectionIndex: number, lineItemIndex: number, tax: BuilderTaxOption, enabled: boolean): void => {
+    withLineItem(sectionIndex, lineItemIndex, (item) => {
+        if (enabled) {
+            if (!item.taxes.some((entry) => entry.tax_id === tax.id)) {
+                item.taxes.push({
+                    tax_id: tax.id,
+                    tax_label: tax.name,
+                    tax_rate: tax.rate,
+                    inclusive: tax.inclusive ?? false,
+                });
+            }
+
+            return;
+        }
+
+        item.taxes = item.taxes.filter((entry) => entry.tax_id !== tax.id);
+    });
+};
+
+const toggleLineItemTaxForSelected = (payload: { tax: BuilderTaxOption; enabled: boolean }): void => {
+    withSelectedLineItem(({ sectionIndex, lineItemIndex }) => {
+        toggleLineItemTax(sectionIndex, lineItemIndex, payload.tax, payload.enabled);
+    });
+};
+
+const addLineItem = (sectionIndex: number, catalogItem?: BuilderCatalogItem | null): number | null => {
+    const section = localState.value.sections[sectionIndex];
+
+    if (!section) {
+        return null;
+    }
+
+    const newItem = createEmptyLineItem(section.line_items.length + 1);
+    section.line_items.push(newItem);
+
+    if (catalogItem) {
+        applyCatalogItemToLineItem(newItem, catalogItem);
+    }
+
+    const newIndex = section.line_items.length - 1;
+    recompute();
+
+    return newIndex;
+};
+
+const quickAddLineItem = (payload: { blockId: string; sectionIndex: number; catalogItem: BuilderCatalogItem | null }): void => {
+    const newIndex = addLineItem(payload.sectionIndex, payload.catalogItem);
+
+    if (newIndex === null) {
+        return;
+    }
+
+    selectedBlockId.value = payload.blockId;
+    selectedLineItemPointer.value = {
+        blockId: payload.blockId,
+        sectionIndex: payload.sectionIndex,
+        lineItemIndex: newIndex,
+    };
 };
 
 const removeLineItem = (sectionIndex: number, lineItemIndex: number): void => {
@@ -565,19 +715,19 @@ const removeLineItem = (sectionIndex: number, lineItemIndex: number): void => {
         return;
     }
 
-    const newState = { ...localState.value };
-    newState.sections = newState.sections.map((s, idx) => {
-        if (idx === sectionIndex) {
-            return {
-                ...s,
-                line_items: s.line_items.filter((_, index) => index !== lineItemIndex),
+    section.line_items.splice(lineItemIndex, 1);
+    recompute();
+
+    if (selectedLineItemPointer.value?.sectionIndex === sectionIndex) {
+        if (selectedLineItemPointer.value.lineItemIndex === lineItemIndex) {
+            selectedLineItemPointer.value = null;
+        } else if (selectedLineItemPointer.value.lineItemIndex > lineItemIndex) {
+            selectedLineItemPointer.value = {
+                ...selectedLineItemPointer.value,
+                lineItemIndex: selectedLineItemPointer.value.lineItemIndex - 1,
             };
         }
-
-        return s;
-    });
-    localState.value = newState;
-    recompute();
+    }
 };
 
 const updateLineItemField = (sectionIndex: number, lineItemIndex: number, field: string, value: any): void => {
@@ -601,37 +751,38 @@ const updateLineItemField = (sectionIndex: number, lineItemIndex: number, field:
     recompute();
 };
 
-const selectCatalogItem = (sectionIndex: number, lineItemIndex: number, catalogItem: BuilderCatalogItem): void => {
-    const section = localState.value.sections[sectionIndex];
-
-    if (
-        !section ||
-        lineItemIndex < 0 ||
-        lineItemIndex >= section.line_items.length
-    ) {
-        return;
-    }
-
-    const item = section.line_items[lineItemIndex];
-
-    if (!item) {
-        return;
-    }
-
-    // Autofill data from catalog item
+const applyCatalogItemToLineItem = (item: QuoteBuilderLineItem, catalogItem: BuilderCatalogItem): void => {
     item.catalog_item_id = catalogItem.id;
+    item.catalog_item_variant_id = null;
     item.name = catalogItem.name;
     item.description = catalogItem.description;
-    item.unit_price = Number(catalogItem.unit_price || 0);
     item.unit = catalogItem.configuration_unit?.symbol || '';
-    item.unit_id = catalogItem.configuration_unit?.id || null;
+    item.unit_id = catalogItem.configuration_unit?.id ?? null;
+    item.unit_price = Number(catalogItem.unit_price || 0);
+    item.cost_price = Number(catalogItem.cost_price || 0);
     item.taxes = catalogItem.taxes.map((tax) => ({
         tax_id: tax.id,
         tax_label: tax.name,
         tax_rate: tax.rate,
         inclusive: tax.inclusive ?? false,
     }));
-    recompute();
+    item.price_tier_applied = false;
+
+    const resolvedVariant =
+        catalogItem.variants.find((variant) => variant.is_default) ??
+        catalogItem.variants[0];
+
+    if (resolvedVariant) {
+        item.catalog_item_variant_id = resolvedVariant.id;
+        item.unit_price = Number(resolvedVariant.unit_price ?? item.unit_price ?? 0);
+        item.cost_price = Number(resolvedVariant.cost_price ?? item.cost_price ?? 0);
+    }
+};
+
+const selectCatalogItem = (sectionIndex: number, lineItemIndex: number, catalogItem: BuilderCatalogItem): void => {
+    withLineItem(sectionIndex, lineItemIndex, (item) => {
+        applyCatalogItemToLineItem(item, catalogItem);
+    });
 };
 
 const addBlock = (type: BlockType): void => {
@@ -846,6 +997,47 @@ const recompute = (): void => {
     localState.value.total = subtotal + taxAmount - localState.value.discount_amount;
 };
 
+const ensureDefaultVariants = (): void => {
+    let updated = false;
+
+    localState.value.sections.forEach((section) => {
+        section.line_items.forEach((item) => {
+            if (!item.catalog_item_id || item.catalog_item_variant_id) {
+                return;
+            }
+
+            const catalogItem = catalogItemLookup.value.get(item.catalog_item_id);
+
+            if (!catalogItem) {
+                return;
+            }
+
+            const resolvedVariant =
+                catalogItem.variants.find((variant) => variant.is_default) ??
+                catalogItem.variants[0];
+
+            if (!resolvedVariant) {
+                return;
+            }
+
+            item.catalog_item_variant_id = resolvedVariant.id;
+            item.unit_price = Number(resolvedVariant.unit_price ?? item.unit_price ?? 0);
+            item.cost_price = Number(resolvedVariant.cost_price ?? item.cost_price ?? 0);
+            updated = true;
+        });
+    });
+
+    if (updated) {
+        recompute();
+    }
+};
+
+ensureDefaultVariants();
+
+watch(catalogItemLookup, () => {
+    ensureDefaultVariants();
+});
+
 const rendererData = computed(() => {
     return {
         ...localState.value,
@@ -1036,14 +1228,9 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                             "
                             @add-section="addSection"
                             @remove-section="removeSection"
-                            @add-line-item="addLineItem"
-                            @edit-line-item="
-                                (payload) =>
-                                    openLineItemDrawer(
-                                        payload.sectionIndex,
-                                        payload.lineItemIndex,
-                                    )
-                            "
+                            @add-line-item="(sectionIndex) => addLineItem(sectionIndex)"
+                            @quick-add-line-item="quickAddLineItem"
+                            @edit-line-item="selectLineItem"
                             @update-line-item="
                                 (payload) =>
                                     updateLineItemField(
@@ -1139,10 +1326,25 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
             >
                 <div
                     v-if="canvasMode === 'edit' && selectedBlockModel"
-                    class="h-full w-[320px] p-2 shrink-0 overflow-y-auto border-l custom-scrollbar"
+                    class="h-full w-[360px] p-2 shrink-0 overflow-y-auto border-l custom-scrollbar"
                 >
+                    <LineItemDetailPanel
+                        v-if="selectedLineItem"
+                        :line-item="selectedLineItem"
+                        :catalog-items="catalogItems"
+                        :taxes="taxes"
+                        :units="units"
+                        :currency="settings.workspace.currency"
+                        @close="clearSelectedLineItem"
+                        @remove="removeSelectedLineItem"
+                        @update-field="(payload) => updateSelectedLineItemField(payload.field, payload.value)"
+                        @select-catalog-item="selectCatalogItemForSelected"
+                        @select-unit="selectLineItemUnitForSelected"
+                        @select-variant="selectLineItemVariantForSelected"
+                        @toggle-tax="toggleLineItemTaxForSelected"
+                    />
                     <BlockConfigPanel
-                        v-if="selectedBlockModel"
+                        v-else
                         v-model:block="selectedBlockModel"
                         :catalog-items="catalogItems"
                         :taxes="taxes"
@@ -1150,16 +1352,5 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                 </div>
             </Transition>
         </div>
-
-        <LineItemDrawer
-            :open="lineItemDrawerOpen"
-            v-model:item="drawerItem"
-            :catalog-items="catalogItems"
-            :taxes="taxes"
-            :units="units"
-            :currency="settings.workspace.currency"
-            @close="closeLineItemDrawer()"
-            @remove="removeEditingLineItem()"
-        />
     </div>
 </template>
