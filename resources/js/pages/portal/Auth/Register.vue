@@ -39,17 +39,18 @@ const form = useForm({
 <template>
     <Head title="Complete Registration" />
 
-    <div
-        v-if="invitation"
-        class="mb-4 text-center text-sm"
-    >
+    <div v-if="invitation" class="mb-4 text-center text-sm">
         <p class="text-muted-foreground">
-            You've been invited to join {{ invitation.workspace.name }}'s client portal
+            You've been invited to join {{ invitation.workspace.name }}'s client
+            portal
         </p>
         <p class="text-sm text-gray-500">{{ invitation.email }}</p>
     </div>
 
-    <form @submit.prevent="form.post(register(props.invitation.token).url)" class="flex flex-col gap-6">
+    <form
+        @submit.prevent="form.post(register(props.invitation.token).url)"
+        class="flex flex-col gap-6"
+    >
         <div class="grid gap-6">
             <div class="grid gap-2">
                 <Label for="name">Full Name</Label>

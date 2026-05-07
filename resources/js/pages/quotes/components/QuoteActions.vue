@@ -164,22 +164,26 @@ const executeSend = (): void => {
     }
 
     router.post(QuoteSendController.store(props.quote.id).url, payload, {
-        onSuccess: ()=>{
+        onSuccess: () => {
             showSendDialog.value = false;
-        }
+        },
     });
 };
 
 const cancelSchedule = (): void => {
-    router.patch(QuoteController.update(props.quote.id).url, {
-        scheduled_at: null,
-    }, {
-        onSuccess: () => {
-            scheduledAt.value = null;
-            sendMode.value = 'now';
-            toast.success('Schedule cancelled');
+    router.patch(
+        QuoteController.update(props.quote.id).url,
+        {
+            scheduled_at: null,
         },
-    });
+        {
+            onSuccess: () => {
+                scheduledAt.value = null;
+                sendMode.value = 'now';
+                toast.success('Schedule cancelled');
+            },
+        },
+    );
 };
 
 const addCcRecipient = (): void => {
@@ -192,7 +196,7 @@ const addCcRecipient = (): void => {
 };
 
 const removeCcRecipient = (email: string): void => {
-    ccRecipients.value = ccRecipients.value.filter(e => e !== email);
+    ccRecipients.value = ccRecipients.value.filter((e) => e !== email);
 };
 
 const addBccRecipient = (): void => {
@@ -205,7 +209,7 @@ const addBccRecipient = (): void => {
 };
 
 const removeBccRecipient = (email: string): void => {
-    bccRecipients.value = bccRecipients.value.filter(e => e !== email);
+    bccRecipients.value = bccRecipients.value.filter((e) => e !== email);
 };
 
 const approve = (): void => {
@@ -330,7 +334,10 @@ const downloadPDF = async (): Promise<void> => {
         const data = await response.json();
 
         if (response.status === 202) {
-            toast.info(data?.message ?? 'PDF generation started. You can download it shortly.');
+            toast.info(
+                data?.message ??
+                    'PDF generation started. You can download it shortly.',
+            );
 
             return;
         }
@@ -361,10 +368,13 @@ const convertToInvoice = (): void => {
 
 const openChangeOwnerDialog = async (): Promise<void> => {
     try {
-        const response = await fetch(`/quotes/${props.quote.id}/available-users`);
+        const response = await fetch(
+            `/quotes/${props.quote.id}/available-users`,
+        );
         const data = await response.json();
         availableUsers.value = data;
-        selectedUserId.value = (props.quote as any).assignee?.id?.toString() || null;
+        selectedUserId.value =
+            (props.quote as any).assignee?.id?.toString() || null;
         showChangeOwnerDialog.value = true;
     } catch (error) {
         console.error('Failed to fetch users:', error);
@@ -412,7 +422,7 @@ const executeChangeOwner = (): void => {
                 <div class="space-y-2">
                     <Label>When to send</Label>
                     <div class="flex gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer">
+                        <label class="flex cursor-pointer items-center gap-2">
                             <input
                                 type="radio"
                                 v-model="sendMode"
@@ -421,7 +431,7 @@ const executeChangeOwner = (): void => {
                             />
                             <span>Send now</span>
                         </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
+                        <label class="flex cursor-pointer items-center gap-2">
                             <input
                                 type="radio"
                                 v-model="sendMode"
@@ -436,22 +446,32 @@ const executeChangeOwner = (): void => {
                 <!-- Schedule date/time picker -->
                 <div v-if="sendMode === 'schedule'" class="space-y-2">
                     <Label>Schedule date & time</Label>
-                    <Input
-                        v-model="scheduledAt"
-                        type="datetime-local"
-                    />
+                    <Input v-model="scheduledAt" type="datetime-local" />
                     <p class="text-xs text-muted-foreground">
                         Select when to send this quote
                     </p>
                 </div>
 
                 <!-- Already scheduled info -->
-                <div v-if="(props.quote as any).scheduled_at && sendMode === 'schedule'" class="rounded-md bg-yellow-50 p-3 text-sm">
+                <div
+                    v-if="
+                        (props.quote as any).scheduled_at &&
+                        sendMode === 'schedule'
+                    "
+                    class="rounded-md bg-yellow-50 p-3 text-sm"
+                >
                     <div class="flex items-start justify-between gap-4">
                         <div>
-                            <p class="font-medium text-yellow-800">Already scheduled</p>
+                            <p class="font-medium text-yellow-800">
+                                Already scheduled
+                            </p>
                             <p class="text-yellow-700">
-                                This quote is scheduled to be sent at {{ new Date((props.quote as any).scheduled_at).toLocaleString() }}
+                                This quote is scheduled to be sent at
+                                {{
+                                    new Date(
+                                        (props.quote as any).scheduled_at,
+                                    ).toLocaleString()
+                                }}
                             </p>
                         </div>
                         <Button
@@ -483,11 +503,19 @@ const executeChangeOwner = (): void => {
                                 placeholder="Add CC email"
                                 @keyup.enter="addCcRecipient"
                             />
-                            <Button type="button" variant="outline" size="sm" @click="addCcRecipient">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                @click="addCcRecipient"
+                            >
                                 Add
                             </Button>
                         </div>
-                        <div v-if="ccRecipients.length > 0" class="flex flex-wrap gap-2">
+                        <div
+                            v-if="ccRecipients.length > 0"
+                            class="flex flex-wrap gap-2"
+                        >
                             <Badge
                                 v-for="email in ccRecipients"
                                 :key="email"
@@ -524,11 +552,19 @@ const executeChangeOwner = (): void => {
                                 placeholder="Add BCC email"
                                 @keyup.enter="addBccRecipient"
                             />
-                            <Button type="button" variant="outline" size="sm" @click="addBccRecipient">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                @click="addBccRecipient"
+                            >
                                 Add
                             </Button>
                         </div>
-                        <div v-if="bccRecipients.length > 0" class="flex flex-wrap gap-2">
+                        <div
+                            v-if="bccRecipients.length > 0"
+                            class="flex flex-wrap gap-2"
+                        >
                             <Badge
                                 v-for="email in bccRecipients"
                                 :key="email"
@@ -603,12 +639,13 @@ const executeChangeOwner = (): void => {
                 </Select>
             </div>
             <DialogFooter>
-                <Button variant="outline" @click="showChangeOwnerDialog = false">
+                <Button
+                    variant="outline"
+                    @click="showChangeOwnerDialog = false"
+                >
                     Cancel
                 </Button>
-                <Button @click="executeChangeOwner">
-                    Change Owner
-                </Button>
+                <Button @click="executeChangeOwner"> Change Owner </Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>
@@ -977,9 +1014,11 @@ const executeChangeOwner = (): void => {
                         <span>Reopen</span>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem v-if="canConvertToInvoice"     
-                      @select="convertToInvoice" 
-                      class="gap-2">
+                    <DropdownMenuItem
+                        v-if="canConvertToInvoice"
+                        @select="convertToInvoice"
+                        class="gap-2"
+                    >
                         <Edit3 class="h-4 w-4" />
                         <span>Convert to invoice</span>
                     </DropdownMenuItem>

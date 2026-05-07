@@ -47,14 +47,17 @@ const COMMON_COUNTRY_CODES = [
 const countrySearchCache = new Map<string, CountryOption[]>();
 
 const mapCommonCountries = (options: CountryOption[]): CountryOption[] => {
-    const optionByCode = new Map(options.map((country) => [country.code, country]));
+    const optionByCode = new Map(
+        options.map((country) => [country.code, country]),
+    );
 
     return COMMON_COUNTRY_CODES.map((code) => optionByCode.get(code)).filter(
         (country): country is CountryOption => country !== undefined,
     );
 };
 
-export const commonCountryOptions: CountryOption[] = mapCommonCountries(countryOptions);
+export const commonCountryOptions: CountryOption[] =
+    mapCommonCountries(countryOptions);
 
 export const filterCountryOptions = (query: string): CountryOption[] => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -145,14 +148,17 @@ const COMMON_CURRENCY_CODES = [
 const currencySearchCache = new Map<string, CurrencyOption[]>();
 
 const mapCommonCurrencies = (options: CurrencyOption[]): CurrencyOption[] => {
-    const optionByCode = new Map(options.map((currency) => [currency.code, currency]));
+    const optionByCode = new Map(
+        options.map((currency) => [currency.code, currency]),
+    );
 
     return COMMON_CURRENCY_CODES.map((code) => optionByCode.get(code)).filter(
         (currency): currency is CurrencyOption => currency !== undefined,
     );
 };
 
-export const commonCurrencyOptions: CurrencyOption[] = mapCommonCurrencies(currencyOptions);
+export const commonCurrencyOptions: CurrencyOption[] =
+    mapCommonCurrencies(currencyOptions);
 
 export const filterCurrencyOptions = (query: string): CurrencyOption[] => {
     const normalizedQuery = query.trim().toLowerCase();

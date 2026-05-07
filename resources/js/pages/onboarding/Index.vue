@@ -159,7 +159,8 @@ watch(
     () => props.quoteDefaults,
     (quoteDefaults) => {
         onboardingForm.data.quote_prefix = quoteDefaults?.quote_prefix ?? 'QS';
-        onboardingForm.data.invoice_prefix = quoteDefaults?.invoice_prefix ?? 'INV';
+        onboardingForm.data.invoice_prefix =
+            quoteDefaults?.invoice_prefix ?? 'INV';
     },
     { immediate: true },
 );
@@ -239,7 +240,7 @@ const handleFormSuccess = (): void => {
         <Form
             v-bind="onboardingForm"
             @success="handleFormSuccess"
-            class="space-y-6 md:w-lg rounded-xl border bg-card p-8 shadow-sm"
+            class="space-y-6 rounded-xl border bg-card p-8 shadow-sm md:w-lg"
             v-slot="{ errors, processing }"
         >
             <input

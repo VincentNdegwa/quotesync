@@ -32,7 +32,10 @@ const emit = defineEmits<{
                 <Pencil class="mr-2 h-4 w-4" />
                 Edit
             </DropdownMenuItem>
-            <DropdownMenuItem @click="emit('delete', task.id)" class="text-destructive">
+            <DropdownMenuItem
+                @click="emit('delete', task.id)"
+                class="text-destructive"
+            >
                 <Trash2 class="mr-2 h-4 w-4" />
                 Delete
             </DropdownMenuItem>

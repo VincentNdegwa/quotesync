@@ -78,14 +78,18 @@ const openSendDialog = (): void => {
 };
 
 const executeSend = (): void => {
-    router.post(InvoiceSendController.store(props.invoice.id).url, {}, {
-        preserveScroll: true,
-        onSuccess: () => {
-            showSendDialog.value = false;
-            toast.success('Invoice sent successfully');
-            emit('success');
+    router.post(
+        InvoiceSendController.store(props.invoice.id).url,
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                showSendDialog.value = false;
+                toast.success('Invoice sent successfully');
+                emit('success');
+            },
         },
-    });
+    );
 };
 
 const executeDelete = (): void => {
@@ -100,24 +104,32 @@ const executeDelete = (): void => {
 };
 
 const executeArchive = (): void => {
-    router.post(InvoiceController.archive(props.invoice.id).url, {}, {
-        preserveScroll: true,
-        onSuccess: () => {
-            showArchiveDialog.value = false;
-            toast.success('Invoice archived successfully');
-            emit('success');
+    router.post(
+        InvoiceController.archive(props.invoice.id).url,
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                showArchiveDialog.value = false;
+                toast.success('Invoice archived successfully');
+                emit('success');
+            },
         },
-    });
+    );
 };
 
 const duplicate = (): void => {
-    router.post(InvoiceController.duplicate(props.invoice.id).url, {}, {
-        preserveScroll: true,
-        onSuccess: () => {
-            toast.success('Invoice duplicated successfully');
-            emit('success');
+    router.post(
+        InvoiceController.duplicate(props.invoice.id).url,
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success('Invoice duplicated successfully');
+                emit('success');
+            },
         },
-    });
+    );
 };
 
 const downloadPDF = async (): Promise<void> => {
@@ -130,7 +142,10 @@ const downloadPDF = async (): Promise<void> => {
         const data = await response.json();
 
         if (response.status === 202) {
-            toast.info(data?.message ?? 'PDF generation started. You can download it shortly.');
+            toast.info(
+                data?.message ??
+                    'PDF generation started. You can download it shortly.',
+            );
 
             return;
         }
@@ -217,11 +232,7 @@ const openPaymentDialog = (): void => {
                     <span>View as client</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem
-                    v-if="canEdit"
-                    :as-child="true"
-                    class="gap-2"
-                >
+                <DropdownMenuItem v-if="canEdit" :as-child="true" class="gap-2">
                     <Link
                         :href="InvoiceController.edit(invoice.id).url"
                         class="flex w-full items-center gap-2"
@@ -242,18 +253,12 @@ const openPaymentDialog = (): void => {
                     <span>Duplicate</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem
-                    class="gap-2"
-                    @select="openPaymentDialog"
-                >
+                <DropdownMenuItem class="gap-2" @select="openPaymentDialog">
                     <DollarSign class="h-4 w-4" />
                     <span>Record Payment</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem
-                    :as-child="true"
-                    class="gap-2"
-                >
+                <DropdownMenuItem :as-child="true" class="gap-2">
                     <Link
                         :href="`/invoices/${invoice.id}/credit-notes/create`"
                         class="flex w-full items-center gap-2"
@@ -328,12 +333,7 @@ const openPaymentDialog = (): void => {
             Record Payment
         </Button>
 
-        <Button
-            as-child
-            size="sm"
-            variant="outline"
-            class="gap-1.5"
-        >
+        <Button as-child size="sm" variant="outline" class="gap-1.5">
             <Link :href="`/invoices/${invoice.id}/credit-notes/create`">
                 <FileText class="h-3.5 w-3.5" />
                 Credit Note

@@ -22,7 +22,7 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Appearance',
         href: editAppearance(),
-    }
+    },
 ];
 
 const { isCurrentOrParentUrl } = useCurrentUrl();

@@ -85,15 +85,31 @@ const executeDelete = (): void => {
                 </TableHeader>
                 <TableBody>
                     <TableRow v-for="tag in tags" :key="tag.id">
-                        <TableCell class="font-medium">{{ tag.name }}</TableCell>
+                        <TableCell class="font-medium">{{
+                            tag.name
+                        }}</TableCell>
                         <TableCell>
-                            <Badge :variant="tag.is_active ? 'default' : 'secondary'">
+                            <Badge
+                                :variant="
+                                    tag.is_active ? 'default' : 'secondary'
+                                "
+                            >
                                 {{ tag.is_active ? 'Active' : 'Inactive' }}
                             </Badge>
                         </TableCell>
-                        <TableCell class="text-right space-x-2">
-                            <Button size="sm" variant="outline" @click="openEdit(tag)">Edit</Button>
-                            <Button size="sm" variant="destructive" @click="removeTag(tag)">Delete</Button>
+                        <TableCell class="space-x-2 text-right">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                @click="openEdit(tag)"
+                                >Edit</Button
+                            >
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                @click="removeTag(tag)"
+                                >Delete</Button
+                            >
                         </TableCell>
                     </TableRow>
                 </TableBody>

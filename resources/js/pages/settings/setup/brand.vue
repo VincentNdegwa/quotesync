@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { Form, useForm } from '@inertiajs/vue3';
 import { Globe } from 'lucide-vue-next';
-import { Building2, Mail, Phone, Globe as GlobeIcon, Palette, FileImage } from 'lucide-vue-next';
+import {
+    Building2,
+    Mail,
+    Phone,
+    Globe as GlobeIcon,
+    Palette,
+    FileImage,
+} from 'lucide-vue-next';
 import { computed } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -10,7 +17,13 @@ import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import type { IndustryModel } from '@/types';
@@ -31,7 +44,7 @@ const props = defineProps<{
         tax_number: string;
         favicon_url: string;
         white_label_mode: boolean;
-        industry_id?: string
+        industry_id?: string;
     };
 }>();
 
@@ -45,8 +58,6 @@ defineOptions({
         ],
     },
 });
-
-
 
 const brandForm = useForm({
     company_name: props.business.company_name,
@@ -62,7 +73,7 @@ const brandForm = useForm({
     tax_number: props.business.tax_number,
     favicon_path: null as File | null,
     white_label_mode: props.business.white_label_mode,
-    industry_id: props.business.industry_id
+    industry_id: props.business.industry_id,
 });
 
 const logoPreview = computed(() => {
@@ -74,12 +85,13 @@ const logoPreview = computed(() => {
 });
 
 const industryId = computed({
-    get: () => brandForm.industry_id ? String(brandForm.industry_id) : undefined,
+    get: () =>
+        brandForm.industry_id ? String(brandForm.industry_id) : undefined,
     set: (value) => {
-        brandForm.industry_id = value === undefined || value === null ? undefined : String(value);
+        brandForm.industry_id =
+            value === undefined || value === null ? undefined : String(value);
     },
 });
-
 </script>
 
 <template>
@@ -109,18 +121,28 @@ const industryId = computed({
                         <Label>Logo</Label>
                     </div>
                     <div class="space-y-3">
-                        <div v-if="logoPreview" class="relative w-32 h-32 rounded-lg border bg-muted flex items-center justify-center overflow-hidden">
-                            <img :src="logoPreview" alt="Logo" class="w-full h-full object-contain" />
+                        <div
+                            v-if="logoPreview"
+                            class="relative flex h-32 w-32 items-center justify-center overflow-hidden rounded-lg border bg-muted"
+                        >
+                            <img
+                                :src="logoPreview"
+                                alt="Logo"
+                                class="h-full w-full object-contain"
+                            />
                         </div>
                         <Input
                             id="logo_path"
                             name="logo_path"
                             type="file"
                             accept="image/*"
-                            @change="(e: Event) => {
-                                const target = e.target as HTMLInputElement;
-                                brandForm.logo_path = target.files?.[0] ?? null;
-                            }"
+                            @change="
+                                (e: Event) => {
+                                    const target = e.target as HTMLInputElement;
+                                    brandForm.logo_path =
+                                        target.files?.[0] ?? null;
+                                }
+                            "
                         />
                     </div>
                     <InputError :message="errors.logo_path" />
@@ -139,7 +161,7 @@ const industryId = computed({
                                     id="primary_color"
                                     name="primary_color"
                                     type="color"
-                                    class="w-16 h-10 p-1 cursor-pointer"
+                                    class="h-10 w-16 cursor-pointer p-1"
                                     v-model="brandForm.primary_color"
                                 />
                                 <Input
@@ -160,7 +182,7 @@ const industryId = computed({
                                     id="accent_color"
                                     name="accent_color"
                                     type="color"
-                                    class="w-16 h-10 p-1 cursor-pointer"
+                                    class="h-10 w-16 cursor-pointer p-1"
                                     v-model="brandForm.accent_color"
                                 />
                                 <Input
@@ -180,7 +202,7 @@ const industryId = computed({
 
             <!-- Company Information -->
             <div class="space-y-4">
-                <h3 class="text-lg font-semibold flex items-center gap-2">
+                <h3 class="flex items-center gap-2 text-lg font-semibold">
                     <Building2 class="h-5 w-5" />
                     Company Information
                 </h3>
@@ -240,7 +262,7 @@ const industryId = computed({
 
             <!-- Contact Information -->
             <div class="space-y-4">
-                <h3 class="text-lg font-semibold flex items-center gap-2">
+                <h3 class="flex items-center gap-2 text-lg font-semibold">
                     <Building2 class="h-5 w-5" />
                     Contact Information
                 </h3>
@@ -248,7 +270,9 @@ const industryId = computed({
                     <div class="space-y-2">
                         <Label for="email">Email</Label>
                         <div class="relative">
-                            <Mail class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Mail
+                                class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                            />
                             <Input
                                 id="email"
                                 name="email"
@@ -263,7 +287,9 @@ const industryId = computed({
                     <div class="space-y-2">
                         <Label for="phone">Phone</Label>
                         <div class="relative">
-                            <Phone class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Phone
+                                class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                            />
                             <Input
                                 id="phone"
                                 name="phone"
@@ -286,10 +312,12 @@ const industryId = computed({
                         <InputError :message="errors.address" />
                     </div>
 
-                    <div class="space-y-2 col-span-full ">
+                    <div class="col-span-full space-y-2">
                         <Label for="website">Website</Label>
                         <div class="relative">
-                            <GlobeIcon class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <GlobeIcon
+                                class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                            />
                             <Input
                                 id="website"
                                 name="website"
@@ -305,7 +333,7 @@ const industryId = computed({
 
             <!-- Industry -->
             <div class="space-y-4">
-                <h3 class="text-lg font-semibold flex items-center gap-2">
+                <h3 class="flex items-center gap-2 text-lg font-semibold">
                     <Building2 class="h-5 w-5" />
                     Industry
                 </h3>
@@ -316,9 +344,19 @@ const industryId = computed({
                             <SelectValue placeholder="Select your industry" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem v-for="industry in industries" :key="industry.id" :value="String(industry.id)">
+                            <SelectItem
+                                v-for="industry in industries"
+                                :key="industry.id"
+                                :value="String(industry.id)"
+                            >
                                 <div class="flex items-center gap-2">
-                                    <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: industry.color || '#000' }" />
+                                    <div
+                                        class="h-3 w-3 rounded-full"
+                                        :style="{
+                                            backgroundColor:
+                                                industry.color || '#000',
+                                        }"
+                                    />
                                     {{ industry.name }}
                                 </div>
                             </SelectItem>
@@ -332,15 +370,25 @@ const industryId = computed({
             <div class="space-y-4">
                 <h3 class="text-lg font-semibold">Advanced</h3>
                 <div class="space-y-4">
-                    <div class="flex items-center justify-between p-4 border rounded-lg">
+                    <div
+                        class="flex items-center justify-between rounded-lg border p-4"
+                    >
                         <div class="space-y-1">
-                            <Label for="white_label_mode" class="text-base">White-label Mode</Label>
-                            <p class="text-sm text-muted-foreground">Enable white-label branding for customer-facing documents</p>
+                            <Label for="white_label_mode" class="text-base"
+                                >White-label Mode</Label
+                            >
+                            <p class="text-sm text-muted-foreground">
+                                Enable white-label branding for customer-facing
+                                documents
+                            </p>
                         </div>
                         <Switch
                             id="white_label_mode"
                             :model-value="brandForm.white_label_mode"
-                            @update:model-value="(checked: boolean) => (brandForm.white_label_mode = checked)"
+                            @update:model-value="
+                                (checked: boolean) =>
+                                    (brandForm.white_label_mode = checked)
+                            "
                         />
                         <input
                             name="white_label_mode"
@@ -356,10 +404,13 @@ const industryId = computed({
                             name="favicon_path"
                             type="file"
                             accept="image/x-icon,image/png"
-                            @change="(e: Event) => {
-                                const target = e.target as HTMLInputElement;
-                                brandForm.favicon_path = target.files?.[0] ?? null;
-                            }"
+                            @change="
+                                (e: Event) => {
+                                    const target = e.target as HTMLInputElement;
+                                    brandForm.favicon_path =
+                                        target.files?.[0] ?? null;
+                                }
+                            "
                         />
                         <InputError :message="errors.favicon_path" />
                     </div>

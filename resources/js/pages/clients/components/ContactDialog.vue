@@ -17,7 +17,14 @@ import type { ClientRecord } from '@/types';
 const props = defineProps<{
     client: ClientRecord;
     open: boolean;
-    contact?: { id: number; name: string; email: string | null; phone: string | null; position: string | null; is_primary: boolean } | null;
+    contact?: {
+        id: number;
+        name: string;
+        email: string | null;
+        phone: string | null;
+        position: string | null;
+        is_primary: boolean;
+    } | null;
 }>();
 
 const emit = defineEmits<{
@@ -33,27 +40,33 @@ const contactForm = useForm({
     is_primary: false,
 });
 
-watch(() => props.open, (isOpen) => {
-    if (isOpen && props.contact) {
-        contactForm.name = props.contact.name;
-        contactForm.email = props.contact.email || '';
-        contactForm.phone = props.contact.phone || '';
-        contactForm.position = props.contact.position || '';
-        contactForm.is_primary = props.contact.is_primary;
-    } else if (isOpen) {
-        contactForm.reset();
-    }
-});
+watch(
+    () => props.open,
+    (isOpen) => {
+        if (isOpen && props.contact) {
+            contactForm.name = props.contact.name;
+            contactForm.email = props.contact.email || '';
+            contactForm.phone = props.contact.phone || '';
+            contactForm.position = props.contact.position || '';
+            contactForm.is_primary = props.contact.is_primary;
+        } else if (isOpen) {
+            contactForm.reset();
+        }
+    },
+);
 
 const saveContact = () => {
     if (props.contact) {
-        contactForm.put(`/clients/${props.client.id}/contacts/${props.contact.id}`, {
-            onSuccess: () => {
-                emit('update:open', false);
-                emit('success');
-                contactForm.reset();
+        contactForm.put(
+            `/clients/${props.client.id}/contacts/${props.contact.id}`,
+            {
+                onSuccess: () => {
+                    emit('update:open', false);
+                    emit('success');
+                    contactForm.reset();
+                },
             },
-        });
+        );
     } else {
         contactForm.post(`/clients/${props.client.id}/contacts`, {
             onSuccess: () => {
@@ -70,9 +83,15 @@ const saveContact = () => {
     <Dialog :open="open" @update:open="emit('update:open', $event)">
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>{{ contact ? 'Edit Contact' : 'Add Contact' }}</DialogTitle>
+                <DialogTitle>{{
+                    contact ? 'Edit Contact' : 'Add Contact'
+                }}</DialogTitle>
                 <DialogDescription>
-                    {{ contact ? 'Update contact information' : 'Add a new contact to ' + client.company_name }}
+                    {{
+                        contact
+                            ? 'Update contact information'
+                            : 'Add a new contact to ' + client.company_name
+                    }}
                 </DialogDescription>
             </DialogHeader>
             <form @submit.prevent="saveContact" class="space-y-4">
@@ -112,11 +131,18 @@ const saveContact = () => {
                     />
                 </div>
                 <div class="flex items-center space-x-2">
-                    <Switch id="is_primary" v-model:checked="contactForm.is_primary" />
+                    <Switch
+                        id="is_primary"
+                        v-model:checked="contactForm.is_primary"
+                    />
                     <Label for="is_primary">Primary Contact</Label>
                 </div>
                 <div class="flex justify-end gap-2">
-                    <Button type="button" variant="outline" @click="emit('update:open', false)">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="emit('update:open', false)"
+                    >
                         Cancel
                     </Button>
                     <Button type="submit" :disabled="contactForm.processing">

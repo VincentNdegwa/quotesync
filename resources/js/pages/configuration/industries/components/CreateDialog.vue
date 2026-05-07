@@ -43,7 +43,10 @@ const submit = (): void => {
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>Create industry</DialogTitle>
-                <DialogDescription>Add reusable industry classifications for clients.</DialogDescription>
+                <DialogDescription
+                    >Add reusable industry classifications for
+                    clients.</DialogDescription
+                >
             </DialogHeader>
 
             <form class="space-y-4" @submit.prevent="submit">
@@ -54,8 +57,14 @@ const submit = (): void => {
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="industry_create_description">Description (optional)</Label>
-                    <Input id="industry_create_description" v-model="form.description" placeholder="Brief description of the industry" />
+                    <Label for="industry_create_description"
+                        >Description (optional)</Label
+                    >
+                    <Input
+                        id="industry_create_description"
+                        v-model="form.description"
+                        placeholder="Brief description of the industry"
+                    />
                     <InputError :message="form.errors.description" />
                 </div>
 
@@ -67,21 +76,37 @@ const submit = (): void => {
 
                 <div class="grid gap-2">
                     <Label for="industry_create_color">Color (optional)</Label>
-                    <Input id="industry_create_color" v-model="form.color" placeholder="#3b82f6" type="color" />
+                    <Input
+                        id="industry_create_color"
+                        v-model="form.color"
+                        placeholder="#3b82f6"
+                        type="color"
+                    />
                     <InputError :message="form.errors.color" />
                 </div>
 
-                <div class="flex items-center justify-between rounded-md border p-3">
+                <div
+                    class="flex items-center justify-between rounded-md border p-3"
+                >
                     <span class="text-sm">Active</span>
                     <Switch
                         :model-value="Boolean(form.is_active)"
-                        @update:model-value="(checked: boolean) => (form.is_active = checked)"
+                        @update:model-value="
+                            (checked: boolean) => (form.is_active = checked)
+                        "
                     />
                 </div>
 
                 <DialogFooter>
-                    <Button type="button" variant="outline" @click="open = false">Cancel</Button>
-                    <Button type="submit" :disabled="form.processing">Create industry</Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="open = false"
+                        >Cancel</Button
+                    >
+                    <Button type="submit" :disabled="form.processing"
+                        >Create industry</Button
+                    >
                 </DialogFooter>
             </form>
         </DialogContent>

@@ -100,11 +100,21 @@ const selectCurrency = (selectedValue: string): void => {
                             v-for="currency in filteredCurrencies"
                             :key="currency.code"
                             :value="currency.code"
-                            @select="(ev) => selectCurrency(ev.detail.value as string)"
+                            @select="
+                                (ev) =>
+                                    selectCurrency(ev.detail.value as string)
+                            "
                         >
                             {{ currency.label }}
                             <CheckIcon
-                                :class="cn('ml-auto h-4 w-4', model === currency.code ? 'opacity-100' : 'opacity-0')"
+                                :class="
+                                    cn(
+                                        'ml-auto h-4 w-4',
+                                        model === currency.code
+                                            ? 'opacity-100'
+                                            : 'opacity-0',
+                                    )
+                                "
                             />
                         </CommandItem>
                     </CommandGroup>

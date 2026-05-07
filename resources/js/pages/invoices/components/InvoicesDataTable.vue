@@ -31,10 +31,12 @@ const emit = defineEmits<{
 
 const sorting = ref<SortingState>([]);
 
-const columns = computed(() => getInvoiceColumns({
-    onDelete: (invoiceId) => emit('delete', invoiceId),
-    invoiceStatuses: props.invoiceStatuses,
-}));
+const columns = computed(() =>
+    getInvoiceColumns({
+        onDelete: (invoiceId) => emit('delete', invoiceId),
+        invoiceStatuses: props.invoiceStatuses,
+    }),
+);
 
 const table = useVueTable({
     get data() {
@@ -59,7 +61,10 @@ const table = useVueTable({
     <div :class="invoicesDataTableTheme.container">
         <Table>
             <TableHeader>
-                <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
+                <TableRow
+                    v-for="headerGroup in table.getHeaderGroups()"
+                    :key="headerGroup.id"
+                >
                     <TableHead
                         v-for="header in headerGroup.headers"
                         :key="header.id"
@@ -79,13 +84,22 @@ const table = useVueTable({
                         v-for="row in table.getRowModel().rows"
                         :key="row.id"
                     >
-                        <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                            <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                        <TableCell
+                            v-for="cell in row.getVisibleCells()"
+                            :key="cell.id"
+                        >
+                            <FlexRender
+                                :render="cell.column.columnDef.cell"
+                                :props="cell.getContext()"
+                            />
                         </TableCell>
                     </TableRow>
                 </template>
                 <TableRow v-else>
-                    <TableCell :colspan="columns.length" :class="invoicesDataTableTheme.emptyCell">
+                    <TableCell
+                        :colspan="columns.length"
+                        :class="invoicesDataTableTheme.emptyCell"
+                    >
                         No invoices found.
                     </TableCell>
                 </TableRow>

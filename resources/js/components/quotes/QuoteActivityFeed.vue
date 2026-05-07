@@ -47,7 +47,7 @@ const newComment = ref('');
 const showAllActivity = ref(false);
 
 const mentions = computed(() => {
-    return (props.teamMembers || []).map(member => ({
+    return (props.teamMembers || []).map((member) => ({
         id: member.id.toString(),
         label: member.name,
     }));
@@ -82,7 +82,6 @@ const colorForType = (type: string): string => {
     return 'text-muted-foreground bg-muted';
 };
 
-
 const timeline = computed(() => {
     const items: Array<{
         id: string;
@@ -92,7 +91,7 @@ const timeline = computed(() => {
     }> = [];
 
     // Add activities
-    props.activities.forEach(activity => {
+    props.activities.forEach((activity) => {
         items.push({
             id: `activity-${activity.id}`,
             type: 'activity',
@@ -102,7 +101,7 @@ const timeline = computed(() => {
     });
 
     // Add comments
-    props.comments.forEach(comment => {
+    props.comments.forEach((comment) => {
         items.push({
             id: `comment-${comment.id}`,
             type: 'comment',
@@ -131,25 +130,28 @@ const displayTimeline = computed(() => {
 
 const submitComment = async () => {
     if (editorRef.value?.isEmpty) {
-return;
-}
+        return;
+    }
 
     if (!newComment.value.trim()) {
-return;
-}
+        return;
+    }
 
     try {
-        const response = await fetch(`/comments/${props.commentableType}/${props.commentableId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
+        const response = await fetch(
+            `/comments/${props.commentableType}/${props.commentableId}`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    content: newComment.value,
+                    mentions: [],
+                    is_internal: true,
+                }),
             },
-            body: JSON.stringify({
-                content: newComment.value,
-                mentions: [],
-                is_internal: true,
-            }),
-        });
+        );
 
         if (response.ok) {
             newComment.value = '';
@@ -162,14 +164,13 @@ return;
 
 const deleteComment = async (commentId: number) => {
     if (!confirm('Are you sure you want to delete this comment?')) {
-return;
-}
+        return;
+    }
 
     try {
         const response = await fetch(`/comments/${commentId}`, {
             method: 'DELETE',
-            headers: {
-            },
+            headers: {},
         });
 
         if (response.ok) {
@@ -191,14 +192,16 @@ const handleKeyDown = (event: KeyboardEvent) => {
 <template>
     <div class="space-y-4">
         <div class="flex items-center justify-between">
-            <h3 class="text-sm font-semibold text-foreground">Activity & Comments</h3>
+            <h3 class="text-sm font-semibold text-foreground">
+                Activity & Comments
+            </h3>
             <Badge variant="secondary" class="text-xs">
                 {{ timeline.length }} item{{ timeline.length !== 1 ? 's' : '' }}
             </Badge>
         </div>
 
         <div class="relative space-y-3">
-            <div class="absolute left-3 top-0 bottom-0 w-px bg-border/50" />
+            <div class="absolute top-0 bottom-0 left-3 w-px bg-border/50" />
 
             <div
                 v-for="item in displayTimeline"
@@ -209,55 +212,90 @@ const handleKeyDown = (event: KeyboardEvent) => {
                 <div
                     :class="[
                         'relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ring-4 ring-background',
-                        item.type === 'comment' ? 'bg-primary text-white' : colorForType((item.data as any).type),
+                        item.type === 'comment'
+                            ? 'bg-primary text-white'
+                            : colorForType((item.data as any).type),
                     ]"
                 >
                     <component
-                        :is="item.type === 'comment' ? MessageSquare : iconForType((item.data as any).type)"
+                        :is="
+                            item.type === 'comment'
+                                ? MessageSquare
+                                : iconForType((item.data as any).type)
+                        "
                         class="h-3 w-3"
                     />
                 </div>
 
                 <!-- Content -->
-                <div class="flex-1 min-w-0">
+                <div class="min-w-0 flex-1">
                     <div class="flex items-center justify-between gap-2">
                         <div class="flex items-center gap-2">
                             <span class="text-sm font-medium text-foreground">
-                                {{ item.type === 'comment' ? (item.data as CommentModel).user?.name : (item.data as QuoteActivity).user?.name || 'System' }}
+                                {{
+                                    item.type === 'comment'
+                                        ? (item.data as CommentModel).user?.name
+                                        : (item.data as QuoteActivity).user
+                                              ?.name || 'System'
+                                }}
                             </span>
-                            <span class="text-xs text-muted-foreground">{{ fmtDateTime(item.timestamp) }}</span>
+                            <span class="text-xs text-muted-foreground">{{
+                                fmtDateTime(item.timestamp)
+                            }}</span>
                         </div>
                         <Button
                             v-if="item.type === 'comment'"
                             size="sm"
                             variant="ghost"
-                            class="h-6 w-6 p-0 shrink-0 opacity-0 hover:opacity-100 transition-opacity"
-                            @click="deleteComment((item.data as CommentModel).id)"
+                            class="h-6 w-6 shrink-0 p-0 opacity-0 transition-opacity hover:opacity-100"
+                            @click="
+                                deleteComment((item.data as CommentModel).id)
+                            "
                         >
                             <Trash2 class="h-3 w-3" />
                         </Button>
                     </div>
-                    <div class="text-sm text-foreground mt-0.5" v-html="item.type === 'comment' ? (item.data as CommentModel).content : (item.data as QuoteActivity).description"></div>
+                    <div
+                        class="mt-0.5 text-sm text-foreground"
+                        v-html="
+                            item.type === 'comment'
+                                ? (item.data as CommentModel).content
+                                : (item.data as QuoteActivity).description
+                        "
+                    ></div>
                 </div>
             </div>
 
-            <div v-if="!showAllActivity && timeline.length > 10" class="relative flex gap-3">
-                <div class="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-4 ring-background bg-muted text-muted-foreground">
+            <div
+                v-if="!showAllActivity && timeline.length > 10"
+                class="relative flex gap-3"
+            >
+                <div
+                    class="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground ring-4 ring-background"
+                >
                     <MoreHorizontal class="h-4 w-4" />
                 </div>
-                <div class="flex-1 min-w-0 pt-1">
-                    <Button variant="ghost" size="sm" @click="showAllActivity = true" class="text-xs">
+                <div class="min-w-0 flex-1 pt-1">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        @click="showAllActivity = true"
+                        class="text-xs"
+                    >
                         Show {{ timeline.length - 10 }} more items
                     </Button>
                 </div>
             </div>
 
-            <div v-if="timeline.length === 0" class="text-center py-8 text-sm text-muted-foreground">
+            <div
+                v-if="timeline.length === 0"
+                class="py-8 text-center text-sm text-muted-foreground"
+            >
                 No activity yet
             </div>
         </div>
 
-        <div class="bg-card shadow-sm p-2 rounded-lg">
+        <div class="rounded-lg bg-card p-2 shadow-sm">
             <TiptapEditor
                 ref="editorRef"
                 v-model="newComment"
@@ -268,8 +306,12 @@ const handleKeyDown = (event: KeyboardEvent) => {
                 class="min-h-[60px] border-0 bg-card"
                 @keydown="handleKeyDown"
             />
-            <div class="flex mb-3 justify-end">
-                <Button size="sm" @click="submitComment" :disabled="!newComment.trim()">
+            <div class="mb-3 flex justify-end">
+                <Button
+                    size="sm"
+                    @click="submitComment"
+                    :disabled="!newComment.trim()"
+                >
                     <Send class="h-4 w-4" />
                 </Button>
             </div>

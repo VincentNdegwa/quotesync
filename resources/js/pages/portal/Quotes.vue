@@ -26,11 +26,14 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
-const quoteStatuses = computed(() => [
-    { value: 'sent', label: 'Sent' },
-    { value: 'accepted', label: 'Accepted' },
-    { value: 'rejected', label: 'Rejected' },
-] as any);
+const quoteStatuses = computed(
+    () =>
+        [
+            { value: 'sent', label: 'Sent' },
+            { value: 'accepted', label: 'Accepted' },
+            { value: 'rejected', label: 'Rejected' },
+        ] as any,
+);
 
 const ALL = '__all__';
 
@@ -54,7 +57,8 @@ watch(
                 '/portal/quotes',
                 {
                     search: query.value.search,
-                    status: query.value.status === ALL ? '' : query.value.status,
+                    status:
+                        query.value.status === ALL ? '' : query.value.status,
                     sort: query.value.sort,
                 },
                 {
@@ -80,13 +84,17 @@ const approveQuote = (quoteId: number): void => {
 
 const executeApprove = (): void => {
     if (quoteToApprove.value) {
-        router.post(`/portal/quotes/${quoteToApprove.value}/approve`, {}, {
-            preserveScroll: true,
-            onSuccess: () => {
-                showApproveDialog.value = false;
-                quoteToApprove.value = null;
-            }
-        });
+        router.post(
+            `/portal/quotes/${quoteToApprove.value}/approve`,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    showApproveDialog.value = false;
+                    quoteToApprove.value = null;
+                },
+            },
+        );
     }
 };
 
@@ -100,13 +108,17 @@ const rejectQuote = (quoteId: number): void => {
 
 const executeReject = (): void => {
     if (quoteToReject.value) {
-        router.post(`/portal/quotes/${quoteToReject.value}/reject`, {}, {
-            preserveScroll: true,
-            onSuccess: () => {
-                showRejectDialog.value = false;
-                quoteToReject.value = null;
-            }
-        });
+        router.post(
+            `/portal/quotes/${quoteToReject.value}/reject`,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    showRejectDialog.value = false;
+                    quoteToReject.value = null;
+                },
+            },
+        );
     }
 };
 </script>
@@ -115,7 +127,9 @@ const executeReject = (): void => {
     <Head title="Quotes" />
 
     <div class="space-y-4">
-        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div
+            class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+        >
             <Heading
                 title="Quotes"
                 description="View and manage quotes sent to you."
@@ -124,7 +138,11 @@ const executeReject = (): void => {
 
         <div class="rounded-lg border p-3">
             <div class="flex flex-col gap-3 md:flex-row md:items-center">
-                <Input v-model="query.search" placeholder="Search quote number or title" class="w-full md:w-96" />
+                <Input
+                    v-model="query.search"
+                    placeholder="Search quote number or title"
+                    class="w-full md:w-96"
+                />
 
                 <Select v-model="query.status">
                     <SelectTrigger class="w-full md:w-44">
@@ -132,10 +150,10 @@ const executeReject = (): void => {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem :value="ALL">All statuses</SelectItem>
-                        
-                        <SelectItem 
-                            v-for="status in quoteStatuses" 
-                            :key="status.value" 
+
+                        <SelectItem
+                            v-for="status in quoteStatuses"
+                            :key="status.value"
                             :value="status.value"
                         >
                             {{ status.label }}
@@ -166,12 +184,21 @@ const executeReject = (): void => {
             @reject="rejectQuote"
         />
 
-        <div v-else class="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
+        <div
+            v-else
+            class="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground"
+        >
             No quotes found.
         </div>
 
-        <div v-if="quotes.links.length > 1" class="flex w-full flex-wrap items-center justify-end gap-2">
-            <template v-for="(link, index) in quotes.links" :key="`${link.label}-${index}`">
+        <div
+            v-if="quotes.links.length > 1"
+            class="flex w-full flex-wrap items-center justify-end gap-2"
+        >
+            <template
+                v-for="(link, index) in quotes.links"
+                :key="`${link.label}-${index}`"
+            >
                 <Link
                     v-if="link.url"
                     :href="link.url"
@@ -190,7 +217,10 @@ const executeReject = (): void => {
                               : link.label
                     }}
                 </Link>
-                <span v-else class="inline-flex h-9 items-center rounded-md border px-3 text-sm text-muted-foreground">
+                <span
+                    v-else
+                    class="inline-flex h-9 items-center rounded-md border px-3 text-sm text-muted-foreground"
+                >
                     {{
                         index === 0
                             ? 'Previous'

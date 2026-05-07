@@ -63,7 +63,9 @@ const emit = defineEmits<{
     (e: 'apply-ai-template', data: any): void;
 }>();
 
-const localState = ref<QuoteBuilderState>(JSON.parse(JSON.stringify(props.modelValue)));
+const localState = ref<QuoteBuilderState>(
+    JSON.parse(JSON.stringify(props.modelValue)),
+);
 const initialState = ref<string>(JSON.stringify(props.modelValue));
 
 const hasUnsavedChanges = computed(() => {
@@ -78,13 +80,16 @@ useEventListener(window, 'beforeunload', (e) => {
     }
 });
 
+watch(
+    () => props.modelValue,
+    (newValue) => {
+        initialState.value = JSON.stringify(newValue);
+        localState.value = JSON.parse(JSON.stringify(newValue));
 
-watch(() => props.modelValue, (newValue) => {
-    initialState.value = JSON.stringify(newValue);
-    localState.value = JSON.parse(JSON.stringify(newValue));
-
-    ensureDefaultVariants();
-}, { deep: true });
+        ensureDefaultVariants();
+    },
+    { deep: true },
+);
 
 const currentLayout = ref<TemplateLayout>(
     ensureTemplateLayout(
@@ -99,7 +104,9 @@ const catalogItemLookup = computed<Map<number, BuilderCatalogItem>>(() => {
 const isRealItem = (item: QuoteBuilderLineItem): boolean =>
     item.name.trim() !== '' || item.unit_price !== 0;
 
-const applyTemplateSections = (templateSections: QuoteBuilderSection[]): void => {
+const applyTemplateSections = (
+    templateSections: QuoteBuilderSection[],
+): void => {
     const ui = localState.value.sections;
 
     templateSections.forEach((tplSection, i) => {
@@ -111,11 +118,16 @@ const applyTemplateSections = (templateSections: QuoteBuilderSection[]): void =>
             const realCount = uiSection.line_items.filter(isRealItem).length;
 
             if (realCount === 0) {
-                uiSection.line_items = tplSection.line_items.length > 0
-                    ? tplSection.line_items
-                    : [createEmptyLineItem(1)];
-            } else if (tplSection.line_items.length > uiSection.line_items.length) {
-                const extras = tplSection.line_items.slice(uiSection.line_items.length);
+                uiSection.line_items =
+                    tplSection.line_items.length > 0
+                        ? tplSection.line_items
+                        : [createEmptyLineItem(1)];
+            } else if (
+                tplSection.line_items.length > uiSection.line_items.length
+            ) {
+                const extras = tplSection.line_items.slice(
+                    uiSection.line_items.length,
+                );
                 uiSection.line_items.push(...extras);
             }
         } else {
@@ -123,9 +135,10 @@ const applyTemplateSections = (templateSections: QuoteBuilderSection[]): void =>
                 id: null,
                 title: tplSection.title,
                 sort_order: i,
-                line_items: tplSection.line_items.length > 0
-                    ? tplSection.line_items
-                    : [createEmptyLineItem(1)],
+                line_items:
+                    tplSection.line_items.length > 0
+                        ? tplSection.line_items
+                        : [createEmptyLineItem(1)],
             });
         }
     });
@@ -169,86 +182,96 @@ const aiTemplateOpen = ref(false);
 
 const applyAiGeneration = (data: any) => {
     if (data.sections && data.sections.length > 0) {
-        const newSections = data.sections.map((section: any, index: number) => ({
-            id: null,
-            title: section.title,
-            sort_order: index,
-            line_items: section.line_items.map((item: any) => ({
+        const newSections = data.sections.map(
+            (section: any, index: number) => ({
                 id: null,
-                catalog_item_id: item.catalog_item_id,
-                name: item.name,
-                description: item.description,
-                quantity: item.quantity,
-                unit: item.unit,
-                unit_price: item.unit_price,
-                discount_percent: 0,
-                subtotal: item.quantity * item.unit_price,
-                tax_amount: 0,
-                total: item.quantity * item.unit_price,
-                is_optional: item.is_optional,
-                notes: null,
-                sort_order: 0,
-                taxes: [],
-            })),
-        }));
+                title: section.title,
+                sort_order: index,
+                line_items: section.line_items.map((item: any) => ({
+                    id: null,
+                    catalog_item_id: item.catalog_item_id,
+                    name: item.name,
+                    description: item.description,
+                    quantity: item.quantity,
+                    unit: item.unit,
+                    unit_price: item.unit_price,
+                    discount_percent: 0,
+                    subtotal: item.quantity * item.unit_price,
+                    tax_amount: 0,
+                    total: item.quantity * item.unit_price,
+                    is_optional: item.is_optional,
+                    notes: null,
+                    sort_order: 0,
+                    taxes: [],
+                })),
+            }),
+        );
 
         localState.value.sections = newSections;
     }
 
     // Apply cover message
     if (data.cover_message) {
-        const coverBlock = currentLayout.value.blocks.find(b => b.type === 'cover_message');
+        const coverBlock = currentLayout.value.blocks.find(
+            (b) => b.type === 'cover_message',
+        );
 
         if (coverBlock) {
             const config = coverBlock.config as CoverMessageBlockConfig;
 
             if (data.cover_message.label_text) {
-config.labelText = data.cover_message.label_text;
-}
+                config.labelText = data.cover_message.label_text;
+            }
 
             if (data.cover_message.context_text) {
-config.contextText = data.cover_message.context_text;
-}
+                config.contextText = data.cover_message.context_text;
+            }
         }
     }
 
     // Apply payment terms
     if (data.payment_terms) {
-        const paymentBlock = currentLayout.value.blocks.find(b => b.type === 'payment_terms');
+        const paymentBlock = currentLayout.value.blocks.find(
+            (b) => b.type === 'payment_terms',
+        );
 
         if (paymentBlock) {
             const config = paymentBlock.config as PaymentTermsBlockConfig;
 
             if (data.payment_terms.label_text) {
-config.labelText = data.payment_terms.label_text;
-}
+                config.labelText = data.payment_terms.label_text;
+            }
 
             if (data.payment_terms.context_text) {
-config.contextText = data.payment_terms.context_text;
-}
+                config.contextText = data.payment_terms.context_text;
+            }
         }
     }
 
     // Apply terms
     if (data.terms) {
-        const termsBlock = currentLayout.value.blocks.find(b => b.type === 'terms');
+        const termsBlock = currentLayout.value.blocks.find(
+            (b) => b.type === 'terms',
+        );
 
         if (termsBlock) {
             const config = termsBlock.config as TermsBlockConfig;
 
             if (data.terms.label_text) {
-config.labelText = data.terms.label_text;
-}
+                config.labelText = data.terms.label_text;
+            }
 
             if (data.terms.context_text) {
-config.contextText = data.terms.context_text;
-}
+                config.contextText = data.terms.context_text;
+            }
         }
     }
 
     // Apply timeline if generated
     if (data.timeline && data.timeline.rows && data.timeline.rows.length > 0) {
-        const timelineBlock = currentLayout.value.blocks.find(b => b.type === 'timeline');
+        const timelineBlock = currentLayout.value.blocks.find(
+            (b) => b.type === 'timeline',
+        );
         const timelineRows = data.timeline.rows.map((row: any) => ({
             id: crypto.randomUUID(),
             phase: row.phase,
@@ -261,8 +284,8 @@ config.contextText = data.terms.context_text;
             const config = timelineBlock.config as any;
 
             if (data.timeline.label_text) {
-config.labelText = data.timeline.label_text;
-}
+                config.labelText = data.timeline.label_text;
+            }
 
             config.rows = timelineRows;
         } else {
@@ -271,8 +294,8 @@ config.labelText = data.timeline.label_text;
             const config = newTimelineBlock.config as any;
 
             if (data.timeline.label_text) {
-config.labelText = data.timeline.label_text;
-}
+                config.labelText = data.timeline.label_text;
+            }
 
             config.rows = timelineRows;
             currentLayout.value.blocks.push(newTimelineBlock);
@@ -300,7 +323,6 @@ const applyAiTemplate = (data: any) => {
         localState.value.industry = data.industry;
     }
 };
-
 
 type LineItemPointer = {
     blockId: string;
@@ -500,13 +522,16 @@ const selectedLineItem = computed(() => {
         return null;
     }
 
-    const section = localState.value.sections[selectedLineItemPointer.value.sectionIndex];
+    const section =
+        localState.value.sections[selectedLineItemPointer.value.sectionIndex];
 
     if (!section) {
         return null;
     }
 
-    return section.line_items[selectedLineItemPointer.value.lineItemIndex] ?? null;
+    return (
+        section.line_items[selectedLineItemPointer.value.lineItemIndex] ?? null
+    );
 });
 
 const withLineItem = (
@@ -530,7 +555,9 @@ const withLineItem = (
     recompute();
 };
 
-const withSelectedLineItem = (callback: (pointer: LineItemPointer) => void): void => {
+const withSelectedLineItem = (
+    callback: (pointer: LineItemPointer) => void,
+): void => {
     if (!selectedLineItemPointer.value) {
         return;
     }
@@ -560,7 +587,9 @@ watch(selectedBlockId, (blockId) => {
         return;
     }
 
-    const block = currentLayout.value.blocks.find((entry) => entry.id === blockId);
+    const block = currentLayout.value.blocks.find(
+        (entry) => entry.id === blockId,
+    );
 
     if (!block || block.type !== 'line_items') {
         clearSelectedLineItem();
@@ -574,19 +603,33 @@ const removeSelectedLineItem = (): void => {
     });
 };
 
-const updateSelectedLineItemField = (field: keyof QuoteBuilderLineItem, value: any): void => {
+const updateSelectedLineItemField = (
+    field: keyof QuoteBuilderLineItem,
+    value: any,
+): void => {
     withSelectedLineItem(({ sectionIndex, lineItemIndex }) => {
-        updateLineItemField(sectionIndex, lineItemIndex, field as string, value);
+        updateLineItemField(
+            sectionIndex,
+            lineItemIndex,
+            field as string,
+            value,
+        );
     });
 };
 
-const selectCatalogItemForSelected = (catalogItem: BuilderCatalogItem): void => {
+const selectCatalogItemForSelected = (
+    catalogItem: BuilderCatalogItem,
+): void => {
     withSelectedLineItem(({ sectionIndex, lineItemIndex }) => {
         selectCatalogItem(sectionIndex, lineItemIndex, catalogItem);
     });
 };
 
-const selectLineItemUnit = (sectionIndex: number, lineItemIndex: number, unitId: number | null): void => {
+const selectLineItemUnit = (
+    sectionIndex: number,
+    lineItemIndex: number,
+    unitId: number | null,
+): void => {
     const unit = props.units.find((entry) => entry.id === unitId);
 
     withLineItem(sectionIndex, lineItemIndex, (item) => {
@@ -601,7 +644,11 @@ const selectLineItemUnitForSelected = (unitId: number | null): void => {
     });
 };
 
-const selectLineItemVariant = (sectionIndex: number, lineItemIndex: number, variantId: number | null): void => {
+const selectLineItemVariant = (
+    sectionIndex: number,
+    lineItemIndex: number,
+    variantId: number | null,
+): void => {
     withLineItem(sectionIndex, lineItemIndex, (item) => {
         if (!item.catalog_item_id) {
             item.catalog_item_variant_id = null;
@@ -609,7 +656,9 @@ const selectLineItemVariant = (sectionIndex: number, lineItemIndex: number, vari
             return;
         }
 
-        const catalog = props.catalogItems.find((entry) => entry.id === item.catalog_item_id);
+        const catalog = props.catalogItems.find(
+            (entry) => entry.id === item.catalog_item_id,
+        );
 
         if (!variantId) {
             item.catalog_item_variant_id = null;
@@ -624,7 +673,9 @@ const selectLineItemVariant = (sectionIndex: number, lineItemIndex: number, vari
             return;
         }
 
-        const variant = catalog?.variants.find((entry) => entry.id === variantId);
+        const variant = catalog?.variants.find(
+            (entry) => entry.id === variantId,
+        );
 
         if (!variant) {
             item.catalog_item_variant_id = null;
@@ -644,7 +695,12 @@ const selectLineItemVariantForSelected = (variantId: number | null): void => {
     });
 };
 
-const toggleLineItemTax = (sectionIndex: number, lineItemIndex: number, tax: BuilderTaxOption, enabled: boolean): void => {
+const toggleLineItemTax = (
+    sectionIndex: number,
+    lineItemIndex: number,
+    tax: BuilderTaxOption,
+    enabled: boolean,
+): void => {
     withLineItem(sectionIndex, lineItemIndex, (item) => {
         if (enabled) {
             if (!item.taxes.some((entry) => entry.tax_id === tax.id)) {
@@ -664,13 +720,24 @@ const toggleLineItemTax = (sectionIndex: number, lineItemIndex: number, tax: Bui
     recompute();
 };
 
-const toggleLineItemTaxForSelected = (payload: { tax: BuilderTaxOption; enabled: boolean }): void => {
+const toggleLineItemTaxForSelected = (payload: {
+    tax: BuilderTaxOption;
+    enabled: boolean;
+}): void => {
     withSelectedLineItem(({ sectionIndex, lineItemIndex }) => {
-        toggleLineItemTax(sectionIndex, lineItemIndex, payload.tax, payload.enabled);
+        toggleLineItemTax(
+            sectionIndex,
+            lineItemIndex,
+            payload.tax,
+            payload.enabled,
+        );
     });
 };
 
-const addLineItem = (sectionIndex: number, catalogItem?: BuilderCatalogItem | null): number | null => {
+const addLineItem = (
+    sectionIndex: number,
+    catalogItem?: BuilderCatalogItem | null,
+): number | null => {
     const section = localState.value.sections[sectionIndex];
 
     if (!section) {
@@ -690,7 +757,11 @@ const addLineItem = (sectionIndex: number, catalogItem?: BuilderCatalogItem | nu
     return newIndex;
 };
 
-const quickAddLineItem = (payload: { blockId: string; sectionIndex: number; catalogItem: BuilderCatalogItem | null }): void => {
+const quickAddLineItem = (payload: {
+    blockId: string;
+    sectionIndex: number;
+    catalogItem: BuilderCatalogItem | null;
+}): void => {
     const newIndex = addLineItem(payload.sectionIndex, payload.catalogItem);
 
     if (newIndex === null) {
@@ -722,7 +793,9 @@ const removeLineItem = (sectionIndex: number, lineItemIndex: number): void => {
     if (selectedLineItemPointer.value?.sectionIndex === sectionIndex) {
         if (selectedLineItemPointer.value.lineItemIndex === lineItemIndex) {
             selectedLineItemPointer.value = null;
-        } else if (selectedLineItemPointer.value.lineItemIndex > lineItemIndex) {
+        } else if (
+            selectedLineItemPointer.value.lineItemIndex > lineItemIndex
+        ) {
             selectedLineItemPointer.value = {
                 ...selectedLineItemPointer.value,
                 lineItemIndex: selectedLineItemPointer.value.lineItemIndex - 1,
@@ -731,7 +804,12 @@ const removeLineItem = (sectionIndex: number, lineItemIndex: number): void => {
     }
 };
 
-const updateLineItemField = (sectionIndex: number, lineItemIndex: number, field: string, value: any): void => {
+const updateLineItemField = (
+    sectionIndex: number,
+    lineItemIndex: number,
+    field: string,
+    value: any,
+): void => {
     const section = localState.value.sections[sectionIndex];
 
     if (
@@ -752,7 +830,10 @@ const updateLineItemField = (sectionIndex: number, lineItemIndex: number, field:
     recompute();
 };
 
-const applyCatalogItemToLineItem = (item: QuoteBuilderLineItem, catalogItem: BuilderCatalogItem): void => {
+const applyCatalogItemToLineItem = (
+    item: QuoteBuilderLineItem,
+    catalogItem: BuilderCatalogItem,
+): void => {
     item.catalog_item_id = catalogItem.id;
     item.catalog_item_variant_id = null;
     item.name = catalogItem.name;
@@ -775,12 +856,20 @@ const applyCatalogItemToLineItem = (item: QuoteBuilderLineItem, catalogItem: Bui
 
     if (resolvedVariant) {
         item.catalog_item_variant_id = resolvedVariant.id;
-        item.unit_price = Number(resolvedVariant.unit_price ?? item.unit_price ?? 0);
-        item.cost_price = Number(resolvedVariant.cost_price ?? item.cost_price ?? 0);
+        item.unit_price = Number(
+            resolvedVariant.unit_price ?? item.unit_price ?? 0,
+        );
+        item.cost_price = Number(
+            resolvedVariant.cost_price ?? item.cost_price ?? 0,
+        );
     }
 };
 
-const selectCatalogItem = (sectionIndex: number, lineItemIndex: number, catalogItem: BuilderCatalogItem): void => {
+const selectCatalogItem = (
+    sectionIndex: number,
+    lineItemIndex: number,
+    catalogItem: BuilderCatalogItem,
+): void => {
     withLineItem(sectionIndex, lineItemIndex, (item) => {
         applyCatalogItemToLineItem(item, catalogItem);
     });
@@ -843,7 +932,10 @@ const updatePaymentTermsContent = (
     config.contextText = payload.contextText;
 };
 
-const updateCoverMessageContent = (blockId: string, value: string | null): void => {
+const updateCoverMessageContent = (
+    blockId: string,
+    value: string | null,
+): void => {
     const block = currentLayout.value.blocks.find(
         (entry) => entry.id === blockId && entry.type === 'cover_message',
     );
@@ -956,9 +1048,10 @@ const resolvedClient = computed(() => {
         return null;
     }
 
-    return props.clients.find((c) => c.id === localState.value.client_id) ?? null;
+    return (
+        props.clients.find((c) => c.id === localState.value.client_id) ?? null
+    );
 });
-
 
 const builderTitle = computed({
     get: () => localState.value.title,
@@ -973,8 +1066,11 @@ const recompute = (): void => {
 
     localState.value.sections.forEach((section) => {
         section.line_items.forEach((item) => {
-            const lineSubtotal = item.quantity * item.unit_price * (1 - item.discount_percent / 100);
-            
+            const lineSubtotal =
+                item.quantity *
+                item.unit_price *
+                (1 - item.discount_percent / 100);
+
             // Calculate individual tax amounts
             item.taxes.forEach((tax) => {
                 const taxRate = Number(tax.tax_rate);
@@ -985,11 +1081,14 @@ const recompute = (): void => {
                 } else {
                     taxAmountValue = lineSubtotal * (taxRate / 100);
                 }
-                
+
                 tax.tax_amount = taxAmountValue;
             });
 
-            const lineTaxAmount = item.taxes.reduce((sum, tax) => sum + (tax.tax_amount || 0), 0);
+            const lineTaxAmount = item.taxes.reduce(
+                (sum, tax) => sum + (tax.tax_amount || 0),
+                0,
+            );
 
             item.subtotal = lineSubtotal;
             item.tax_amount = lineTaxAmount;
@@ -1002,7 +1101,8 @@ const recompute = (): void => {
 
     localState.value.subtotal = subtotal;
     localState.value.tax_amount = taxAmount;
-    localState.value.total = subtotal + taxAmount - localState.value.discount_amount;
+    localState.value.total =
+        subtotal + taxAmount - localState.value.discount_amount;
 };
 
 const ensureDefaultVariants = (): void => {
@@ -1014,7 +1114,9 @@ const ensureDefaultVariants = (): void => {
                 return;
             }
 
-            const catalogItem = catalogItemLookup.value.get(item.catalog_item_id);
+            const catalogItem = catalogItemLookup.value.get(
+                item.catalog_item_id,
+            );
 
             if (!catalogItem) {
                 return;
@@ -1029,8 +1131,12 @@ const ensureDefaultVariants = (): void => {
             }
 
             item.catalog_item_variant_id = resolvedVariant.id;
-            item.unit_price = Number(resolvedVariant.unit_price ?? item.unit_price ?? 0);
-            item.cost_price = Number(resolvedVariant.cost_price ?? item.cost_price ?? 0);
+            item.unit_price = Number(
+                resolvedVariant.unit_price ?? item.unit_price ?? 0,
+            );
+            item.cost_price = Number(
+                resolvedVariant.cost_price ?? item.cost_price ?? 0,
+            );
             updated = true;
         });
     });
@@ -1170,7 +1276,7 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
             >
                 <div
                     v-if="blockListOpen"
-                    class="h-full p-4 w-[220px] shrink-0 overflow-y-auto border-r custom-scrollbar"
+                    class="custom-scrollbar h-full w-[220px] shrink-0 overflow-y-auto border-r p-4"
                 >
                     <BlockList
                         :blocks="currentLayout.blocks"
@@ -1189,10 +1295,12 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                 </div>
             </Transition>
 
-            <div class="min-w-0 flex-1 overflow-y-auto bg-muted/30 custom-scrollbar">
+            <div
+                class="custom-scrollbar min-w-0 flex-1 overflow-y-auto bg-muted/30"
+            >
                 <div class="my-10">
                     <div
-                        class="mx-auto p-1 w-full max-w-4xl rounded-lg border bg-white shadow-sm"
+                        class="mx-auto w-full max-w-4xl rounded-lg border bg-white p-1 shadow-sm"
                     >
                         <QuoteRenderer
                             :data="rendererData"
@@ -1236,7 +1344,9 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                             "
                             @add-section="addSection"
                             @remove-section="removeSection"
-                            @add-line-item="(sectionIndex) => addLineItem(sectionIndex)"
+                            @add-line-item="
+                                (sectionIndex) => addLineItem(sectionIndex)
+                            "
                             @quick-add-line-item="quickAddLineItem"
                             @edit-line-item="selectLineItem"
                             @update-line-item="
@@ -1245,14 +1355,14 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                                         payload.sectionIndex,
                                         payload.lineItemIndex,
                                         payload.field,
-                                        payload.value
+                                        payload.value,
                                     )
                             "
                             @remove-line-item="
                                 (payload) =>
                                     removeLineItem(
                                         payload.sectionIndex,
-                                        payload.lineItemIndex
+                                        payload.lineItemIndex,
                                     )
                             "
                             @select-catalog-item="
@@ -1260,7 +1370,7 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                                     selectCatalogItem(
                                         payload.sectionIndex,
                                         payload.lineItemIndex,
-                                        payload.catalogItem
+                                        payload.catalogItem,
                                     )
                             "
                             @update-section-title="
@@ -1334,7 +1444,7 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
             >
                 <div
                     v-if="canvasMode === 'edit' && selectedBlockModel"
-                    class="h-full w-[360px] p-2 shrink-0 overflow-y-auto border-l custom-scrollbar"
+                    class="custom-scrollbar h-full w-[360px] shrink-0 overflow-y-auto border-l p-2"
                 >
                     <LineItemDetailPanel
                         v-if="selectedLineItem"
@@ -1345,7 +1455,13 @@ const addableBlockTypes = ADDABLE_BLOCK_TYPES;
                         :currency="settings.workspace.currency"
                         @close="clearSelectedLineItem"
                         @remove="removeSelectedLineItem"
-                        @update-field="(payload) => updateSelectedLineItemField(payload.field, payload.value)"
+                        @update-field="
+                            (payload) =>
+                                updateSelectedLineItemField(
+                                    payload.field,
+                                    payload.value,
+                                )
+                        "
                         @select-catalog-item="selectCatalogItemForSelected"
                         @select-unit="selectLineItemUnitForSelected"
                         @select-variant="selectLineItemVariantForSelected"

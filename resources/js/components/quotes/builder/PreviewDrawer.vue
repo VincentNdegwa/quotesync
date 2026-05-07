@@ -8,11 +8,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
-import type {
-    BrandingData,
-    QuoteBuilderState,
-    TemplateLayout,
-} from '@/types';
+import type { BrandingData, QuoteBuilderState, TemplateLayout } from '@/types';
 
 const props = defineProps<{
     open: boolean;
@@ -51,7 +47,10 @@ const brandingData = computed<BrandingData>(() => {
 
 <template>
     <Sheet :open="open" @update:open="(value) => emit('update:open', value)">
-        <SheetContent side="right" class="w-full overflow-y-auto bg-muted/30 sm:max-w-4xl xl:max-w-6xl">
+        <SheetContent
+            side="right"
+            class="w-full overflow-y-auto bg-muted/30 sm:max-w-4xl xl:max-w-6xl"
+        >
             <div class="space-y-6">
                 <SheetHeader>
                     <SheetTitle>Client preview</SheetTitle>
@@ -60,7 +59,9 @@ const brandingData = computed<BrandingData>(() => {
                     </SheetDescription>
                 </SheetHeader>
 
-                <div class="mx-auto max-w-4xl rounded-lg border bg-white p-6 shadow-sm">
+                <div
+                    class="mx-auto max-w-4xl rounded-lg border bg-white p-6 shadow-sm"
+                >
                     <QuoteRenderer
                         :data="{ ...state, documentType: 'quote' }"
                         :layout="currentLayout"

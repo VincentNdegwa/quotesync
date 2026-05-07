@@ -10,7 +10,11 @@ import {
     CommandItem,
     CommandList,
 } from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import type { BuilderCatalogItem } from '@/types';
 
 const props = defineProps<{
@@ -46,9 +50,10 @@ const filteredItems = computed(() => {
     const term = query.value.toLowerCase();
 
     return props.catalogItems
-        .filter((item) =>
-            item.name.toLowerCase().includes(term) ||
-            (item.sku && item.sku.toLowerCase().includes(term)),
+        .filter(
+            (item) =>
+                item.name.toLowerCase().includes(term) ||
+                (item.sku && item.sku.toLowerCase().includes(term)),
         )
         .slice(0, 25);
 });
@@ -58,7 +63,6 @@ const handleSelect = (catalogItem: BuilderCatalogItem): void => {
     query.value = '';
     open.value = false;
 };
-
 </script>
 
 <template>
@@ -80,7 +84,9 @@ const handleSelect = (catalogItem: BuilderCatalogItem): void => {
             <Command>
                 <CommandInput
                     v-model="query"
-                    :placeholder="props.placeholder ?? 'Search catalog items...'"
+                    :placeholder="
+                        props.placeholder ?? 'Search catalog items...'
+                    "
                 />
                 <CommandList>
                     <CommandEmpty>No catalog items found.</CommandEmpty>
@@ -92,9 +98,13 @@ const handleSelect = (catalogItem: BuilderCatalogItem): void => {
                             :value="String(item.id)"
                             @select="() => handleSelect(item)"
                         >
-                            <div class="flex text-start flex-col text-sm">
+                            <div class="flex flex-col text-start text-sm">
                                 <span class="font-medium">{{ item.name }}</span>
-                                <span v-if="item.sku" class="text-xs text-muted-foreground">SKU {{ item.sku }}</span>
+                                <span
+                                    v-if="item.sku"
+                                    class="text-xs text-muted-foreground"
+                                    >SKU {{ item.sku }}</span
+                                >
                             </div>
                         </CommandItem>
                     </CommandGroup>

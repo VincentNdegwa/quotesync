@@ -1,15 +1,36 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
-import { CheckCircle2, Clock, Circle, XCircle, Plus, Trash2, Calendar, User } from 'lucide-vue-next';
+import {
+    CheckCircle2,
+    Clock,
+    Circle,
+    XCircle,
+    Plus,
+    Trash2,
+    Calendar,
+    User,
+} from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 import { toast } from 'vue-sonner';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 
 const props = defineProps<{
@@ -48,7 +69,7 @@ const emit = defineEmits<{
 
 const showCreateDialog = ref(false);
 const showEditDialog = ref(false);
-const editingTask = ref<typeof props.tasks[0] | null>(null);
+const editingTask = ref<(typeof props.tasks)[0] | null>(null);
 
 const formData = ref({
     title: '',
@@ -60,7 +81,7 @@ const formData = ref({
 
 const statusColors = computed(() => {
     const colors: Record<string, string> = {};
-    props.taskStatuses?.forEach(status => {
+    props.taskStatuses?.forEach((status) => {
         colors[status.slug] = status.color;
     });
 
@@ -85,7 +106,7 @@ const openCreateDialog = () => {
     showCreateDialog.value = true;
 };
 
-const openEditDialog = (task: typeof props.tasks[0]) => {
+const openEditDialog = (task: (typeof props.tasks)[0]) => {
     editingTask.value = task;
     formData.value = {
         title: task.title,
@@ -121,7 +142,7 @@ const submitTask = async () => {
     }
 };
 
-const updateStatus = async (task: typeof props.tasks[0], status: string) => {
+const updateStatus = async (task: (typeof props.tasks)[0], status: string) => {
     try {
         await router.put(`/quotes/tasks/${task.id}`, { status });
         toast.success('Task status updated');
@@ -149,7 +170,7 @@ const deleteTask = async (taskId: number) => {
             <Dialog v-model:open="showCreateDialog">
                 <DialogTrigger as-child>
                     <Button size="sm" @click="openCreateDialog">
-                        <Plus class="h-4 w-4 mr-1" />
+                        <Plus class="mr-1 h-4 w-4" />
                         Add Task
                     </Button>
                 </DialogTrigger>
@@ -160,20 +181,34 @@ const deleteTask = async (taskId: number) => {
                     <div class="space-y-4">
                         <div class="grid gap-2">
                             <Label for="title">Title</Label>
-                            <Input id="title" v-model="formData.title" placeholder="Task title" />
+                            <Input
+                                id="title"
+                                v-model="formData.title"
+                                placeholder="Task title"
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label for="description">Description</Label>
-                            <Textarea id="description" v-model="formData.description" placeholder="Task description" />
+                            <Textarea
+                                id="description"
+                                v-model="formData.description"
+                                placeholder="Task description"
+                            />
                         </div>
                         <div class="grid gap-2">
                             <Label for="assigned_to">Assign To</Label>
                             <Select v-model="formData.assigned_to">
                                 <SelectTrigger id="assigned_to">
-                                    <SelectValue placeholder="Select team member" />
+                                    <SelectValue
+                                        placeholder="Select team member"
+                                    />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem v-for="member in teamMembers" :key="member.id" :value="member.id.toString()">
+                                    <SelectItem
+                                        v-for="member in teamMembers"
+                                        :key="member.id"
+                                        :value="member.id.toString()"
+                                    >
                                         {{ member.name }}
                                     </SelectItem>
                                 </SelectContent>
@@ -186,7 +221,11 @@ const deleteTask = async (taskId: number) => {
                                     <SelectValue placeholder="Select status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem v-for="status in taskStatuses" :key="status.id" :value="status.id">
+                                    <SelectItem
+                                        v-for="status in taskStatuses"
+                                        :key="status.id"
+                                        :value="status.id"
+                                    >
                                         {{ status.name }}
                                     </SelectItem>
                                 </SelectContent>
@@ -194,18 +233,32 @@ const deleteTask = async (taskId: number) => {
                         </div>
                         <div class="grid gap-2">
                             <Label for="due_date">Due Date</Label>
-                            <Input id="due_date" v-model="formData.due_date" type="date" />
+                            <Input
+                                id="due_date"
+                                v-model="formData.due_date"
+                                type="date"
+                            />
                         </div>
                         <div class="flex gap-2">
-                            <Button variant="outline" @click="showCreateDialog = false" class="flex-1">Cancel</Button>
-                            <Button @click="submitTask" class="flex-1">Create</Button>
+                            <Button
+                                variant="outline"
+                                @click="showCreateDialog = false"
+                                class="flex-1"
+                                >Cancel</Button
+                            >
+                            <Button @click="submitTask" class="flex-1"
+                                >Create</Button
+                            >
                         </div>
                     </div>
                 </DialogContent>
             </Dialog>
         </div>
 
-        <div v-if="tasks.length === 0" class="text-center py-8 text-sm text-muted-foreground">
+        <div
+            v-if="tasks.length === 0"
+            class="py-8 text-center text-sm text-muted-foreground"
+        >
             No tasks yet
         </div>
 
@@ -213,41 +266,84 @@ const deleteTask = async (taskId: number) => {
             <div
                 v-for="task in tasks"
                 :key="task.id"
-                class="group relative p-3 rounded-md border hover:border-primary/30 transition-colors"
+                class="group relative rounded-md border p-3 transition-colors hover:border-primary/30"
             >
                 <div class="flex items-start gap-3">
                     <component
                         v-if="task.status"
                         :is="statusIcons[task.status.slug] || Circle"
-                        class="h-5 w-5 mt-0.5 shrink-0"
+                        class="mt-0.5 h-5 w-5 shrink-0"
                         :style="{ color: task.status.color }"
                     />
-                    <div class="flex-1 min-w-0">
+                    <div class="min-w-0 flex-1">
                         <div class="flex items-center justify-between gap-2">
-                            <h4 class="text-sm font-medium text-foreground">{{ task.title }}</h4>
-                            <Badge v-if="task.status" :style="{ backgroundColor: task.status.color }" class="text-white text-xs">
+                            <h4 class="text-sm font-medium text-foreground">
+                                {{ task.title }}
+                            </h4>
+                            <Badge
+                                v-if="task.status"
+                                :style="{ backgroundColor: task.status.color }"
+                                class="text-xs text-white"
+                            >
                                 {{ task.status.name }}
                             </Badge>
                         </div>
-                        <p v-if="task.description" class="text-xs text-muted-foreground mt-1">{{ task.description }}</p>
-                        <div class="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                            <div v-if="task.assigned_to" class="flex items-center gap-1">
+                        <p
+                            v-if="task.description"
+                            class="mt-1 text-xs text-muted-foreground"
+                        >
+                            {{ task.description }}
+                        </p>
+                        <div
+                            class="mt-2 flex items-center gap-4 text-xs text-muted-foreground"
+                        >
+                            <div
+                                v-if="task.assigned_to"
+                                class="flex items-center gap-1"
+                            >
                                 <User class="h-3 w-3" />
                                 {{ task.assigned_to.name }}
                             </div>
-                            <div v-if="task.due_date" class="flex items-center gap-1">
+                            <div
+                                v-if="task.due_date"
+                                class="flex items-center gap-1"
+                            >
                                 <Calendar class="h-3 w-3" />
-                                {{ new Date(task.due_date).toLocaleDateString() }}
+                                {{
+                                    new Date(task.due_date).toLocaleDateString()
+                                }}
                             </div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button size="sm" variant="ghost" class="h-8 w-8 p-0" @click="openEditDialog(task)">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    <div
+                        class="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+                    >
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            class="h-8 w-8 p-0"
+                            @click="openEditDialog(task)"
+                        >
+                            <svg
+                                class="h-4 w-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                />
                             </svg>
                         </Button>
-                        <Button size="sm" variant="ghost" class="h-8 w-8 p-0 text-destructive" @click="deleteTask(task.id)">
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            class="h-8 w-8 p-0 text-destructive"
+                            @click="deleteTask(task.id)"
+                        >
                             <Trash2 class="h-4 w-4" />
                         </Button>
                     </div>
@@ -263,11 +359,19 @@ const deleteTask = async (taskId: number) => {
                 <div class="space-y-4">
                     <div class="grid gap-2">
                         <Label for="edit-title">Title</Label>
-                        <Input id="edit-title" v-model="formData.title" placeholder="Task title" />
+                        <Input
+                            id="edit-title"
+                            v-model="formData.title"
+                            placeholder="Task title"
+                        />
                     </div>
                     <div class="grid gap-2">
                         <Label for="edit-description">Description</Label>
-                        <Textarea id="edit-description" v-model="formData.description" placeholder="Task description" />
+                        <Textarea
+                            id="edit-description"
+                            v-model="formData.description"
+                            placeholder="Task description"
+                        />
                     </div>
                     <div class="grid gap-2">
                         <Label for="edit-assigned_to">Assign To</Label>
@@ -276,7 +380,11 @@ const deleteTask = async (taskId: number) => {
                                 <SelectValue placeholder="Select team member" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem v-for="member in teamMembers" :key="member.id" :value="member.id.toString()">
+                                <SelectItem
+                                    v-for="member in teamMembers"
+                                    :key="member.id"
+                                    :value="member.id.toString()"
+                                >
                                     {{ member.name }}
                                 </SelectItem>
                             </SelectContent>
@@ -289,7 +397,11 @@ const deleteTask = async (taskId: number) => {
                                 <SelectValue placeholder="Select status" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem v-for="status in taskStatuses" :key="status.id" :value="status.id">
+                                <SelectItem
+                                    v-for="status in taskStatuses"
+                                    :key="status.id"
+                                    :value="status.id"
+                                >
                                     {{ status.name }}
                                 </SelectItem>
                             </SelectContent>
@@ -297,11 +409,22 @@ const deleteTask = async (taskId: number) => {
                     </div>
                     <div class="grid gap-2">
                         <Label for="edit-due_date">Due Date</Label>
-                        <Input id="edit-due_date" v-model="formData.due_date" type="date" />
+                        <Input
+                            id="edit-due_date"
+                            v-model="formData.due_date"
+                            type="date"
+                        />
                     </div>
                     <div class="flex gap-2">
-                        <Button variant="outline" @click="showEditDialog = false" class="flex-1">Cancel</Button>
-                        <Button @click="submitTask" class="flex-1">Update</Button>
+                        <Button
+                            variant="outline"
+                            @click="showEditDialog = false"
+                            class="flex-1"
+                            >Cancel</Button
+                        >
+                        <Button @click="submitTask" class="flex-1"
+                            >Update</Button
+                        >
                     </div>
                 </div>
             </DialogContent>

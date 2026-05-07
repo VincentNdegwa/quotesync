@@ -15,31 +15,41 @@ type CreditNoteColumnOptions = {
 
 const sortableHeader = (
     label: string,
-    column: { getIsSorted: () => false | 'asc' | 'desc'; toggleSorting: (desc?: boolean) => void },
-    align: 'left' | 'right' = 'left',
-): ReturnType<typeof h> => h(
-    Button,
-    {
-        variant: 'ghost',
-        class: align === 'right'
-            ? 'h-8 w-full justify-center px-0 text-right'
-            : 'h-8 justify-center px-0 text-left',
-        onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+    column: {
+        getIsSorted: () => false | 'asc' | 'desc';
+        toggleSorting: (desc?: boolean) => void;
     },
-    () => [
-        label,
-        h(ArrowUpDown, { class: 'ml-2 h-4 w-4' }),
-    ],
-);
+    align: 'left' | 'right' = 'left',
+): ReturnType<typeof h> =>
+    h(
+        Button,
+        {
+            variant: 'ghost',
+            class:
+                align === 'right'
+                    ? 'h-8 w-full justify-center px-0 text-right'
+                    : 'h-8 justify-center px-0 text-left',
+            onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+        },
+        () => [label, h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+    );
 
-
-export const getCreditNoteColumns = (options: CreditNoteColumnOptions): ColumnDef<CreditNoteListRecord>[] => {
+export const getCreditNoteColumns = (
+    options: CreditNoteColumnOptions,
+): ColumnDef<CreditNoteListRecord>[] => {
     const { getCreditNoteStatus } = useEnums();
     const page = usePage();
-    const defaultCurrency = (page.props.workspace_currency as string) || undefined;
+    const defaultCurrency =
+        (page.props.workspace_currency as string) || undefined;
 
-    const formatCurrency = (val: number | string, currency?: string | null): string => {
-        return useFormat(currency || defaultCurrency).formatCurrency(val, currency || defaultCurrency);
+    const formatCurrency = (
+        val: number | string,
+        currency?: string | null,
+    ): string => {
+        return useFormat(currency || defaultCurrency).formatCurrency(
+            val,
+            currency || defaultCurrency,
+        );
     };
 
     const formatDate = (val: string | null): string => {
@@ -55,7 +65,8 @@ export const getCreditNoteColumns = (options: CreditNoteColumnOptions): ColumnDe
         {
             accessorKey: 'title',
             header: ({ column }) => sortableHeader('Title', column),
-            cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.title),
+            cell: ({ row }) =>
+                h('span', { class: 'font-medium' }, row.original.title),
         },
         {
             accessorKey: 'client',
@@ -73,16 +84,31 @@ export const getCreditNoteColumns = (options: CreditNoteColumnOptions): ColumnDe
             cell: ({ row }): ReturnType<typeof h> => {
                 const status = getCreditNoteStatus(row.original.status);
 
-                return h(Badge, {
-                    variant: status?.badgeColor ?? 'outline',
-                    class: ['px-3 py-1 text-xs font-semibold', status?.cssColor],
-                }, () => status?.label ?? row.original.status);
+                return h(
+                    Badge,
+                    {
+                        variant: status?.badgeColor ?? 'outline',
+                        class: [
+                            'px-3 py-1 text-xs font-semibold',
+                            status?.cssColor,
+                        ],
+                    },
+                    () => status?.label ?? row.original.status,
+                );
             },
         },
         {
             accessorKey: 'total',
             header: ({ column }) => sortableHeader('Total', column, 'right'),
-            cell: ({ row }) => h('span', { class: 'text-right' }, formatCurrency(Number(row.original.base_total), row.original.base_currency)),
+            cell: ({ row }) =>
+                h(
+                    'span',
+                    { class: 'text-right' },
+                    formatCurrency(
+                        Number(row.original.base_total),
+                        row.original.base_currency,
+                    ),
+                ),
         },
         {
             accessorKey: 'issue_date',
@@ -92,11 +118,12 @@ export const getCreditNoteColumns = (options: CreditNoteColumnOptions): ColumnDe
         {
             id: 'actions',
             header: '',
-            cell: ({ row }) => h(CreditNoteTableRowActions, {
-                creditNoteId: row.original.id,
-                creditNote: row.original,
-                onDelete: () => options.onDelete(row.original.id),
-            }),
+            cell: ({ row }) =>
+                h(CreditNoteTableRowActions, {
+                    creditNoteId: row.original.id,
+                    creditNote: row.original,
+                    onDelete: () => options.onDelete(row.original.id),
+                }),
         },
     ];
 

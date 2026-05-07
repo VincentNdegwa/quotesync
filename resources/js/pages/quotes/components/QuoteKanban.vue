@@ -21,7 +21,10 @@ const loadQuotes = async (): Promise<void> => {
 
     try {
         const res = await fetch('/quotes/kanban', {
-            headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
         });
         quotes.value = await res.json();
     } catch {
@@ -33,19 +36,29 @@ const loadQuotes = async (): Promise<void> => {
 
 onMounted(loadQuotes);
 
-const COLUMN_ORDER = ['draft','pending_approval', 'sent', 'viewed', 'accepted', 'declined', 'won', 'lost', 'expired'] as const;
+const COLUMN_ORDER = [
+    'draft',
+    'pending_approval',
+    'sent',
+    'viewed',
+    'accepted',
+    'declined',
+    'won',
+    'lost',
+    'expired',
+] as const;
 type StatusKey = (typeof COLUMN_ORDER)[number];
 
 const ALLOWED_TRANSITIONS: Record<StatusKey, StatusKey[]> = {
-    draft:    ['sent'],
+    draft: ['sent'],
     pending_approval: ['sent', 'draft'],
-    sent:     ['won', 'lost', 'draft'],
-    viewed:   ['won', 'lost', 'draft'],
+    sent: ['won', 'lost', 'draft'],
+    viewed: ['won', 'lost', 'draft'],
     accepted: ['won', 'lost'],
     declined: ['lost', 'draft'],
-    won:      [],
-    lost:     [],
-    expired:  ['draft'],
+    won: [],
+    lost: [],
+    expired: ['draft'],
 };
 
 const LOCKED_STATUSES: StatusKey[] = ['won', 'lost'];
@@ -61,44 +74,122 @@ type ColStyle = {
 };
 
 const COLUMN_STYLES: Record<StatusKey, ColStyle> = {
-    draft:    { topBar: 'bg-slate-400',   countBg: 'bg-slate-100',   countText: 'text-slate-600',   dropActive: 'ring-2 ring-slate-400 bg-slate-50',        dot: 'bg-slate-400',   badge: 'bg-slate-100',   badgeText: 'text-slate-600' },
-    pending_approval: { topBar: 'bg-amber-400',   countBg: 'bg-amber-100',   countText: 'text-amber-600',   dropActive: 'ring-2 ring-amber-400 bg-amber-50',        dot: 'bg-amber-400',   badge: 'bg-amber-100',   badgeText: 'text-amber-600' },
-    sent:     { topBar: 'bg-blue-500',    countBg: 'bg-blue-50',     countText: 'text-blue-600',    dropActive: 'ring-2 ring-blue-400 bg-blue-50/60',       dot: 'bg-blue-500',    badge: 'bg-blue-50',     badgeText: 'text-blue-600' },
-    viewed:   { topBar: 'bg-cyan-500',    countBg: 'bg-cyan-50',     countText: 'text-cyan-600',    dropActive: 'ring-2 ring-cyan-400 bg-cyan-50/60',       dot: 'bg-cyan-500',    badge: 'bg-cyan-50',     badgeText: 'text-cyan-600' },
-    accepted: { topBar: 'bg-emerald-500',  countBg: 'bg-emerald-50',  countText: 'text-emerald-600', dropActive: 'ring-2 ring-emerald-400 bg-emerald-50/60', dot: 'bg-emerald-500', badge: 'bg-emerald-50',  badgeText: 'text-emerald-600' },
-    declined: { topBar: 'bg-rose-500',    countBg: 'bg-rose-50',     countText: 'text-rose-600',    dropActive: 'ring-2 ring-rose-400 bg-rose-50/60',       dot: 'bg-rose-500',    badge: 'bg-rose-50',     badgeText: 'text-rose-600' },
-    won:      { topBar: 'bg-emerald-500', countBg: 'bg-emerald-50',  countText: 'text-emerald-700', dropActive: 'ring-2 ring-emerald-400 bg-emerald-50/60', dot: 'bg-emerald-500', badge: 'bg-emerald-50',  badgeText: 'text-emerald-700' },
-    lost:     { topBar: 'bg-orange-500',  countBg: 'bg-orange-50',   countText: 'text-orange-600',  dropActive: 'ring-2 ring-orange-400 bg-orange-50/60',   dot: 'bg-orange-500',  badge: 'bg-orange-50',   badgeText: 'text-orange-600' },
-    expired:  { topBar: 'bg-amber-400',   countBg: 'bg-amber-50',    countText: 'text-amber-700',   dropActive: 'ring-2 ring-amber-400 bg-amber-50/60',     dot: 'bg-amber-400',   badge: 'bg-amber-50',    badgeText: 'text-amber-700' },
+    draft: {
+        topBar: 'bg-slate-400',
+        countBg: 'bg-slate-100',
+        countText: 'text-slate-600',
+        dropActive: 'ring-2 ring-slate-400 bg-slate-50',
+        dot: 'bg-slate-400',
+        badge: 'bg-slate-100',
+        badgeText: 'text-slate-600',
+    },
+    pending_approval: {
+        topBar: 'bg-amber-400',
+        countBg: 'bg-amber-100',
+        countText: 'text-amber-600',
+        dropActive: 'ring-2 ring-amber-400 bg-amber-50',
+        dot: 'bg-amber-400',
+        badge: 'bg-amber-100',
+        badgeText: 'text-amber-600',
+    },
+    sent: {
+        topBar: 'bg-blue-500',
+        countBg: 'bg-blue-50',
+        countText: 'text-blue-600',
+        dropActive: 'ring-2 ring-blue-400 bg-blue-50/60',
+        dot: 'bg-blue-500',
+        badge: 'bg-blue-50',
+        badgeText: 'text-blue-600',
+    },
+    viewed: {
+        topBar: 'bg-cyan-500',
+        countBg: 'bg-cyan-50',
+        countText: 'text-cyan-600',
+        dropActive: 'ring-2 ring-cyan-400 bg-cyan-50/60',
+        dot: 'bg-cyan-500',
+        badge: 'bg-cyan-50',
+        badgeText: 'text-cyan-600',
+    },
+    accepted: {
+        topBar: 'bg-emerald-500',
+        countBg: 'bg-emerald-50',
+        countText: 'text-emerald-600',
+        dropActive: 'ring-2 ring-emerald-400 bg-emerald-50/60',
+        dot: 'bg-emerald-500',
+        badge: 'bg-emerald-50',
+        badgeText: 'text-emerald-600',
+    },
+    declined: {
+        topBar: 'bg-rose-500',
+        countBg: 'bg-rose-50',
+        countText: 'text-rose-600',
+        dropActive: 'ring-2 ring-rose-400 bg-rose-50/60',
+        dot: 'bg-rose-500',
+        badge: 'bg-rose-50',
+        badgeText: 'text-rose-600',
+    },
+    won: {
+        topBar: 'bg-emerald-500',
+        countBg: 'bg-emerald-50',
+        countText: 'text-emerald-700',
+        dropActive: 'ring-2 ring-emerald-400 bg-emerald-50/60',
+        dot: 'bg-emerald-500',
+        badge: 'bg-emerald-50',
+        badgeText: 'text-emerald-700',
+    },
+    lost: {
+        topBar: 'bg-orange-500',
+        countBg: 'bg-orange-50',
+        countText: 'text-orange-600',
+        dropActive: 'ring-2 ring-orange-400 bg-orange-50/60',
+        dot: 'bg-orange-500',
+        badge: 'bg-orange-50',
+        badgeText: 'text-orange-600',
+    },
+    expired: {
+        topBar: 'bg-amber-400',
+        countBg: 'bg-amber-50',
+        countText: 'text-amber-700',
+        dropActive: 'ring-2 ring-amber-400 bg-amber-50/60',
+        dot: 'bg-amber-400',
+        badge: 'bg-amber-50',
+        badgeText: 'text-amber-700',
+    },
 };
 
 const columns = computed(() =>
     COLUMN_ORDER.map((status) => ({
         status,
-        label: props.quoteStatuses.find((s) => s.value === status)?.label ?? status,
+        label:
+            props.quoteStatuses.find((s) => s.value === status)?.label ??
+            status,
         quotes: quotes.value.filter((q) => q.status === status),
         locked: LOCKED_STATUSES.includes(status),
         style: COLUMN_STYLES[status],
     })),
 );
 
-const dragging = ref<{ quote: QuoteListRecord; fromStatus: string } | null>(null);
+const dragging = ref<{ quote: QuoteListRecord; fromStatus: string } | null>(
+    null,
+);
 const dragOverStatus = ref<string | null>(null);
 const hoveredQuoteId = ref<number | null>(null);
 
 const canDrop = (toStatus: string): boolean => {
     if (!dragging.value || dragging.value.fromStatus === toStatus) {
-return false;
-}
+        return false;
+    }
 
     const from = dragging.value.fromStatus as StatusKey;
 
     return (ALLOWED_TRANSITIONS[from] ?? []).includes(toStatus as StatusKey);
 };
 
-const validTargets = (status: StatusKey): StatusKey[] => ALLOWED_TRANSITIONS[status] ?? [];
+const validTargets = (status: StatusKey): StatusKey[] =>
+    ALLOWED_TRANSITIONS[status] ?? [];
 
-const isTerminal = (status: StatusKey): boolean => ALLOWED_TRANSITIONS[status].length === 0;
+const isTerminal = (status: StatusKey): boolean =>
+    ALLOWED_TRANSITIONS[status].length === 0;
 
 const onDragStart = (e: DragEvent, quote: QuoteListRecord): void => {
     hoveredQuoteId.value = null;
@@ -115,8 +206,8 @@ const onDragOver = (e: DragEvent, status: string): void => {
         e.preventDefault();
 
         if (e.dataTransfer) {
-e.dataTransfer.dropEffect = 'move';
-}
+            e.dataTransfer.dropEffect = 'move';
+        }
 
         dragOverStatus.value = status;
     }
@@ -127,8 +218,8 @@ const onDragLeave = (e: DragEvent): void => {
     const related = e.relatedTarget as Node | null;
 
     if (!target.contains(related)) {
-dragOverStatus.value = null;
-}
+        dragOverStatus.value = null;
+    }
 };
 
 const onDragEnd = (): void => {
@@ -141,40 +232,55 @@ const showSendDialog = ref(false);
 const showMarkWonDialog = ref(false);
 const showMarkLostDialog = ref(false);
 const showToDraftDialog = ref(false);
-const pendingDraftQuote = ref<{ quoteId: number; fromStatus: StatusKey } | null>(null);
+const pendingDraftQuote = ref<{
+    quoteId: number;
+    fromStatus: StatusKey;
+} | null>(null);
 
 const reloadKanban = (): void => {
- loadQuotes(); 
+    loadQuotes();
 };
 
-const applyStatusChange = (quoteId: number, toStatus: StatusKey, extra?: Record<string, string>): void => {
-    router.patch(QuoteController.updateStatus(quoteId).url, { status: toStatus, ...extra }, {
-        preserveScroll: true,
-        preserveUrl: true,
-        onSuccess: reloadKanban,
-    });
+const applyStatusChange = (
+    quoteId: number,
+    toStatus: StatusKey,
+    extra?: Record<string, string>,
+): void => {
+    router.patch(
+        QuoteController.updateStatus(quoteId).url,
+        { status: toStatus, ...extra },
+        {
+            preserveScroll: true,
+            preserveUrl: true,
+            onSuccess: reloadKanban,
+        },
+    );
 };
 
 const executeSend = (): void => {
     if (!pendingDrop.value) {
-return;
-}
+        return;
+    }
 
-    router.post(QuoteSendController.store(pendingDrop.value.quoteId).url, {}, {
-        preserveScroll: true,
-        preserveUrl: true,
-        onSuccess: () => {
-            showSendDialog.value = false;
-            pendingDrop.value = null;
-            reloadKanban();
+    router.post(
+        QuoteSendController.store(pendingDrop.value.quoteId).url,
+        {},
+        {
+            preserveScroll: true,
+            preserveUrl: true,
+            onSuccess: () => {
+                showSendDialog.value = false;
+                pendingDrop.value = null;
+                reloadKanban();
+            },
         },
-    });
+    );
 };
 
 const executeMarkWon = (): void => {
     if (!pendingDrop.value) {
-return;
-}
+        return;
+    }
 
     applyStatusChange(pendingDrop.value.quoteId, 'won');
     showMarkWonDialog.value = false;
@@ -183,18 +289,20 @@ return;
 
 const executeMarkLost = (reason?: string): void => {
     if (!pendingDrop.value) {
-return;
-}
+        return;
+    }
 
-    applyStatusChange(pendingDrop.value.quoteId, 'lost', { reason: reason ?? '' });
+    applyStatusChange(pendingDrop.value.quoteId, 'lost', {
+        reason: reason ?? '',
+    });
     showMarkLostDialog.value = false;
     pendingDrop.value = null;
 };
 
 const executeToDraft = (): void => {
     if (!pendingDraftQuote.value) {
-return;
-}
+        return;
+    }
 
     applyStatusChange(pendingDraftQuote.value.quoteId, 'draft');
     showToDraftDialog.value = false;
@@ -219,10 +327,10 @@ const onDrop = (e: DragEvent, toStatus: string): void => {
     e.preventDefault();
 
     if (!dragging.value || !canDrop(toStatus)) {
- onDragEnd();
+        onDragEnd();
 
- return; 
-}
+        return;
+    }
 
     const quoteId = dragging.value.quote.id;
     const fromStatus = dragging.value.fromStatus as StatusKey;
@@ -261,25 +369,28 @@ const onDrop = (e: DragEvent, toStatus: string): void => {
 };
 
 const formatAmount = (amount: number, currency: string | null): string => {
-    return useFormat().formatCurrency(amount, currency || (usePage().props.workspace_currency as string) || undefined);
+    return useFormat().formatCurrency(
+        amount,
+        currency || (usePage().props.workspace_currency as string) || undefined,
+    );
 };
 
 const formatDate = (date: string | null): string => {
     if (!date) {
-return '—';
-}
+        return '—';
+    }
 
     return useFormat().formatDate(date);
 };
 
 const getWinProbabilityBgColor = (probability: number) => {
     if (probability >= 70) {
-return 'bg-green-500';
-}
+        return 'bg-green-500';
+    }
 
     if (probability >= 40) {
-return 'bg-yellow-500';
-}
+        return 'bg-yellow-500';
+    }
 
     return 'bg-red-500';
 };
@@ -328,33 +439,51 @@ return 'bg-yellow-500';
         />
     </div>
 
-    <div v-else class="w-full overflow-x-auto custom-scrollbar pb-4">
+    <div v-else class="custom-scrollbar w-full overflow-x-auto pb-4">
         <div class="flex min-w-max gap-3 px-0.5 pt-0.5">
             <div
                 v-for="col in columns"
                 :key="col.status"
                 class="flex w-[240px] shrink-0 flex-col rounded-xl border bg-muted/30 transition-all duration-150"
                 :class="[
-                    dragOverStatus === col.status && canDrop(col.status) ? col.style.dropActive : '',
-                    dragging && !canDrop(col.status) && dragging.fromStatus !== col.status ? 'opacity-40' : '',
+                    dragOverStatus === col.status && canDrop(col.status)
+                        ? col.style.dropActive
+                        : '',
+                    dragging &&
+                    !canDrop(col.status) &&
+                    dragging.fromStatus !== col.status
+                        ? 'opacity-40'
+                        : '',
                 ]"
                 @dragover="onDragOver($event, col.status)"
                 @dragleave="onDragLeave($event)"
                 @drop="onDrop($event, col.status)"
             >
-                <div class="flex items-center gap-2 px-3 pb-2 pt-3">
+                <div class="flex items-center gap-2 px-3 pt-3 pb-2">
                     <div class="flex flex-1 items-center gap-2 overflow-hidden">
-                        <span class="h-2.5 w-2.5 shrink-0 rounded-full" :class="col.style.dot" />
-                        <span class="truncate text-sm font-semibold text-foreground">{{ col.label }}</span>
+                        <span
+                            class="h-2.5 w-2.5 shrink-0 rounded-full"
+                            :class="col.style.dot"
+                        />
+                        <span
+                            class="truncate text-sm font-semibold text-foreground"
+                            >{{ col.label }}</span
+                        >
                     </div>
 
                     <div class="flex items-center gap-1">
-                        <Lock v-if="col.locked" class="h-3 w-3 text-muted-foreground" />
+                        <Lock
+                            v-if="col.locked"
+                            class="h-3 w-3 text-muted-foreground"
+                        />
 
                         <template v-if="!dragging">
                             <span
                                 class="rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums"
-                                :class="[col.style.countBg, col.style.countText]"
+                                :class="[
+                                    col.style.countBg,
+                                    col.style.countText,
+                                ]"
                             >
                                 {{ col.quotes.length }}
                             </span>
@@ -383,14 +512,21 @@ return 'bg-yellow-500';
                     </div>
                 </div>
 
-                <div class="mx-3 mb-2 h-0.5 rounded-full" :class="col.style.topBar" />
+                <div
+                    class="mx-3 mb-2 h-0.5 rounded-full"
+                    :class="col.style.topBar"
+                />
 
                 <div
                     class="flex flex-1 flex-col gap-2 overflow-y-auto px-2 pb-3"
-                    style="max-height: 72vh; min-height: 120px;"
+                    style="max-height: 72vh; min-height: 120px"
                 >
                     <div
-                        v-if="col.quotes.length === 0 && dragging && canDrop(col.status)"
+                        v-if="
+                            col.quotes.length === 0 &&
+                            dragging &&
+                            canDrop(col.status)
+                        "
                         class="flex h-16 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 text-xs text-muted-foreground"
                     >
                         Drop here
@@ -403,20 +539,30 @@ return 'bg-yellow-500';
                         :class="[
                             LOCKED_STATUSES.includes(col.status as StatusKey)
                                 ? 'cursor-default'
-                                : 'cursor-grab active:cursor-grabbing hover:shadow-md hover:-translate-y-0.5',
-                            dragging?.quote.id === quote.id ? 'opacity-40 scale-95' : '',
+                                : 'cursor-grab hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing',
+                            dragging?.quote.id === quote.id
+                                ? 'scale-95 opacity-40'
+                                : '',
                         ]"
-                        :draggable="!LOCKED_STATUSES.includes(col.status as StatusKey)"
+                        :draggable="
+                            !LOCKED_STATUSES.includes(col.status as StatusKey)
+                        "
                         @mouseenter="hoveredQuoteId = quote.id"
                         @mouseleave="hoveredQuoteId = null"
                         @dragstart="onDragStart($event, quote)"
                         @dragend="onDragEnd"
                     >
-                        <div class="mb-1.5 flex items-start justify-between gap-1">
-                            <span class="font-mono text-xs text-muted-foreground">
+                        <div
+                            class="mb-1.5 flex items-start justify-between gap-1"
+                        >
+                            <span
+                                class="font-mono text-xs text-muted-foreground"
+                            >
                                 {{ quote.number ?? '—' }}
                             </span>
-                            <div class="-mr-1 -mt-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                            <div
+                                class="-mt-0.5 -mr-1 opacity-0 transition-opacity group-hover:opacity-100"
+                            >
                                 <QuoteActions
                                     :quote="quote"
                                     :quote-statuses="quoteStatuses"
@@ -425,30 +571,63 @@ return 'bg-yellow-500';
                             </div>
                         </div>
 
-                        <p class="mb-2 line-clamp-2 text-sm font-medium leading-snug text-foreground">
+                        <p
+                            class="mb-2 line-clamp-2 text-sm leading-snug font-medium text-foreground"
+                        >
                             {{ quote.title }}
                         </p>
 
-                        <div v-if="quote.win_probability !== null && quote.win_probability !== undefined" class="mb-1.5">
-                            <div class="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
+                        <div
+                            v-if="
+                                quote.win_probability !== null &&
+                                quote.win_probability !== undefined
+                            "
+                            class="mb-1.5"
+                        >
+                            <div
+                                class="h-1.5 w-full overflow-hidden rounded-full bg-gray-200"
+                            >
                                 <div
                                     class="h-full rounded-full"
-                                    :class="getWinProbabilityBgColor(quote.win_probability.probability)"
-                                    :style="{ width: `${quote.win_probability.probability}%` }"
+                                    :class="
+                                        getWinProbabilityBgColor(
+                                            quote.win_probability.probability,
+                                        )
+                                    "
+                                    :style="{
+                                        width: `${quote.win_probability.probability}%`,
+                                    }"
                                 />
                             </div>
                         </div>
 
-                        <div v-if="quote.client" class="mb-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <div
+                            v-if="quote.client"
+                            class="mb-1.5 flex items-center gap-1.5 text-xs text-muted-foreground"
+                        >
                             <User class="h-3 w-3 shrink-0" />
-                            <span class="truncate">{{ quote.client.company_name }}</span>
+                            <span class="truncate">{{
+                                quote.client.company_name
+                            }}</span>
                         </div>
 
-                        <div class="flex items-center justify-between gap-2 border-t border-border/50 pt-1.5">
-                            <span class="text-xs font-semibold tabular-nums text-foreground">
-                                {{ formatAmount(quote.base_total, quote.base_currency) }}
+                        <div
+                            class="flex items-center justify-between gap-2 border-t border-border/50 pt-1.5"
+                        >
+                            <span
+                                class="text-xs font-semibold text-foreground tabular-nums"
+                            >
+                                {{
+                                    formatAmount(
+                                        quote.base_total,
+                                        quote.base_currency,
+                                    )
+                                }}
                             </span>
-                            <div v-if="quote.valid_until" class="flex items-center gap-1 text-xs text-muted-foreground">
+                            <div
+                                v-if="quote.valid_until"
+                                class="flex items-center gap-1 text-xs text-muted-foreground"
+                            >
                                 <Calendar class="h-3 w-3 shrink-0" />
                                 <span>{{ formatDate(quote.valid_until) }}</span>
                             </div>
@@ -459,18 +638,35 @@ return 'bg-yellow-500';
                                 v-if="hoveredQuoteId === quote.id && !dragging"
                                 class="mt-2 border-t border-border/30 pt-2"
                             >
-                                <div v-if="isTerminal(quote.status as StatusKey)" class="text-[10px] italic text-muted-foreground">
+                                <div
+                                    v-if="isTerminal(quote.status as StatusKey)"
+                                    class="text-[10px] text-muted-foreground italic"
+                                >
                                     Final status — cannot be moved
                                 </div>
-                                <div v-else class="flex flex-wrap items-center gap-1">
-                                    <span class="mr-0.5 text-[10px] leading-none text-muted-foreground">Move to:</span>
+                                <div
+                                    v-else
+                                    class="flex flex-wrap items-center gap-1"
+                                >
                                     <span
-                                        v-for="target in validTargets(quote.status as StatusKey)"
-                                        :key="target"
-                                        class="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none"
-                                        :class="[COLUMN_STYLES[target].badge, COLUMN_STYLES[target].badgeText]"
+                                        class="mr-0.5 text-[10px] leading-none text-muted-foreground"
+                                        >Move to:</span
                                     >
-                                        <span class="h-1.5 w-1.5 rounded-full" :class="COLUMN_STYLES[target].dot" />
+                                    <span
+                                        v-for="target in validTargets(
+                                            quote.status as StatusKey,
+                                        )"
+                                        :key="target"
+                                        class="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] leading-none font-semibold"
+                                        :class="[
+                                            COLUMN_STYLES[target].badge,
+                                            COLUMN_STYLES[target].badgeText,
+                                        ]"
+                                    >
+                                        <span
+                                            class="h-1.5 w-1.5 rounded-full"
+                                            :class="COLUMN_STYLES[target].dot"
+                                        />
                                         {{ target }}
                                     </span>
                                 </div>
@@ -493,7 +689,9 @@ return 'bg-yellow-500';
 <style scoped>
 .hint-slide-enter-active,
 .hint-slide-leave-active {
-    transition: opacity 0.15s ease, transform 0.15s ease;
+    transition:
+        opacity 0.15s ease,
+        transform 0.15s ease;
 }
 .hint-slide-enter-from,
 .hint-slide-leave-to {

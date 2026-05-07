@@ -15,7 +15,14 @@ import { Label } from '@/components/ui/label';
 const props = defineProps<{
     open: boolean;
     catalogItemId: number;
-    priceTier?: { id: number; min_quantity: number; max_quantity: number | null; pricing_type: string; unit_price: number; discount_percent: number } | null;
+    priceTier?: {
+        id: number;
+        min_quantity: number;
+        max_quantity: number | null;
+        pricing_type: string;
+        unit_price: number;
+        discount_percent: number;
+    } | null;
 }>();
 
 const emit = defineEmits<{
@@ -31,28 +38,39 @@ const priceTierForm = useForm({
     discount_percent: 0,
 });
 
-watch(() => props.open, (isOpen) => {
-    if (isOpen && props.priceTier) {
-        priceTierForm.pricing_type = (props.priceTier.pricing_type as 'fixed_price' | 'discount_percent') || 'fixed_price';
-        priceTierForm.min_quantity = props.priceTier.min_quantity;
-        priceTierForm.max_quantity = props.priceTier.max_quantity;
-        priceTierForm.unit_price = Number(props.priceTier.unit_price);
-        priceTierForm.discount_percent = Number(props.priceTier.discount_percent);
-    } else if (isOpen) {
-        priceTierForm.reset();
-        priceTierForm.pricing_type = 'fixed_price';
-    }
-});
+watch(
+    () => props.open,
+    (isOpen) => {
+        if (isOpen && props.priceTier) {
+            priceTierForm.pricing_type =
+                (props.priceTier.pricing_type as
+                    | 'fixed_price'
+                    | 'discount_percent') || 'fixed_price';
+            priceTierForm.min_quantity = props.priceTier.min_quantity;
+            priceTierForm.max_quantity = props.priceTier.max_quantity;
+            priceTierForm.unit_price = Number(props.priceTier.unit_price);
+            priceTierForm.discount_percent = Number(
+                props.priceTier.discount_percent,
+            );
+        } else if (isOpen) {
+            priceTierForm.reset();
+            priceTierForm.pricing_type = 'fixed_price';
+        }
+    },
+);
 
 const savePriceTier = () => {
     if (props.priceTier) {
-        priceTierForm.put(`/catalog/${props.catalogItemId}/price-tiers/${props.priceTier.id}`, {
-            onSuccess: () => {
-                emit('update:open', false);
-                emit('success');
-                priceTierForm.reset();
+        priceTierForm.put(
+            `/catalog/${props.catalogItemId}/price-tiers/${props.priceTier.id}`,
+            {
+                onSuccess: () => {
+                    emit('update:open', false);
+                    emit('success');
+                    priceTierForm.reset();
+                },
             },
-        });
+        );
     } else {
         priceTierForm.post(`/catalog/${props.catalogItemId}/price-tiers`, {
             onSuccess: () => {
@@ -69,16 +87,22 @@ const savePriceTier = () => {
     <Dialog :open="open" @update:open="emit('update:open', $event)">
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>{{ priceTier ? 'Edit Price Tier' : 'Add Price Tier' }}</DialogTitle>
+                <DialogTitle>{{
+                    priceTier ? 'Edit Price Tier' : 'Add Price Tier'
+                }}</DialogTitle>
                 <DialogDescription>
-                    {{ priceTier ? 'Update price tier information' : 'Add a new price tier based on quantity' }}
+                    {{
+                        priceTier
+                            ? 'Update price tier information'
+                            : 'Add a new price tier based on quantity'
+                    }}
                 </DialogDescription>
             </DialogHeader>
             <form @submit.prevent="savePriceTier" class="space-y-4">
                 <div class="space-y-2">
                     <Label>Pricing Method</Label>
                     <div class="flex gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer">
+                        <label class="flex cursor-pointer items-center gap-2">
                             <input
                                 type="radio"
                                 v-model="priceTierForm.pricing_type"
@@ -87,7 +111,7 @@ const savePriceTier = () => {
                             />
                             <span class="text-sm">Fixed Price</span>
                         </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
+                        <label class="flex cursor-pointer items-center gap-2">
                             <input
                                 type="radio"
                                 v-model="priceTierForm.pricing_type"
@@ -119,7 +143,10 @@ const savePriceTier = () => {
                         placeholder="Leave blank for unlimited"
                     />
                 </div>
-                <div v-if="priceTierForm.pricing_type === 'fixed_price'" class="space-y-2">
+                <div
+                    v-if="priceTierForm.pricing_type === 'fixed_price'"
+                    class="space-y-2"
+                >
                     <Label for="unit_price">Unit Price *</Label>
                     <Input
                         id="unit_price"
@@ -131,7 +158,10 @@ const savePriceTier = () => {
                         required
                     />
                 </div>
-                <div v-if="priceTierForm.pricing_type === 'discount_percent'" class="space-y-2">
+                <div
+                    v-if="priceTierForm.pricing_type === 'discount_percent'"
+                    class="space-y-2"
+                >
                     <Label for="discount_percent">Discount Percent *</Label>
                     <Input
                         id="discount_percent"
@@ -145,7 +175,11 @@ const savePriceTier = () => {
                     />
                 </div>
                 <div class="flex justify-end gap-2">
-                    <Button type="button" variant="outline" @click="emit('update:open', false)">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="emit('update:open', false)"
+                    >
                         Cancel
                     </Button>
                     <Button type="submit" :disabled="priceTierForm.processing">

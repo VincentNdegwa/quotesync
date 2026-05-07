@@ -16,7 +16,14 @@ import { Switch } from '@/components/ui/switch';
 const props = defineProps<{
     open: boolean;
     catalogItemId: number;
-    variant?: { id: number; name: string; sku: string | null; unit_price: number; cost_price: number; is_default: boolean } | null;
+    variant?: {
+        id: number;
+        name: string;
+        sku: string | null;
+        unit_price: number;
+        cost_price: number;
+        is_default: boolean;
+    } | null;
 }>();
 
 const emit = defineEmits<{
@@ -32,27 +39,33 @@ const variantForm = useForm({
     is_default: false,
 });
 
-watch(() => props.open, (isOpen) => {
-    if (isOpen && props.variant) {
-        variantForm.name = props.variant.name;
-        variantForm.sku = props.variant.sku || '';
-        variantForm.unit_price = Number(props.variant.unit_price);
-        variantForm.cost_price = Number(props.variant.cost_price);
-        variantForm.is_default = props.variant.is_default;
-    } else if (isOpen) {
-        variantForm.reset();
-    }
-});
+watch(
+    () => props.open,
+    (isOpen) => {
+        if (isOpen && props.variant) {
+            variantForm.name = props.variant.name;
+            variantForm.sku = props.variant.sku || '';
+            variantForm.unit_price = Number(props.variant.unit_price);
+            variantForm.cost_price = Number(props.variant.cost_price);
+            variantForm.is_default = props.variant.is_default;
+        } else if (isOpen) {
+            variantForm.reset();
+        }
+    },
+);
 
 const saveVariant = () => {
     if (props.variant) {
-        variantForm.put(`/catalog/${props.catalogItemId}/variants/${props.variant.id}`, {
-            onSuccess: () => {
-                emit('update:open', false);
-                emit('success');
-                variantForm.reset();
+        variantForm.put(
+            `/catalog/${props.catalogItemId}/variants/${props.variant.id}`,
+            {
+                onSuccess: () => {
+                    emit('update:open', false);
+                    emit('success');
+                    variantForm.reset();
+                },
             },
-        });
+        );
     } else {
         variantForm.post(`/catalog/${props.catalogItemId}/variants`, {
             onSuccess: () => {
@@ -69,9 +82,15 @@ const saveVariant = () => {
     <Dialog :open="open" @update:open="emit('update:open', $event)">
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>{{ variant ? 'Edit Variant' : 'Add Variant' }}</DialogTitle>
+                <DialogTitle>{{
+                    variant ? 'Edit Variant' : 'Add Variant'
+                }}</DialogTitle>
                 <DialogDescription>
-                    {{ variant ? 'Update variant information' : 'Add a new variant to this catalog item' }}
+                    {{
+                        variant
+                            ? 'Update variant information'
+                            : 'Add a new variant to this catalog item'
+                    }}
                 </DialogDescription>
             </DialogHeader>
             <form @submit.prevent="saveVariant" class="space-y-4">
@@ -116,11 +135,18 @@ const saveVariant = () => {
                     />
                 </div>
                 <div class="flex items-center space-x-2">
-                    <Switch id="is_default" v-model:modelValue="variantForm.is_default" />
+                    <Switch
+                        id="is_default"
+                        v-model:modelValue="variantForm.is_default"
+                    />
                     <Label for="is_default">Default Variant</Label>
                 </div>
                 <div class="flex justify-end gap-2">
-                    <Button type="button" variant="outline" @click="emit('update:open', false)">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="emit('update:open', false)"
+                    >
                         Cancel
                     </Button>
                     <Button type="submit" :disabled="variantForm.processing">

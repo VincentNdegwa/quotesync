@@ -18,13 +18,16 @@ const { getCreditNoteStatus } = useEnums();
 const { formatCurrency: fmt, formatDate: fmtDate } = useFormat(props.currency);
 
 const issuedCreditNotes = computed(() => {
-    return props.creditNotes.filter(cn => cn.status === 'issued');
+    return props.creditNotes.filter((cn) => cn.status === 'issued');
 });
 
-const page = usePage()
+const page = usePage();
 const defaultCurrency: string = page.props.workspace_currency as string;
 const totalCredited = computed(() => {
-    return issuedCreditNotes.value.reduce((sum, cn) => sum + Number(cn.base_total || cn.total), 0);
+    return issuedCreditNotes.value.reduce(
+        (sum, cn) => sum + Number(cn.base_total || cn.total),
+        0,
+    );
 });
 
 const balanceAfterCredits = computed(() => {
@@ -71,7 +74,9 @@ const getStatusLabel = (status: string): string => {
         <div class="flex items-center justify-between">
             <div>
                 <h3 class="text-lg font-semibold">Credit Notes</h3>
-                <p class="text-sm text-muted-foreground">Track credit notes applied to this invoice</p>
+                <p class="text-sm text-muted-foreground">
+                    Track credit notes applied to this invoice
+                </p>
             </div>
             <Badge :class="[getStatusColor(creditStatus), 'text-xs']">
                 {{ getStatusLabel(creditStatus) }}
@@ -83,15 +88,26 @@ const getStatusLabel = (status: string): string => {
             <div class="grid grid-cols-3 gap-4 text-sm">
                 <div>
                     <p class="text-muted-foreground">Invoice Total</p>
-                    <p class="font-semibold">{{ fmt(total, defaultCurrency) }}</p>
+                    <p class="font-semibold">
+                        {{ fmt(total, defaultCurrency) }}
+                    </p>
                 </div>
                 <div>
                     <p class="text-muted-foreground">Total Credited</p>
-                    <p class="font-semibold">{{ fmt(totalCredited, defaultCurrency) }}</p>
+                    <p class="font-semibold">
+                        {{ fmt(totalCredited, defaultCurrency) }}
+                    </p>
                 </div>
                 <div>
                     <p class="text-muted-foreground">Balance</p>
-                    <p class="font-semibold" :class="balanceAfterCredits > 0 ? 'text-red-600' : 'text-green-600'">
+                    <p
+                        class="font-semibold"
+                        :class="
+                            balanceAfterCredits > 0
+                                ? 'text-red-600'
+                                : 'text-green-600'
+                        "
+                    >
                         {{ fmt(balanceAfterCredits, defaultCurrency) }}
                     </p>
                 </div>
@@ -104,19 +120,39 @@ const getStatusLabel = (status: string): string => {
                 <div
                     v-for="creditNote in creditNotes"
                     :key="creditNote.id"
-                    class="group relative p-4 rounded-md border hover:border-primary/30 hover:shadow-md transition-all"
+                    class="group relative rounded-md border p-4 transition-all hover:border-primary/30 hover:shadow-md"
                 >
                     <div class="flex items-start justify-between gap-4">
                         <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="font-semibold text-lg">{{ fmt(creditNote.base_total || creditNote.total, creditNote.base_currency || defaultCurrency) }}</span>
-                                <Badge :class="[getCreditNoteStatus(creditNote.status)?.cssColor, 'text-xs']">
-                                    {{ getCreditNoteStatus(creditNote.status)?.label }}
+                            <div class="mb-1 flex items-center gap-2">
+                                <span class="text-lg font-semibold">{{
+                                    fmt(
+                                        creditNote.base_total ||
+                                            creditNote.total,
+                                        creditNote.base_currency ||
+                                            defaultCurrency,
+                                    )
+                                }}</span>
+                                <Badge
+                                    :class="[
+                                        getCreditNoteStatus(creditNote.status)
+                                            ?.cssColor,
+                                        'text-xs',
+                                    ]"
+                                >
+                                    {{
+                                        getCreditNoteStatus(creditNote.status)
+                                            ?.label
+                                    }}
                                 </Badge>
                             </div>
-                            <div class="text-sm text-muted-foreground space-y-1">
+                            <div
+                                class="space-y-1 text-sm text-muted-foreground"
+                            >
                                 <div class="flex items-center gap-2">
-                                    <span class="font-medium">{{ creditNote.credit_note_number }}</span>
+                                    <span class="font-medium">{{
+                                        creditNote.credit_note_number
+                                    }}</span>
                                 </div>
                                 <div class="text-xs">
                                     {{ fmtDate(creditNote.issue_date) }}
@@ -137,7 +173,7 @@ const getStatusLabel = (status: string): string => {
                     </div>
                 </div>
             </div>
-            <div v-else class="text-center py-8 text-sm text-muted-foreground">
+            <div v-else class="py-8 text-center text-sm text-muted-foreground">
                 No credit notes applied yet.
             </div>
         </ScrollArea>

@@ -73,25 +73,36 @@ const onDrop = (targetStatus: TaskStatusRecord): void => {
     }
 
     // Calculate new sort orders
-    const draggedIndex = props.taskStatuses.findIndex((s: TaskStatusRecord) => s.id === draggedItem.value?.id);
-    const targetIndex = props.taskStatuses.findIndex((s: TaskStatusRecord) => s.id === targetStatus.id);
-    
+    const draggedIndex = props.taskStatuses.findIndex(
+        (s: TaskStatusRecord) => s.id === draggedItem.value?.id,
+    );
+    const targetIndex = props.taskStatuses.findIndex(
+        (s: TaskStatusRecord) => s.id === targetStatus.id,
+    );
+
     // Create new array with reordered items
     const newOrder = [...props.taskStatuses];
     newOrder.splice(draggedIndex, 1);
     newOrder.splice(targetIndex, 0, draggedItem.value);
-    
+
     // Update sort orders
     newOrder.forEach((status: TaskStatusRecord, index: number) => {
         status.sort_order = index + 1;
     });
 
     // Send update to backend
-    router.put('/configuration/task-status/reorder', {
-        taskStatuses: newOrder.map((s: TaskStatusRecord) => ({ id: s.id, sort_order: s.sort_order })),
-    }, {
-        preserveScroll: true,
-    });
+    router.put(
+        '/configuration/task-status/reorder',
+        {
+            taskStatuses: newOrder.map((s: TaskStatusRecord) => ({
+                id: s.id,
+                sort_order: s.sort_order,
+            })),
+        },
+        {
+            preserveScroll: true,
+        },
+    );
 
     draggedItem.value = null;
 };
@@ -122,45 +133,61 @@ const onDrop = (targetStatus: TaskStatusRecord): void => {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    <TableRow 
-                        v-for="taskStatus in props.taskStatuses" 
+                    <TableRow
+                        v-for="taskStatus in props.taskStatuses"
                         :key="taskStatus.id"
                         draggable="true"
                         @dragstart="onDragStart(taskStatus)"
                         @dragover="onDragOver"
                         @drop="onDrop(taskStatus)"
-                        :class="{ 'opacity-50': draggedItem?.id === taskStatus.id }"
+                        :class="{
+                            'opacity-50': draggedItem?.id === taskStatus.id,
+                        }"
                     >
                         <TableCell class="cursor-grab">
-                            <GripVertical class="h-4 w-4 text-muted-foreground" />
+                            <GripVertical
+                                class="h-4 w-4 text-muted-foreground"
+                            />
                         </TableCell>
-                        <TableCell class="font-medium">{{ taskStatus.name }}</TableCell>
+                        <TableCell class="font-medium">{{
+                            taskStatus.name
+                        }}</TableCell>
                         <TableCell>
                             <div class="flex items-center gap-2">
-                                <div 
+                                <div
                                     class="h-4 w-4 rounded-full"
-                                    :style="{ backgroundColor: taskStatus.color }"
+                                    :style="{
+                                        backgroundColor: taskStatus.color,
+                                    }"
                                 />
-                                <span class="text-sm text-muted-foreground">{{ taskStatus.color }}</span>
+                                <span class="text-sm text-muted-foreground">{{
+                                    taskStatus.color
+                                }}</span>
                             </div>
                         </TableCell>
                         <TableCell>
-                            <Badge :variant="taskStatus.is_system ? 'default' : 'secondary'">
+                            <Badge
+                                :variant="
+                                    taskStatus.is_system
+                                        ? 'default'
+                                        : 'secondary'
+                                "
+                            >
                                 {{ taskStatus.is_system ? 'System' : 'Custom' }}
                             </Badge>
                         </TableCell>
-                        <TableCell class="text-right space-x-2">
-                            <Button 
-                                size="sm" 
-                                variant="outline" 
+                        <TableCell class="space-x-2 text-right">
+                            <Button
+                                size="sm"
+                                variant="outline"
                                 @click="openEdit(taskStatus)"
                                 :disabled="taskStatus.is_system"
                             >
                                 Edit
                             </Button>
-                            <Button 
-                                size="sm" 
-                                variant="destructive" 
+                            <Button
+                                size="sm"
+                                variant="destructive"
                                 @click="removeTaskStatus(taskStatus)"
                                 :disabled="taskStatus.is_system"
                             >

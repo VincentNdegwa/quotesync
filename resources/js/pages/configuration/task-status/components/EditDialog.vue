@@ -85,15 +85,27 @@ const submit = (): void => {
                 <div class="grid gap-2">
                     <Label for="task_status_edit_color" required>Color</Label>
                     <div class="flex items-center gap-2">
-                        <Input id="task_status_edit_color" v-model="form.color" type="color" class="w-20" />
+                        <Input
+                            id="task_status_edit_color"
+                            v-model="form.color"
+                            type="color"
+                            class="w-20"
+                        />
                         <Input v-model="form.color" />
                     </div>
                     <InputError :message="form.errors.color" />
                 </div>
 
                 <DialogFooter>
-                    <Button type="button" variant="outline" @click="open = false">Cancel</Button>
-                    <Button type="submit" :disabled="form.processing">Save changes</Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="open = false"
+                        >Cancel</Button
+                    >
+                    <Button type="submit" :disabled="form.processing"
+                        >Save changes</Button
+                    >
                 </DialogFooter>
             </form>
         </DialogContent>

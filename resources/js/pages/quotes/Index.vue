@@ -26,14 +26,15 @@ type Filters = {
     sort: string;
 };
 
-
 const props = defineProps<{
     filters: Filters;
     quotes: Paginator<QuoteListRecord>;
 }>();
 
 const page = usePage();
-const quoteStatuses = computed(() => (page.props.enums as any)?.quoteStatus ?? []);
+const quoteStatuses = computed(
+    () => (page.props.enums as any)?.quoteStatus ?? [],
+);
 
 const viewMode = ref<'table' | 'kanban'>(
     (localStorage.getItem(STORAGE_KEY) as 'table' | 'kanban') ?? 'table',
@@ -77,7 +78,8 @@ watch(
                 '/quotes',
                 {
                     search: query.value.search,
-                    status: query.value.status === ALL ? '' : query.value.status,
+                    status:
+                        query.value.status === ALL ? '' : query.value.status,
                     sort: query.value.sort,
                 },
                 {
@@ -108,7 +110,7 @@ const executeDelete = (): void => {
             onSuccess: () => {
                 showDeleteDialog.value = false;
                 quoteToDelete.value = null;
-            }
+            },
         });
     }
 };
@@ -123,13 +125,17 @@ const sendQuote = (quoteId: number): void => {
 
 const executeSend = (): void => {
     if (quoteToSend.value) {
-        router.post(QuoteSendController.store(quoteToSend.value).url, {}, {
-            preserveScroll: true,
-            onSuccess: () => {
-                showSendDialog.value = false;
-                quoteToSend.value = null;
-            }
-        });
+        router.post(
+            QuoteSendController.store(quoteToSend.value).url,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    showSendDialog.value = false;
+                    quoteToSend.value = null;
+                },
+            },
+        );
     }
 };
 </script>
@@ -138,7 +144,9 @@ const executeSend = (): void => {
     <Head title="Quotes" />
 
     <div class="space-y-4">
-        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div
+            class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+        >
             <Heading
                 title="Quotes"
                 description="Create and manage reusable, trackable quotes from one dynamic builder."
@@ -153,7 +161,11 @@ const executeSend = (): void => {
 
         <div class="rounded-lg border p-3">
             <div class="flex flex-col gap-3 md:flex-row md:items-center">
-                <Input v-model="query.search" placeholder="Search quote number, title, or client" class="w-full md:w-96" />
+                <Input
+                    v-model="query.search"
+                    placeholder="Search quote number, title, or client"
+                    class="w-full md:w-96"
+                />
 
                 <Select v-model="query.status">
                     <SelectTrigger class="w-full md:w-44">
@@ -161,10 +173,10 @@ const executeSend = (): void => {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem :value="ALL">All statuses</SelectItem>
-                        
-                        <SelectItem 
-                            v-for="status in quoteStatuses" 
-                            :key="status.value" 
+
+                        <SelectItem
+                            v-for="status in quoteStatuses"
+                            :key="status.value"
                             :value="status.value"
                         >
                             {{ status.label }}
@@ -200,13 +212,23 @@ const executeSend = (): void => {
                 @delete="removeQuote"
             />
 
-            <div v-else class="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
-                No quotes yet. Create your first quote from scratch or from a template.
+            <div
+                v-else
+                class="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground"
+            >
+                No quotes yet. Create your first quote from scratch or from a
+                template.
             </div>
         </template>
 
-        <div v-if="viewMode === 'table' && quotes.links.length > 1" class="flex w-full flex-wrap items-center justify-end gap-2">
-            <template v-for="(link, index) in quotes.links" :key="`${link.label}-${index}`">
+        <div
+            v-if="viewMode === 'table' && quotes.links.length > 1"
+            class="flex w-full flex-wrap items-center justify-end gap-2"
+        >
+            <template
+                v-for="(link, index) in quotes.links"
+                :key="`${link.label}-${index}`"
+            >
                 <Link
                     v-if="link.url"
                     :href="link.url"
@@ -225,7 +247,10 @@ const executeSend = (): void => {
                               : link.label
                     }}
                 </Link>
-                <span v-else class="inline-flex h-9 items-center rounded-md border px-3 text-sm text-muted-foreground">
+                <span
+                    v-else
+                    class="inline-flex h-9 items-center rounded-md border px-3 text-sm text-muted-foreground"
+                >
                     {{
                         index === 0
                             ? 'Previous'

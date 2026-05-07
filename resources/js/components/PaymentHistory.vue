@@ -27,8 +27,8 @@ const balanceDue = computed(() => {
 
 const paymentStatus = computed(() => {
     if (totalPaid.value >= props.total) {
-return 'paid';
-}
+        return 'paid';
+    }
 
     if (totalPaid.value > 0) {
         return 'partial';
@@ -54,10 +54,18 @@ const getStatusColor = (status: string): string => {
         <div class="flex items-center justify-between">
             <div>
                 <h3 class="text-lg font-semibold">Payment History</h3>
-                <p class="text-sm text-muted-foreground">Track payments and balance due</p>
+                <p class="text-sm text-muted-foreground">
+                    Track payments and balance due
+                </p>
             </div>
             <Badge :class="[getStatusColor(paymentStatus), 'text-xs']">
-                {{ paymentStatus === 'paid' ? 'Paid' : paymentStatus === 'partial' ? 'Partial' : 'Unpaid' }}
+                {{
+                    paymentStatus === 'paid'
+                        ? 'Paid'
+                        : paymentStatus === 'partial'
+                          ? 'Partial'
+                          : 'Unpaid'
+                }}
             </Badge>
         </div>
 
@@ -65,15 +73,24 @@ const getStatusColor = (status: string): string => {
             <div class="grid grid-cols-3 gap-4 text-sm">
                 <div>
                     <p class="text-muted-foreground">Total</p>
-                    <p class="font-semibold">{{ fmt(total, defaultCurrency) }}</p>
+                    <p class="font-semibold">
+                        {{ fmt(total, defaultCurrency) }}
+                    </p>
                 </div>
                 <div>
                     <p class="text-muted-foreground">Paid</p>
-                    <p class="font-semibold">{{ fmt(totalPaid, defaultCurrency) }}</p>
+                    <p class="font-semibold">
+                        {{ fmt(totalPaid, defaultCurrency) }}
+                    </p>
                 </div>
                 <div>
                     <p class="text-muted-foreground">Balance</p>
-                    <p class="font-semibold" :class="balanceDue > 0 ? 'text-red-600' : 'text-green-600'">
+                    <p
+                        class="font-semibold"
+                        :class="
+                            balanceDue > 0 ? 'text-red-600' : 'text-green-600'
+                        "
+                    >
                         {{ fmt(balanceDue, defaultCurrency) }}
                     </p>
                 </div>
@@ -85,21 +102,30 @@ const getStatusColor = (status: string): string => {
                 <div
                     v-for="payment in payments"
                     :key="payment.id"
-                    class="group relative p-4 rounded-md border hover:border-primary/30 hover:shadow-md transition-all"
+                    class="group relative rounded-md border p-4 transition-all hover:border-primary/30 hover:shadow-md"
                 >
                     <div class="flex items-start justify-between gap-4">
                         <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="font-semibold text-lg">{{ fmt(payment.amount, defaultCurrency) }}</span>
+                            <div class="mb-1 flex items-center gap-2">
+                                <span class="text-lg font-semibold">{{
+                                    fmt(payment.amount, defaultCurrency)
+                                }}</span>
                                 <Badge variant="outline" class="text-xs">
                                     {{ payment.payment_method || '—' }}
                                 </Badge>
                             </div>
-                            <div class="text-sm text-muted-foreground space-y-1">
+                            <div
+                                class="space-y-1 text-sm text-muted-foreground"
+                            >
                                 <div class="flex items-center gap-2">
-                                    <span class="font-medium">{{ fmtDate(payment.payment_date) }}</span>
+                                    <span class="font-medium">{{
+                                        fmtDate(payment.payment_date)
+                                    }}</span>
                                 </div>
-                                <div v-if="payment.reference_number" class="text-xs">
+                                <div
+                                    v-if="payment.reference_number"
+                                    class="text-xs"
+                                >
                                     Ref: {{ payment.reference_number }}
                                 </div>
                                 <div v-if="payment.notes" class="text-xs">
@@ -113,7 +139,7 @@ const getStatusColor = (status: string): string => {
                     </div>
                 </div>
             </div>
-            <div v-else class="text-center py-8 text-sm text-muted-foreground">
+            <div v-else class="py-8 text-center text-sm text-muted-foreground">
                 No payments recorded yet.
             </div>
         </ScrollArea>

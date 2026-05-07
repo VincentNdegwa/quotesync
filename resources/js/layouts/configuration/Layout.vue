@@ -13,11 +13,11 @@ const navItems: NavItem[] = [
     { title: 'Categories', href: '/configuration/categories' },
     { title: 'Tags', href: '/configuration/tags' },
     { title: 'Units', href: '/configuration/units' },
-    { title: 'Industries', href :'/configuration/industries' },
+    { title: 'Industries', href: '/configuration/industries' },
     { title: 'Follow-ups', href: '/configuration/follow-ups' },
     { title: 'Templates', href: '/configuration/templates' },
     { title: 'Task Statuses', href: '/configuration/task-status' },
-    {title: 'Invoice Reminders', href: configuration.invoiceReminders().url}
+    { title: 'Invoice Reminders', href: configuration.invoiceReminders().url },
 ];
 
 const { isCurrentOrParentUrl } = useCurrentUrl();

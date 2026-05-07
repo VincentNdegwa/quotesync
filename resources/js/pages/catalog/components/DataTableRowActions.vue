@@ -36,13 +36,19 @@ const emit = defineEmits<{
 
             <DropdownMenuContent align="end" class="w-40">
                 <DropdownMenuItem :as-child="true">
-                    <Link :href="`/catalog/${item.id}`" class="flex w-full items-center gap-2">
+                    <Link
+                        :href="`/catalog/${item.id}`"
+                        class="flex w-full items-center gap-2"
+                    >
                         <Eye class="h-4 w-4" />
                         <span>View</span>
                     </Link>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem class="flex items-center gap-2" @select="emit('edit', item)">
+                <DropdownMenuItem
+                    class="flex items-center gap-2"
+                    @select="emit('edit', item)"
+                >
                     <Pencil class="h-4 w-4" />
                     <span>Edit</span>
                 </DropdownMenuItem>

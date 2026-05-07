@@ -1,6 +1,17 @@
 import { usePage } from '@inertiajs/vue3';
 import { Mail, MessageSquare, Phone } from 'lucide-vue-next';
-import type { CreditNoteStatusEnum, FollowUpChannelEnum, GlobalEnums, InvoiceStatusEnum, QuoteActivityTypeEnum, QuoteFollowUpStatusEnum, QuoteStatusEnum, SignalDirectionEnum, TrackingEventTypeEnum, WinProbabilityConfidenceEnum } from '@/types/quotes';
+import type {
+    CreditNoteStatusEnum,
+    FollowUpChannelEnum,
+    GlobalEnums,
+    InvoiceStatusEnum,
+    QuoteActivityTypeEnum,
+    QuoteFollowUpStatusEnum,
+    QuoteStatusEnum,
+    SignalDirectionEnum,
+    TrackingEventTypeEnum,
+    WinProbabilityConfidenceEnum,
+} from '@/types/quotes';
 
 export function useEnums() {
     const page = usePage();
@@ -10,19 +21,29 @@ export function useEnums() {
         return enums.quoteStatus.find((status) => status.value === value);
     };
 
-    const getQuoteActivityType = (value: string): QuoteActivityTypeEnum | undefined => {
+    const getQuoteActivityType = (
+        value: string,
+    ): QuoteActivityTypeEnum | undefined => {
         return enums.quoteActivityType.find((type) => type.value === value);
     };
 
-    const getFollowUpChannel = (value: string): FollowUpChannelEnum | undefined => {
+    const getFollowUpChannel = (
+        value: string,
+    ): FollowUpChannelEnum | undefined => {
         return enums.followUpChannel.find((channel) => channel.value === value);
     };
 
-    const getQuoteFollowUpStatus = (value: string): QuoteFollowUpStatusEnum | undefined => {
-        return enums.quoteFollowUpStatus.find((status) => status.value === value);
+    const getQuoteFollowUpStatus = (
+        value: string,
+    ): QuoteFollowUpStatusEnum | undefined => {
+        return enums.quoteFollowUpStatus.find(
+            (status) => status.value === value,
+        );
     };
 
-    const getTrackingEventType = (value: string): TrackingEventTypeEnum | undefined => {
+    const getTrackingEventType = (
+        value: string,
+    ): TrackingEventTypeEnum | undefined => {
         return enums.trackingEventType.find((type) => type.value === value);
     };
 
@@ -30,20 +51,33 @@ export function useEnums() {
         return enums.invoiceStatus.find((status) => status.value === value);
     };
 
-    const getWinProbabilityConfidence = (value: string): WinProbabilityConfidenceEnum | undefined => {
-        return enums.winProbabilityConfidence?.find((confidence) => confidence.value === value);
+    const getWinProbabilityConfidence = (
+        value: string,
+    ): WinProbabilityConfidenceEnum | undefined => {
+        return enums.winProbabilityConfidence?.find(
+            (confidence) => confidence.value === value,
+        );
     };
 
-    const getSignalDirection = (value: string): SignalDirectionEnum | undefined => {
-        return enums.signalDirection?.find((direction) => direction.value === value);
+    const getSignalDirection = (
+        value: string,
+    ): SignalDirectionEnum | undefined => {
+        return enums.signalDirection?.find(
+            (direction) => direction.value === value,
+        );
     };
 
-    const getCreditNoteStatus = (value: string): CreditNoteStatusEnum | undefined => {
+    const getCreditNoteStatus = (
+        value: string,
+    ): CreditNoteStatusEnum | undefined => {
         return enums.creditNoteStatus?.find((status) => status.value === value);
     };
 
     const getFollowUpChannelIcon = (channel: string) => {
-        return { email: Mail, whatsapp: MessageSquare, sms: Phone }[channel] ?? Mail;
+        return (
+            { email: Mail, whatsapp: MessageSquare, sms: Phone }[channel] ??
+            Mail
+        );
     };
 
     const getFollowUpChannelColor = (channel: string): string => {

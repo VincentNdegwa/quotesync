@@ -19,7 +19,13 @@ interface Props {
     description?: string;
     confirmText?: string;
     cancelText?: string;
-    variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+    variant?:
+        | 'default'
+        | 'destructive'
+        | 'outline'
+        | 'secondary'
+        | 'ghost'
+        | 'link';
     processing?: boolean;
     showInput?: boolean;
     inputPlaceholder?: string;
@@ -75,11 +81,22 @@ const handleCancel = () => {
                 />
             </div>
             <DialogFooter class="mt-4">
-                <Button variant="outline" @click="handleCancel" :disabled="processing">
+                <Button
+                    variant="outline"
+                    @click="handleCancel"
+                    :disabled="processing"
+                >
                     {{ cancelText }}
                 </Button>
-                <Button :variant="variant" @click="handleConfirm" :disabled="processing">
-                    <Loader2 v-if="processing" class="mr-2 h-4 w-4 animate-spin" />
+                <Button
+                    :variant="variant"
+                    @click="handleConfirm"
+                    :disabled="processing"
+                >
+                    <Loader2
+                        v-if="processing"
+                        class="mr-2 h-4 w-4 animate-spin"
+                    />
                     {{ confirmText }}
                 </Button>
             </DialogFooter>

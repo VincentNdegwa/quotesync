@@ -40,18 +40,27 @@ const inviteDialogOpen = ref(false);
 
             <DropdownMenuContent align="end" class="w-40">
                 <DropdownMenuItem :as-child="true">
-                    <Link :href="`/clients/${client.id}`" class="flex w-full items-center gap-2">
+                    <Link
+                        :href="`/clients/${client.id}`"
+                        class="flex w-full items-center gap-2"
+                    >
                         <Eye class="h-4 w-4" />
                         <span>View</span>
                     </Link>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem class="flex items-center gap-2" @select="emit('edit', client)">
+                <DropdownMenuItem
+                    class="flex items-center gap-2"
+                    @select="emit('edit', client)"
+                >
                     <Pencil class="h-4 w-4" />
                     <span>Edit</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem class="flex items-center gap-2" @select="inviteDialogOpen = true">
+                <DropdownMenuItem
+                    class="flex items-center gap-2"
+                    @select="inviteDialogOpen = true"
+                >
                     <Mail class="h-4 w-4" />
                     <span>Invite to Portal</span>
                 </DropdownMenuItem>

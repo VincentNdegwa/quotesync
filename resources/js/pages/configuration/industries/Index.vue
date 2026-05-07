@@ -75,16 +75,32 @@ const removeIndustry = (industry: IndustryRecord): void => {
                 </TableHeader>
                 <TableBody>
                     <TableRow v-for="industry in industries" :key="industry.id">
-                        <TableCell class="font-medium">{{ industry.name }}</TableCell>
+                        <TableCell class="font-medium">{{
+                            industry.name
+                        }}</TableCell>
                         <TableCell>{{ industry.description || '—' }}</TableCell>
                         <TableCell>
-                            <Badge :variant="industry.is_active ? 'default' : 'secondary'">
+                            <Badge
+                                :variant="
+                                    industry.is_active ? 'default' : 'secondary'
+                                "
+                            >
                                 {{ industry.is_active ? 'Active' : 'Inactive' }}
                             </Badge>
                         </TableCell>
-                        <TableCell class="text-right space-x-2">
-                            <Button size="sm" variant="outline" @click="openEdit(industry)">Edit</Button>
-                            <Button size="sm" variant="destructive" @click="removeIndustry(industry)">Delete</Button>
+                        <TableCell class="space-x-2 text-right">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                @click="openEdit(industry)"
+                                >Edit</Button
+                            >
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                @click="removeIndustry(industry)"
+                                >Delete</Button
+                            >
                         </TableCell>
                     </TableRow>
                 </TableBody>

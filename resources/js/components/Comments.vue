@@ -24,22 +24,28 @@ const mentionedUsers = ref<number[]>([]);
 
 const submitComment = async () => {
     if (!newComment.value.trim()) {
-return;
-}
+        return;
+    }
 
     try {
-        const response = await fetch(`/comments/${props.commentableType}/${props.commentableId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+        const response = await fetch(
+            `/comments/${props.commentableType}/${props.commentableId}`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN':
+                        document
+                            .querySelector('meta[name="csrf-token"]')
+                            ?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({
+                    content: newComment.value,
+                    mentions: [],
+                    is_internal: true,
+                }),
             },
-            body: JSON.stringify({
-                content: newComment.value,
-                mentions: [],
-                is_internal: true,
-            }),
-        });
+        );
 
         if (response.ok) {
             newComment.value = '';
@@ -52,14 +58,17 @@ return;
 
 const deleteComment = async (commentId: number) => {
     if (!confirm('Are you sure you want to delete this comment?')) {
-return;
-}
+        return;
+    }
 
     try {
         const response = await fetch(`/comments/${commentId}`, {
             method: 'DELETE',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                'X-CSRF-TOKEN':
+                    document
+                        .querySelector('meta[name="csrf-token"]')
+                        ?.getAttribute('content') || '',
             },
         });
 
@@ -74,7 +83,7 @@ return;
 const getInitials = (name: string) => {
     return name
         .split(' ')
-        .map(n => n[0])
+        .map((n) => n[0])
         .join('')
         .toUpperCase()
         .slice(0, 2);
@@ -82,8 +91,8 @@ const getInitials = (name: string) => {
 
 const formatDate = (date: string | null) => {
     if (!date) {
-return '—';
-}
+        return '—';
+    }
 
     return new Date(date).toLocaleDateString('en-US', {
         month: 'short',
@@ -105,7 +114,9 @@ const handleMention = (e: KeyboardEvent) => {
     <div class="space-y-4">
         <div class="flex items-center justify-between">
             <h3 class="text-sm font-semibold text-foreground">Comments</h3>
-            <span class="text-xs text-muted-foreground">{{ comments.length }} comments</span>
+            <span class="text-xs text-muted-foreground"
+                >{{ comments.length }} comments</span
+            >
         </div>
 
         <!-- New Comment Form -->
@@ -117,7 +128,11 @@ const handleMention = (e: KeyboardEvent) => {
                 @keydown="handleMention"
             />
             <div class="flex justify-end">
-                <Button size="sm" @click="submitComment" :disabled="!newComment.trim()">
+                <Button
+                    size="sm"
+                    @click="submitComment"
+                    :disabled="!newComment.trim()"
+                >
                     Post Comment
                 </Button>
             </div>
@@ -138,19 +153,27 @@ const handleMention = (e: KeyboardEvent) => {
                             </AvatarFallback>
                         </Avatar>
 
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="text-sm font-medium text-foreground">
+                        <div class="min-w-0 flex-1">
+                            <div class="mb-1 flex items-center gap-2">
+                                <span
+                                    class="text-sm font-medium text-foreground"
+                                >
                                     {{ comment.user?.name || 'Unknown' }}
                                 </span>
                                 <span class="text-xs text-muted-foreground">
                                     {{ formatDate(comment.created_at) }}
                                 </span>
-                                <Badge v-if="comment.is_internal" variant="secondary" class="text-xs">
+                                <Badge
+                                    v-if="comment.is_internal"
+                                    variant="secondary"
+                                    class="text-xs"
+                                >
                                     Internal
                                 </Badge>
                             </div>
-                            <p class="text-sm text-foreground whitespace-pre-wrap break-words">
+                            <p
+                                class="text-sm break-words whitespace-pre-wrap text-foreground"
+                            >
                                 {{ comment.content }}
                             </p>
                         </div>
@@ -158,17 +181,31 @@ const handleMention = (e: KeyboardEvent) => {
                         <Button
                             size="sm"
                             variant="ghost"
-                            class="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            class="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"
                             @click="deleteComment(comment.id)"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-3 w-3"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"
+                                />
                             </svg>
                         </Button>
                     </div>
                 </div>
 
-                <div v-if="comments.length === 0" class="text-center py-8 text-sm text-muted-foreground">
+                <div
+                    v-if="comments.length === 0"
+                    class="py-8 text-center text-sm text-muted-foreground"
+                >
                     No comments yet. Add the first comment above.
                 </div>
             </div>

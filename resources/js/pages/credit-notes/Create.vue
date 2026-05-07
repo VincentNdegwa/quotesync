@@ -26,7 +26,10 @@ const { formatCurrency } = useFormat(props.invoice.base_currency);
 
 const breadcrumbs = computed(() => [
     { title: 'Invoices', href: '/invoices' },
-    { title: props.invoice.invoice_number, href: `/invoices/${props.invoice.id}` },
+    {
+        title: props.invoice.invoice_number,
+        href: `/invoices/${props.invoice.id}`,
+    },
     { title: 'Credit Note', href: '#' },
 ]);
 
@@ -83,12 +86,12 @@ const computeLineItem = (
 };
 
 const isItemSelected = (originalId: number): boolean =>
-    form.line_items.some(li => li.original_line_item_id === originalId);
+    form.line_items.some((li) => li.original_line_item_id === originalId);
 
 const toggleItem = (original: InvoiceLineItemModel): void => {
     if (isItemSelected(original.id)) {
         form.line_items = form.line_items.filter(
-            li => li.original_line_item_id !== original.id,
+            (li) => li.original_line_item_id !== original.id,
         );
     } else {
         form.line_items.push(computeLineItem(original, original.quantity));
@@ -96,13 +99,17 @@ const toggleItem = (original: InvoiceLineItemModel): void => {
 };
 
 const getCreditQuantity = (originalId: number): number =>
-    form.line_items.find(li => li.original_line_item_id === originalId)?.credit_quantity ?? 0;
+    form.line_items.find((li) => li.original_line_item_id === originalId)
+        ?.credit_quantity ?? 0;
 
-const setCreditQuantity = (original: InvoiceLineItemModel, qty: number | string): void => {
+const setCreditQuantity = (
+    original: InvoiceLineItemModel,
+    qty: number | string,
+): void => {
     const numericQty = typeof qty === 'string' ? parseFloat(qty) || 0 : qty;
     const clamped = Math.max(0.01, Math.min(original.quantity, numericQty));
     const index = form.line_items.findIndex(
-        li => li.original_line_item_id === original.id,
+        (li) => li.original_line_item_id === original.id,
     );
 
     if (index >= 0) {
@@ -115,19 +122,22 @@ const adjustQty = (original: InvoiceLineItemModel, delta: number): void => {
     setCreditQuantity(original, current + delta);
 };
 
-watch(() => form.type, (type: CreditType) => {
-    form.clearErrors();
-    form.line_items = [];
-    form.partial_amount = '';
+watch(
+    () => form.type,
+    (type: CreditType) => {
+        form.clearErrors();
+        form.line_items = [];
+        form.partial_amount = '';
 
-    if (type === 'full') {
-        form.line_items = props.invoice.line_items.map(item =>
-            computeLineItem(item, item.quantity),
-        );
-    }
-});
+        if (type === 'full') {
+            form.line_items = props.invoice.line_items.map((item) =>
+                computeLineItem(item, item.quantity),
+            );
+        }
+    },
+);
 
-form.line_items = props.invoice.line_items.map(item =>
+form.line_items = props.invoice.line_items.map((item) =>
     computeLineItem(item, item.quantity),
 );
 
@@ -141,8 +151,8 @@ const creditSubtotal = computed((): number => {
 
 const creditTax = computed((): number => {
     if (form.type === 'partial') {
-return 0;
-}
+        return 0;
+    }
 
     return form.line_items.reduce((s, li) => s + li.tax_amount, 0);
 });
@@ -161,45 +171,48 @@ const partialAmountValid = computed((): boolean => {
     return v > 0 && v <= Number(props.invoice.base_total);
 });
 
-const lineItemsValid = computed((): boolean =>
-    form.line_items.length > 0 &&
-    form.line_items.every(li => li.credit_quantity > 0),
+const lineItemsValid = computed(
+    (): boolean =>
+        form.line_items.length > 0 &&
+        form.line_items.every((li) => li.credit_quantity > 0),
 );
 
 const canSubmit = computed((): boolean => {
     if (!form.reason.trim()) {
-return false;
-}
+        return false;
+    }
 
     if (form.type === 'partial') {
-return partialAmountValid.value;
-}
+        return partialAmountValid.value;
+    }
 
     if (form.type === 'line_items') {
-return lineItemsValid.value;
-}
+        return lineItemsValid.value;
+    }
 
     return true;
 });
 
 const submit = (): void => {
-    form
-        .transform((data) => ({
-            invoice_id:     data.invoice_id,
-            client_id:      data.client_id,
-            type:           data.type,
-            title:          data.title,
-            reason:         data.reason,
-            issue_date:     data.issue_date,
-            partial_amount: data.type === 'partial' ? data.partial_amount : undefined,
-            line_items:     data.type === 'line_items' ? data.line_items.map(li => ({
-                id: li.original_line_item_id,
-                unit_price: li.unit_price,
-                original_quantity: li.original_quantity,
-                credit_quantity: li.credit_quantity,
-            })) : undefined,
-        }))
-        .post('/credit-notes');
+    form.transform((data) => ({
+        invoice_id: data.invoice_id,
+        client_id: data.client_id,
+        type: data.type,
+        title: data.title,
+        reason: data.reason,
+        issue_date: data.issue_date,
+        partial_amount:
+            data.type === 'partial' ? data.partial_amount : undefined,
+        line_items:
+            data.type === 'line_items'
+                ? data.line_items.map((li) => ({
+                      id: li.original_line_item_id,
+                      unit_price: li.unit_price,
+                      original_quantity: li.original_quantity,
+                      credit_quantity: li.credit_quantity,
+                  }))
+                : undefined,
+    })).post('/credit-notes');
 };
 </script>
 
@@ -227,13 +240,15 @@ const submit = (): void => {
                     <RadioGroup
                         :model-value="form.type"
                         class="space-y-3"
-                        @update:model-value="(v) => form.type = v as any"
+                        @update:model-value="(v) => (form.type = v as any)"
                     >
                         <label
                             class="flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors"
-                            :class="form.type === 'full'
-                                ? 'border-primary bg-primary/5'
-                                : 'hover:border-muted-foreground/40'"
+                            :class="
+                                form.type === 'full'
+                                    ? 'border-primary bg-primary/5'
+                                    : 'hover:border-muted-foreground/40'
+                            "
                         >
                             <RadioGroupItem value="full" class="mt-0.5" />
                             <div>
@@ -243,21 +258,32 @@ const submit = (): void => {
                                     nothing. All {{ invoice.line_items.length }}
                                     items are credited at their full amounts.
                                 </p>
-                                <p class="mt-1 text-xs font-semibold text-foreground">
-                                    Credits {{ formatCurrency(Number(invoice.base_total)) }}
+                                <p
+                                    class="mt-1 text-xs font-semibold text-foreground"
+                                >
+                                    Credits
+                                    {{
+                                        formatCurrency(
+                                            Number(invoice.base_total),
+                                        )
+                                    }}
                                 </p>
                             </div>
                         </label>
 
                         <label
                             class="flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors"
-                            :class="form.type === 'partial'
-                                ? 'border-primary bg-primary/5'
-                                : 'hover:border-muted-foreground/40'"
+                            :class="
+                                form.type === 'partial'
+                                    ? 'border-primary bg-primary/5'
+                                    : 'hover:border-muted-foreground/40'
+                            "
                         >
                             <RadioGroupItem value="partial" class="mt-0.5" />
                             <div class="flex-1">
-                                <p class="text-sm font-medium">Partial amount</p>
+                                <p class="text-sm font-medium">
+                                    Partial amount
+                                </p>
                                 <p class="mt-0.5 text-xs text-muted-foreground">
                                     Credit a fixed amount not tied to specific
                                     items. Use for goodwill adjustments, agreed
@@ -267,7 +293,9 @@ const submit = (): void => {
                                     v-if="form.type === 'partial'"
                                     class="mt-3 flex items-center gap-2"
                                 >
-                                    <div class="flex h-9 w-16 items-center justify-center rounded-md border bg-muted text-xs text-muted-foreground">
+                                    <div
+                                        class="flex h-9 w-16 items-center justify-center rounded-md border bg-muted text-xs text-muted-foreground"
+                                    >
                                         {{ invoice.currency }}
                                     </div>
                                     <Input
@@ -281,27 +309,45 @@ const submit = (): void => {
                                         @click.stop
                                     />
                                     <span class="text-xs text-muted-foreground">
-                                        max {{ formatCurrency(Number(invoice.base_total)) }}
+                                        max
+                                        {{
+                                            formatCurrency(
+                                                Number(invoice.base_total),
+                                            )
+                                        }}
                                     </span>
                                 </div>
                                 <p
-                                    v-if="form.type === 'partial' && form.partial_amount && !partialAmountValid"
+                                    v-if="
+                                        form.type === 'partial' &&
+                                        form.partial_amount &&
+                                        !partialAmountValid
+                                    "
                                     class="mt-1 text-xs text-destructive"
                                 >
-                                    Amount must be between 0.01 and {{ formatCurrency(Number(invoice.base_total)) }}
+                                    Amount must be between 0.01 and
+                                    {{
+                                        formatCurrency(
+                                            Number(invoice.base_total),
+                                        )
+                                    }}
                                 </p>
                             </div>
                         </label>
 
                         <label
                             class="flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors"
-                            :class="form.type === 'line_items'
-                                ? 'border-primary bg-primary/5'
-                                : 'hover:border-muted-foreground/40'"
+                            :class="
+                                form.type === 'line_items'
+                                    ? 'border-primary bg-primary/5'
+                                    : 'hover:border-muted-foreground/40'
+                            "
                         >
                             <RadioGroupItem value="line_items" class="mt-0.5" />
                             <div>
-                                <p class="text-sm font-medium">Specific items</p>
+                                <p class="text-sm font-medium">
+                                    Specific items
+                                </p>
                                 <p class="mt-0.5 text-xs text-muted-foreground">
                                     Credit specific line items, or partial
                                     quantities of items. Use when goods were
@@ -317,10 +363,13 @@ const submit = (): void => {
                     class="rounded-xl border bg-card"
                 >
                     <div class="border-b px-5 py-4">
-                        <h3 class="text-sm font-semibold">Select items to credit</h3>
+                        <h3 class="text-sm font-semibold">
+                            Select items to credit
+                        </h3>
                         <p class="mt-0.5 text-xs text-muted-foreground">
-                            Check items and adjust the credit quantity if needed.
-                            Credit quantity cannot exceed the original quantity.
+                            Check items and adjust the credit quantity if
+                            needed. Credit quantity cannot exceed the original
+                            quantity.
                         </p>
                     </div>
 
@@ -329,10 +378,18 @@ const submit = (): void => {
                             <TableRow>
                                 <TableHead class="w-8" />
                                 <TableHead>Item</TableHead>
-                                <TableHead class="text-right">Original qty</TableHead>
-                                <TableHead class="text-right">Credit qty</TableHead>
-                                <TableHead class="text-right">Unit price</TableHead>
-                                <TableHead class="text-right">Credit total</TableHead>
+                                <TableHead class="text-right"
+                                    >Original qty</TableHead
+                                >
+                                <TableHead class="text-right"
+                                    >Credit qty</TableHead
+                                >
+                                <TableHead class="text-right"
+                                    >Unit price</TableHead
+                                >
+                                <TableHead class="text-right"
+                                    >Credit total</TableHead
+                                >
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -342,9 +399,11 @@ const submit = (): void => {
                             >
                                 <TableRow
                                     class="cursor-pointer transition-colors"
-                                    :class="isItemSelected(item.id)
-                                        ? 'bg-primary/5'
-                                        : 'hover:bg-muted/30'"
+                                    :class="
+                                        isItemSelected(item.id)
+                                            ? 'bg-primary/5'
+                                            : 'hover:bg-muted/30'
+                                    "
                                     @click="toggleItem(item)"
                                 >
                                     <TableCell class="pr-0" @click.stop>
@@ -357,7 +416,9 @@ const submit = (): void => {
                                     </TableCell>
 
                                     <TableCell>
-                                        <p class="font-medium">{{ item.name }}</p>
+                                        <p class="font-medium">
+                                            {{ item.name }}
+                                        </p>
                                         <p
                                             v-if="item.description"
                                             class="text-xs text-muted-foreground"
@@ -377,25 +438,40 @@ const submit = (): void => {
                                     </TableCell>
 
                                     <TableCell class="text-right" @click.stop>
-                                        <div v-if="isItemSelected(item.id)" class="flex items-center justify-end gap-0">
+                                        <div
+                                            v-if="isItemSelected(item.id)"
+                                            class="flex items-center justify-end gap-0"
+                                        >
                                             <Button
                                                 type="button"
                                                 variant="outline"
                                                 size="icon"
                                                 class="h-7 w-7 rounded-r-none border-r-0"
-                                                :disabled="getCreditQuantity(item.id) <= 0.01"
+                                                :disabled="
+                                                    getCreditQuantity(
+                                                        item.id,
+                                                    ) <= 0.01
+                                                "
                                                 @click="adjustQty(item, -1)"
                                             >
                                                 <Minus class="h-3 w-3" />
                                             </Button>
                                             <Input
                                                 type="number"
-                                                :model-value="getCreditQuantity(item.id)"
+                                                :model-value="
+                                                    getCreditQuantity(item.id)
+                                                "
                                                 min="0.01"
                                                 :max="item.quantity"
                                                 step="0.01"
-                                                class="h-7 w-16 text-center tabular-nums rounded-none border-x-0"
-                                                @update:model-value="(v) => setCreditQuantity(item, v)"
+                                                class="h-7 w-16 rounded-none border-x-0 text-center tabular-nums"
+                                                @update:model-value="
+                                                    (v) =>
+                                                        setCreditQuantity(
+                                                            item,
+                                                            v,
+                                                        )
+                                                "
                                                 @click.stop
                                             />
                                             <Button
@@ -403,30 +479,52 @@ const submit = (): void => {
                                                 variant="outline"
                                                 size="icon"
                                                 class="h-7 w-7 rounded-l-none border-l-0"
-                                                :disabled="getCreditQuantity(item.id) >= item.quantity"
+                                                :disabled="
+                                                    getCreditQuantity(
+                                                        item.id,
+                                                    ) >= item.quantity
+                                                "
                                                 @click="adjustQty(item, 1)"
                                             >
                                                 <Plus class="h-3 w-3" />
                                             </Button>
                                         </div>
-                                        <span v-else class="text-muted-foreground/40">—</span>
+                                        <span
+                                            v-else
+                                            class="text-muted-foreground/40"
+                                            >—</span
+                                        >
                                     </TableCell>
 
                                     <TableCell class="text-right tabular-nums">
-                                        {{ formatCurrency(Number(item.base_unit_price)) }}
+                                        {{
+                                            formatCurrency(
+                                                Number(item.base_unit_price),
+                                            )
+                                        }}
                                     </TableCell>
 
-                                    <TableCell class="text-right font-semibold tabular-nums">
+                                    <TableCell
+                                        class="text-right font-semibold tabular-nums"
+                                    >
                                         <span v-if="isItemSelected(item.id)">
                                             {{
                                                 formatCurrency(
-                                                    Number(form.line_items.find(
-                                                        li => li.original_line_item_id === item.id
-                                                    )?.total ?? 0)
+                                                    Number(
+                                                        form.line_items.find(
+                                                            (li) =>
+                                                                li.original_line_item_id ===
+                                                                item.id,
+                                                        )?.total ?? 0,
+                                                    ),
                                                 )
                                             }}
                                         </span>
-                                        <span v-else class="text-muted-foreground/40">—</span>
+                                        <span
+                                            v-else
+                                            class="text-muted-foreground/40"
+                                            >—</span
+                                        >
                                     </TableCell>
                                 </TableRow>
                             </template>
@@ -468,7 +566,11 @@ const submit = (): void => {
                                 v-model="form.reason"
                                 placeholder="Explain why this credit note is being issued. The client will see this."
                                 :rows="3"
-                                :class="form.errors.reason ? 'border-destructive' : ''"
+                                :class="
+                                    form.errors.reason
+                                        ? 'border-destructive'
+                                        : ''
+                                "
                             />
                             <p
                                 v-if="form.errors.reason"
@@ -477,7 +579,8 @@ const submit = (): void => {
                                 {{ form.errors.reason }}
                             </p>
                             <p class="text-xs text-muted-foreground">
-                                This reason is visible to the client on the credit note document.
+                                This reason is visible to the client on the
+                                credit note document.
                             </p>
                         </div>
 
@@ -494,24 +597,33 @@ const submit = (): void => {
             </div>
 
             <div class="space-y-4">
-
                 <div class="rounded-xl border bg-muted/30 p-4">
-                    <p class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <p
+                        class="mb-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
+                    >
                         Against invoice
                     </p>
                     <p class="font-semibold">{{ invoice.invoice_number }}</p>
-                    <p class="text-sm text-muted-foreground">{{ invoice.client.company_name }}</p>
+                    <p class="text-sm text-muted-foreground">
+                        {{ invoice.client.company_name }}
+                    </p>
                     <Separator class="my-3" />
                     <div class="space-y-1 text-sm">
                         <div class="flex justify-between">
-                            <span class="text-muted-foreground">Invoice total</span>
-                            <span class="tabular-nums">{{ formatCurrency(Number(invoice.base_total)) }}</span>
+                            <span class="text-muted-foreground"
+                                >Invoice total</span
+                            >
+                            <span class="tabular-nums">{{
+                                formatCurrency(Number(invoice.base_total))
+                            }}</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="rounded-xl border bg-card p-4">
-                    <p class="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <p
+                        class="mb-3 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
+                    >
                         Credit summary
                     </p>
 
@@ -521,23 +633,35 @@ const submit = (): void => {
                             class="flex justify-between"
                         >
                             <span class="text-muted-foreground">Subtotal</span>
-                            <span class="tabular-nums">{{ formatCurrency(Number(creditSubtotal)) }}</span>
+                            <span class="tabular-nums">{{
+                                formatCurrency(Number(creditSubtotal))
+                            }}</span>
                         </div>
                         <div
                             v-if="form.type !== 'partial' && creditTax > 0"
                             class="flex justify-between"
                         >
-                            <span class="text-muted-foreground">Tax credited</span>
-                            <span class="tabular-nums">{{ formatCurrency(Number(creditTax)) }}</span>
+                            <span class="text-muted-foreground"
+                                >Tax credited</span
+                            >
+                            <span class="tabular-nums">{{
+                                formatCurrency(Number(creditTax))
+                            }}</span>
                         </div>
 
                         <Separator class="my-1" />
 
-                        <div class="flex justify-between font-semibold text-base">
+                        <div
+                            class="flex justify-between text-base font-semibold"
+                        >
                             <span>Total credit</span>
                             <span
                                 class="tabular-nums"
-                                :class="creditTotal > 0 ? 'text-emerald-600' : 'text-muted-foreground'"
+                                :class="
+                                    creditTotal > 0
+                                        ? 'text-emerald-600'
+                                        : 'text-muted-foreground'
+                                "
                             >
                                 {{ formatCurrency(Number(creditTotal)) }}
                             </span>
@@ -549,18 +673,30 @@ const submit = (): void => {
                         >
                             <span>New balance after credit</span>
                             <span class="tabular-nums">
-                                {{ formatCurrency(Math.max(0, invoice.total - creditTotal)) }}
+                                {{
+                                    formatCurrency(
+                                        Math.max(
+                                            0,
+                                            invoice.total - creditTotal,
+                                        ),
+                                    )
+                                }}
                             </span>
                         </div>
                     </div>
 
                     <div
-                        v-if="form.type === 'line_items' && form.line_items.length > 0"
+                        v-if="
+                            form.type === 'line_items' &&
+                            form.line_items.length > 0
+                        "
                         class="mt-3 rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground"
                     >
                         {{ form.line_items.length }}
-                        item{{ form.line_items.length !== 1 ? 's' : '' }} selected
-                        for credit
+                        item{{
+                            form.line_items.length !== 1 ? 's' : ''
+                        }}
+                        selected for credit
                     </div>
 
                     <div
@@ -569,8 +705,8 @@ const submit = (): void => {
                     >
                         <Info class="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            This will cancel the entire invoice.
-                            The client's balance will be reduced to zero.
+                            This will cancel the entire invoice. The client's
+                            balance will be reduced to zero.
                         </span>
                     </div>
                 </div>
@@ -583,11 +719,7 @@ const submit = (): void => {
                     >
                         Issue credit note
                     </Button>
-                    <Button
-                        variant="outline"
-                        class="w-full"
-                        as-child
-                    >
+                    <Button variant="outline" class="w-full" as-child>
                         <Link :href="`/invoices/${invoice.id}`">Cancel</Link>
                     </Button>
                 </div>
@@ -596,13 +728,24 @@ const submit = (): void => {
                     v-if="!canSubmit"
                     class="rounded-xl border border-dashed p-4 text-xs text-muted-foreground"
                 >
-                    <p class="font-medium text-foreground">Before you can submit:</p>
+                    <p class="font-medium text-foreground">
+                        Before you can submit:
+                    </p>
                     <ul class="mt-2 space-y-1">
-                        <li v-if="!form.reason.trim()">→ Add a reason for the credit note</li>
-                        <li v-if="form.type === 'partial' && !partialAmountValid">
-                            → Enter a valid credit amount (between 0.01 and {{ formatCurrency(Number(invoice.base_total)) }})
+                        <li v-if="!form.reason.trim()">
+                            → Add a reason for the credit note
                         </li>
-                        <li v-if="form.type === 'line_items' && !lineItemsValid">
+                        <li
+                            v-if="
+                                form.type === 'partial' && !partialAmountValid
+                            "
+                        >
+                            → Enter a valid credit amount (between 0.01 and
+                            {{ formatCurrency(Number(invoice.base_total)) }})
+                        </li>
+                        <li
+                            v-if="form.type === 'line_items' && !lineItemsValid"
+                        >
                             → Select at least one item to credit
                         </li>
                     </ul>

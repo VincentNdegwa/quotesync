@@ -3,7 +3,12 @@ import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -26,26 +31,30 @@ const formData = ref({
 });
 
 const submitPayment = () => {
-    router.post(`/invoices/${props.invoiceId}/record-payment`, {
-        amount: formData.value.amount,
-        payment_date: formData.value.payment_date,
-        payment_method: formData.value.payment_method,
-        reference_number: formData.value.reference_number,
-        notes: formData.value.notes,
-    }, {
-        onSuccess: () => {
-            emit('update:open', false);
-            formData.value = {
-                amount: '',
-                payment_date: new Date().toISOString().split('T')[0],
-                payment_method: '',
-                reference_number: '',
-                notes: '',
-            };
-            toast.success('Payment recorded successfully');
-            emit('success');
+    router.post(
+        `/invoices/${props.invoiceId}/record-payment`,
+        {
+            amount: formData.value.amount,
+            payment_date: formData.value.payment_date,
+            payment_method: formData.value.payment_method,
+            reference_number: formData.value.reference_number,
+            notes: formData.value.notes,
         },
-    });
+        {
+            onSuccess: () => {
+                emit('update:open', false);
+                formData.value = {
+                    amount: '',
+                    payment_date: new Date().toISOString().split('T')[0],
+                    payment_method: '',
+                    reference_number: '',
+                    notes: '',
+                };
+                toast.success('Payment recorded successfully');
+                emit('success');
+            },
+        },
+    );
 };
 
 const closeDialog = () => {
@@ -110,7 +119,11 @@ const closeDialog = () => {
                 </div>
 
                 <div class="flex gap-2">
-                    <Button variant="outline" @click="closeDialog" class="flex-1">
+                    <Button
+                        variant="outline"
+                        @click="closeDialog"
+                        class="flex-1"
+                    >
                         Cancel
                     </Button>
                     <Button @click="submitPayment" class="flex-1">

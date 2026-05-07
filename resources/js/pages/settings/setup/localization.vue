@@ -29,9 +29,14 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import type { WorkspaceSettingsField, WorkspaceSettingsPageProps } from '@/types';
+import type {
+    WorkspaceSettingsField,
+    WorkspaceSettingsPageProps,
+} from '@/types';
 
-const props = defineProps<WorkspaceSettingsPageProps & { timezones?: string[] }>();
+const props = defineProps<
+    WorkspaceSettingsPageProps & { timezones?: string[] }
+>();
 
 defineOptions({
     layout: {
@@ -44,7 +49,9 @@ defineOptions({
     },
 });
 
-const updateAction = computed(() => `/business-setup/${props.currentGroup.group}`);
+const updateAction = computed(
+    () => `/business-setup/${props.currentGroup.group}`,
+);
 
 const buildFormValues = (
     fields: WorkspaceSettingsField[],
@@ -63,7 +70,9 @@ const buildFormValues = (
                 return values;
             }
 
-            values[field.key] = Array.isArray(field.value) ? field.value.join(',') : field.value;
+            values[field.key] = Array.isArray(field.value)
+                ? field.value.join(',')
+                : field.value;
 
             return values;
         },
@@ -71,7 +80,9 @@ const buildFormValues = (
     );
 };
 
-const formValues = reactive<Record<string, any>>(buildFormValues(props.currentGroup.fields));
+const formValues = reactive<Record<string, any>>(
+    buildFormValues(props.currentGroup.fields),
+);
 
 const timezoneOpen = ref(false);
 
@@ -80,7 +91,8 @@ const selectedTimezone = computed(() =>
 );
 
 function selectTimezone(selectedValue: string) {
-    formValues.timezone = selectedValue === formValues.timezone ? '' : selectedValue;
+    formValues.timezone =
+        selectedValue === formValues.timezone ? '' : selectedValue;
     timezoneOpen.value = false;
 }
 
@@ -93,7 +105,6 @@ watch(
     },
     { immediate: true, deep: true },
 );
-
 </script>
 
 <template>
@@ -115,7 +126,7 @@ watch(
         >
             <!-- Date & Time Settings -->
             <div class="space-y-4">
-                <h3 class="text-lg font-semibold flex items-center gap-2">
+                <h3 class="flex items-center gap-2 text-lg font-semibold">
                     <Clock class="h-5 w-5" />
                     Date & Time Settings
                 </h3>
@@ -130,27 +141,46 @@ watch(
                                     :aria-expanded="timezoneOpen"
                                     class="w-full justify-between"
                                 >
-                                    {{ formValues.timezone || "Select timezone..." }}
-                                    <ChevronsUpDown class="opacity-50 h-4 w-4" />
+                                    {{
+                                        formValues.timezone ||
+                                        'Select timezone...'
+                                    }}
+                                    <ChevronsUpDown
+                                        class="h-4 w-4 opacity-50"
+                                    />
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent class="w-full p-0">
                                 <Command>
-                                    <CommandInput placeholder="Search timezone..." />
+                                    <CommandInput
+                                        placeholder="Search timezone..."
+                                    />
                                     <CommandList>
-                                        <CommandEmpty>No timezone found.</CommandEmpty>
+                                        <CommandEmpty
+                                            >No timezone found.</CommandEmpty
+                                        >
                                         <CommandGroup>
                                             <CommandItem
-                                                v-for="tz in props.timezones || []"
+                                                v-for="tz in props.timezones ||
+                                                []"
                                                 :key="tz"
                                                 :value="tz"
-                                                @select="(ev) => selectTimezone(ev.detail.value as string)"
+                                                @select="
+                                                    (ev) =>
+                                                        selectTimezone(
+                                                            ev.detail
+                                                                .value as string,
+                                                        )
+                                                "
                                             >
                                                 {{ tz }}
                                                 <Check
                                                     :class="[
                                                         'ml-auto h-4 w-4',
-                                                        formValues.timezone === tz ? 'opacity-100' : 'opacity-0',
+                                                        formValues.timezone ===
+                                                        tz
+                                                            ? 'opacity-100'
+                                                            : 'opacity-0',
                                                     ]"
                                                 />
                                             </CommandItem>
@@ -168,35 +198,57 @@ watch(
                     </div>
                     <div class="space-y-2">
                         <Label for="date_format">Date Format</Label>
-                        <Select v-model="formValues.date_format" name="settings[date_format]">
+                        <Select
+                            v-model="formValues.date_format"
+                            name="settings[date_format]"
+                        >
                             <SelectTrigger class="w-full" id="date_format">
                                 <SelectValue placeholder="Select date format" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="MMM D, YYYY">MMM D, YYYY</SelectItem>
-                                <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
-                                <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
+                                <SelectItem value="MMM D, YYYY"
+                                    >MMM D, YYYY</SelectItem
+                                >
+                                <SelectItem value="YYYY-MM-DD"
+                                    >YYYY-MM-DD</SelectItem
+                                >
+                                <SelectItem value="DD/MM/YYYY"
+                                    >DD/MM/YYYY</SelectItem
+                                >
                             </SelectContent>
                         </Select>
                         <InputError :message="errors['settings.date_format']" />
                     </div>
                     <div class="space-y-2">
                         <Label for="time_format">Time Format</Label>
-                        <Select v-model="formValues.time_format" name="settings[time_format]">
+                        <Select
+                            v-model="formValues.time_format"
+                            name="settings[time_format]"
+                        >
                             <SelectTrigger class="w-full" id="time_format">
                                 <SelectValue placeholder="Select time format" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="12h">12-hour (AM/PM)</SelectItem>
+                                <SelectItem value="12h"
+                                    >12-hour (AM/PM)</SelectItem
+                                >
                                 <SelectItem value="24h">24-hour</SelectItem>
                             </SelectContent>
                         </Select>
                         <InputError :message="errors['settings.time_format']" />
                     </div>
                     <div class="space-y-2">
-                        <Label for="fiscal_year_start_month">Fiscal Year Start Month</Label>
-                        <Select v-model="formValues.fiscal_year_start_month" name="settings[fiscal_year_start_month]">
-                            <SelectTrigger class="w-full" id="fiscal_year_start_month">
+                        <Label for="fiscal_year_start_month"
+                            >Fiscal Year Start Month</Label
+                        >
+                        <Select
+                            v-model="formValues.fiscal_year_start_month"
+                            name="settings[fiscal_year_start_month]"
+                        >
+                            <SelectTrigger
+                                class="w-full"
+                                id="fiscal_year_start_month"
+                            >
                                 <SelectValue placeholder="Select month" />
                             </SelectTrigger>
                             <SelectContent>
@@ -214,49 +266,80 @@ watch(
                                 <SelectItem value="12">December</SelectItem>
                             </SelectContent>
                         </Select>
-                        <InputError :message="errors['settings.fiscal_year_start_month']" />
+                        <InputError
+                            :message="
+                                errors['settings.fiscal_year_start_month']
+                            "
+                        />
                     </div>
                 </div>
             </div>
 
             <!-- Currency & Number Formatting -->
             <div class="space-y-4">
-                <h3 class="text-lg font-semibold flex items-center gap-2">
+                <h3 class="flex items-center gap-2 text-lg font-semibold">
                     <DollarSign class="h-5 w-5" />
                     Currency & Number Formatting
                 </h3>
                 <div class="grid gap-4 md:grid-cols-2">
                     <div class="space-y-2">
                         <Label for="currency_position">Currency Position</Label>
-                        <Select v-model="formValues.currency_position" name="settings[currency_position]">
-                            <SelectTrigger class="w-full" id="currency_position">
-                                <SelectValue placeholder="Select currency position" />
+                        <Select
+                            v-model="formValues.currency_position"
+                            name="settings[currency_position]"
+                        >
+                            <SelectTrigger
+                                class="w-full"
+                                id="currency_position"
+                            >
+                                <SelectValue
+                                    placeholder="Select currency position"
+                                />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="before">Before (e.g., $100)</SelectItem>
-                                <SelectItem value="after">After (e.g., 100$)</SelectItem>
+                                <SelectItem value="before"
+                                    >Before (e.g., $100)</SelectItem
+                                >
+                                <SelectItem value="after"
+                                    >After (e.g., 100$)</SelectItem
+                                >
                             </SelectContent>
                         </Select>
-                        <InputError :message="errors['settings.currency_position']" />
+                        <InputError
+                            :message="errors['settings.currency_position']"
+                        />
                     </div>
                     <div class="space-y-2">
                         <Label for="number_format">Number Format</Label>
-                        <Select v-model="formValues.number_format" name="settings[number_format]">
+                        <Select
+                            v-model="formValues.number_format"
+                            name="settings[number_format]"
+                        >
                             <SelectTrigger class="w-full" id="number_format">
-                                <SelectValue placeholder="Select number format" />
+                                <SelectValue
+                                    placeholder="Select number format"
+                                />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="1,000.00">1,000.00 (US/UK)</SelectItem>
-                                <SelectItem value="1.000,00">1.000,00 (Europe)</SelectItem>
+                                <SelectItem value="1,000.00"
+                                    >1,000.00 (US/UK)</SelectItem
+                                >
+                                <SelectItem value="1.000,00"
+                                    >1.000,00 (Europe)</SelectItem
+                                >
                             </SelectContent>
                         </Select>
-                        <InputError :message="errors['settings.number_format']" />
+                        <InputError
+                            :message="errors['settings.number_format']"
+                        />
                     </div>
                 </div>
             </div>
 
             <div class="flex justify-end">
-                <Button type="submit" :disabled="processing">Save settings</Button>
+                <Button type="submit" :disabled="processing"
+                    >Save settings</Button
+                >
             </div>
         </Form>
     </div>

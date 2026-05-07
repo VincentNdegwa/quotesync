@@ -223,14 +223,34 @@ export type EnumOption<T = string> = {
 };
 
 export type QuoteStatusEnum = {
-    value: 'draft' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'won' | 'lost' | 'expired';
+    value:
+        | 'draft'
+        | 'sent'
+        | 'viewed'
+        | 'accepted'
+        | 'declined'
+        | 'won'
+        | 'lost'
+        | 'expired';
     label: string;
     badgeColor: 'default' | 'secondary' | 'destructive' | 'outline';
     cssColor: string;
     availableActions: string[];
 };
 
-export type QuoteActivityTypeEnum = EnumOption<'created' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'follow_up_sent' | 'scheduled' | 'approval_requested' | 'approval_approved' | 'approval_rejected' | 'approval_granted'>;
+export type QuoteActivityTypeEnum = EnumOption<
+    | 'created'
+    | 'sent'
+    | 'viewed'
+    | 'accepted'
+    | 'declined'
+    | 'follow_up_sent'
+    | 'scheduled'
+    | 'approval_requested'
+    | 'approval_approved'
+    | 'approval_rejected'
+    | 'approval_granted'
+>;
 
 export type InvoiceActivity = {
     id: number;
@@ -241,7 +261,16 @@ export type InvoiceActivity = {
     user: { id: number; name: string } | null;
 };
 
-export type InvoiceActivityTypeEnum = EnumOption<'created' | 'sent' | 'viewed' | 'paid' | 'overdue' | 'partial' | 'voided' | 'scheduled'>;
+export type InvoiceActivityTypeEnum = EnumOption<
+    | 'created'
+    | 'sent'
+    | 'viewed'
+    | 'paid'
+    | 'overdue'
+    | 'partial'
+    | 'voided'
+    | 'scheduled'
+>;
 
 export type InvoiceBuilderLineItemTax = {
     tax_id: number | null;
@@ -304,12 +333,24 @@ export type QuoteFollowUpStatusEnum = {
 };
 
 export type TrackingEventTypeEnum = {
-    value: 'view' | 'section_visible' | 'scroll_depth' | 'time_spent' | 'link_click';
+    value:
+        | 'view'
+        | 'section_visible'
+        | 'scroll_depth'
+        | 'time_spent'
+        | 'link_click';
     label: string;
 };
 
 export type InvoiceStatusEnum = {
-    value: 'draft' | 'sent' | 'viewed' | 'partial' | 'paid' | 'overdue' | 'void';
+    value:
+        | 'draft'
+        | 'sent'
+        | 'viewed'
+        | 'partial'
+        | 'paid'
+        | 'overdue'
+        | 'void';
     label: string;
     badgeColor: 'default' | 'secondary' | 'destructive' | 'outline';
     cssColor: string;
@@ -359,7 +400,12 @@ export type InvoiceData = InvoiceBase & {
     created_by: number | null;
     updated_at: string | null;
     deleted_at: string | null;
-    workspace: { id: number; name: string; display_name: string; owner_id: number } | null;
+    workspace: {
+        id: number;
+        name: string;
+        display_name: string;
+        owner_id: number;
+    } | null;
     assignee: { id: number; name: string; email: string } | null;
     creator: { id: number; name: string; email: string } | null;
     quote: { id: number; number: string | null; title: string } | null;
@@ -384,7 +430,6 @@ export type InvoiceData = InvoiceBase & {
         user: { id: number; name: string } | null;
     }>;
 };
-
 
 export type WinProbabilityConfidenceEnum = {
     value: 'none' | 'low' | 'medium' | 'high';

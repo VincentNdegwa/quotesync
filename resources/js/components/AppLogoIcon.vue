@@ -14,10 +14,5 @@ defineProps<Props>();
 </script>
 
 <template>
-    <img
-        :src="faviconSvg"
-        :class="className"
-        v-bind="$attrs"
-        alt="Logo"
-    />
+    <img :src="faviconSvg" :class="className" v-bind="$attrs" alt="Logo" />
 </template>

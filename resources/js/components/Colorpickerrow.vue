@@ -30,14 +30,13 @@ const swatchColor = computed<string>(() => {
     const v = modelValue.value;
 
     if (!v) {
-return 'transparent';
-}
+        return 'transparent';
+    }
 
     return isValidHex(v) ? v : 'transparent';
 });
 
 const hasValue = computed(() => !!modelValue.value);
-
 
 function isValidHex(value: string): boolean {
     return /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(value);
@@ -47,12 +46,11 @@ function normalizeHex(value: string): string {
     let v = value.trim();
 
     if (v && !v.startsWith('#')) {
-v = `#${v}`;
-}
+        v = `#${v}`;
+    }
 
     return v.toUpperCase();
 }
-
 
 function onColorInputChange(e: Event): void {
     const val = (e.target as HTMLInputElement).value;
@@ -115,7 +113,6 @@ function onReset(): void {
         </p>
 
         <div class="flex items-center gap-2">
-
             <!-- ── Color swatch + native color picker ──────────────────────── -->
             <div
                 class="relative h-8 w-8 shrink-0 cursor-pointer overflow-hidden rounded-md border transition-shadow hover:shadow-md"
@@ -125,7 +122,19 @@ function onReset(): void {
                 <!-- Checkerboard pattern behind swatch to show transparency -->
                 <div
                     class="absolute inset-0"
-                    style="background-image: linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%);background-size:6px 6px;background-position:0 0,0 3px,3px -3px,-3px 0;"
+                    style="
+                        background-image:
+                            linear-gradient(45deg, #ccc 25%, transparent 25%),
+                            linear-gradient(-45deg, #ccc 25%, transparent 25%),
+                            linear-gradient(45deg, transparent 75%, #ccc 75%),
+                            linear-gradient(-45deg, transparent 75%, #ccc 75%);
+                        background-size: 6px 6px;
+                        background-position:
+                            0 0,
+                            0 3px,
+                            3px -3px,
+                            -3px 0;
+                    "
                 />
 
                 <!-- Solid color fill -->
@@ -164,7 +173,9 @@ function onReset(): void {
                 variant="ghost"
                 size="icon"
                 class="h-8 w-8 shrink-0 text-muted-foreground/50 transition-colors hover:text-destructive"
-                :class="hasValue ? 'opacity-100' : 'opacity-30 pointer-events-none'"
+                :class="
+                    hasValue ? 'opacity-100' : 'pointer-events-none opacity-30'
+                "
                 :disabled="disabled || !hasValue"
                 :title="hasValue ? 'Clear color' : 'No color set'"
                 @click="onReset"

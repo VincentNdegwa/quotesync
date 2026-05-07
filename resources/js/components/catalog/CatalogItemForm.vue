@@ -14,7 +14,11 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import type { CatalogCategoryRecord, ConfigurationUnitRecord, TaxRecord } from '@/types';
+import type {
+    CatalogCategoryRecord,
+    ConfigurationUnitRecord,
+    TaxRecord,
+} from '@/types';
 
 const NONE_OPTION = '__none__';
 
@@ -91,7 +95,8 @@ const selectedUnitId = computed<string | null>({
                             :key="unit.id"
                             :value="String(unit.id)"
                         >
-                            {{ unit.name }}{{ unit.symbol ? ` (${unit.symbol})` : '' }}
+                            {{ unit.name
+                            }}{{ unit.symbol ? ` (${unit.symbol})` : '' }}
                         </SelectItem>
                     </SelectContent>
                 </Select>
@@ -102,13 +107,25 @@ const selectedUnitId = computed<string | null>({
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div class="grid gap-2">
                 <Label for="unit_price" required>Unit price</Label>
-                <Input id="unit_price" type="number" step="0.01" min="0" v-model="form.unit_price" />
+                <Input
+                    id="unit_price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    v-model="form.unit_price"
+                />
                 <InputError :message="errors.unit_price" />
             </div>
 
             <div class="grid gap-2">
                 <Label for="cost_price">Cost price</Label>
-                <Input id="cost_price" type="number" step="0.01" min="0" v-model="form.cost_price" />
+                <Input
+                    id="cost_price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    v-model="form.cost_price"
+                />
                 <InputError :message="errors.cost_price" />
             </div>
         </div>
@@ -121,7 +138,9 @@ const selectedUnitId = computed<string | null>({
                         <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem :value="NONE_OPTION">No category</SelectItem>
+                        <SelectItem :value="NONE_OPTION"
+                            >No category</SelectItem
+                        >
                         <SelectItem
                             v-for="category in categories"
                             :key="category.id"
@@ -153,7 +172,10 @@ const selectedUnitId = computed<string | null>({
                         </SelectGroup>
                     </SelectContent>
                 </Select>
-                <p v-if="taxes.length === 0" class="text-sm text-muted-foreground">
+                <p
+                    v-if="taxes.length === 0"
+                    class="text-sm text-muted-foreground"
+                >
                     No active taxes found. Create taxes in Configuration.
                 </p>
                 <InputError :message="errors.tax_ids" />
@@ -162,21 +184,31 @@ const selectedUnitId = computed<string | null>({
 
         <div class="grid gap-2">
             <Label for="image">Image</Label>
-            <Input id="image" type="file" @change="(event: Event) => {
-                const target = event.target as HTMLInputElement;
-                form.image = target.files?.[0] ?? null;
-            }" />
+            <Input
+                id="image"
+                type="file"
+                @change="
+                    (event: Event) => {
+                        const target = event.target as HTMLInputElement;
+                        form.image = target.files?.[0] ?? null;
+                    }
+                "
+            />
             <InputError :message="errors.image" />
         </div>
 
         <div class="flex items-center justify-between rounded-md border p-3">
             <div>
                 <p class="text-sm font-medium">Active item</p>
-                <p class="text-xs text-muted-foreground">Inactive items are hidden from quick pickers.</p>
+                <p class="text-xs text-muted-foreground">
+                    Inactive items are hidden from quick pickers.
+                </p>
             </div>
             <Switch
                 :model-value="Boolean(form.is_active)"
-                @update:model-value="(checked: boolean) => (form.is_active = checked)"
+                @update:model-value="
+                    (checked: boolean) => (form.is_active = checked)
+                "
             />
         </div>
     </div>

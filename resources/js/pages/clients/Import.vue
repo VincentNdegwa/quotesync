@@ -56,8 +56,12 @@ const columnMapping = ref<Record<string, string>>({});
 const initializeMapping = (): void => {
     if (props.detectedColumns && props.requiredColumns) {
         props.requiredColumns.forEach((field) => {
-            const exactMatch = props.detectedColumns?.find((col) => col === field);
-            const fuzzyMatch = props.detectedColumns?.find((col) => col.includes(field) || field.includes(col));
+            const exactMatch = props.detectedColumns?.find(
+                (col) => col === field,
+            );
+            const fuzzyMatch = props.detectedColumns?.find(
+                (col) => col.includes(field) || field.includes(col),
+            );
             columnMapping.value[field] = exactMatch || fuzzyMatch || '__skip__';
         });
     }
@@ -89,8 +93,11 @@ const handlePreview = async (): Promise<void> => {
             const response = await fetch('/clients/import/preview', {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN':
+                        document
+                            .querySelector('meta[name="csrf-token"]')
+                            ?.getAttribute('content') || '',
+                    Accept: 'application/json',
                 },
                 body: formData,
                 signal: abortController.value.signal,
@@ -153,21 +160,42 @@ defineOptions({
 
     <div class="space-y-6">
         <div class="flex items-center justify-between">
-            <Heading title="Import Clients" description="Import clients from a CSV file." />
+            <Heading
+                title="Import Clients"
+                description="Import clients from a CSV file."
+            />
             <Button variant="outline" as-child>
-                <a href="/clients/import/template" download>Download template</a>
+                <a href="/clients/import/template" download
+                    >Download template</a
+                >
             </Button>
         </div>
 
         <div class="space-y-4 rounded-md border p-4">
-            <input type="file" @change="handleFileUpload" accept=".csv,.txt" :disabled="uploadForm.processing" />
-            <Button @click="handlePreview" :disabled="uploadForm.processing || !uploadForm.file">Preview import</Button>
+            <input
+                type="file"
+                @change="handleFileUpload"
+                accept=".csv,.txt"
+                :disabled="uploadForm.processing"
+            />
+            <Button
+                @click="handlePreview"
+                :disabled="uploadForm.processing || !uploadForm.file"
+                >Preview import</Button
+            >
         </div>
 
-        <div v-if="localDetectedColumns && localDetectedColumns.length > 0" class="space-y-4 rounded-md border p-4">
+        <div
+            v-if="localDetectedColumns && localDetectedColumns.length > 0"
+            class="space-y-4 rounded-md border p-4"
+        >
             <h3 class="font-medium">Map CSV columns to fields</h3>
             <div class="space-y-3">
-                <div v-for="field in localRequiredColumns" :key="field" class="flex items-center gap-4">
+                <div
+                    v-for="field in localRequiredColumns"
+                    :key="field"
+                    class="flex items-center gap-4"
+                >
                     <Label class="w-40">{{ field }}</Label>
                     <Select v-model="columnMapping[field]">
                         <SelectTrigger class="w-64">
@@ -175,7 +203,11 @@ defineOptions({
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="__skip__">Skip</SelectItem>
-                            <SelectItem v-for="col in localDetectedColumns" :key="col" :value="col">
+                            <SelectItem
+                                v-for="col in localDetectedColumns"
+                                :key="col"
+                                :value="col"
+                            >
                                 {{ col }}
                             </SelectItem>
                         </SelectContent>
@@ -184,10 +216,16 @@ defineOptions({
             </div>
         </div>
 
-        <div v-if="localPreviewRows && localPreviewRows.length > 0" class="space-y-4 rounded-md border p-4">
+        <div
+            v-if="localPreviewRows && localPreviewRows.length > 0"
+            class="space-y-4 rounded-md border p-4"
+        >
             <p class="text-sm text-muted-foreground">
-                Previewing {{ localPreviewRows.length }} rows (total {{ localTotalRows }})
-                <span v-if="localErrorCount > 0" class="text-destructive">, {{ localErrorCount }} errors found</span>
+                Previewing {{ localPreviewRows.length }} rows (total
+                {{ localTotalRows }})
+                <span v-if="localErrorCount > 0" class="text-destructive"
+                    >, {{ localErrorCount }} errors found</span
+                >
             </p>
 
             <Table>
@@ -211,16 +249,25 @@ defineOptions({
                         <TableCell>{{ row.data.phone }}</TableCell>
                         <TableCell>{{ row.data.country }}</TableCell>
                         <TableCell>
-                            <div v-if="row.errors.length > 0" class="text-destructive text-xs">
+                            <div
+                                v-if="row.errors.length > 0"
+                                class="text-xs text-destructive"
+                            >
                                 {{ row.errors.join(', ') }}
                             </div>
-                            <span v-else class="text-green-600 text-xs">Valid</span>
+                            <span v-else class="text-xs text-green-600"
+                                >Valid</span
+                            >
                         </TableCell>
                     </TableRow>
                 </TableBody>
             </Table>
 
-            <Button @click="handleConfirmImport" :disabled="confirmForm.processing || localErrorCount > 0">Confirm import</Button>
+            <Button
+                @click="handleConfirmImport"
+                :disabled="confirmForm.processing || localErrorCount > 0"
+                >Confirm import</Button
+            >
         </div>
     </div>
 </template>

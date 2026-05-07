@@ -79,16 +79,21 @@ const selectedTagIds = computed<string[]>({
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div class="grid gap-2">
                 <Label for="country">Country code</Label>
-                <CountryCombobox v-model="form.country" trigger-class="w-full" />
+                <CountryCombobox
+                    v-model="form.country"
+                    trigger-class="w-full"
+                />
                 <InputError :message="errors.country" />
             </div>
 
             <div class="grid gap-2">
                 <Label for="currency">Currency</Label>
-                <CurrencyCombobox v-model="form.currency" trigger-class="w-full" />
+                <CurrencyCombobox
+                    v-model="form.currency"
+                    trigger-class="w-full"
+                />
                 <InputError :message="errors.currency" />
             </div>
-
         </div>
 
         <!-- <div class="grid gap-2">
@@ -136,7 +141,10 @@ const selectedTagIds = computed<string[]>({
                     </SelectGroup>
                 </SelectContent>
             </Select>
-            <p v-if="availableTags.length === 0" class="text-sm text-muted-foreground">
+            <p
+                v-if="availableTags.length === 0"
+                class="text-sm text-muted-foreground"
+            >
                 No tags found. Create tags in Configuration.
             </p>
             <InputError :message="errors.tag_ids" />

@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { MessageSquare, Send, X, Minimize2, Maximize2 } from 'lucide-vue-next';
 import { ref } from 'vue';
-import { store, storeFromPortal, index, indexFromPortal } from '@/actions/App/Http/Controllers/QuoteMessageController';
+import {
+    store,
+    storeFromPortal,
+    index,
+    indexFromPortal,
+} from '@/actions/App/Http/Controllers/QuoteMessageController';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -29,27 +34,33 @@ const sendingMessage = ref(false);
 const localMessages = ref([...(props.messages || [])]);
 
 const loadMessages = () => {
-    const indexEndpoint = props.isClient 
-        ? indexFromPortal(props.quoteId).url 
+    const indexEndpoint = props.isClient
+        ? indexFromPortal(props.quoteId).url
         : index(Number(props.quoteId)).url;
-    
+
     fetch(indexEndpoint, {
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            'X-CSRF-TOKEN':
+                document
+                    .querySelector('meta[name="csrf-token"]')
+                    ?.getAttribute('content') || '',
         },
     })
-    .then(response => response.json())
-    .then(data => {
-        localMessages.value = data;
-    })
-    .catch(error => {
-        console.error('Error loading messages:', error);
-    });
+        .then((response) => response.json())
+        .then((data) => {
+            localMessages.value = data;
+        })
+        .catch((error) => {
+            console.error('Error loading messages:', error);
+        });
 };
 
 const formatTime = (date: string) => {
-    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return new Date(date).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+    });
 };
 
 const toggleChat = () => {
@@ -67,40 +78,46 @@ const toggleMinimize = () => {
 
 const sendMessage = () => {
     if (!newMessage.value.trim()) {
-return;
-}
+        return;
+    }
 
     sendingMessage.value = true;
-    const endpoint = props.endpoint || (props.isClient ? storeFromPortal(props.quoteId).url : store(Number(props.quoteId)).url);
-    
+    const endpoint =
+        props.endpoint ||
+        (props.isClient
+            ? storeFromPortal(props.quoteId).url
+            : store(Number(props.quoteId)).url);
+
     fetch(endpoint, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            'X-CSRF-TOKEN':
+                document
+                    .querySelector('meta[name="csrf-token"]')
+                    ?.getAttribute('content') || '',
         },
         body: JSON.stringify({
             message: newMessage.value,
         }),
     })
-    .then(response => response.json())
-    .then(data => {
-        newMessage.value = '';
-        sendingMessage.value = false;
-        // Add the new message to local messages
-        localMessages.value.push(data);
-        emit('messageSent', data);
-    })
-    .catch(error => {
-        console.error('Error sending message:', error);
-        sendingMessage.value = false;
-    });
+        .then((response) => response.json())
+        .then((data) => {
+            newMessage.value = '';
+            sendingMessage.value = false;
+            // Add the new message to local messages
+            localMessages.value.push(data);
+            emit('messageSent', data);
+        })
+        .catch((error) => {
+            console.error('Error sending message:', error);
+            sendingMessage.value = false;
+        });
 };
 </script>
 
 <template>
-    <div class="fixed bottom-6 right-6 z-50">
-
+    <div class="fixed right-6 bottom-6 z-50">
         <Transition
             enter-active-class="transition ease-out duration-200"
             enter-from-class="scale-0 opacity-0"
@@ -112,13 +129,13 @@ return;
             <Button
                 v-if="!isOpen"
                 @click="toggleChat"
-                class="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground"
+                class="h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
                 size="icon"
             >
                 <MessageSquare class="h-6 w-6" />
                 <span
                     v-if="localMessages && localMessages.length > 0"
-                    class="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-[10px] text-destructive-foreground flex items-center justify-center font-semibold"
+                    class="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-semibold text-destructive-foreground"
                 >
                     {{ localMessages.length }}
                 </span>
@@ -136,17 +153,32 @@ return;
         >
             <div
                 v-if="isOpen"
-                class="w-[500px] bg-card rounded-xl shadow-lg border custom-scrollbar overflow-hidden"
+                class="custom-scrollbar w-[500px] overflow-hidden rounded-xl border bg-card shadow-lg"
             >
                 <!-- Header -->
-                <div class="bg-primary px-4 py-3 flex items-center justify-between">
+                <div
+                    class="flex items-center justify-between bg-primary px-4 py-3"
+                >
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-                            <MessageSquare class="h-4 w-4 text-primary-foreground" />
+                        <div
+                            class="flex h-8 w-8 items-center justify-center rounded-full bg-primary-foreground/20"
+                        >
+                            <MessageSquare
+                                class="h-4 w-4 text-primary-foreground"
+                            />
                         </div>
                         <div>
-                            <h3 class="font-semibold text-primary-foreground text-sm">Messages</h3>
-                            <p v-if="localMessages" class="text-xs text-primary-foreground/70">{{ localMessages.length }} messages</p>
+                            <h3
+                                class="text-sm font-semibold text-primary-foreground"
+                            >
+                                Messages
+                            </h3>
+                            <p
+                                v-if="localMessages"
+                                class="text-xs text-primary-foreground/70"
+                            >
+                                {{ localMessages.length }} messages
+                            </p>
                         </div>
                     </div>
                     <div class="flex items-center gap-1">
@@ -171,55 +203,100 @@ return;
                 </div>
 
                 <!-- Messages -->
-                <div v-if="!isMinimized" class="h-[500px] flex flex-col">
-                    <div class="flex-1 overflow-y-auto p-4 space-y-3 bg-muted/30">
-                        <div v-if="!localMessages || localMessages.length === 0" class="text-center py-8">
-                            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted mb-3">
-                                <MessageSquare class="h-6 w-6 text-muted-foreground" />
+                <div v-if="!isMinimized" class="flex h-[500px] flex-col">
+                    <div
+                        class="flex-1 space-y-3 overflow-y-auto bg-muted/30 p-4"
+                    >
+                        <div
+                            v-if="!localMessages || localMessages.length === 0"
+                            class="py-8 text-center"
+                        >
+                            <div
+                                class="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-muted"
+                            >
+                                <MessageSquare
+                                    class="h-6 w-6 text-muted-foreground"
+                                />
                             </div>
-                            <p class="text-sm text-muted-foreground">No messages yet</p>
-                            <p class="text-xs text-muted-foreground/70 mt-1">Start the conversation!</p>
+                            <p class="text-sm text-muted-foreground">
+                                No messages yet
+                            </p>
+                            <p class="mt-1 text-xs text-muted-foreground/70">
+                                Start the conversation!
+                            </p>
                         </div>
                         <div
                             v-for="message in localMessages || []"
                             :key="message.id"
                             :class="[
                                 'flex gap-2',
-                                (props.isClient && message.sender_type === 'portal_user') || (!props.isClient && message.sender_type === 'user')
-                                    ? 'flex-row-reverse' 
-                                    : 'flex-row'
+                                (props.isClient &&
+                                    message.sender_type === 'portal_user') ||
+                                (!props.isClient &&
+                                    message.sender_type === 'user')
+                                    ? 'flex-row-reverse'
+                                    : 'flex-row',
                             ]"
                         >
-                            <div :class="[
-                                'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold',
-                                (props.isClient && message.sender_type === 'portal_user') || (!props.isClient && message.sender_type === 'user')
-                                    ? 'bg-primary text-primary-foreground' 
-                                    : 'bg-secondary text-secondary-foreground'
-                            ]">
-                                {{ message.sender_name?.charAt(0).toUpperCase() || '?' }}
+                            <div
+                                :class="[
+                                    'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold',
+                                    (props.isClient &&
+                                        message.sender_type ===
+                                            'portal_user') ||
+                                    (!props.isClient &&
+                                        message.sender_type === 'user')
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-secondary text-secondary-foreground',
+                                ]"
+                            >
+                                {{
+                                    message.sender_name
+                                        ?.charAt(0)
+                                        .toUpperCase() || '?'
+                                }}
                             </div>
-                            <div :class="[
-                                'max-w-[75%] p-3 rounded-lg',
-                                (props.isClient && message.sender_type === 'portal_user') || (!props.isClient && message.sender_type === 'user')
-                                    ? 'bg-primary text-primary-foreground rounded-br-md' 
-                                    : 'bg-card text-card-foreground border rounded-bl-md'
-                            ]">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span class="font-medium text-xs">{{ message.sender_name }}</span>
-                                    <span :class="[
-                                        'text-[10px]',
-                                        (props.isClient && message.sender_type === 'portal_user') || (!props.isClient && message.sender_type === 'user')
-                                            ? 'text-primary-foreground/70' 
-                                            : 'text-muted-foreground'
-                                    ]">{{ formatTime(message.created_at) }}</span>
+                            <div
+                                :class="[
+                                    'max-w-[75%] rounded-lg p-3',
+                                    (props.isClient &&
+                                        message.sender_type ===
+                                            'portal_user') ||
+                                    (!props.isClient &&
+                                        message.sender_type === 'user')
+                                        ? 'rounded-br-md bg-primary text-primary-foreground'
+                                        : 'rounded-bl-md border bg-card text-card-foreground',
+                                ]"
+                            >
+                                <div class="mb-1 flex items-center gap-2">
+                                    <span class="text-xs font-medium">{{
+                                        message.sender_name
+                                    }}</span>
+                                    <span
+                                        :class="[
+                                            'text-[10px]',
+                                            (props.isClient &&
+                                                message.sender_type ===
+                                                    'portal_user') ||
+                                            (!props.isClient &&
+                                                message.sender_type === 'user')
+                                                ? 'text-primary-foreground/70'
+                                                : 'text-muted-foreground',
+                                        ]"
+                                        >{{
+                                            formatTime(message.created_at)
+                                        }}</span
+                                    >
                                 </div>
-                                <p class="text-sm leading-relaxed">{{ message.message }}</p>
+                                <p class="text-sm leading-relaxed">
+                                    {{ message.message }}
+                                </p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Input -->
-                    <div class="p-3 border-t bg-card">
+                    <div class="border-t bg-card p-3">
                         <div class="flex gap-2">
                             <Textarea
                                 v-model="newMessage"
@@ -228,10 +305,10 @@ return;
                                 rows="2"
                                 @keydown.ctrl.enter="sendMessage"
                             />
-                            <Button 
-                                @click="sendMessage" 
+                            <Button
+                                @click="sendMessage"
                                 :disabled="sendingMessage || !newMessage.trim()"
-                                class="self-end h-9 px-3 bg-primary hover:bg-primary/90 text-primary-foreground"
+                                class="h-9 self-end bg-primary px-3 text-primary-foreground hover:bg-primary/90"
                                 size="sm"
                             >
                                 <Send class="h-4 w-4" />

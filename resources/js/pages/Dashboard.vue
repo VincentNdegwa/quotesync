@@ -20,8 +20,8 @@ import {
     TrendingDown,
     TrendingUp,
 } from 'lucide-vue-next';
-import { computed  } from 'vue';
-import type {Component} from 'vue';
+import { computed } from 'vue';
+import type { Component } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -122,10 +122,13 @@ const props = defineProps<{
     generated_at: string;
 }>();
 
-const { formatCurrency, formatNumber, formatRelativeTime } = useFormat(usePage().props.workspace_currency as string || undefined);
+const { formatCurrency, formatNumber, formatRelativeTime } = useFormat(
+    (usePage().props.workspace_currency as string) || undefined,
+);
 
 const formatPercent = (value: number): string => `${formatNumber(value, 0)}%`;
-const formatTrendValue = (value: number): string => formatNumber(value, Math.abs(value) < 10 ? 1 : 0);
+const formatTrendValue = (value: number): string =>
+    formatNumber(value, Math.abs(value) < 10 ? 1 : 0);
 
 type StatCard = {
     key: string;
@@ -360,7 +363,6 @@ defineOptions({
             >
         </div>
 
-
         <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <Card
                 v-for="stat in statCards"
@@ -378,28 +380,32 @@ defineOptions({
                             >{{ stat.value }}</CardTitle
                         >
                         <div
-                        v-if="stat.trend !== null"
-                        class="flex items-center gap-1 text-xs"
+                            v-if="stat.trend !== null"
+                            class="flex items-center gap-1 text-xs"
                         >
-                        <span
-                        :class="
+                            <span
+                                :class="
                                     stat.trend >= 0
-                                    ? 'text-emerald-600'
-                                    : 'text-rose-600'
-                                    "
+                                        ? 'text-emerald-600'
+                                        : 'text-rose-600'
+                                "
                                 class="flex items-center gap-1 font-semibold"
-                                >
+                            >
                                 <span>{{ stat.trend >= 0 ? '↑' : '↓' }}</span>
                                 <span>{{ formatTrendValue(stat.trend) }}%</span>
-                              </span>
+                            </span>
                         </div>
                     </div>
                 </CardHeader>
                 <CardFooter
                     v-if="stat.trend !== null || stat.note || stat.valueText"
-                    class="pt-0 flex flex-col items-start"
+                    class="flex flex-col items-start pt-0"
                 >
-                    <span v-if="stat.valueText" class="text-xs text-muted-foreground">{{ stat.valueText }}</span>
+                    <span
+                        v-if="stat.valueText"
+                        class="text-xs text-muted-foreground"
+                        >{{ stat.valueText }}</span
+                    >
 
                     <div
                         class="flex items-center gap-2 text-sm text-muted-foreground"
@@ -498,7 +504,10 @@ defineOptions({
                                         { labelKey: 'month' },
                                     )
                                 "
-                                :color="[revenueChartConfig.pipeline.color, revenueChartConfig.won.color]"
+                                :color="[
+                                    revenueChartConfig.pipeline.color,
+                                    revenueChartConfig.won.color,
+                                ]"
                             />
                         </VisXYContainer>
                         <ChartLegendContent class="mt-4 justify-start" />
@@ -570,7 +579,9 @@ defineOptions({
                                 :num-ticks="4"
                                 :tick-line="false"
                                 :domain-line="false"
-                                :tick-format="(d: number) => formatNumber(d) + '%'"
+                                :tick-format="
+                                    (d: number) => formatNumber(d) + '%'
+                                "
                             />
                             <ChartTooltip />
                             <ChartCrosshair

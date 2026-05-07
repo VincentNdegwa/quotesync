@@ -79,7 +79,9 @@ const submit = (): void => {
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>Edit industry</DialogTitle>
-                <DialogDescription>Update this industry classification.</DialogDescription>
+                <DialogDescription
+                    >Update this industry classification.</DialogDescription
+                >
             </DialogHeader>
 
             <form class="space-y-4" @submit.prevent="submit">
@@ -90,8 +92,13 @@ const submit = (): void => {
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="industry_edit_description">Description (optional)</Label>
-                    <Input id="industry_edit_description" v-model="form.description" />
+                    <Label for="industry_edit_description"
+                        >Description (optional)</Label
+                    >
+                    <Input
+                        id="industry_edit_description"
+                        v-model="form.description"
+                    />
                     <InputError :message="form.errors.description" />
                 </div>
 
@@ -103,21 +110,36 @@ const submit = (): void => {
 
                 <div class="grid gap-2">
                     <Label for="industry_edit_color">Color (optional)</Label>
-                    <Input id="industry_edit_color" v-model="form.color" type="color" />
+                    <Input
+                        id="industry_edit_color"
+                        v-model="form.color"
+                        type="color"
+                    />
                     <InputError :message="form.errors.color" />
                 </div>
 
-                <div class="flex items-center justify-between rounded-md border p-3">
+                <div
+                    class="flex items-center justify-between rounded-md border p-3"
+                >
                     <span class="text-sm">Active</span>
                     <Switch
                         :model-value="Boolean(form.is_active)"
-                        @update:model-value="(checked: boolean) => (form.is_active = checked)"
+                        @update:model-value="
+                            (checked: boolean) => (form.is_active = checked)
+                        "
                     />
                 </div>
 
                 <DialogFooter>
-                    <Button type="button" variant="outline" @click="open = false">Cancel</Button>
-                    <Button type="submit" :disabled="form.processing">Save changes</Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="open = false"
+                        >Cancel</Button
+                    >
+                    <Button type="submit" :disabled="form.processing"
+                        >Save changes</Button
+                    >
                 </DialogFooter>
             </form>
         </DialogContent>

@@ -44,12 +44,9 @@ const query = ref({
 
 let handle: ReturnType<typeof setTimeout> | null = null;
 
-
 defineOptions({
     layout: {
-        breadcrumbs: [
-            {title:"Tasks", href: TaskController.index().url}
-        ],
+        breadcrumbs: [{ title: 'Tasks', href: TaskController.index().url }],
     },
 });
 
@@ -65,7 +62,8 @@ watch(
                 '/tasks',
                 {
                     search: query.value.search,
-                    status: query.value.status === ALL ? '' : query.value.status,
+                    status:
+                        query.value.status === ALL ? '' : query.value.status,
                     sort: query.value.sort,
                 },
                 {
@@ -96,7 +94,7 @@ const executeDelete = (): void => {
             onSuccess: () => {
                 showDeleteDialog.value = false;
                 taskToDelete.value = null;
-            }
+            },
         });
     }
 };
@@ -110,21 +108,22 @@ const openCreateDialog = (): void => {
 };
 
 const openEditDialog = (taskId: number): void => {
-    const task = props.tasks.data.find(t => t.id === taskId);
+    const task = props.tasks.data.find((t) => t.id === taskId);
 
     if (task) {
         editingTask.value = task;
         showEditDialog.value = true;
     }
 };
-
 </script>
 
 <template>
     <Head title="Tasks" />
 
     <div class="space-y-4">
-        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div
+            class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+        >
             <Heading
                 title="Tasks"
                 description="Manage tasks across quotes, invoices, and other entities."
@@ -135,7 +134,11 @@ const openEditDialog = (taskId: number): void => {
 
         <div class="rounded-lg border p-3">
             <div class="flex flex-col gap-3 md:flex-row md:items-center">
-                <Input v-model="query.search" placeholder="Search task title or description" class="w-full md:w-96" />
+                <Input
+                    v-model="query.search"
+                    placeholder="Search task title or description"
+                    class="w-full md:w-96"
+                />
 
                 <Select v-model="query.status">
                     <SelectTrigger class="w-full md:w-44">
@@ -143,10 +146,10 @@ const openEditDialog = (taskId: number): void => {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem :value="ALL">All statuses</SelectItem>
-                        
-                        <SelectItem 
-                            v-for="status in taskStatuses" 
-                            :key="status.id" 
+
+                        <SelectItem
+                            v-for="status in taskStatuses"
+                            :key="status.id"
                             :value="status.slug"
                         >
                             {{ status.name }}
@@ -175,12 +178,21 @@ const openEditDialog = (taskId: number): void => {
             @edit="openEditDialog"
         />
 
-        <div v-else class="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
+        <div
+            v-else
+            class="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground"
+        >
             No tasks yet. Create your first task.
         </div>
 
-        <div v-if="tasks.links.length > 1" class="flex w-full flex-wrap items-center justify-end gap-2">
-            <template v-for="(link, index) in tasks.links" :key="`${link.label}-${index}`">
+        <div
+            v-if="tasks.links.length > 1"
+            class="flex w-full flex-wrap items-center justify-end gap-2"
+        >
+            <template
+                v-for="(link, index) in tasks.links"
+                :key="`${link.label}-${index}`"
+            >
                 <Link
                     v-if="link.url"
                     :href="link.url"
@@ -199,7 +211,10 @@ const openEditDialog = (taskId: number): void => {
                               : link.label
                     }}
                 </Link>
-                <span v-else class="inline-flex h-9 items-center rounded-md border px-3 text-sm text-muted-foreground">
+                <span
+                    v-else
+                    class="inline-flex h-9 items-center rounded-md border px-3 text-sm text-muted-foreground"
+                >
                     {{
                         index === 0
                             ? 'Previous'
@@ -220,10 +235,7 @@ const openEditDialog = (taskId: number): void => {
             @confirm="executeDelete"
         />
 
-        <TaskCreateDialog
-            v-model:open="showCreateDialog"
-            :users="users"
-        />
+        <TaskCreateDialog v-model:open="showCreateDialog" :users="users" />
 
         <TaskEditDialog
             v-model:open="showEditDialog"

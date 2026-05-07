@@ -31,8 +31,8 @@ export function useQuoteTracking(options: TrackingOptions) {
 
     const flush = (): void => {
         if (queue.length === 0) {
-return;
-}
+            return;
+        }
 
         const batch = queue.splice(0, queue.length);
 
@@ -93,7 +93,10 @@ return;
 
         trackTimeSpent();
         flush();
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        document.removeEventListener(
+            'visibilitychange',
+            handleVisibilityChange,
+        );
     };
 
     const handleVisibilityChange = (): void => {

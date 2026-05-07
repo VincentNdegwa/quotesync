@@ -27,28 +27,32 @@ const props = defineProps<{
     settings: WorkspaceSettings;
 }>();
 
-
-const breadcrumbs = computed(()=>{
+const breadcrumbs = computed(() => {
     return [
         {
             title: 'Quotes',
             href: '/quotes',
         },
-        { title: props.initialState?.title ?? 'Quote details', href: QuoteController.show(props.quoteId).url },
+        {
+            title: props.initialState?.title ?? 'Quote details',
+            href: QuoteController.show(props.quoteId).url,
+        },
         {
             title: 'Edit',
             href: '/quotes',
         },
     ];
-})
+});
 
-watchEffect(()=>{
+watchEffect(() => {
     setLayoutProps({
         breadcrumbs: breadcrumbs.value,
-    })
-})
+    });
+});
 
-const form = useForm<QuoteBuilderState>(JSON.parse(JSON.stringify(props.initialState)) as QuoteBuilderState);
+const form = useForm<QuoteBuilderState>(
+    JSON.parse(JSON.stringify(props.initialState)) as QuoteBuilderState,
+);
 
 const save = (updatedState?: QuoteBuilderState): void => {
     if (updatedState) {
@@ -67,12 +71,16 @@ const save = (updatedState?: QuoteBuilderState): void => {
 const showSendDialog = ref(false);
 
 const executeSend = (): void => {
-    router.post(QuoteSendController.store(props.quoteId).url, {}, {
-        preserveScroll: true,
-        onSuccess: () => {
-            showSendDialog.value = false;
-        }
-    });
+    router.post(
+        QuoteSendController.store(props.quoteId).url,
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                showSendDialog.value = false;
+            },
+        },
+    );
 };
 </script>
 

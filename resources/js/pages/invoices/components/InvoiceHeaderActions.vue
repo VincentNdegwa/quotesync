@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { FolderOpen, KanbanSquare, LayoutList, MoreHorizontal, Plus } from 'lucide-vue-next';
+import {
+    FolderOpen,
+    KanbanSquare,
+    LayoutList,
+    MoreHorizontal,
+    Plus,
+} from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,7 +28,9 @@ const emit = defineEmits<{
 }>();
 
 const viewToggleTitle = computed(() =>
-    props.viewMode === 'kanban' ? 'Switch to table view' : 'Switch to kanban view',
+    props.viewMode === 'kanban'
+        ? 'Switch to table view'
+        : 'Switch to kanban view',
 );
 
 const viewIcon = computed(() =>
@@ -32,7 +40,10 @@ const viewIcon = computed(() =>
 
 <template>
     <div class="flex flex-wrap items-center gap-2">
-        <Button class="hidden sm:inline-flex" @click="emit('open-create-invoice')">
+        <Button
+            class="hidden sm:inline-flex"
+            @click="emit('open-create-invoice')"
+        >
             <Plus class="mr-2 h-4 w-4" />
             New invoice
         </Button>
@@ -59,7 +70,12 @@ const viewIcon = computed(() =>
 
         <DropdownMenu>
             <DropdownMenuTrigger as-child>
-                <Button variant="outline" size="icon" title="More actions" aria-label="More actions">
+                <Button
+                    variant="outline"
+                    size="icon"
+                    title="More actions"
+                    aria-label="More actions"
+                >
                     <MoreHorizontal class="h-4 w-4" />
                 </Button>
             </DropdownMenuTrigger>
@@ -69,7 +85,10 @@ const viewIcon = computed(() =>
                 <DropdownMenuSeparator />
 
                 <DropdownMenuItem :as-child="true">
-                    <Link href="/configuration/templates" class="flex w-full items-center gap-2">
+                    <Link
+                        href="/configuration/templates"
+                        class="flex w-full items-center gap-2"
+                    >
                         <FolderOpen class="h-4 w-4" />
                         <span>Templates</span>
                     </Link>

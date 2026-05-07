@@ -1,6 +1,9 @@
 import type { WorkspaceSummary } from '@/types/auth';
 
-export type MembersWorkspace = Pick<WorkspaceSummary, 'id' | 'name' | 'display_name'>;
+export type MembersWorkspace = Pick<
+    WorkspaceSummary,
+    'id' | 'name' | 'display_name'
+>;
 
 export type WorkspaceRoleOption = {
     id: number;

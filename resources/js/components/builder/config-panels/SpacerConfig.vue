@@ -16,7 +16,11 @@ const heightOptions = [
 <template>
     <div class="divide-y">
         <section class="px-4 py-4">
-            <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Layout</p>
+            <p
+                class="mb-3 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+            >
+                Layout
+            </p>
             <div class="space-y-2">
                 <Label class="text-xs text-muted-foreground">Height</Label>
                 <div class="grid grid-cols-3 gap-2">
@@ -25,13 +29,22 @@ const heightOptions = [
                         :key="option.value"
                         type="button"
                         class="rounded-md border p-2 text-left transition"
-                        :class="config.height === option.value ? 'border-primary bg-primary/5' : 'hover:border-muted-foreground'"
+                        :class="
+                            config.height === option.value
+                                ? 'border-primary bg-primary/5'
+                                : 'hover:border-muted-foreground'
+                        "
                         @click="config.height = option.value"
                     >
                         <div class="mb-1.5 rounded bg-muted p-1.5">
-                            <div class="w-full rounded bg-foreground/25" :style="{ height: option.px }" />
+                            <div
+                                class="w-full rounded bg-foreground/25"
+                                :style="{ height: option.px }"
+                            />
                         </div>
-                        <span class="text-xs font-medium">{{ option.label }}</span>
+                        <span class="text-xs font-medium">{{
+                            option.label
+                        }}</span>
                     </button>
                 </div>
             </div>

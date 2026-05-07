@@ -25,14 +25,15 @@ type Filters = {
     sort: string;
 };
 
-
 const props = defineProps<{
     filters: Filters;
     invoices: Paginator<InvoiceListRecord>;
 }>();
 
 const page = usePage();
-const invoiceStatuses = computed(() => (page.props.enums as any)?.invoiceStatus ?? []);
+const invoiceStatuses = computed(
+    () => (page.props.enums as any)?.invoiceStatus ?? [],
+);
 
 const viewMode = ref<'table' | 'kanban'>(
     (localStorage.getItem(STORAGE_KEY) as 'table' | 'kanban') ?? 'table',
@@ -76,7 +77,8 @@ watch(
                 '/invoices',
                 {
                     search: query.value.search,
-                    status: query.value.status === ALL ? '' : query.value.status,
+                    status:
+                        query.value.status === ALL ? '' : query.value.status,
                     sort: query.value.sort,
                 },
                 {
@@ -107,7 +109,7 @@ const executeDelete = (): void => {
             onSuccess: () => {
                 showDeleteDialog.value = false;
                 invoiceToDelete.value = null;
-            }
+            },
         });
     }
 };
@@ -117,7 +119,9 @@ const executeDelete = (): void => {
     <Head title="Invoices" />
 
     <div class="space-y-4">
-        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div
+            class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+        >
             <Heading
                 title="Invoices"
                 description="Create and manage invoices for your clients."
@@ -132,7 +136,11 @@ const executeDelete = (): void => {
 
         <div class="rounded-lg border p-3">
             <div class="flex flex-col gap-3 md:flex-row md:items-center">
-                <Input v-model="query.search" placeholder="Search invoice number, title, or client" class="w-full md:w-96" />
+                <Input
+                    v-model="query.search"
+                    placeholder="Search invoice number, title, or client"
+                    class="w-full md:w-96"
+                />
 
                 <Select v-model="query.status">
                     <SelectTrigger class="w-full md:w-44">
@@ -140,10 +148,10 @@ const executeDelete = (): void => {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem :value="ALL">All statuses</SelectItem>
-                        
-                        <SelectItem 
-                            v-for="status in invoiceStatuses" 
-                            :key="status.value" 
+
+                        <SelectItem
+                            v-for="status in invoiceStatuses"
+                            :key="status.value"
                             :value="status.value"
                         >
                             {{ status.label }}
@@ -177,13 +185,22 @@ const executeDelete = (): void => {
                 @delete="removeInvoice"
             />
 
-            <div v-else class="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
+            <div
+                v-else
+                class="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground"
+            >
                 No invoices yet. Create your first invoice.
             </div>
         </template>
 
-        <div v-if="viewMode === 'table' && invoices.links.length > 1" class="flex w-full flex-wrap items-center justify-end gap-2">
-            <template v-for="(link, index) in invoices.links" :key="`${link.label}-${index}`">
+        <div
+            v-if="viewMode === 'table' && invoices.links.length > 1"
+            class="flex w-full flex-wrap items-center justify-end gap-2"
+        >
+            <template
+                v-for="(link, index) in invoices.links"
+                :key="`${link.label}-${index}`"
+            >
                 <Link
                     v-if="link.url"
                     :href="link.url"
@@ -202,7 +219,10 @@ const executeDelete = (): void => {
                               : link.label
                     }}
                 </Link>
-                <span v-else class="inline-flex h-9 items-center rounded-md border px-3 text-sm text-muted-foreground">
+                <span
+                    v-else
+                    class="inline-flex h-9 items-center rounded-md border px-3 text-sm text-muted-foreground"
+                >
                     {{
                         index === 0
                             ? 'Previous'

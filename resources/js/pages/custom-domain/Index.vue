@@ -1,12 +1,26 @@
 <script setup lang="ts">
 import { Head, useForm, router } from '@inertiajs/vue3';
-import { Plus, Check, X, Globe, RefreshCw, Trash2, Star } from 'lucide-vue-next';
+import {
+    Plus,
+    Check,
+    X,
+    Globe,
+    RefreshCw,
+    Trash2,
+    Star,
+} from 'lucide-vue-next';
 import { ref } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useFormat } from '@/composables/useFormat';
@@ -32,8 +46,8 @@ const domainToDelete = ref<number | null>(null);
 
 const addDomain = () => {
     if (!newDomain.value.trim()) {
-return;
-}
+        return;
+    }
 
     adding.value = true;
     useForm({ domain: newDomain.value }).post('/custom-domains', {
@@ -49,15 +63,23 @@ return;
 };
 
 const verifyDomain = (domainId: number) => {
-    router.post(`/custom-domains/${domainId}/verify`, {}, {
-        preserveScroll: true,
-    });
+    router.post(
+        `/custom-domains/${domainId}/verify`,
+        {},
+        {
+            preserveScroll: true,
+        },
+    );
 };
 
 const setPrimary = (domainId: number) => {
-    router.post(`/custom-domains/${domainId}/set-primary`, {}, {
-        preserveScroll: true,
-    });
+    router.post(
+        `/custom-domains/${domainId}/set-primary`,
+        {},
+        {
+            preserveScroll: true,
+        },
+    );
 };
 
 const deleteDomain = (domainId: number) => {
@@ -88,7 +110,7 @@ const executeDelete = (): void => {
                 description="Manage custom domains for white-label branding"
             />
             <Button @click="showAddForm = true">
-                <Plus class="h-4 w-4 mr-2" />
+                <Plus class="mr-2 h-4 w-4" />
                 Add Domain
             </Button>
         </div>
@@ -97,7 +119,10 @@ const executeDelete = (): void => {
         <Card v-if="showAddForm" class="border-blue-200">
             <CardHeader>
                 <CardTitle>Add Custom Domain</CardTitle>
-                <CardDescription>Enter your custom domain to enable white-label branding</CardDescription>
+                <CardDescription
+                    >Enter your custom domain to enable white-label
+                    branding</CardDescription
+                >
             </CardHeader>
             <CardContent>
                 <form @submit.prevent="addDomain" class="flex gap-2">
@@ -114,7 +139,12 @@ const executeDelete = (): void => {
                         <Button type="submit" :disabled="adding">
                             Add Domain
                         </Button>
-                        <Button type="button" variant="outline" @click="showAddForm = false" :disabled="adding">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            @click="showAddForm = false"
+                            :disabled="adding"
+                        >
                             Cancel
                         </Button>
                     </div>
@@ -123,41 +153,62 @@ const executeDelete = (): void => {
         </Card>
 
         <!-- Domains List -->
-        <div v-if="domains.length === 0" class="text-center py-12 text-muted-foreground border rounded-lg">
-            <Globe class="h-12 w-12 mx-auto mb-4 opacity-50" />
+        <div
+            v-if="domains.length === 0"
+            class="rounded-lg border py-12 text-center text-muted-foreground"
+        >
+            <Globe class="mx-auto mb-4 h-12 w-12 opacity-50" />
             <p class="text-lg font-medium">No custom domains yet</p>
-            <p class="text-sm">Add your first custom domain to enable white-label branding</p>
+            <p class="text-sm">
+                Add your first custom domain to enable white-label branding
+            </p>
         </div>
 
         <div v-else class="space-y-3">
             <div
                 v-for="domain in domains"
                 :key="domain.id"
-                class="flex items-center justify-between p-4 border rounded-lg"
-                :class="{ 'bg-green-50 border-green-200': domain.verified_at }"
+                class="flex items-center justify-between rounded-lg border p-4"
+                :class="{ 'border-green-200 bg-green-50': domain.verified_at }"
             >
                 <div class="flex items-center gap-4">
-                    <div class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <div
+                        class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10"
+                    >
                         <Globe class="h-5 w-5 text-primary" />
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
                             <p class="font-medium">{{ domain.domain }}</p>
-                            <Badge v-if="domain.is_primary" variant="default" class="text-xs">
-                                <Star class="h-3 w-3 mr-1" />
+                            <Badge
+                                v-if="domain.is_primary"
+                                variant="default"
+                                class="text-xs"
+                            >
+                                <Star class="mr-1 h-3 w-3" />
                                 Primary
                             </Badge>
                         </div>
-                        <div class="flex items-center gap-3 text-sm text-muted-foreground">
-                            <span v-if="domain.verified_at" class="text-green-600 flex items-center gap-1">
+                        <div
+                            class="flex items-center gap-3 text-sm text-muted-foreground"
+                        >
+                            <span
+                                v-if="domain.verified_at"
+                                class="flex items-center gap-1 text-green-600"
+                            >
                                 <Check class="h-3 w-3" />
                                 Verified {{ formatDate(domain.verified_at) }}
                             </span>
-                            <span v-else class="text-orange-600 flex items-center gap-1">
+                            <span
+                                v-else
+                                class="flex items-center gap-1 text-orange-600"
+                            >
                                 <X class="h-3 w-3" />
                                 Not verified
                             </span>
-                            <span>Added {{ formatDate(domain.created_at) }}</span>
+                            <span
+                                >Added {{ formatDate(domain.created_at) }}</span
+                            >
                         </div>
                     </div>
                 </div>
@@ -168,7 +219,7 @@ const executeDelete = (): void => {
                         size="sm"
                         @click="verifyDomain(domain.id)"
                     >
-                        <RefreshCw class="h-4 w-4 mr-1" />
+                        <RefreshCw class="mr-1 h-4 w-4" />
                         Verify
                     </Button>
                     <Button
@@ -177,7 +228,7 @@ const executeDelete = (): void => {
                         size="sm"
                         @click="setPrimary(domain.id)"
                     >
-                        <Star class="h-4 w-4 mr-1" />
+                        <Star class="mr-1 h-4 w-4" />
                         Set Primary
                     </Button>
                     <Button
@@ -192,11 +243,13 @@ const executeDelete = (): void => {
         </div>
 
         <!-- Info Card -->
-        <Card class="bg-blue-50 border-blue-200">
+        <Card class="border-blue-200 bg-blue-50">
             <CardHeader>
-                <CardTitle class="text-blue-900">How to verify your domain</CardTitle>
+                <CardTitle class="text-blue-900"
+                    >How to verify your domain</CardTitle
+                >
             </CardHeader>
-            <CardContent class="text-sm text-blue-800 space-y-2">
+            <CardContent class="space-y-2 text-sm text-blue-800">
                 <p>1. Add your custom domain and click "Verify"</p>
                 <p>2. Add the TXT record to your DNS configuration</p>
                 <p>3. Click "Verify" again to check the DNS record</p>

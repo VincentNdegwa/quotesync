@@ -59,7 +59,9 @@ const drawerOpen = ref(false);
 const editingSequence = ref<Sequence | null>(null);
 const activeStepIndex = ref<number | null>(null);
 const subjectInputRef = ref<InstanceType<typeof Input> | null>(null);
-const tiptapEditorRef = ref<{ insertText: (text: string) => void } | null>(null);
+const tiptapEditorRef = ref<{ insertText: (text: string) => void } | null>(
+    null,
+);
 const deleteOpen = ref(false);
 const sequenceToDelete = ref<Sequence | null>(null);
 
@@ -115,18 +117,24 @@ const removeSequence = (sequence: Sequence): void => {
 
 const executeDelete = (): void => {
     if (sequenceToDelete.value) {
-        router.delete(`/configuration/invoice-reminders/${sequenceToDelete.value.id}`, {
-            preserveScroll: true,
-            onSuccess: () => {
-                deleteOpen.value = false;
-                sequenceToDelete.value = null;
+        router.delete(
+            `/configuration/invoice-reminders/${sequenceToDelete.value.id}`,
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    deleteOpen.value = false;
+                    sequenceToDelete.value = null;
+                },
             },
-        });
+        );
     }
 };
 
 const addStep = (): void => {
-    const lastDay = form.steps.length > 0 ? form.steps[form.steps.length - 1].day_offset : -3;
+    const lastDay =
+        form.steps.length > 0
+            ? form.steps[form.steps.length - 1].day_offset
+            : -3;
     const newStep = emptyStep(form.steps.length);
     newStep.day_offset = lastDay + 3;
     form.steps.push(newStep);
@@ -136,7 +144,10 @@ const addStep = (): void => {
 const removeStep = (index: number): void => {
     form.steps.splice(index, 1);
 
-    if (activeStepIndex.value !== null && activeStepIndex.value >= form.steps.length) {
+    if (
+        activeStepIndex.value !== null &&
+        activeStepIndex.value >= form.steps.length
+    ) {
         activeStepIndex.value = form.steps.length - 1;
     }
 };
@@ -154,9 +165,13 @@ const insertPlaceholder = (key: string): void => {
         const start = inputEl.selectionStart ?? 0;
         const end = inputEl.selectionEnd ?? 0;
         const currentValue = form.steps[activeStepIndex.value].subject;
-        form.steps[activeStepIndex.value].subject = currentValue.slice(0, start) + token + currentValue.slice(end);
+        form.steps[activeStepIndex.value].subject =
+            currentValue.slice(0, start) + token + currentValue.slice(end);
         setTimeout(() => {
-            inputEl.setSelectionRange(start + token.length, start + token.length);
+            inputEl.setSelectionRange(
+                start + token.length,
+                start + token.length,
+            );
             inputEl.focus();
         }, 0);
     } else if (tiptapEditorRef.value) {
@@ -205,7 +220,14 @@ const reminderTypeColor = (value: string): string => {
 const placeholderGroups = computed(() => ({
     invoice: {
         label: 'Invoice',
-        keys: ['invoice_number', 'invoice_title', 'amount', 'currency', 'due_date', 'issue_date'],
+        keys: [
+            'invoice_number',
+            'invoice_title',
+            'amount',
+            'currency',
+            'due_date',
+            'issue_date',
+        ],
     },
     client: {
         label: 'Client',
@@ -285,14 +307,22 @@ const placeholderGroups = computed(() => ({
                             <div class="flex flex-col items-center gap-1">
                                 <div
                                     class="flex h-8 w-8 items-center justify-center rounded-full border-2 bg-background"
-                                    :class="reminderTypeColor(step.reminder_type)"
+                                    :class="
+                                        reminderTypeColor(step.reminder_type)
+                                    "
                                 >
                                     <Mail class="h-3.5 w-3.5" />
                                 </div>
                                 <span
                                     class="text-[10px] font-medium whitespace-nowrap text-muted-foreground"
                                 >
-                                    {{ step.day_offset < 0 ? `${Math.abs(step.day_offset)}d before` : step.day_offset === 0 ? 'Due' : `${step.day_offset}d after` }}
+                                    {{
+                                        step.day_offset < 0
+                                            ? `${Math.abs(step.day_offset)}d before`
+                                            : step.day_offset === 0
+                                              ? 'Due'
+                                              : `${step.day_offset}d after`
+                                    }}
                                 </span>
                             </div>
                             <div
@@ -310,8 +340,8 @@ const placeholderGroups = computed(() => ({
             <Zap class="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
             <p class="font-medium text-foreground">No reminder sequences</p>
             <p class="mt-1 text-sm text-muted-foreground">
-                Create a sequence to automatically remind clients about
-                invoice due dates.
+                Create a sequence to automatically remind clients about invoice
+                due dates.
             </p>
             <Button class="mt-4" @click="openCreate">
                 <Plus class="mr-2 h-4 w-4" />
@@ -320,7 +350,10 @@ const placeholderGroups = computed(() => ({
         </div>
     </div>
 
-    <Sheet :open="drawerOpen" @update:open="(value: boolean) => drawerOpen = value">
+    <Sheet
+        :open="drawerOpen"
+        @update:open="(value: boolean) => (drawerOpen = value)"
+    >
         <SheetContent side="right" custom-width="900px" class="overflow-y-auto">
             <SheetHeader>
                 <SheetTitle>
@@ -339,7 +372,7 @@ const placeholderGroups = computed(() => ({
                 </SheetDescription>
             </SheetHeader>
 
-            <div class="flex min-h-0 flex-1 custom-scrollbar overflow-hidden">
+            <div class="custom-scrollbar flex min-h-0 flex-1 overflow-hidden">
                 <div class="w-[200px] shrink-0 overflow-y-auto border-r py-4">
                     <p
                         class="mb-2 px-4 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
@@ -348,7 +381,9 @@ const placeholderGroups = computed(() => ({
                     </p>
 
                     <div class="relative px-4">
-                        <div class="absolute top-4 bottom-4 left-[36px] w-px bg-border" />
+                        <div
+                            class="absolute top-4 bottom-4 left-[36px] w-px bg-border"
+                        />
 
                         <div class="space-y-1">
                             <button
@@ -382,12 +417,22 @@ const placeholderGroups = computed(() => ({
                                 </div>
                                 <div class="min-w-0">
                                     <p class="text-xs leading-none font-medium">
-                                        {{ step.day_offset < 0 ? `${Math.abs(step.day_offset)}d before` : step.day_offset === 0 ? 'Due' : `${step.day_offset}d after` }}
+                                        {{
+                                            step.day_offset < 0
+                                                ? `${Math.abs(step.day_offset)}d before`
+                                                : step.day_offset === 0
+                                                  ? 'Due'
+                                                  : `${step.day_offset}d after`
+                                        }}
                                     </p>
                                     <p
                                         class="mt-0.5 truncate text-[10px] capitalize"
                                     >
-                                        {{ reminderTypeLabel(step.reminder_type) }}
+                                        {{
+                                            reminderTypeLabel(
+                                                step.reminder_type,
+                                            )
+                                        }}
                                     </p>
                                 </div>
                             </button>
@@ -466,7 +511,8 @@ const placeholderGroups = computed(() => ({
                                     —
                                     {{
                                         reminderTypeLabel(
-                                            form.steps[activeStepIndex].reminder_type,
+                                            form.steps[activeStepIndex]
+                                                .reminder_type,
                                         )
                                     }}
                                     on day
@@ -509,7 +555,8 @@ const placeholderGroups = computed(() => ({
                                     </span>
                                 </div>
                                 <p class="text-[11px] text-muted-foreground">
-                                    Negative = before due, 0 = on due, Positive = after due
+                                    Negative = before due, 0 = on due, Positive
+                                    = after due
                                 </p>
                             </div>
 
@@ -521,7 +568,8 @@ const placeholderGroups = computed(() => ({
                                 </Label>
                                 <Select
                                     v-model="
-                                        form.steps[activeStepIndex].reminder_type
+                                        form.steps[activeStepIndex]
+                                            .reminder_type
                                     "
                                 >
                                     <SelectTrigger class="h-9">
@@ -564,7 +612,9 @@ const placeholderGroups = computed(() => ({
                             </Label>
                             <TiptapEditor
                                 ref="tiptapEditorRef"
-                                v-model="form.steps[activeStepIndex].message_template"
+                                v-model="
+                                    form.steps[activeStepIndex].message_template
+                                "
                                 placeholder="Write your reminder message here. Use placeholders below to personalise it."
                             />
                             <InputError
@@ -578,10 +628,15 @@ const placeholderGroups = computed(() => ({
 
                         <div class="flex items-center gap-2">
                             <Switch
-                                :model-value="form.steps[activeStepIndex].send_automatically"
+                                :model-value="
+                                    form.steps[activeStepIndex]
+                                        .send_automatically
+                                "
                                 @update:model-value="
                                     (v: boolean) =>
-                                        (form.steps[activeStepIndex].send_automatically = v)
+                                        (form.steps[
+                                            activeStepIndex
+                                        ].send_automatically = v)
                                 "
                             />
                             <Label class="cursor-pointer text-sm">

@@ -38,7 +38,9 @@ const updateToggle = (
 <template>
     <div class="flex h-full min-h-0 flex-col">
         <div class="border-b px-4 py-3">
-            <p class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+            <p
+                class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+            >
                 Display
             </p>
             <div class="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
@@ -51,14 +53,18 @@ const updateToggle = (
                     <Switch
                         :model-value="config[toggle.key]"
                         class="scale-75"
-                        @update:model-value="(value) => updateToggle(toggle.key, value)"
+                        @update:model-value="
+                            (value) => updateToggle(toggle.key, value)
+                        "
                     />
                 </label>
             </div>
         </div>
 
         <div class="px-4 py-3">
-            <p class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+            <p
+                class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+            >
                 Layout
             </p>
             <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -67,11 +73,18 @@ const updateToggle = (
                     :key="option.value"
                     type="button"
                     class="group rounded-lg border p-2 text-left transition-colors"
-                    :class="config.layout === option.value ? 'border-primary bg-primary/5 ring-1 ring-primary/30' : 'hover:border-muted-foreground/50'"
+                    :class="
+                        config.layout === option.value
+                            ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
+                            : 'hover:border-muted-foreground/50'
+                    "
                     @click="config.layout = option.value"
                 >
                     <div class="mb-1.5 rounded bg-muted p-1.5">
-                        <div v-if="option.value === 'split'" class="grid grid-cols-2 gap-1">
+                        <div
+                            v-if="option.value === 'split'"
+                            class="grid grid-cols-2 gap-1"
+                        >
                             <div class="h-6 rounded bg-foreground/20" />
                             <div class="h-6 rounded bg-foreground/20" />
                         </div>
@@ -80,8 +93,14 @@ const updateToggle = (
                             <div class="h-4 rounded bg-foreground/20" />
                         </div>
                     </div>
-                    <p class="text-xs leading-none font-medium">{{ option.label }}</p>
-                    <p class="mt-0.5 text-[10px] leading-snug text-muted-foreground">{{ option.description }}</p>
+                    <p class="text-xs leading-none font-medium">
+                        {{ option.label }}
+                    </p>
+                    <p
+                        class="mt-0.5 text-[10px] leading-snug text-muted-foreground"
+                    >
+                        {{ option.description }}
+                    </p>
                 </button>
             </div>
         </div>

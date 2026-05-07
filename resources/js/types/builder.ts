@@ -44,10 +44,10 @@ export type ThemeConfig = {
 
 export type BlockBorder = {
     style: BorderLineStyle;
-    color: string | null;    // null = use theme primary color
+    color: string | null; // null = use theme primary color
     width: 'thin' | 'medium' | 'thick';
-    sides: BorderSide;       // which sides the border applies to
-    radius: BorderRadius;    // corner radius for the block wrapper
+    sides: BorderSide; // which sides the border applies to
+    radius: BorderRadius; // corner radius for the block wrapper
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -57,13 +57,13 @@ export type BlockBorder = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type BaseBlockConfig = {
-    padding:    Spacing;
+    padding: Spacing;
     background: string | null;
-    border:     BlockBorder;
+    border: BlockBorder;
 };
 
 export type ContentBlockConfig = BaseBlockConfig & {
-    fontSize:  FontSize | null;
+    fontSize: FontSize | null;
     textColor: string | null;
 };
 
@@ -97,7 +97,11 @@ export type BlockType =
 // Auto-data block — company logo, quote number, dates.
 // No content editing. Config controls layout and visibility.
 export type HeaderBlockConfig = BaseBlockConfig & {
-    layout: 'logo-left-details-right' | 'logo-right-details-left' | 'centered' | 'minimal';
+    layout:
+        | 'logo-left-details-right'
+        | 'logo-right-details-left'
+        | 'centered'
+        | 'minimal';
     showLogo: boolean;
     showQuoteNumber: boolean;
     showIssueDate: boolean;
@@ -145,10 +149,10 @@ export type LineItemsBlockConfig = BaseBlockConfig & {
     showCostPrice: boolean;
     showOptionalBadge: boolean;
     optionalItemStyle: 'checkbox' | 'badge' | 'greyed';
-    headerBackground: string | null;   // table header row background only
+    headerBackground: string | null; // table header row background only
     alternateRowColor: boolean;
     columnWidths: {
-        description: number;           // all widths are percentages, must sum ≤ 100
+        description: number; // all widths are percentages, must sum ≤ 100
         quantity: number;
         unitPrice: number;
         discount: number;
@@ -170,14 +174,14 @@ export type TotalsBlockConfig = BaseBlockConfig & {
     showTaxTotal: boolean;
     highlightTotal: boolean;
     totalLabel: string;
-    totalRowBackground: string | null;  // specific to the total row, not the block
+    totalRowBackground: string | null; // specific to the total row, not the block
 };
 
 // rich_text
 // Content block — full Tiptap rich text editor.
 // columns: 1 is single column, 2 splits into two side-by-side areas.
 export type RichTextBlockConfig = ContentBlockConfig & {
-    content: string;                   // Tiptap JSON string
+    content: string; // Tiptap JSON string
     labelText: string | null;
     labelSize: 'h2' | 'h3' | 'h4';
     columns: 1 | 2;
@@ -216,10 +220,12 @@ export type ImageRowBlockConfig = BaseBlockConfig & {
 // style controls the visual treatment of the whole block.
 export type PaymentTermsBlockConfig = ContentBlockConfig & {
     labelText: string;
-    showDepositInfo: boolean;          // pulls from quote.requires_deposit automatically
+    showDepositInfo: boolean; // pulls from quote.requires_deposit automatically
     showPaymentMethods: boolean;
-    paymentMethods: Array<'bank_transfer' | 'card' | 'mobile_money' | 'cash' | 'cheque'>;
-    contextText: string | null;        // Tiptap HTML, stored in layout JSON
+    paymentMethods: Array<
+        'bank_transfer' | 'card' | 'mobile_money' | 'cash' | 'cheque'
+    >;
+    contextText: string | null; // Tiptap HTML, stored in layout JSON
     style: 'default' | 'card' | 'highlighted';
 };
 
@@ -242,8 +248,8 @@ export type TimelineBlockConfig = BaseBlockConfig & {
 // Content block — editable rich text. Stored in layout JSON as contextText.
 export type TermsBlockConfig = ContentBlockConfig & {
     labelText: string;
-    contextText: string | null;        // Tiptap HTML, stored in layout JSON
-    defaultCollapsed: boolean;         // client view: collapsed with expand link
+    contextText: string | null; // Tiptap HTML, stored in layout JSON
+    defaultCollapsed: boolean; // client view: collapsed with expand link
 };
 
 // signature
@@ -251,7 +257,7 @@ export type TermsBlockConfig = ContentBlockConfig & {
 export type SignatureBlockConfig = BaseBlockConfig & {
     acceptButtonText: string;
     declineButtonText: string;
-    acceptButtonColor: string | null;  // null = use theme primaryColor
+    acceptButtonColor: string | null; // null = use theme primaryColor
     showContextText: boolean;
     contextText: string;
     requireNameTyped: boolean;
@@ -311,8 +317,8 @@ export type LayoutBlock<T extends BlockType = BlockType> = {
     id: string;
     type: T;
     visible: boolean;
-    locked: boolean;       // locked = cannot be hidden or reordered (required blocks)
-    label: string | null;  // optional display label in the block list panel
+    locked: boolean; // locked = cannot be hidden or reordered (required blocks)
+    label: string | null; // optional display label in the block list panel
     config: BlockConfigMap[T];
 };
 
@@ -390,7 +396,10 @@ export const ADDABLE_BLOCK_TYPES: BlockType[] = [
 //   auto    = data comes from quote/company automatically, no content editing
 //   content = user writes/uploads the content (rich text, image)
 //   mixed   = some auto data + some user-editable content or interactions
-export const BLOCK_EDITABILITY: Record<BlockType, 'content' | 'auto' | 'mixed'> = {
+export const BLOCK_EDITABILITY: Record<
+    BlockType,
+    'content' | 'auto' | 'mixed'
+> = {
     header: 'auto',
     from_to: 'auto',
     cover_message: 'content',
@@ -451,14 +460,14 @@ export const defaultBorder = (): BlockBorder => ({
 });
 
 export const defaultBaseConfig = (): BaseBlockConfig => ({
-    padding:    'md',
+    padding: 'md',
     background: null,
-    border:     defaultBorder(),
+    border: defaultBorder(),
 });
 
 export const defaultContentConfig = (): ContentBlockConfig => ({
     ...defaultBaseConfig(),
-    fontSize:  null,
+    fontSize: null,
     textColor: null,
 });
 
@@ -467,7 +476,10 @@ export const defaultContentConfig = (): ContentBlockConfig => ({
 // ─────────────────────────────────────────────────────────────────────────────
 
 const uid = (): string => {
-    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    if (
+        typeof crypto !== 'undefined' &&
+        typeof crypto.randomUUID === 'function'
+    ) {
         return crypto.randomUUID();
     }
 
@@ -695,37 +707,58 @@ export const createDefaultLayout = (): TemplateLayout => ({
 // the schema was updated (forward compatibility).
 // ─────────────────────────────────────────────────────────────────────────────
 
-const ensureBaseConfig = (config: Record<string, unknown>): Record<string, unknown> => {
+const ensureBaseConfig = (
+    config: Record<string, unknown>,
+): Record<string, unknown> => {
     const base = defaultBaseConfig();
 
     return {
         ...base,
         // Migrate old field names to new ones
-        background: config.background ?? config.backgroundColor ?? base.background,
-        padding:    config.padding    ?? config.paddingSize     ?? base.padding,
-        fontSize:   config.fontSize   ?? null,
-        textColor:  config.textColor  ?? null,
-        border:     config.border     ?? {
+        background:
+            config.background ?? config.backgroundColor ?? base.background,
+        padding: config.padding ?? config.paddingSize ?? base.padding,
+        fontSize: config.fontSize ?? null,
+        textColor: config.textColor ?? null,
+        border: config.border ?? {
             // migrate old borderLeft pattern
-            style:  config.borderLeft ? 'solid' : base.border.style,
-            color:  config.borderLeftColor ?? base.border.color,
-            width:  'thin',
-            sides:  config.borderLeft ? 'left' : 'none',
+            style: config.borderLeft ? 'solid' : base.border.style,
+            color: config.borderLeftColor ?? base.border.color,
+            width: 'thin',
+            sides: config.borderLeft ? 'left' : 'none',
             radius: 'none',
         },
         // spread remaining block-specific fields, migrating old field names
-        contextText: config.contextText ?? config.customText ?? config.coverMessageText ?? null,
+        contextText:
+            config.contextText ??
+            config.customText ??
+            config.coverMessageText ??
+            null,
         ...Object.fromEntries(
-            Object.entries(config).filter(([key]) =>
-                !['backgroundColor', 'paddingSize', 'borderLeft', 'borderLeftColor',
-                  'background', 'padding', 'fontSize', 'textColor', 'border',
-                  'contextText', 'customText', 'coverMessageText'].includes(key),
+            Object.entries(config).filter(
+                ([key]) =>
+                    ![
+                        'backgroundColor',
+                        'paddingSize',
+                        'borderLeft',
+                        'borderLeftColor',
+                        'background',
+                        'padding',
+                        'fontSize',
+                        'textColor',
+                        'border',
+                        'contextText',
+                        'customText',
+                        'coverMessageText',
+                    ].includes(key),
             ),
         ),
     };
 };
 
-export const ensureTemplateLayout = (layout: TemplateLayout | null | undefined): TemplateLayout => {
+export const ensureTemplateLayout = (
+    layout: TemplateLayout | null | undefined,
+): TemplateLayout => {
     if (!layout || !Array.isArray(layout.blocks)) {
         return createDefaultLayout();
     }
@@ -743,14 +776,20 @@ export const ensureTemplateLayout = (layout: TemplateLayout | null | undefined):
 
     return {
         version: layout.version ?? 1,
-        theme:   { ...defaultTheme(), ...layout.theme },
-        blocks:  normalizedBlocks.map((block) => ({
+        theme: { ...defaultTheme(), ...layout.theme },
+        blocks: normalizedBlocks.map((block) => ({
             ...block,
             // Required blocks are always locked and visible regardless of stored value
-            locked:  REQUIRED_BLOCK_TYPES.includes(block.type) ? true : block.locked,
-            visible: REQUIRED_BLOCK_TYPES.includes(block.type) ? true : block.visible,
+            locked: REQUIRED_BLOCK_TYPES.includes(block.type)
+                ? true
+                : block.locked,
+            visible: REQUIRED_BLOCK_TYPES.includes(block.type)
+                ? true
+                : block.visible,
             // Repair any block config that is missing BaseBlockConfig fields
-            config:  ensureBaseConfig(block.config as Record<string, unknown>) as BlockConfig,
+            config: ensureBaseConfig(
+                block.config as Record<string, unknown>,
+            ) as BlockConfig,
         })),
     };
 };

@@ -33,22 +33,34 @@ onUnmounted(() => {
 <template>
     <Head :title="invoice.title" />
 
-    <main class="min-h-screen bg-background px-4 py-8 text-foreground flex flex-col">
-        <div class="mx-auto flex w-full max-w-6xl flex-col gap-6 flex-1">
-
+    <main
+        class="flex min-h-screen flex-col bg-background px-4 py-8 text-foreground"
+    >
+        <div class="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6">
             <!-- Action Bar -->
-            <div class="flex items-center justify-between rounded-lg bg-card p-4 shadow-sm ring-1 ring-border sticky top-4 z-10">
+            <div
+                class="sticky top-4 z-10 flex items-center justify-between rounded-lg bg-card p-4 shadow-sm ring-1 ring-border"
+            >
                 <div class="flex items-center gap-3">
                     <h1 class="text-lg font-semibold">{{ invoice.title }}</h1>
-                    <Badge v-if="clientState === 'paid'" variant="default" class="bg-emerald-500 hover:bg-emerald-600 border-transparent text-white">
+                    <Badge
+                        v-if="clientState === 'paid'"
+                        variant="default"
+                        class="border-transparent bg-emerald-500 text-white hover:bg-emerald-600"
+                    >
                         Paid
                     </Badge>
                 </div>
             </div>
 
             <!-- Invoice Document -->
-            <div v-if="clientState === 'closed'" class="rounded-lg bg-card p-8 text-center shadow-sm ring-1 ring-border">
-                <p class="text-muted-foreground">This invoice is no longer available.</p>
+            <div
+                v-if="clientState === 'closed'"
+                class="rounded-lg bg-card p-8 text-center shadow-sm ring-1 ring-border"
+            >
+                <p class="text-muted-foreground">
+                    This invoice is no longer available.
+                </p>
             </div>
 
             <InvoiceRenderer

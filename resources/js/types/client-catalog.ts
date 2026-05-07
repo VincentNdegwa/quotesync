@@ -74,8 +74,23 @@ export type CatalogItemRecord = {
     configuration_unit?: { id: number; name: string; symbol: string } | null;
     taxes?: Array<{ id: number; name: string; rate: number | string }>;
     tax_ids?: number[];
-    variants?: Array<{ id: number; name: string; sku: string | null; unit_price: number; cost_price: number; is_default: boolean }>;
-    priceTiers?: Array<{ id: number; variant_id: number | null; min_quantity: number; max_quantity: number | null; pricing_type: string; unit_price: number; discount_percent: number }>;
+    variants?: Array<{
+        id: number;
+        name: string;
+        sku: string | null;
+        unit_price: number;
+        cost_price: number;
+        is_default: boolean;
+    }>;
+    priceTiers?: Array<{
+        id: number;
+        variant_id: number | null;
+        min_quantity: number;
+        max_quantity: number | null;
+        pricing_type: string;
+        unit_price: number;
+        discount_percent: number;
+    }>;
     created_at: string;
 };
 

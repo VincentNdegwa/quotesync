@@ -32,11 +32,13 @@ const emit = defineEmits<{
 
 const sorting = ref<SortingState>([]);
 
-const columns = computed(() => getTaskColumns({
-    onEdit: (taskId) => emit('edit', taskId),
-    onDelete: (taskId) => emit('delete', taskId),
-    taskStatuses: props.taskStatuses,
-}));
+const columns = computed(() =>
+    getTaskColumns({
+        onEdit: (taskId) => emit('edit', taskId),
+        onDelete: (taskId) => emit('delete', taskId),
+        taskStatuses: props.taskStatuses,
+    }),
+);
 
 const table = useVueTable({
     get data() {
@@ -61,7 +63,10 @@ const table = useVueTable({
     <div :class="tasksDataTableTheme.container">
         <Table>
             <TableHeader>
-                <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
+                <TableRow
+                    v-for="headerGroup in table.getHeaderGroups()"
+                    :key="headerGroup.id"
+                >
                     <TableHead
                         v-for="header in headerGroup.headers"
                         :key="header.id"
@@ -81,13 +86,22 @@ const table = useVueTable({
                         v-for="row in table.getRowModel().rows"
                         :key="row.id"
                     >
-                        <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                            <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                        <TableCell
+                            v-for="cell in row.getVisibleCells()"
+                            :key="cell.id"
+                        >
+                            <FlexRender
+                                :render="cell.column.columnDef.cell"
+                                :props="cell.getContext()"
+                            />
                         </TableCell>
                     </TableRow>
                 </template>
                 <TableRow v-else>
-                    <TableCell :colspan="columns.length" :class="tasksDataTableTheme.emptyCell">
+                    <TableCell
+                        :colspan="columns.length"
+                        :class="tasksDataTableTheme.emptyCell"
+                    >
                         No tasks found.
                     </TableCell>
                 </TableRow>

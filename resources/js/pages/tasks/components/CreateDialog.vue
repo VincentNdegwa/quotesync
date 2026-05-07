@@ -54,7 +54,9 @@ const form = useForm({
     due_date: '',
 });
 
-const availableEntities = ref<Array<{ id: number; title: string; number?: string }>>([]);
+const availableEntities = ref<
+    Array<{ id: number; title: string; number?: string }>
+>([]);
 const entitySearch = ref('');
 const entityPopoverOpen = ref(false);
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -64,10 +66,14 @@ const selectedEntityText = computed(() => {
         return `Select ${form.taskable_type === 'quote' ? 'quote' : 'invoice'}`;
     }
 
-    const entity = availableEntities.value.find(e => e.id === form.taskable_id);
+    const entity = availableEntities.value.find(
+        (e) => e.id === form.taskable_id,
+    );
 
     if (entity) {
-        return entity.number ? `${entity.title} (${entity.number})` : entity.title;
+        return entity.number
+            ? `${entity.title} (${entity.number})`
+            : entity.title;
     }
 
     return `Select ${form.taskable_type === 'quote' ? 'quote' : 'invoice'}`;
@@ -77,43 +83,44 @@ watch(
     () => form.taskable_type,
     async (newType) => {
         if (!newType) {
-return;
-}
+            return;
+        }
 
         entitySearch.value = '';
         await fetchEntities();
     },
-    { immediate: true }
+    { immediate: true },
 );
 
-watch(
-    entitySearch,
-    (search: string) => {
-        if (searchTimeout) {
-            clearTimeout(searchTimeout);
-        }
+watch(entitySearch, (search: string) => {
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
 
-        searchTimeout = setTimeout(() => {
-            fetchEntities();
-        }, 300);
-    },
-);
+    searchTimeout = setTimeout(() => {
+        fetchEntities();
+    }, 300);
+});
 
 async function fetchEntities() {
     if (!form.taskable_type) {
-return;
-}
-    
+        return;
+    }
+
     try {
-        const endpoint = form.taskable_type === 'quote' ? '/quotes' : '/invoices';
-        const response = await fetch(`${endpoint}?search=${entitySearch.value}&per_page=50`, {
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
+        const endpoint =
+            form.taskable_type === 'quote' ? '/quotes' : '/invoices';
+        const response = await fetch(
+            `${endpoint}?search=${entitySearch.value}&per_page=50`,
+            {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
             },
-        });
+        );
         const data = await response.json();
-        
+
         if (data.data) {
             availableEntities.value = data.data.map((item: any) => ({
                 id: item.id,
@@ -144,13 +151,19 @@ const submit = (): void => {
         <DialogContent class="max-w-2xl">
             <DialogHeader>
                 <DialogTitle>Create task</DialogTitle>
-                <DialogDescription>Add a new task to your workspace.</DialogDescription>
+                <DialogDescription
+                    >Add a new task to your workspace.</DialogDescription
+                >
             </DialogHeader>
 
             <form class="space-y-4" @submit.prevent="submit">
                 <div class="grid gap-2">
                     <Label for="task_create_title" required>Title</Label>
-                    <Input id="task_create_title" v-model="form.title" placeholder="Task title" />
+                    <Input
+                        id="task_create_title"
+                        v-model="form.title"
+                        placeholder="Task title"
+                    />
                     <InputError :message="form.errors.title" />
                 </div>
 
@@ -166,9 +179,14 @@ const submit = (): void => {
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="task_create_assigned_to" required>Assign To</Label>
+                    <Label for="task_create_assigned_to" required
+                        >Assign To</Label
+                    >
                     <Select v-model="form.assigned_to as number | undefined">
-                        <SelectTrigger class='w-full' id="task_create_assigned_to">
+                        <SelectTrigger
+                            class="w-full"
+                            id="task_create_assigned_to"
+                        >
                             <SelectValue placeholder="Select a team member" />
                         </SelectTrigger>
                         <SelectContent>
@@ -177,24 +195,37 @@ const submit = (): void => {
                                 :key="user.id"
                                 :value="user.id"
                             >
-                                {{ user.name }} <span v-if="user.email" class="text-muted-foreground text-xs">({{ user.email }})</span>
+                                {{ user.name }}
+                                <span
+                                    v-if="user.email"
+                                    class="text-xs text-muted-foreground"
+                                    >({{ user.email }})</span
+                                >
                             </SelectItem>
                         </SelectContent>
                     </Select>
                     <InputError :message="form.errors.assigned_to" />
                 </div>
 
-
                 <div class="grid gap-2">
                     <Label for="task_create_due_date">Due Date</Label>
-                    <Input id="task_create_due_date" v-model="form.due_date" type="date" />
+                    <Input
+                        id="task_create_due_date"
+                        v-model="form.due_date"
+                        type="date"
+                    />
                     <InputError :message="form.errors.due_date" />
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="task_create_taskable_type">Related Entity Type</Label>
+                    <Label for="task_create_taskable_type"
+                        >Related Entity Type</Label
+                    >
                     <Select v-model="form.taskable_type">
-                        <SelectTrigger class='w-full' id="task_create_taskable_type">
+                        <SelectTrigger
+                            class="w-full"
+                            id="task_create_taskable_type"
+                        >
                             <SelectValue placeholder="Select entity type" />
                         </SelectTrigger>
                         <SelectContent>
@@ -206,16 +237,26 @@ const submit = (): void => {
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="task_create_taskable_id" required>Related Entity</Label>
+                    <Label for="task_create_taskable_id" required
+                        >Related Entity</Label
+                    >
                     <Popover v-model:open="entityPopoverOpen">
                         <PopoverTrigger as-child>
                             <Button
                                 variant="outline"
-                                :class="cn('justify-between', !form.taskable_id && 'text-muted-foreground')"
+                                :class="
+                                    cn(
+                                        'justify-between',
+                                        !form.taskable_id &&
+                                            'text-muted-foreground',
+                                    )
+                                "
                                 class="w-full"
                             >
                                 {{ selectedEntityText }}
-                                <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                <ChevronsUpDown
+                                    class="ml-2 h-4 w-4 shrink-0 opacity-50"
+                                />
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent class="w-[300px] p-0">
@@ -226,24 +267,44 @@ const submit = (): void => {
                                     class="h-9"
                                 />
                                 <CommandList>
-                                    <CommandEmpty>No {{ form.taskable_type === 'quote' ? 'quotes' : 'invoices' }} found.</CommandEmpty>
+                                    <CommandEmpty
+                                        >No
+                                        {{
+                                            form.taskable_type === 'quote'
+                                                ? 'quotes'
+                                                : 'invoices'
+                                        }}
+                                        found.</CommandEmpty
+                                    >
                                     <CommandGroup>
                                         <CommandItem
                                             v-for="entity in availableEntities"
                                             :key="entity.id"
                                             :value="entity.id"
-                                            @select="() => {
-                                                form.taskable_id = entity.id as number;
-                                                entityPopoverOpen = false;
-                                            }"
+                                            @select="
+                                                () => {
+                                                    form.taskable_id =
+                                                        entity.id as number;
+                                                    entityPopoverOpen = false;
+                                                }
+                                            "
                                         >
-                                            {{ entity.title }} 
-                                            <span v-if="entity.number" class="text-muted-foreground text-xs ml-2">({{ entity.number }})</span>
+                                            {{ entity.title }}
+                                            <span
+                                                v-if="entity.number"
+                                                class="ml-2 text-xs text-muted-foreground"
+                                                >({{ entity.number }})</span
+                                            >
                                             <Check
-                                                :class="cn(
-                                                    'ml-auto',
-                                                    form.taskable_id === entity.id ? 'opacity-100' : 'opacity-0'
-                                                )"
+                                                :class="
+                                                    cn(
+                                                        'ml-auto',
+                                                        form.taskable_id ===
+                                                            entity.id
+                                                            ? 'opacity-100'
+                                                            : 'opacity-0',
+                                                    )
+                                                "
                                                 class="h-4 w-4"
                                             />
                                         </CommandItem>
@@ -256,8 +317,15 @@ const submit = (): void => {
                 </div>
 
                 <DialogFooter>
-                    <Button type="button" variant="outline" @click="open = false">Cancel</Button>
-                    <Button type="submit" :disabled="form.processing">Create task</Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="open = false"
+                        >Cancel</Button
+                    >
+                    <Button type="submit" :disabled="form.processing"
+                        >Create task</Button
+                    >
                 </DialogFooter>
             </form>
         </DialogContent>

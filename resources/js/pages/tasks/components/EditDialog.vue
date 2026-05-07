@@ -51,14 +51,20 @@ watch(
         }
 
         // Map full class name to simple value
-        const taskableType = task.taskable_type === 'App\\Models\\Quote' ? 'quote' : 
-                            task.taskable_type === 'App\\Models\\Invoice' ? 'invoice' : 'quote';
+        const taskableType =
+            task.taskable_type === 'App\\Models\\Quote'
+                ? 'quote'
+                : task.taskable_type === 'App\\Models\\Invoice'
+                  ? 'invoice'
+                  : 'quote';
 
         form.defaults({
             title: task.title,
             description: task.description || '',
             assigned_to: task.assigned_to?.id || null,
-            task_status_id: task.status?.id ? String(task.status.id) : '__none__',
+            task_status_id: task.status?.id
+                ? String(task.status.id)
+                : '__none__',
             due_date: task.due_date ? task.due_date.split('T')[0] : '',
             taskable_type: taskableType,
             taskable_id: task.taskable_id,
@@ -79,7 +85,8 @@ const submit = (): void => {
 
         return {
             ...data,
-            task_status_id: data.task_status_id === '__none__' ? null : data.task_status_id,
+            task_status_id:
+                data.task_status_id === '__none__' ? null : data.task_status_id,
         };
     }).put(`/tasks/${props.task.id}`, {
         preserveScroll: true,
@@ -117,9 +124,14 @@ const submit = (): void => {
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="task_edit_assigned_to" required>Assign To</Label>
-                    <Select  v-model="form.assigned_to as number | undefined">
-                        <SelectTrigger class='w-full' id="task_edit_assigned_to">
+                    <Label for="task_edit_assigned_to" required
+                        >Assign To</Label
+                    >
+                    <Select v-model="form.assigned_to as number | undefined">
+                        <SelectTrigger
+                            class="w-full"
+                            id="task_edit_assigned_to"
+                        >
                             <SelectValue placeholder="Select a team member" />
                         </SelectTrigger>
                         <SelectContent>
@@ -128,7 +140,12 @@ const submit = (): void => {
                                 :key="user.id"
                                 :value="user.id"
                             >
-                                {{ user.name }} <span v-if="user.email" class="text-muted-foreground text-xs">({{ user.email }})</span>
+                                {{ user.name }}
+                                <span
+                                    v-if="user.email"
+                                    class="text-xs text-muted-foreground"
+                                    >({{ user.email }})</span
+                                >
                             </SelectItem>
                         </SelectContent>
                     </Select>
@@ -137,12 +154,17 @@ const submit = (): void => {
 
                 <div class="grid gap-2">
                     <Label for="task_edit_task_status">Status</Label>
-                    <Select  v-model="form.task_status_id">
-                        <SelectTrigger class='w-full' id="task_edit_task_status">
+                    <Select v-model="form.task_status_id">
+                        <SelectTrigger
+                            class="w-full"
+                            id="task_edit_task_status"
+                        >
                             <SelectValue placeholder="Select status" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem :value="'__none__'">No status</SelectItem>
+                            <SelectItem :value="'__none__'"
+                                >No status</SelectItem
+                            >
                             <SelectItem
                                 v-for="status in taskStatuses"
                                 :key="status.id"
@@ -157,13 +179,24 @@ const submit = (): void => {
 
                 <div class="grid gap-2">
                     <Label for="task_edit_due_date">Due Date</Label>
-                    <Input id="task_edit_due_date" v-model="form.due_date" type="date" />
+                    <Input
+                        id="task_edit_due_date"
+                        v-model="form.due_date"
+                        type="date"
+                    />
                     <InputError :message="form.errors.due_date" />
                 </div>
 
                 <DialogFooter>
-                    <Button type="button" variant="outline" @click="open = false">Cancel</Button>
-                    <Button type="submit" :disabled="form.processing">Save changes</Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="open = false"
+                        >Cancel</Button
+                    >
+                    <Button type="submit" :disabled="form.processing"
+                        >Save changes</Button
+                    >
                 </DialogFooter>
             </form>
         </DialogContent>

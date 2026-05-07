@@ -70,8 +70,12 @@ const unitMapping = ref<Record<number, string>>({});
 const initializeMapping = (): void => {
     if (props.detectedColumns && props.requiredColumns) {
         props.requiredColumns.forEach((field) => {
-            const exactMatch = props.detectedColumns?.find((col) => col === field);
-            const fuzzyMatch = props.detectedColumns?.find((col) => col.includes(field) || field.includes(col));
+            const exactMatch = props.detectedColumns?.find(
+                (col) => col === field,
+            );
+            const fuzzyMatch = props.detectedColumns?.find(
+                (col) => col.includes(field) || field.includes(col),
+            );
             columnMapping.value[field] = exactMatch || fuzzyMatch || '__skip__';
         });
     }
@@ -83,7 +87,9 @@ const initializeUnitMapping = (): void => {
     } else {
         localPreviewRows.value.forEach((row) => {
             if (!unitMapping.value[row.line]) {
-                unitMapping.value[row.line] = row.data.unit || (props.units.length > 0 ? props.units[0].name : '');
+                unitMapping.value[row.line] =
+                    row.data.unit ||
+                    (props.units.length > 0 ? props.units[0].name : '');
             }
         });
     }
@@ -91,7 +97,9 @@ const initializeUnitMapping = (): void => {
 
 initializeMapping();
 
-const { formatCurrency } = useFormat(usePage().props.workspace_currency as string || undefined);
+const { formatCurrency } = useFormat(
+    (usePage().props.workspace_currency as string) || undefined,
+);
 
 const uploadForm = useForm({
     file: null as File | null,
@@ -117,8 +125,11 @@ const handlePreview = async (): Promise<void> => {
             const response = await fetch('/catalog/import/preview', {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN':
+                        document
+                            .querySelector('meta[name="csrf-token"]')
+                            ?.getAttribute('content') || '',
+                    Accept: 'application/json',
                 },
                 body: formData,
                 signal: abortController.value.signal,
@@ -194,19 +205,37 @@ defineOptions({
             />
 
             <Button variant="outline" as-child>
-                <a href="/catalog/import/template" download>Download template</a>
+                <a href="/catalog/import/template" download
+                    >Download template</a
+                >
             </Button>
         </div>
 
         <div class="space-y-4 rounded-md border p-4">
-            <input type="file" @change="handleFileUpload" accept=".csv,.txt" :disabled="uploadForm.processing" />
-            <Button @click="handlePreview" :disabled="uploadForm.processing || !uploadForm.file">Preview import</Button>
+            <input
+                type="file"
+                @change="handleFileUpload"
+                accept=".csv,.txt"
+                :disabled="uploadForm.processing"
+            />
+            <Button
+                @click="handlePreview"
+                :disabled="uploadForm.processing || !uploadForm.file"
+                >Preview import</Button
+            >
         </div>
 
-        <div v-if="localDetectedColumns && localDetectedColumns.length > 0" class="space-y-4 rounded-md border p-4">
+        <div
+            v-if="localDetectedColumns && localDetectedColumns.length > 0"
+            class="space-y-4 rounded-md border p-4"
+        >
             <h3 class="font-medium">Map CSV columns to fields</h3>
             <div class="space-y-3">
-                <div v-for="field in localRequiredColumns" :key="field" class="flex items-center gap-4">
+                <div
+                    v-for="field in localRequiredColumns"
+                    :key="field"
+                    class="flex items-center gap-4"
+                >
                     <Label class="w-40">{{ field }}</Label>
                     <Select v-model="columnMapping[field]">
                         <SelectTrigger class="w-64">
@@ -214,7 +243,11 @@ defineOptions({
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="__skip__">Skip</SelectItem>
-                            <SelectItem v-for="col in localDetectedColumns" :key="col" :value="col">
+                            <SelectItem
+                                v-for="col in localDetectedColumns"
+                                :key="col"
+                                :value="col"
+                            >
                                 {{ col }}
                             </SelectItem>
                         </SelectContent>
@@ -223,7 +256,10 @@ defineOptions({
             </div>
         </div>
 
-        <div v-if="localPreviewRows && localPreviewRows.length > 0" class="space-y-4 rounded-md border p-4">
+        <div
+            v-if="localPreviewRows && localPreviewRows.length > 0"
+            class="space-y-4 rounded-md border p-4"
+        >
             <h3 class="font-medium">Map units</h3>
             <div class="space-y-3">
                 <div class="flex items-center gap-4">
@@ -233,13 +269,20 @@ defineOptions({
                             <SelectValue placeholder="Select mapping mode" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">Apply one unit to all items</SelectItem>
-                            <SelectItem value="individual">Select unit per item</SelectItem>
+                            <SelectItem value="all"
+                                >Apply one unit to all items</SelectItem
+                            >
+                            <SelectItem value="individual"
+                                >Select unit per item</SelectItem
+                            >
                         </SelectContent>
                     </Select>
                 </div>
 
-                <div v-if="unitMappingMode === 'all'" class="flex items-center gap-4">
+                <div
+                    v-if="unitMappingMode === 'all'"
+                    class="flex items-center gap-4"
+                >
                     <Label class="w-40">Unit for all</Label>
                     <Select v-model="unitForAll">
                         <SelectTrigger class="w-64">
@@ -251,7 +294,8 @@ defineOptions({
                                 :key="unit.id"
                                 :value="unit.name"
                             >
-                                {{ unit.name }}{{ unit.symbol ? ` (${unit.symbol})` : '' }}
+                                {{ unit.name
+                                }}{{ unit.symbol ? ` (${unit.symbol})` : '' }}
                             </SelectItem>
                         </SelectContent>
                     </Select>
@@ -259,10 +303,16 @@ defineOptions({
             </div>
         </div>
 
-        <div v-if="localPreviewRows && localPreviewRows.length > 0" class="space-y-4 rounded-md border p-4">
+        <div
+            v-if="localPreviewRows && localPreviewRows.length > 0"
+            class="space-y-4 rounded-md border p-4"
+        >
             <p class="text-sm text-muted-foreground">
-                Previewing {{ localPreviewRows.length }} rows (total {{ localTotalRows }})
-                <span v-if="localErrorCount > 0" class="text-destructive">, {{ localErrorCount }} errors found</span>
+                Previewing {{ localPreviewRows.length }} rows (total
+                {{ localTotalRows }})
+                <span v-if="localErrorCount > 0" class="text-destructive"
+                    >, {{ localErrorCount }} errors found</span
+                >
             </p>
 
             <Table>
@@ -271,7 +321,9 @@ defineOptions({
                         <TableHead>Line</TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>SKU</TableHead>
-                        <TableHead v-if="unitMappingMode === 'individual'">Unit</TableHead>
+                        <TableHead v-if="unitMappingMode === 'individual'"
+                            >Unit</TableHead
+                        >
                         <TableHead class="text-right">Unit price</TableHead>
                         <TableHead class="text-right">Cost price</TableHead>
                         <TableHead>Status</TableHead>
@@ -283,7 +335,10 @@ defineOptions({
                         <TableCell>{{ row.data.name }}</TableCell>
                         <TableCell>{{ row.data.sku }}</TableCell>
                         <TableCell v-if="unitMappingMode === 'individual'">
-                            <Select v-model="unitMapping[row.line]" class="w-40">
+                            <Select
+                                v-model="unitMapping[row.line]"
+                                class="w-40"
+                            >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select unit" />
                                 </SelectTrigger>
@@ -293,28 +348,51 @@ defineOptions({
                                         :key="unit.id"
                                         :value="unit.name"
                                     >
-                                        {{ unit.name }}{{ unit.symbol ? ` (${unit.symbol})` : '' }}
+                                        {{ unit.name
+                                        }}{{
+                                            unit.symbol
+                                                ? ` (${unit.symbol})`
+                                                : ''
+                                        }}
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
                         </TableCell>
-                        <TableCell class="text-right">{{ formatCurrency(row.data.unit_price) }}</TableCell>
-                        <TableCell class="text-right">{{ formatCurrency(row.data.cost_price) }}</TableCell>
+                        <TableCell class="text-right">{{
+                            formatCurrency(row.data.unit_price)
+                        }}</TableCell>
+                        <TableCell class="text-right">{{
+                            formatCurrency(row.data.cost_price)
+                        }}</TableCell>
                         <TableCell>
-                            <div v-if="row.errors.length > 0" class="text-destructive text-xs">
+                            <div
+                                v-if="row.errors.length > 0"
+                                class="text-xs text-destructive"
+                            >
                                 {{ row.errors.join(', ') }}
                             </div>
-                            <span v-else class="text-green-600 text-xs">Valid</span>
+                            <span v-else class="text-xs text-green-600"
+                                >Valid</span
+                            >
                         </TableCell>
                     </TableRow>
                 </TableBody>
             </Table>
 
-            <Button @click="handleConfirmImport" :disabled="confirmForm.processing || localErrorCount > 0">Confirm import</Button>
+            <Button
+                @click="handleConfirmImport"
+                :disabled="confirmForm.processing || localErrorCount > 0"
+                >Confirm import</Button
+            >
         </div>
 
-        <div v-if="props.skippedItems && props.skippedItems.length > 0" class="space-y-4 rounded-md border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20">
-            <h3 class="font-medium text-yellow-800 dark:text-yellow-200">Skipped items ({{ props.skippedItems.length }})</h3>
+        <div
+            v-if="props.skippedItems && props.skippedItems.length > 0"
+            class="space-y-4 rounded-md border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20"
+        >
+            <h3 class="font-medium text-yellow-800 dark:text-yellow-200">
+                Skipped items ({{ props.skippedItems.length }})
+            </h3>
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -325,11 +403,18 @@ defineOptions({
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    <TableRow v-for="item in props.skippedItems" :key="item.line" class="bg-yellow-100/50 dark:bg-yellow-800/30">
+                    <TableRow
+                        v-for="item in props.skippedItems"
+                        :key="item.line"
+                        class="bg-yellow-100/50 dark:bg-yellow-800/30"
+                    >
                         <TableCell>{{ item.line }}</TableCell>
                         <TableCell>{{ item.name }}</TableCell>
                         <TableCell>{{ item.sku }}</TableCell>
-                        <TableCell class="text-yellow-700 dark:text-yellow-300">{{ item.reason }}</TableCell>
+                        <TableCell
+                            class="text-yellow-700 dark:text-yellow-300"
+                            >{{ item.reason }}</TableCell
+                        >
                     </TableRow>
                 </TableBody>
             </Table>

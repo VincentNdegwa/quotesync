@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { Head, Link, router, setLayoutProps, useForm, usePage } from '@inertiajs/vue3';
+import {
+    Head,
+    Link,
+    router,
+    setLayoutProps,
+    useForm,
+    usePage,
+} from '@inertiajs/vue3';
 import { computed, watchEffect, ref } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
@@ -26,12 +33,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import {
-    Tabs,
-    TabsContent,
-    TabsList,
-    TabsTrigger,
-} from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFormat } from '@/composables/useFormat';
 import type { ClientRecord, ClientStats } from '@/types';
 import ContactDialog from './components/ContactDialog.vue';
@@ -45,13 +47,22 @@ const props = defineProps<{
 
 const inviteDialogOpen = ref(false);
 const contactDialogOpen = ref(false);
-const editingContact = ref<{ id: number; name: string; email: string | null; phone: string | null; position: string | null; is_primary: boolean } | null>(null);
+const editingContact = ref<{
+    id: number;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    position: string | null;
+    is_primary: boolean;
+} | null>(null);
 
 const deleteClientDialogOpen = ref(false);
 const deleteContactDialogOpen = ref(false);
 const contactToDelete = ref<number | null>(null);
 
-const { formatCurrency, formatDate } = useFormat(usePage().props.workspace_currency as string || undefined);
+const { formatCurrency, formatDate } = useFormat(
+    (usePage().props.workspace_currency as string) || undefined,
+);
 
 const breadcrumbs = computed(() => [
     { title: 'Clients', href: '/clients' },
@@ -81,8 +92,8 @@ const form = useForm({
 
 const saveClient = (): void => {
     form.put(`/clients/${props.client.id}`, {
-            preserveScroll: true,
-        });
+        preserveScroll: true,
+    });
 };
 
 const selectedTagIds = computed<string[]>({
@@ -100,7 +111,9 @@ const selectedTagIds = computed<string[]>({
     },
 });
 
-const statusBadgeVariant = (status: string | null | undefined): 'secondary' | 'default' | 'destructive' | 'outline' => {
+const statusBadgeVariant = (
+    status: string | null | undefined,
+): 'secondary' | 'default' | 'destructive' | 'outline' => {
     if (status === 'won') {
         return 'default';
     }
@@ -137,17 +150,29 @@ const deleteContact = (contactId: number): void => {
 
 const confirmDeleteContact = (): void => {
     if (contactToDelete.value) {
-        router.delete(`/clients/${props.client.id}/contacts/${contactToDelete.value}`, {
-            preserveScroll: true,
-            onSuccess: () => {
-                deleteContactDialogOpen.value = false;
-                contactToDelete.value = null;
+        router.delete(
+            `/clients/${props.client.id}/contacts/${contactToDelete.value}`,
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    deleteContactDialogOpen.value = false;
+                    contactToDelete.value = null;
+                },
             },
-        });
+        );
     }
 };
 
-const openContactDialog = (contact: { id: number; name: string; email: string | null; phone: string | null; position: string | null; is_primary: boolean } | null = null): void => {
+const openContactDialog = (
+    contact: {
+        id: number;
+        name: string;
+        email: string | null;
+        phone: string | null;
+        position: string | null;
+        is_primary: boolean;
+    } | null = null,
+): void => {
     editingContact.value = contact;
     contactDialogOpen.value = true;
 };
@@ -156,7 +181,6 @@ const closeContactDialog = (): void => {
     editingContact.value = null;
     contactDialogOpen.value = false;
 };
-
 </script>
 
 <template>
@@ -171,17 +195,23 @@ const closeContactDialog = (): void => {
 
             <div class="flex gap-2">
                 <Button as-child>
-                    <Link :href="`/quotes/create?client_id=${client.id}`">New quote</Link>
+                    <Link :href="`/quotes/create?client_id=${client.id}`"
+                        >New quote</Link
+                    >
                 </Button>
                 <!-- <Button variant="outline" @click="inviteDialogOpen = true">Invite to Portal</Button> -->
-                <Button variant="destructive" @click="deleteClient">Delete</Button>
+                <Button variant="destructive" @click="deleteClient"
+                    >Delete</Button
+                >
             </div>
         </div>
 
         <div class="grid gap-4 md:grid-cols-5">
             <div class="rounded-md border p-4">
                 <p class="text-xs text-muted-foreground">Total quotes sent</p>
-                <p class="text-2xl font-semibold">{{ stats.total_quotes_sent }}</p>
+                <p class="text-2xl font-semibold">
+                    {{ stats.total_quotes_sent }}
+                </p>
             </div>
             <div class="rounded-md border p-4">
                 <p class="text-xs text-muted-foreground">Win rate</p>
@@ -189,15 +219,23 @@ const closeContactDialog = (): void => {
             </div>
             <div class="rounded-md border p-4">
                 <p class="text-xs text-muted-foreground">Total value won</p>
-                <p class="text-2xl font-semibold">{{ formatCurrency(stats.total_value_won) }}</p>
+                <p class="text-2xl font-semibold">
+                    {{ formatCurrency(stats.total_value_won) }}
+                </p>
             </div>
             <div class="rounded-md border p-4">
                 <p class="text-xs text-muted-foreground">Average quote value</p>
-                <p class="text-2xl font-semibold">{{ formatCurrency(stats.average_quote_value) }}</p>
+                <p class="text-2xl font-semibold">
+                    {{ formatCurrency(stats.average_quote_value) }}
+                </p>
             </div>
             <div class="rounded-md border p-4">
-                <p class="text-xs text-muted-foreground">Avg days to acceptance</p>
-                <p class="text-2xl font-semibold">{{ stats.average_time_to_acceptance_days }}</p>
+                <p class="text-xs text-muted-foreground">
+                    Avg days to acceptance
+                </p>
+                <p class="text-2xl font-semibold">
+                    {{ stats.average_time_to_acceptance_days }}
+                </p>
             </div>
         </div>
 
@@ -208,7 +246,10 @@ const closeContactDialog = (): void => {
                 <TabsTrigger value="history">Quote history</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="profile" class="space-y-4 rounded-md border p-4">
+            <TabsContent
+                value="profile"
+                class="space-y-4 rounded-md border p-4"
+            >
                 <div class="grid gap-4 md:grid-cols-2">
                     <div class="grid gap-2">
                         <Label for="company_name">Company name</Label>
@@ -228,11 +269,17 @@ const closeContactDialog = (): void => {
                     </div>
                     <div class="grid gap-2">
                         <Label for="country">Country</Label>
-                        <CountryCombobox v-model="form.country" trigger-class="w-full" />
+                        <CountryCombobox
+                            v-model="form.country"
+                            trigger-class="w-full"
+                        />
                     </div>
                     <div class="grid gap-2">
                         <Label for="currency">Currency</Label>
-                        <CurrencyCombobox v-model="form.currency" trigger-class="w-full" />
+                        <CurrencyCombobox
+                            v-model="form.currency"
+                            trigger-class="w-full"
+                        />
                     </div>
                 </div>
 
@@ -255,17 +302,25 @@ const closeContactDialog = (): void => {
                             </SelectGroup>
                         </SelectContent>
                     </Select>
-                    <p v-if="availableTags.length === 0" class="text-sm text-muted-foreground">
+                    <p
+                        v-if="availableTags.length === 0"
+                        class="text-sm text-muted-foreground"
+                    >
                         No tags found. Create tags in Configuration.
                     </p>
                 </div>
 
                 <div class="flex justify-end">
-                    <Button :disabled="form.processing" @click="saveClient">Save profile</Button>
+                    <Button :disabled="form.processing" @click="saveClient"
+                        >Save profile</Button
+                    >
                 </div>
             </TabsContent>
 
-            <TabsContent value="contacts" class="space-y-4 rounded-md border p-4">
+            <TabsContent
+                value="contacts"
+                class="space-y-4 rounded-md border p-4"
+            >
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-semibold">Contacts</h3>
                     <Button @click="openContactDialog()">Add Contact</Button>
@@ -283,22 +338,45 @@ const closeContactDialog = (): void => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        <TableRow v-if="client.contacts && client.contacts.length > 0" v-for="contact in client.contacts" :key="contact.id">
+                        <TableRow
+                            v-if="client.contacts && client.contacts.length > 0"
+                            v-for="contact in client.contacts"
+                            :key="contact.id"
+                        >
                             <TableCell>{{ contact.name }}</TableCell>
                             <TableCell>{{ contact.email || '-' }}</TableCell>
                             <TableCell>{{ contact.phone || '-' }}</TableCell>
                             <TableCell>{{ contact.position || '-' }}</TableCell>
                             <TableCell>
-                                <Badge v-if="contact.is_primary" variant="default">Primary</Badge>
+                                <Badge
+                                    v-if="contact.is_primary"
+                                    variant="default"
+                                    >Primary</Badge
+                                >
                             </TableCell>
                             <TableCell class="text-right">
-                                <Button variant="ghost" size="sm" @click="openContactDialog(contact)">Edit</Button>
-                                <Button variant="ghost" size="sm" class="text-destructive" @click="deleteContact(contact.id)">Delete</Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    @click="openContactDialog(contact)"
+                                    >Edit</Button
+                                >
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    class="text-destructive"
+                                    @click="deleteContact(contact.id)"
+                                    >Delete</Button
+                                >
                             </TableCell>
                         </TableRow>
                         <TableRow v-else>
-                            <TableCell colspan="6" class="text-center text-muted-foreground">
-                                No contacts added yet. Click "Add Contact" to create one.
+                            <TableCell
+                                colspan="6"
+                                class="text-center text-muted-foreground"
+                            >
+                                No contacts added yet. Click "Add Contact" to
+                                create one.
                             </TableCell>
                         </TableRow>
                     </TableBody>
@@ -317,17 +395,28 @@ const closeContactDialog = (): void => {
                     </TableHeader>
                     <TableBody>
                         <TableRow v-for="quote in quoteHistory" :key="quote.id">
-                            <TableCell>{{ quote.number || quote.title || `#${quote.id}` }}</TableCell>
+                            <TableCell>{{
+                                quote.number || quote.title || `#${quote.id}`
+                            }}</TableCell>
                             <TableCell>
-                                <Badge :variant="statusBadgeVariant(quote.status)">
+                                <Badge
+                                    :variant="statusBadgeVariant(quote.status)"
+                                >
                                     {{ quote.status || 'unknown' }}
                                 </Badge>
                             </TableCell>
-                            <TableCell class="text-right">{{ formatCurrency(quote.base_total ?? 0) }}</TableCell>
-                            <TableCell>{{ formatDate(quote.created_at) }}</TableCell>
+                            <TableCell class="text-right">{{
+                                formatCurrency(quote.base_total ?? 0)
+                            }}</TableCell>
+                            <TableCell>{{
+                                formatDate(quote.created_at)
+                            }}</TableCell>
                         </TableRow>
                         <TableRow v-if="quoteHistory.length === 0">
-                            <TableCell colspan="4" class="text-center text-muted-foreground">
+                            <TableCell
+                                colspan="4"
+                                class="text-center text-muted-foreground"
+                            >
                                 No quote history available yet.
                             </TableCell>
                         </TableRow>

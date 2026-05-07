@@ -6,11 +6,15 @@ export function useFormat(defaultCurrency?: string) {
 
     const getDateFormat = () => localization.date_format || 'MMM d, yyyy';
     const getTimeFormat = () => localization.time_format || 'h:mm a';
-    const getCurrencyPosition = () => localization.currency_position || 'before';
+    const getCurrencyPosition = () =>
+        localization.currency_position || 'before';
     const getNumberFormat = () => localization.number_format || '1,234.56';
     const getTimezone = () => localization.timezone || 'UTC';
 
-    const formatCurrency = (val: number | string | null | undefined, currency?: string): string => {
+    const formatCurrency = (
+        val: number | string | null | undefined,
+        currency?: string,
+    ): string => {
         const n = Number(val || 0);
         const currencyCode = currency || defaultCurrency || 'USD';
         const position = getCurrencyPosition();
@@ -27,14 +31,21 @@ export function useFormat(defaultCurrency?: string) {
         // Format the number with custom separators
         const parts = n.toFixed(decimals).split('.');
         const integerPart = parts[0];
-        const decimalPart = decimals > 0 ? (parts[1] || '0'.repeat(decimals)) : '';
+        const decimalPart =
+            decimals > 0 ? parts[1] || '0'.repeat(decimals) : '';
 
         // Add thousand separators
         const thousandsSeparator = usesCommaForThousands ? ',' : '.';
         const decimalSeparator = usesPeriodForDecimal ? '.' : ',';
 
-        const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSeparator);
-        const formattedNumber = decimals > 0 ? `${formattedInteger}${decimalSeparator}${decimalPart}` : formattedInteger;
+        const formattedInteger = integerPart.replace(
+            /\B(?=(\d{3})+(?!\d))/g,
+            thousandsSeparator,
+        );
+        const formattedNumber =
+            decimals > 0
+                ? `${formattedInteger}${decimalSeparator}${decimalPart}`
+                : formattedInteger;
 
         // Get currency symbol
         const formatter = new Intl.NumberFormat(undefined, {
@@ -44,7 +55,8 @@ export function useFormat(defaultCurrency?: string) {
             maximumFractionDigits: 0,
         });
         const formattedWithSymbol = formatter.format(0);
-        const currencySymbol = formattedWithSymbol.replace(/[0-9]/g, '').trim() || currencyCode;
+        const currencySymbol =
+            formattedWithSymbol.replace(/[0-9]/g, '').trim() || currencyCode;
 
         // Position the currency symbol
         if (position === 'after') {
@@ -66,8 +78,12 @@ export function useFormat(defaultCurrency?: string) {
         const day = date.getDate().toString().padStart(2, '0');
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
         const year = date.getFullYear();
-        const monthName = date.toLocaleDateString(undefined, { month: 'short' });
-        const monthNameLong = date.toLocaleDateString(undefined, { month: 'long' });
+        const monthName = date.toLocaleDateString(undefined, {
+            month: 'short',
+        });
+        const monthNameLong = date.toLocaleDateString(undefined, {
+            month: 'long',
+        });
 
         if (dateFormat === 'DD/MM/YYYY') {
             return `${day}/${month}/${year}`;
@@ -131,7 +147,10 @@ export function useFormat(defaultCurrency?: string) {
         return `${formatDate(val)} ${formatTime(val)}`;
     };
 
-    const formatNumber = (val: number | string | null | undefined, decimals: number = 2): string => {
+    const formatNumber = (
+        val: number | string | null | undefined,
+        decimals: number = 2,
+    ): string => {
         const n = Number(val || 0);
         const numberFormat = getNumberFormat();
 
@@ -142,7 +161,9 @@ export function useFormat(defaultCurrency?: string) {
         if (isWholeNumber) {
             const usesCommaForThousands = numberFormat.includes(',');
             const thousandsSeparator = usesCommaForThousands ? ',' : '.';
-            const formattedInteger = Math.floor(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSeparator);
+            const formattedInteger = Math.floor(n)
+                .toString()
+                .replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSeparator);
 
             return formattedInteger;
         }
@@ -160,7 +181,10 @@ export function useFormat(defaultCurrency?: string) {
         const thousandsSeparator = usesCommaForThousands ? ',' : '.';
         const decimalSeparator = usesPeriodForDecimal ? '.' : ',';
 
-        const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSeparator);
+        const formattedInteger = integerPart.replace(
+            /\B(?=(\d{3})+(?!\d))/g,
+            thousandsSeparator,
+        );
 
         return `${formattedInteger}${decimalSeparator}${decimalPart}`;
     };
@@ -172,7 +196,9 @@ export function useFormat(defaultCurrency?: string) {
 
         const date = new Date(val);
         const now = new Date();
-        const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+        const diffInSeconds = Math.floor(
+            (now.getTime() - date.getTime()) / 1000,
+        );
 
         if (diffInSeconds < 60) {
             return 'just now';
@@ -199,7 +225,10 @@ export function useFormat(defaultCurrency?: string) {
         return formatDate(val);
     };
 
-    const convertTimezone = (val: string | null | undefined, targetTimezone?: string): string => {
+    const convertTimezone = (
+        val: string | null | undefined,
+        targetTimezone?: string,
+    ): string => {
         if (!val) {
             return '—';
         }
@@ -219,19 +248,19 @@ export function useFormat(defaultCurrency?: string) {
         };
 
         const formatted = date.toLocaleString(undefined, options);
-        
+
         // Parse and reformat according to custom date format
         const parts = formatted.split(/[,\s]+/);
         const timePart = parts[parts.length - 1];
         const datePart = parts.slice(0, -1).join(' ');
-        
+
         // Reformat date part according to custom format
         const dateFormat = getDateFormat();
         const dateObj = new Date(formatted);
         const day = dateObj.getDate().toString().padStart(2, '0');
         const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
         const year = dateObj.getFullYear();
-        
+
         let formattedDate;
 
         if (dateFormat === 'DD/MM/YYYY') {
@@ -243,7 +272,7 @@ export function useFormat(defaultCurrency?: string) {
         } else {
             formattedDate = datePart;
         }
-        
+
         return `${formattedDate} ${timePart}`;
     };
 

@@ -40,27 +40,42 @@ const statusLabels: Record<string, string> = {
             </Link>
         </div>
 
-        <div v-if="creditNotes.data.length > 0" class="rounded-xl border bg-white shadow-sm">
+        <div
+            v-if="creditNotes.data.length > 0"
+            class="rounded-xl border bg-white shadow-sm"
+        >
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead class="border-b bg-muted/30">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-muted-foreground">
+                            <th
+                                class="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase"
+                            >
                                 Credit Note
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-muted-foreground">
+                            <th
+                                class="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase"
+                            >
                                 Invoice
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-muted-foreground">
+                            <th
+                                class="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase"
+                            >
                                 Amount
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-muted-foreground">
+                            <th
+                                class="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase"
+                            >
                                 Status
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold uppercase text-muted-foreground">
+                            <th
+                                class="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase"
+                            >
                                 Date
                             </th>
-                            <th class="px-6 py-3 text-right text-xs font-semibold uppercase text-muted-foreground">
+                            <th
+                                class="px-6 py-3 text-right text-xs font-semibold text-muted-foreground uppercase"
+                            >
                                 Actions
                             </th>
                         </tr>
@@ -78,7 +93,9 @@ const statusLabels: Record<string, string> = {
                                 >
                                     {{ creditNote.credit_note_number }}
                                 </Link>
-                                <div class="text-xs text-muted-foreground">{{ creditNote.title }}</div>
+                                <div class="text-xs text-muted-foreground">
+                                    {{ creditNote.title }}
+                                </div>
                             </td>
                             <td class="px-6 py-4 text-muted-foreground">
                                 <Link
@@ -91,7 +108,8 @@ const statusLabels: Record<string, string> = {
                                 <span v-else>-</span>
                             </td>
                             <td class="px-6 py-4 font-medium">
-                                {{ creditNote.currency }} {{ formatCurrency(creditNote.total) }}
+                                {{ creditNote.currency }}
+                                {{ formatCurrency(creditNote.total) }}
                             </td>
                             <td class="px-6 py-4">
                                 <Badge :class="statusColors[creditNote.status]">
@@ -106,7 +124,13 @@ const statusLabels: Record<string, string> = {
                                     v-if="creditNote.pdf_url"
                                     variant="outline"
                                     size="sm"
-                                    @click="() => window.open(creditNote.pdf_url, '_blank')"
+                                    @click="
+                                        () =>
+                                            window.open(
+                                                creditNote.pdf_url,
+                                                '_blank',
+                                            )
+                                    "
                                 >
                                     <Download class="mr-2 h-4 w-4" />
                                     Download
@@ -122,7 +146,8 @@ const statusLabels: Record<string, string> = {
                 class="flex items-center justify-between border-t px-6 py-4"
             >
                 <div class="text-sm text-muted-foreground">
-                    Showing {{ creditNotes.from }} to {{ creditNotes.to }} of {{ creditNotes.total }} results
+                    Showing {{ creditNotes.from }} to {{ creditNotes.to }} of
+                    {{ creditNotes.total }} results
                 </div>
                 <div class="flex gap-2">
                     <Link
@@ -131,9 +156,10 @@ const statusLabels: Record<string, string> = {
                         v-html="link.label"
                         :href="link.url || '#'"
                         :class="{
-                            'px-3 py-1 text-sm rounded': true,
+                            'rounded px-3 py-1 text-sm': true,
                             'bg-primary text-white': link.active,
-                            'bg-muted text-muted-foreground hover:bg-muted/80': !link.active,
+                            'bg-muted text-muted-foreground hover:bg-muted/80':
+                                !link.active,
                             'pointer-events-none opacity-50': !link.url,
                         }"
                     />
@@ -141,7 +167,10 @@ const statusLabels: Record<string, string> = {
             </div>
         </div>
 
-        <div v-else class="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+        <div
+            v-else
+            class="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground"
+        >
             <FileText class="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
             No credit notes yet.
         </div>

@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { FolderOpen, MoreHorizontal, Plus, Tags, Upload } from 'lucide-vue-next';
+import {
+    FolderOpen,
+    MoreHorizontal,
+    Plus,
+    Tags,
+    Upload,
+} from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -19,7 +25,10 @@ const emit = defineEmits<{
 
 <template>
     <div class="flex flex-wrap items-center gap-2">
-        <Button class="hidden sm:inline-flex" @click="emit('open-create-client')">
+        <Button
+            class="hidden sm:inline-flex"
+            @click="emit('open-create-client')"
+        >
             <Plus class="mr-2 h-4 w-4" />
             Add client
         </Button>
@@ -36,7 +45,12 @@ const emit = defineEmits<{
 
         <DropdownMenu>
             <DropdownMenuTrigger as-child>
-                <Button variant="outline" size="icon" title="More actions" aria-label="More actions">
+                <Button
+                    variant="outline"
+                    size="icon"
+                    title="More actions"
+                    aria-label="More actions"
+                >
                     <MoreHorizontal class="h-4 w-4" />
                 </Button>
             </DropdownMenuTrigger>
@@ -46,7 +60,10 @@ const emit = defineEmits<{
                 <DropdownMenuSeparator />
 
                 <DropdownMenuItem :as-child="true">
-                    <Link href="/clients/import" class="flex w-full items-center gap-2">
+                    <Link
+                        href="/clients/import"
+                        class="flex w-full items-center gap-2"
+                    >
                         <Upload class="h-4 w-4" />
                         <span>Import CSV</span>
                     </Link>
@@ -55,20 +72,29 @@ const emit = defineEmits<{
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Tags</DropdownMenuLabel>
 
-                <DropdownMenuItem class="flex items-center gap-2" @select="emit('open-create-tag')">
+                <DropdownMenuItem
+                    class="flex items-center gap-2"
+                    @select="emit('open-create-tag')"
+                >
                     <Plus class="h-4 w-4" />
                     <span>Create tag</span>
                 </DropdownMenuItem>
 
                 <DropdownMenuItem :as-child="true">
-                    <Link href="/configuration/tags" class="flex w-full items-center gap-2">
+                    <Link
+                        href="/configuration/tags"
+                        class="flex w-full items-center gap-2"
+                    >
                         <Tags class="h-4 w-4" />
                         <span>Open tags</span>
                     </Link>
                 </DropdownMenuItem>
 
                 <DropdownMenuItem :as-child="true">
-                    <Link href="/clients" class="flex w-full items-center gap-2">
+                    <Link
+                        href="/clients"
+                        class="flex w-full items-center gap-2"
+                    >
                         <FolderOpen class="h-4 w-4" />
                         <span>Open client list</span>
                     </Link>

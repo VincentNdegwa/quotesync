@@ -3,7 +3,13 @@ import { Head, Link } from '@inertiajs/vue3';
 import { FileText, Eye, CheckCircle2, XCircle, Clock } from 'lucide-vue-next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { useFormat } from '@/composables/useFormat';
 import { show as showQuote } from '@/routes/portal/quotes';
 
@@ -20,8 +26,13 @@ const props = defineProps<{
     };
 }>();
 
-const getStatusBadge = (status: string): 'default' | 'outline' | 'destructive' | 'secondary' => {
-    const colors: Record<string, 'default' | 'outline' | 'destructive' | 'secondary'> = {
+const getStatusBadge = (
+    status: string,
+): 'default' | 'outline' | 'destructive' | 'secondary' => {
+    const colors: Record<
+        string,
+        'default' | 'outline' | 'destructive' | 'secondary'
+    > = {
         sent: 'outline',
         viewed: 'outline',
         accepted: 'default',
@@ -58,7 +69,9 @@ const getStatusIcon = (status: string) => {
                     <CardTitle class="text-sm font-medium">Total</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div class="text-2xl font-bold">{{ stats?.total ?? 0 }}</div>
+                    <div class="text-2xl font-bold">
+                        {{ stats?.total ?? 0 }}
+                    </div>
                 </CardContent>
             </Card>
 
@@ -67,7 +80,9 @@ const getStatusIcon = (status: string) => {
                     <CardTitle class="text-sm font-medium">Pending</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div class="text-2xl font-bold">{{ stats?.pending ?? 0 }}</div>
+                    <div class="text-2xl font-bold">
+                        {{ stats?.pending ?? 0 }}
+                    </div>
                 </CardContent>
             </Card>
 
@@ -76,7 +91,9 @@ const getStatusIcon = (status: string) => {
                     <CardTitle class="text-sm font-medium">Viewed</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div class="text-2xl font-bold">{{ stats?.viewed ?? 0 }}</div>
+                    <div class="text-2xl font-bold">
+                        {{ stats?.viewed ?? 0 }}
+                    </div>
                 </CardContent>
             </Card>
 
@@ -85,7 +102,9 @@ const getStatusIcon = (status: string) => {
                     <CardTitle class="text-sm font-medium">Accepted</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div class="text-2xl font-bold text-green-600">{{ stats?.accepted ?? 0 }}</div>
+                    <div class="text-2xl font-bold text-green-600">
+                        {{ stats?.accepted ?? 0 }}
+                    </div>
                 </CardContent>
             </Card>
 
@@ -94,7 +113,9 @@ const getStatusIcon = (status: string) => {
                     <CardTitle class="text-sm font-medium">Declined</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div class="text-2xl font-bold text-red-600">{{ stats?.declined ?? 0 }}</div>
+                    <div class="text-2xl font-bold text-red-600">
+                        {{ stats?.declined ?? 0 }}
+                    </div>
                 </CardContent>
             </Card>
         </div>
@@ -106,30 +127,52 @@ const getStatusIcon = (status: string) => {
                 <CardDescription>View and manage your quotes</CardDescription>
             </CardHeader>
             <CardContent>
-                <div v-if="quotes.length === 0" class="text-center text-muted-foreground py-8">
+                <div
+                    v-if="quotes.length === 0"
+                    class="py-8 text-center text-muted-foreground"
+                >
                     No quotes found
                 </div>
                 <div v-else class="space-y-4">
                     <div
                         v-for="quote in quotes"
                         :key="quote.id"
-                        class="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                        class="flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50"
                     >
                         <div class="flex-1">
                             <div class="flex items-center gap-2">
-                                <span class="font-medium">{{ quote?.title || 'Untitled Quote' }}</span>
-                                <Badge :variant="getStatusBadge(quote.status || 'unknown')">
+                                <span class="font-medium">{{
+                                    quote?.title || 'Untitled Quote'
+                                }}</span>
+                                <Badge
+                                    :variant="
+                                        getStatusBadge(
+                                            quote.status || 'unknown',
+                                        )
+                                    "
+                                >
                                     {{ quote.status || 'Unknown' }}
                                 </Badge>
                             </div>
-                            <p class="text-sm text-gray-500 mt-1">
-                                {{ quote.workspace?.name || 'Unknown' }} • {{ formatDate(quote.created_at) }}
+                            <p class="mt-1 text-sm text-gray-500">
+                                {{ quote.workspace?.name || 'Unknown' }} •
+                                {{ formatDate(quote.created_at) }}
                             </p>
                         </div>
                         <div class="flex items-center gap-4">
-                            <span class="font-bold">{{ formatCurrency(quote.total, quote.currency ?? undefined) }}</span>
-                            <Link v-if="quote.uuid" :href="showQuote(quote.uuid).url">
-                                <Button variant="outline" size="sm">View</Button>
+                            <span class="font-bold">{{
+                                formatCurrency(
+                                    quote.total,
+                                    quote.currency ?? undefined,
+                                )
+                            }}</span>
+                            <Link
+                                v-if="quote.uuid"
+                                :href="showQuote(quote.uuid).url"
+                            >
+                                <Button variant="outline" size="sm"
+                                    >View</Button
+                                >
                             </Link>
                         </div>
                     </div>

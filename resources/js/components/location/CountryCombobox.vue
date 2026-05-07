@@ -16,10 +16,7 @@ import {
     PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import {
-    countryOptions,
-    getCountryOptions,
-} from '@/utils/location-options';
+import { countryOptions, getCountryOptions } from '@/utils/location-options';
 import type { CountryOption } from '@/utils/location-options';
 
 const model = defineModel<string>({
@@ -103,11 +100,20 @@ const selectCountry = (selectedValue: string): void => {
                             v-for="country in filteredCountries"
                             :key="country.code"
                             :value="country.code"
-                            @select="(ev) => selectCountry(ev.detail.value as string)"
+                            @select="
+                                (ev) => selectCountry(ev.detail.value as string)
+                            "
                         >
                             {{ country.label }}
                             <CheckIcon
-                                :class="cn('ml-auto h-4 w-4', model === country.code ? 'opacity-100' : 'opacity-0')"
+                                :class="
+                                    cn(
+                                        'ml-auto h-4 w-4',
+                                        model === country.code
+                                            ? 'opacity-100'
+                                            : 'opacity-0',
+                                    )
+                                "
                             />
                         </CommandItem>
                     </CommandGroup>

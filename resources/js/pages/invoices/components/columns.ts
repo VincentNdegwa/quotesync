@@ -16,31 +16,38 @@ type InvoiceColumnOptions = {
 
 const sortableHeader = (
     label: string,
-    column: { getIsSorted: () => false | 'asc' | 'desc'; toggleSorting: (desc?: boolean) => void },
-    align: 'left' | 'right' = 'left',
-) => h(
-    Button,
-    {
-        variant: 'ghost',
-        class: align === 'right'
-            ? 'h-8 w-full justify-center px-0 text-right'
-            : 'h-8 justify-center px-0 text-left',
-        onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+    column: {
+        getIsSorted: () => false | 'asc' | 'desc';
+        toggleSorting: (desc?: boolean) => void;
     },
-    () => [
-        label,
-        h(ArrowUpDown, { class: 'ml-2 h-4 w-4' }),
-    ],
-);
+    align: 'left' | 'right' = 'left',
+) =>
+    h(
+        Button,
+        {
+            variant: 'ghost',
+            class:
+                align === 'right'
+                    ? 'h-8 w-full justify-center px-0 text-right'
+                    : 'h-8 justify-center px-0 text-left',
+            onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+        },
+        () => [label, h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+    );
 
-
-export const getInvoiceColumns = (options: InvoiceColumnOptions): ColumnDef<InvoiceListRecord>[] => {
+export const getInvoiceColumns = (
+    options: InvoiceColumnOptions,
+): ColumnDef<InvoiceListRecord>[] => {
     const { getInvoiceStatus } = useEnums();
     const page = usePage();
-    const defaultCurrency = (page.props.workspace_currency as string) || undefined;
+    const defaultCurrency =
+        (page.props.workspace_currency as string) || undefined;
 
     const formatCurrency = (val: number | string, currency?: string | null) => {
-        return useFormat(currency || defaultCurrency).formatCurrency(val, currency || defaultCurrency);
+        return useFormat(currency || defaultCurrency).formatCurrency(
+            val,
+            currency || defaultCurrency,
+        );
     };
 
     const formatDate = (val: string | null) => {
@@ -56,7 +63,8 @@ export const getInvoiceColumns = (options: InvoiceColumnOptions): ColumnDef<Invo
         {
             accessorKey: 'title',
             header: ({ column }) => sortableHeader('Title', column),
-            cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.title),
+            cell: ({ row }) =>
+                h('span', { class: 'font-medium' }, row.original.title),
         },
         {
             accessorKey: 'client',
@@ -69,16 +77,31 @@ export const getInvoiceColumns = (options: InvoiceColumnOptions): ColumnDef<Invo
             cell: ({ row }) => {
                 const status = getInvoiceStatus(row.original.status);
 
-                return h(Badge, {
-                    variant: status?.badgeColor ?? 'outline',
-                    class: ['px-3 py-1 text-xs font-semibold', status?.cssColor],
-                }, () => status?.label ?? row.original.status);
+                return h(
+                    Badge,
+                    {
+                        variant: status?.badgeColor ?? 'outline',
+                        class: [
+                            'px-3 py-1 text-xs font-semibold',
+                            status?.cssColor,
+                        ],
+                    },
+                    () => status?.label ?? row.original.status,
+                );
             },
         },
         {
             accessorKey: 'total',
             header: ({ column }) => sortableHeader('Total', column, 'right'),
-            cell: ({ row }) => h('span', { class: 'text-right' }, formatCurrency(row.original.total, row.original.base_currency)),
+            cell: ({ row }) =>
+                h(
+                    'span',
+                    { class: 'text-right' },
+                    formatCurrency(
+                        row.original.total,
+                        row.original.base_currency,
+                    ),
+                ),
         },
         {
             accessorKey: 'due_date',
@@ -88,12 +111,13 @@ export const getInvoiceColumns = (options: InvoiceColumnOptions): ColumnDef<Invo
         {
             id: 'actions',
             header: '',
-            cell: ({ row }) => h(InvoiceTableRowActions, {
-                invoiceId: row.original.id,
-                invoice: row.original,
-                invoiceStatuses: options.invoiceStatuses,
-                onDelete: () => options.onDelete(row.original.id),
-            }),
+            cell: ({ row }) =>
+                h(InvoiceTableRowActions, {
+                    invoiceId: row.original.id,
+                    invoice: row.original,
+                    invoiceStatuses: options.invoiceStatuses,
+                    onDelete: () => options.onDelete(row.original.id),
+                }),
         },
     ];
 

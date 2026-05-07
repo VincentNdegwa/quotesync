@@ -20,7 +20,10 @@ const progressPercentage = computed(() => {
         return 0;
     }
 
-    return Math.round((props.importHistory.processed_rows / props.importHistory.total_rows) * 100);
+    return Math.round(
+        (props.importHistory.processed_rows / props.importHistory.total_rows) *
+            100,
+    );
 });
 
 const statusColor = computed(() => {
@@ -55,21 +58,29 @@ const statusText = computed(() => {
 </script>
 
 <template>
-    <div class="rounded-lg border p-4 space-y-3">
+    <div class="space-y-3 rounded-lg border p-4">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <div :class="['w-3 h-3 rounded-full', statusColor]" />
-                <span class="font-medium">{{ importHistory.type === 'clients' ? 'Client' : 'Catalog' }} Import</span>
+                <div :class="['h-3 w-3 rounded-full', statusColor]" />
+                <span class="font-medium"
+                    >{{
+                        importHistory.type === 'clients' ? 'Client' : 'Catalog'
+                    }}
+                    Import</span
+                >
             </div>
             <span class="text-sm text-muted-foreground">{{ statusText }}</span>
         </div>
 
         <div class="space-y-1">
             <div class="flex justify-between text-sm">
-                <span>{{ importHistory.processed_rows }} / {{ importHistory.total_rows }} rows</span>
+                <span
+                    >{{ importHistory.processed_rows }} /
+                    {{ importHistory.total_rows }} rows</span
+                >
                 <span>{{ progressPercentage }}%</span>
             </div>
-            <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div class="h-2 overflow-hidden rounded-full bg-gray-200">
                 <div
                     :class="['h-full transition-all duration-300', statusColor]"
                     :style="{ width: `${progressPercentage}%` }"
@@ -77,21 +88,41 @@ const statusText = computed(() => {
             </div>
         </div>
 
-        <div v-if="importHistory.failed_rows > 0" class="text-sm text-destructive">
+        <div
+            v-if="importHistory.failed_rows > 0"
+            class="text-sm text-destructive"
+        >
             {{ importHistory.failed_rows }} rows failed
         </div>
 
-        <div v-if="importHistory.error_details && importHistory.error_details.length > 0" class="mt-2">
+        <div
+            v-if="
+                importHistory.error_details &&
+                importHistory.error_details.length > 0
+            "
+            class="mt-2"
+        >
             <details class="text-sm">
-                <summary class="cursor-pointer text-muted-foreground hover:text-foreground">
+                <summary
+                    class="cursor-pointer text-muted-foreground hover:text-foreground"
+                >
                     View errors ({{ importHistory.error_details.length }})
                 </summary>
-                <ul class="mt-2 space-y-1 pl-4 list-disc text-destructive">
-                    <li v-for="(error, index) in importHistory.error_details.slice(0, 10)" :key="index">
+                <ul class="mt-2 list-disc space-y-1 pl-4 text-destructive">
+                    <li
+                        v-for="(
+                            error, index
+                        ) in importHistory.error_details.slice(0, 10)"
+                        :key="index"
+                    >
                         {{ error }}
                     </li>
-                    <li v-if="importHistory.error_details.length > 10" class="text-muted-foreground">
-                        ... and {{ importHistory.error_details.length - 10 }} more
+                    <li
+                        v-if="importHistory.error_details.length > 10"
+                        class="text-muted-foreground"
+                    >
+                        ... and
+                        {{ importHistory.error_details.length - 10 }} more
                     </li>
                 </ul>
             </details>

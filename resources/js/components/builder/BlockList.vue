@@ -38,7 +38,11 @@ const onDrop = (index: number): void => {
 
 <template>
     <div class="space-y-3">
-        <h3 class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Blocks</h3>
+        <h3
+            class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+        >
+            Blocks
+        </h3>
 
         <div
             v-for="(block, index) in blocks"
@@ -46,7 +50,11 @@ const onDrop = (index: number): void => {
             role="button"
             tabindex="0"
             class="flex w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-left text-sm transition"
-            :class="selectedBlockId === block.id ? 'border-primary bg-primary/5' : 'hover:border-muted-foreground'"
+            :class="
+                selectedBlockId === block.id
+                    ? 'border-primary bg-primary/5'
+                    : 'hover:border-muted-foreground'
+            "
             draggable="true"
             @click="emit('select', block.id)"
             @keydown.enter.prevent="emit('select', block.id)"
@@ -57,7 +65,9 @@ const onDrop = (index: number): void => {
         >
             <span class="flex min-w-0 items-center gap-2">
                 <GripVertical class="size-4 text-muted-foreground" />
-                <span class="truncate capitalize">{{ block.label || displayName(block.type) }}</span>
+                <span class="truncate capitalize">{{
+                    block.label || displayName(block.type)
+                }}</span>
             </span>
             <span class="flex items-center gap-2">
                 <button
@@ -69,12 +79,19 @@ const onDrop = (index: number): void => {
                     <Eye v-if="block.visible" class="size-3.5" />
                     <EyeOff v-else class="size-3.5" />
                 </button>
-                <Lock v-if="block.locked" class="size-3.5 text-muted-foreground" />
+                <Lock
+                    v-if="block.locked"
+                    class="size-3.5 text-muted-foreground"
+                />
             </span>
         </div>
 
         <div class="border-t pt-3">
-            <p class="mb-2 text-xs uppercase tracking-wide text-muted-foreground">Add block</p>
+            <p
+                class="mb-2 text-xs tracking-wide text-muted-foreground uppercase"
+            >
+                Add block
+            </p>
             <div class="grid grid-cols-1 gap-2">
                 <Button
                     v-for="type in addableTypes"

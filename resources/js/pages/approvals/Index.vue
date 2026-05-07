@@ -103,36 +103,39 @@ const daysAgo = (val: string): string => {
     const diff = Math.floor((Date.now() - new Date(val).getTime()) / 86400000);
 
     if (diff === 0) {
-return 'today';
-}
+        return 'today';
+    }
 
     if (diff === 1) {
-return 'yesterday';
-}
+        return 'yesterday';
+    }
 
     return `${diff} days ago`;
 };
 
-type RuleLabelContext = Pick<Rule, 'trigger_type' | 'threshold_value' | 'client'> & {
+type RuleLabelContext = Pick<
+    Rule,
+    'trigger_type' | 'threshold_value' | 'client'
+> & {
     trigger_type: string;
 };
 
 const triggerLabel = (rule: RuleLabelContext): string => {
     if (rule.trigger_type === 'value_above') {
-return `Quote value above ${fmt(rule.threshold_value ?? 0)}`;
-}
+        return `Quote value above ${fmt(rule.threshold_value ?? 0)}`;
+    }
 
     if (rule.trigger_type === 'value_below') {
-return `Quote value below ${fmt(rule.threshold_value ?? 0)}`;
-}
+        return `Quote value below ${fmt(rule.threshold_value ?? 0)}`;
+    }
 
     if (rule.trigger_type === 'client') {
-return `Client: ${rule.client?.company_name ?? '—'}`;
-}
+        return `Client: ${rule.client?.company_name ?? '—'}`;
+    }
 
     if (rule.trigger_type === 'all_quotes') {
-return 'All quotes';
-}
+        return 'All quotes';
+    }
 
     return rule.trigger_type;
 };
@@ -157,21 +160,23 @@ const openReject = (approval: Approval): void => {
 
 const submitApprove = (send: boolean): void => {
     if (!selectedApproval.value) {
-return;
-}
+        return;
+    }
 
-    approveForm.transform(() => ({ send })).post(`/approvals/${selectedApproval.value.id}/approve`, {
-        preserveScroll: true,
-        onSuccess: () => {
-            approveDialogOpen.value = false;
-        },
-    });
+    approveForm
+        .transform(() => ({ send }))
+        .post(`/approvals/${selectedApproval.value.id}/approve`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                approveDialogOpen.value = false;
+            },
+        });
 };
 
 const submitReject = (): void => {
     if (!selectedApproval.value) {
-return;
-}
+        return;
+    }
 
     rejectForm.post(`/approvals/${selectedApproval.value.id}/reject`, {
         preserveScroll: true,
@@ -352,12 +357,10 @@ const executeDeleteRule = (): void => {
                                     {{
                                         triggerLabel({
                                             trigger_type:
-                                                approval
-                                                    .approval_rule
+                                                approval.approval_rule
                                                     .trigger_type,
                                             threshold_value:
-                                                approval
-                                                    .approval_rule
+                                                approval.approval_rule
                                                     .threshold_value,
                                             client: null,
                                         })
@@ -642,7 +645,7 @@ const executeDeleteRule = (): void => {
                 <div class="space-y-1.5">
                     <Label>Trigger</Label>
                     <Select v-model="newRuleForm.trigger_type">
-                        <SelectTrigger class="w-full" >
+                        <SelectTrigger class="w-full">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

@@ -43,7 +43,9 @@ const props = defineProps<{
 }>();
 
 const countryFilterOptions = computed<CountryOption[]>(() => {
-    const commonCodes = new Set(commonCountryOptions.map((country) => country.code));
+    const commonCodes = new Set(
+        commonCountryOptions.map((country) => country.code),
+    );
 
     return [
         { code: ALL_OPTION, label: 'All countries', currency: '' },
@@ -53,12 +55,16 @@ const countryFilterOptions = computed<CountryOption[]>(() => {
 });
 
 const currencyFilterOptions = computed(() => {
-    const commonCodes = new Set(commonCurrencyOptions.map((currency) => currency.code));
+    const commonCodes = new Set(
+        commonCurrencyOptions.map((currency) => currency.code),
+    );
 
     return [
         { code: ALL_OPTION, label: 'All currencies' },
         ...commonCurrencyOptions,
-        ...currencyOptions.filter((currency) => !commonCodes.has(currency.code)),
+        ...currencyOptions.filter(
+            (currency) => !commonCodes.has(currency.code),
+        ),
     ];
 });
 
@@ -273,7 +279,11 @@ const exportSelected = (): void => {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem :value="ALL_OPTION">All tags</SelectItem>
-                        <SelectItem v-for="tag in tags" :key="tag.id" :value="tag.name">
+                        <SelectItem
+                            v-for="tag in tags"
+                            :key="tag.id"
+                            :value="tag.name"
+                        >
                             {{ tag.name }}
                         </SelectItem>
                     </SelectContent>

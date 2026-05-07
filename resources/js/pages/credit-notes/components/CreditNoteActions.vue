@@ -44,7 +44,11 @@ const emit = defineEmits<{
 }>();
 
 const page = usePage();
-const creditNoteStatuses = computed(() => (page.props.enums as { creditNoteStatus?: CreditNoteStatusEnum[] }).creditNoteStatus ?? []);
+const creditNoteStatuses = computed(
+    () =>
+        (page.props.enums as { creditNoteStatus?: CreditNoteStatusEnum[] })
+            .creditNoteStatus ?? [],
+);
 
 const showDeleteDialog = ref(false);
 const showIssueDialog = ref(false);
@@ -80,13 +84,17 @@ const handleIssue = (): void => {
 };
 
 const executeIssue = (): void => {
-    router.post(`/credit-notes/${props.creditNote.id}/issue`, {}, {
-        preserveScroll: true,
-        onSuccess: () => {
-            showIssueDialog.value = false;
-            emit('success');
+    router.post(
+        `/credit-notes/${props.creditNote.id}/issue`,
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                showIssueDialog.value = false;
+                emit('success');
+            },
         },
-    });
+    );
 };
 
 const handleVoid = (): void => {
@@ -94,23 +102,31 @@ const handleVoid = (): void => {
 };
 
 const executeVoid = (): void => {
-    router.post(`/credit-notes/${props.creditNote.id}/void`, { void_reason: voidReason.value }, {
-        preserveScroll: true,
-        onSuccess: () => {
-            showVoidDialog.value = false;
-            voidReason.value = '';
-            emit('success');
+    router.post(
+        `/credit-notes/${props.creditNote.id}/void`,
+        { void_reason: voidReason.value },
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                showVoidDialog.value = false;
+                voidReason.value = '';
+                emit('success');
+            },
         },
-    });
+    );
 };
 
 const handleApply = (): void => {
-    router.post(`/credit-notes/${props.creditNote.id}/apply`, {}, {
-        preserveScroll: true,
-        onSuccess: () => {
-            emit('success');
+    router.post(
+        `/credit-notes/${props.creditNote.id}/apply`,
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                emit('success');
+            },
         },
-    });
+    );
 };
 </script>
 
@@ -152,8 +168,12 @@ const handleApply = (): void => {
                 </div>
             </div>
             <DialogFooter>
-                <Button variant="outline" @click="showVoidDialog = false">Cancel</Button>
-                <Button @click="executeVoid" :disabled="!voidReason.trim()">Void</Button>
+                <Button variant="outline" @click="showVoidDialog = false"
+                    >Cancel</Button
+                >
+                <Button @click="executeVoid" :disabled="!voidReason.trim()"
+                    >Void</Button
+                >
             </DialogFooter>
         </DialogContent>
     </Dialog>
@@ -177,11 +197,7 @@ const handleApply = (): void => {
                     </Link>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem
-                    v-if="canEdit"
-                    :as-child="true"
-                    class="gap-2"
-                >
+                <DropdownMenuItem v-if="canEdit" :as-child="true" class="gap-2">
                     <Link
                         :href="`/credit-notes/${creditNote.id}/edit`"
                         class="flex w-full items-center gap-2"
@@ -236,12 +252,7 @@ const handleApply = (): void => {
 
     <!-- Buttons variant for Show page -->
     <template v-else-if="variant === 'buttons'">
-        <Button
-            v-if="canIssue"
-            size="sm"
-            class="gap-1.5"
-            @click="handleIssue"
-        >
+        <Button v-if="canIssue" size="sm" class="gap-1.5" @click="handleIssue">
             <Send class="h-3.5 w-3.5" />
             Issue
         </Button>
