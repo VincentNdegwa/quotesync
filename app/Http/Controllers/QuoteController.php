@@ -158,14 +158,12 @@ class QuoteController extends Controller
             'tasks.status',
         ]);
 
-        // Load task statuses for the workspace
         $taskStatuses = \App\Models\TaskStatus::where('workspace_id', $workspace->id)
             ->orderBy('sort_order')
             ->get(['id', 'name', 'slug', 'color', 'sort_order']);
 
         $quote->setRelation('task_statuses', $taskStatuses);
 
-        // Load versions without global scopes
         $quote->setRelation('versions', $quote->versions()->withoutGlobalScopes()->get(['id', 'version', 'number', 'created_at']));
 
         $quote->loadMissing([
@@ -174,6 +172,8 @@ class QuoteController extends Controller
             'quoteFollowUps.step:id,follow_up_sequence_id,channel,subject,message_template,day_offset',
             'winProbability.signals',
         ]);
+
+        $quote = $this->transformQuote($quote);
 
         $teamMembers = User::whereHas('workspaces', function ($query) use ($workspace) {
             $query->where('workspace_id', $workspace->id);
@@ -422,5 +422,25 @@ class QuoteController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote ownership transferred successfully.')]);
 
         return back();
+    }
+
+    private function transformQuote(Quote $quote): Quote
+    {
+        $quote->subtotal = $quote->base_subtotal;
+        $quote->discount_amount = $quote->base_discount_amount;
+        $quote->tax_amount = $quote->base_tax_amount;
+        $quote->total = $quote->base_total;
+        $quote->currency = $quote->base_currency;
+
+        foreach ($quote->sections as $section) {
+            foreach ($section->lineItems as $lineItem) {
+                $lineItem->unit_price = $lineItem->base_unit_price ?? $lineItem->unit_price;
+                $lineItem->subtotal = $lineItem->base_subtotal ?? $lineItem->subtotal;
+                $lineItem->tax_amount = $lineItem->base_tax_amount ?? $lineItem->tax_amount;
+                $lineItem->total = $lineItem->base_total ?? $lineItem->total;
+            }
+        }
+
+        return $quote;
     }
 }
