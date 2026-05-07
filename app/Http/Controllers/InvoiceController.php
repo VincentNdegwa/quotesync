@@ -99,6 +99,8 @@ class InvoiceController extends Controller
             'creditNotes',
         ]);
 
+        $invoice = $this->transformInvoice($invoice);
+
         return Inertia::render('invoices/Show', [
             'invoice' => $invoice,
             'invoiceStatuses' => InvoiceStatus::all(),
@@ -402,5 +404,27 @@ class InvoiceController extends Controller
         ]);
 
         return back()->with('success', 'Payment refunded successfully');
+    }
+
+    private function transformInvoice(Invoice $invoice): Invoice
+    {
+        $invoice->subtotal = $invoice->base_subtotal;
+        $invoice->discount_amount = $invoice->base_discount_amount;
+        $invoice->tax_amount = $invoice->base_tax_amount;
+        $invoice->total = $invoice->base_total;
+        $invoice->currency = $invoice->base_currency;
+
+        foreach ($invoice->lineItems as $lineItem) {
+            $lineItem->unit_price = $lineItem->base_unit_price ?? $lineItem->unit_price;
+            $lineItem->subtotal = $lineItem->base_subtotal ?? $lineItem->subtotal;
+            $lineItem->tax_amount = $lineItem->base_tax_amount ?? $lineItem->tax_amount;
+            $lineItem->total = $lineItem->base_total ?? $lineItem->total;
+
+            foreach ($lineItem->taxes as $tax) {
+                $tax->tax_amount = $tax->base_tax_amount ?? $tax->tax_amount;
+            }
+        }
+
+        return $invoice;
     }
 }

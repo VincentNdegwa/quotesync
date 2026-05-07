@@ -661,6 +661,7 @@ const toggleLineItemTax = (sectionIndex: number, lineItemIndex: number, tax: Bui
 
         item.taxes = item.taxes.filter((entry) => entry.tax_id !== tax.id);
     });
+    recompute();
 };
 
 const toggleLineItemTaxForSelected = (payload: { tax: BuilderTaxOption; enabled: boolean }): void => {
@@ -973,15 +974,22 @@ const recompute = (): void => {
     localState.value.sections.forEach((section) => {
         section.line_items.forEach((item) => {
             const lineSubtotal = item.quantity * item.unit_price * (1 - item.discount_percent / 100);
-            const lineTaxAmount = item.taxes.reduce((sum, tax) => {
+            
+            // Calculate individual tax amounts
+            item.taxes.forEach((tax) => {
                 const taxRate = Number(tax.tax_rate);
+                let taxAmountValue: number;
 
                 if (tax.inclusive) {
-                    return sum + (lineSubtotal * taxRate) / (100 + taxRate);
+                    taxAmountValue = (lineSubtotal * taxRate) / (100 + taxRate);
+                } else {
+                    taxAmountValue = lineSubtotal * (taxRate / 100);
                 }
+                
+                tax.tax_amount = taxAmountValue;
+            });
 
-                return sum + lineSubtotal * (taxRate / 100);
-            }, 0);
+            const lineTaxAmount = item.taxes.reduce((sum, tax) => sum + (tax.tax_amount || 0), 0);
 
             item.subtotal = lineSubtotal;
             item.tax_amount = lineTaxAmount;

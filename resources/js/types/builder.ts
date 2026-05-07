@@ -875,6 +875,7 @@ export type QuoteBuilderLineItemTax = {
     tax_label: string;
     tax_rate: number;
     inclusive: boolean;
+    tax_amount?: number;
 };
 
 export type QuoteBuilderLineItem = {

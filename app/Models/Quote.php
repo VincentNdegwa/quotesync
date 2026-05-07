@@ -297,6 +297,8 @@ class Quote extends Model
             'view_count' => 'integer',
             'time_spent_seconds' => 'integer',
             'deleted_at' => 'datetime',
+            'cc_recipients' => 'array',
+            'bcc_recipients' => 'array',
         ];
     }
 }

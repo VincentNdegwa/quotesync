@@ -86,6 +86,8 @@ export type QuoteLineItemTaxModel = {
   tax_label: string;
   tax_rate: number | string;
   inclusive: boolean;
+  tax_amount: number | null;
+  base_tax_amount: number | null;
 };
 
 export type QuoteLineItemModel = {

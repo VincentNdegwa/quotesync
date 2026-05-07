@@ -87,6 +87,15 @@ class QuoteSendController extends Controller
             $quote->scheduled_at = $scheduledAt;
             $quote->save();
 
+            \App\Models\QuoteActivity::query()->create([
+                'quote_id' => $quote->id,
+                'workspace_id' => $quote->workspace_id,
+                'user_id' => $request->user()?->id,
+                'type' => 'scheduled',
+                'description' => 'Quote scheduled to be sent at ' . $scheduledAt,
+                'metadata' => ['scheduled_at' => $scheduledAt],
+            ]);
+
             Inertia::flash('toast', [
                 'type' => 'success',
                 'message' => __('Quote scheduled to be sent at :date.', ['date' => $scheduledAt]),
@@ -113,6 +122,18 @@ class QuoteSendController extends Controller
             'status' => QuoteStatus::Sent->value,
             'sent_at' => $sendAt,
         ])->save();
+
+        \App\Models\QuoteActivity::query()->create([
+            'quote_id' => $quote->id,
+            'workspace_id' => $quote->workspace_id,
+            'user_id' => $request->user()?->id,
+            'type' => 'sent',
+            'description' => 'Quote sent to client',
+            'metadata' => [
+                'cc_recipients' => $quote->cc_recipients,
+                'bcc_recipients' => $quote->bcc_recipients,
+            ],
+        ]);
 
         Inertia::flash('toast', [
             'type' => 'success',

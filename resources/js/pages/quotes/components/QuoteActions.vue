@@ -87,6 +87,9 @@ const bccRecipients = ref<string[]>([]);
 const scheduledAt = ref<string | null>(null);
 const ccRecipientInput = ref('');
 const bccRecipientInput = ref('');
+const sendMode = ref<'now' | 'schedule'>('now');
+const showCcSection = ref(false);
+const showBccSection = ref(false);
 
 const statusData = computed(() =>
     props.quoteStatuses.find((s) => s.value === props.quote.status),
@@ -135,23 +138,47 @@ const canReject = computed(
 
 const openSendDialog = (): void => {
     quoteToSend.value = props.quote.id;
-    ccRecipients.value = [];
-    bccRecipients.value = [];
-    scheduledAt.value = null;
+    ccRecipients.value = (props.quote as any).cc_recipients || [];
+    bccRecipients.value = (props.quote as any).bcc_recipients || [];
+    scheduledAt.value = (props.quote as any).scheduled_at || null;
     ccRecipientInput.value = '';
     bccRecipientInput.value = '';
+
+    if (scheduledAt.value) {
+        sendMode.value = 'schedule';
+    } else {
+        sendMode.value = 'now';
+    }
+
     showSendDialog.value = true;
 };
 
 const executeSend = (): void => {
-    router.post(QuoteSendController.store(props.quote.id).url, {
+    const payload: any = {
         cc_recipients: ccRecipients.value,
         bcc_recipients: bccRecipients.value,
-        scheduled_at: scheduledAt.value,
-    }, {
+    };
+
+    if (sendMode.value === 'schedule' && scheduledAt.value) {
+        payload.scheduled_at = scheduledAt.value;
+    }
+
+    router.post(QuoteSendController.store(props.quote.id).url, payload, {
         onSuccess: ()=>{
             showSendDialog.value = false;
         }
+    });
+};
+
+const cancelSchedule = (): void => {
+    router.patch(QuoteController.update(props.quote.id).url, {
+        scheduled_at: null,
+    }, {
+        onSuccess: () => {
+            scheduledAt.value = null;
+            sendMode.value = 'now';
+            toast.success('Schedule cancelled');
+        },
     });
 };
 
@@ -334,7 +361,7 @@ const convertToInvoice = (): void => {
 
 const openChangeOwnerDialog = async (): Promise<void> => {
     try {
-        const response = await fetch(`/api/quotes/${props.quote.id}/available-users`);
+        const response = await fetch(`/quotes/${props.quote.id}/available-users`);
         const data = await response.json();
         availableUsers.value = data;
         selectedUserId.value = (props.quote as any).assignee?.id?.toString() || null;
@@ -381,76 +408,144 @@ const executeChangeOwner = (): void => {
                 </DialogDescription>
             </DialogHeader>
             <div class="grid gap-4 py-4">
+                <!-- Send mode selection -->
                 <div class="space-y-2">
-                    <Label>CC recipients</Label>
-                    <div class="flex gap-2">
-                        <Input
-                            v-model="ccRecipientInput"
-                            placeholder="Add CC email"
-                            @keyup.enter="addCcRecipient"
-                        />
-                        <Button type="button" variant="outline" @click="addCcRecipient">
-                            Add
-                        </Button>
-                    </div>
-                    <div v-if="ccRecipients.length > 0" class="flex flex-wrap gap-2">
-                        <Badge
-                            v-for="email in ccRecipients"
-                            :key="email"
-                            variant="secondary"
-                            class="gap-1"
-                        >
-                            {{ email }}
-                            <button
-                                type="button"
-                                @click="removeCcRecipient(email)"
-                                class="ml-1 hover:text-destructive"
-                            >
-                                ×
-                            </button>
-                        </Badge>
+                    <Label>When to send</Label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="radio"
+                                v-model="sendMode"
+                                value="now"
+                                class="h-4 w-4"
+                            />
+                            <span>Send now</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="radio"
+                                v-model="sendMode"
+                                value="schedule"
+                                class="h-4 w-4"
+                            />
+                            <span>Schedule</span>
+                        </label>
                     </div>
                 </div>
-                <div class="space-y-2">
-                    <Label>BCC recipients</Label>
-                    <div class="flex gap-2">
-                        <Input
-                            v-model="bccRecipientInput"
-                            placeholder="Add BCC email"
-                            @keyup.enter="addBccRecipient"
-                        />
-                        <Button type="button" variant="outline" @click="addBccRecipient">
-                            Add
-                        </Button>
-                    </div>
-                    <div v-if="bccRecipients.length > 0" class="flex flex-wrap gap-2">
-                        <Badge
-                            v-for="email in bccRecipients"
-                            :key="email"
-                            variant="secondary"
-                            class="gap-1"
-                        >
-                            {{ email }}
-                            <button
-                                type="button"
-                                @click="removeBccRecipient(email)"
-                                class="ml-1 hover:text-destructive"
-                            >
-                                ×
-                            </button>
-                        </Badge>
-                    </div>
-                </div>
-                <div class="space-y-2">
-                    <Label>Schedule send (optional)</Label>
+
+                <!-- Schedule date/time picker -->
+                <div v-if="sendMode === 'schedule'" class="space-y-2">
+                    <Label>Schedule date & time</Label>
                     <Input
                         v-model="scheduledAt"
                         type="datetime-local"
-                        placeholder="Leave empty to send now"
                     />
                     <p class="text-xs text-muted-foreground">
-                        Leave empty to send immediately
+                        Select when to send this quote
                     </p>
+                </div>
+
+                <!-- Already scheduled info -->
+                <div v-if="(props.quote as any).scheduled_at && sendMode === 'schedule'" class="rounded-md bg-yellow-50 p-3 text-sm">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <p class="font-medium text-yellow-800">Already scheduled</p>
+                            <p class="text-yellow-700">
+                                This quote is scheduled to be sent at {{ new Date((props.quote as any).scheduled_at).toLocaleString() }}
+                            </p>
+                        </div>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            @click="cancelSchedule"
+                            class="text-xs"
+                        >
+                            Cancel
+                        </Button>
+                    </div>
+                </div>
+
+                <!-- CC recipients (collapsible) -->
+                <div class="space-y-2">
+                    <button
+                        type="button"
+                        @click="showCcSection = !showCcSection"
+                        class="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+                    >
+                        <span>{{ showCcSection ? '−' : '+' }}</span>
+                        <span>CC recipients ({{ ccRecipients.length }})</span>
+                    </button>
+                    <div v-if="showCcSection" class="space-y-2 pl-4">
+                        <div class="flex gap-2">
+                            <Input
+                                v-model="ccRecipientInput"
+                                placeholder="Add CC email"
+                                @keyup.enter="addCcRecipient"
+                            />
+                            <Button type="button" variant="outline" size="sm" @click="addCcRecipient">
+                                Add
+                            </Button>
+                        </div>
+                        <div v-if="ccRecipients.length > 0" class="flex flex-wrap gap-2">
+                            <Badge
+                                v-for="email in ccRecipients"
+                                :key="email"
+                                variant="secondary"
+                                class="gap-1"
+                            >
+                                {{ email }}
+                                <button
+                                    type="button"
+                                    @click="removeCcRecipient(email)"
+                                    class="ml-1 hover:text-destructive"
+                                >
+                                    ×
+                                </button>
+                            </Badge>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BCC recipients (collapsible) -->
+                <div class="space-y-2">
+                    <button
+                        type="button"
+                        @click="showBccSection = !showBccSection"
+                        class="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+                    >
+                        <span>{{ showBccSection ? '−' : '+' }}</span>
+                        <span>BCC recipients ({{ bccRecipients.length }})</span>
+                    </button>
+                    <div v-if="showBccSection" class="space-y-2 pl-4">
+                        <div class="flex gap-2">
+                            <Input
+                                v-model="bccRecipientInput"
+                                placeholder="Add BCC email"
+                                @keyup.enter="addBccRecipient"
+                            />
+                            <Button type="button" variant="outline" size="sm" @click="addBccRecipient">
+                                Add
+                            </Button>
+                        </div>
+                        <div v-if="bccRecipients.length > 0" class="flex flex-wrap gap-2">
+                            <Badge
+                                v-for="email in bccRecipients"
+                                :key="email"
+                                variant="secondary"
+                                class="gap-1"
+                            >
+                                {{ email }}
+                                <button
+                                    type="button"
+                                    @click="removeBccRecipient(email)"
+                                    class="ml-1 hover:text-destructive"
+                                >
+                                    ×
+                                </button>
+                            </Badge>
+                        </div>
+                    </div>
                 </div>
             </div>
             <DialogFooter>
@@ -458,7 +553,7 @@ const executeChangeOwner = (): void => {
                     Cancel
                 </Button>
                 <Button @click="executeSend">
-                    {{ scheduledAt ? 'Schedule' : 'Send' }}
+                    {{ sendMode === 'schedule' ? 'Schedule' : 'Send now' }}
                 </Button>
             </DialogFooter>
         </DialogContent>

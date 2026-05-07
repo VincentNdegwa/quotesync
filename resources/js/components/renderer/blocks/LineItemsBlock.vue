@@ -125,13 +125,7 @@ const itemTax = (item: DocumentLineItem): number => {
         return 0;
     }
 
-    const hasTaxAmounts = item.taxes.some((tax) => Number(tax.tax_rate || 0) > 0);
-
-    if (hasTaxAmounts) {
-        return item.taxes.reduce((sum, tax) => sum + Number(tax.tax_rate || 0), 0);
-    }
-
-    return 0;
+    return item.taxes.reduce((sum, tax) => sum + Number(tax.tax_amount || 0), 0);
 };
 
 const itemTotal = (item: DocumentLineItem): number => {

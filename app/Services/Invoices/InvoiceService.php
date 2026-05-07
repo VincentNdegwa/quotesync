@@ -257,6 +257,8 @@ class InvoiceService
                         'tax_label' => $tax['tax_label'],
                         'tax_rate' => $tax['tax_rate'],
                         'inclusive' => $tax['inclusive'] ?? false,
+                        'tax_amount' => $tax['tax_amount'] ?? 0,
+                        'base_tax_amount' => $tax['base_tax_amount'] ?? 0,
                     ]);
                 }
             }

@@ -438,6 +438,10 @@ class QuoteController extends Controller
                 $lineItem->subtotal = $lineItem->base_subtotal ?? $lineItem->subtotal;
                 $lineItem->tax_amount = $lineItem->base_tax_amount ?? $lineItem->tax_amount;
                 $lineItem->total = $lineItem->base_total ?? $lineItem->total;
+
+                foreach ($lineItem->taxes as $tax) {
+                    $tax->tax_amount = $tax->base_tax_amount ?? $tax->tax_amount;
+                }
             }
         }
 
