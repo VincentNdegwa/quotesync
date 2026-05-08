@@ -151,6 +151,7 @@ class QuoteController extends Controller
             'assignee:id,name',
             'workspace',
             'sections.lineItems.taxes',
+            'activities.user',
             'comments.user:id,name',
             'versions:id,version,number,created_at',
             'tasks.assignedTo:id,name',

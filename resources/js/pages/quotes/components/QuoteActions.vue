@@ -349,7 +349,7 @@ const executeDelete = (): void => {
 const viewAsClient = (): void => {
     if (props.quote.quote_uuid) {
         window.open(
-            publicQuotesShow.show(props.quote.quote_uuid).url,
+            publicQuotesShow(props.quote.quote_uuid).url,
             '_blank',
         );
     }

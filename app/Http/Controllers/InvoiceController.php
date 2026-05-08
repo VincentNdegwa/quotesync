@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CreditNoteStatus;
+use App\Enums\InvoiceActivityType;
 use App\Enums\InvoiceStatus;
+use App\Enums\QuoteStatus;
 use App\Http\Requests\Invoices\StoreInvoiceRequest;
 use App\Http\Requests\Invoices\UpdateInvoiceRequest;
 use App\Models\Invoice;

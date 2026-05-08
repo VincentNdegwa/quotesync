@@ -104,7 +104,7 @@ class InvoiceService
     private function replicateInvoice(Invoice $invoice, string $suffix, string $activityDescription): Invoice
     {
         return DB::transaction(function () use ($invoice, $suffix, $activityDescription): Invoice {
-            $invoice->load(['lineItems.taxes', 'workspace']);
+            $invoice->load(['sections.lineItems.taxes', 'workspace']);
 
             $workspace = $invoice->workspace;
 
@@ -120,15 +120,22 @@ class InvoiceService
             $newInvoice->invoice_uuid = (string) \Illuminate\Support\Str::uuid();
             $newInvoice->save();
 
-            foreach ($invoice->lineItems as $lineItem) {
-                $newLineItem = $lineItem->replicate();
-                $newLineItem->invoice_id = $newInvoice->id;
-                $newLineItem->save();
+            foreach ($invoice->sections as $section) {
+                $newSection = $section->replicate();
+                $newSection->invoice_id = $newInvoice->id;
+                $newSection->save();
 
-                foreach ($lineItem->taxes as $tax) {
-                    $newTax = $tax->replicate();
-                    $newTax->invoice_line_item_id = $newLineItem->id;
-                    $newTax->save();
+                foreach ($section->lineItems as $lineItem) {
+                    $newLineItem = $lineItem->replicate();
+                    $newLineItem->invoice_id = $newInvoice->id;
+                    $newLineItem->invoice_section_id = $newSection->id;
+                    $newLineItem->save();
+
+                    foreach ($lineItem->taxes as $tax) {
+                        $newTax = $tax->replicate();
+                        $newTax->invoice_line_item_id = $newLineItem->id;
+                        $newTax->save();
+                    }
                 }
             }
 
