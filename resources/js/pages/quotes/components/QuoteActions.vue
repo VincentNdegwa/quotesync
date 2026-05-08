@@ -75,6 +75,12 @@ const showDeleteDialog = ref(false);
 const _showApproveDialog = ref(false);
 const _showRejectDialog = ref(false);
 const showChangeOwnerDialog = ref(false);
+const showConvertToInvoiceDialog = ref(false);
+const showMarkWonDialog = ref(false);
+const showDuplicateDialog = ref(false);
+const showReviseDialog = ref(false);
+const showReopenDialog = ref(false);
+const showArchiveDialog = ref(false);
 const quoteToSend = ref<number | null>(null);
 const lostReason = ref('');
 const selectedUserId = ref<string | null>(null);
@@ -221,11 +227,16 @@ const reject = (): void => {
 };
 
 const markWon = (): void => {
+    showMarkWonDialog.value = true;
+};
+
+const executeMarkWon = (): void => {
     router.patch(
         QuoteController.updateStatus(props.quote.id).url,
         { status: 'won' },
         {
             onSuccess: () => {
+                showMarkWonDialog.value = false;
                 emit('success');
             },
         },
@@ -251,11 +262,16 @@ const executeMarkLost = (reason?: string): void => {
 };
 
 const duplicate = (): void => {
+    showDuplicateDialog.value = true;
+};
+
+const executeDuplicate = (): void => {
     router.post(
         QuoteController.duplicate(props.quote.id).url,
         {},
         {
             onSuccess: () => {
+                showDuplicateDialog.value = false;
                 emit('success');
             },
         },
@@ -263,11 +279,16 @@ const duplicate = (): void => {
 };
 
 const revise = (): void => {
+    showReviseDialog.value = true;
+};
+
+const executeRevise = (): void => {
     router.post(
         QuoteController.revise(props.quote.id).url,
         {},
         {
             onSuccess: () => {
+                showReviseDialog.value = false;
                 emit('success');
             },
         },
@@ -275,6 +296,10 @@ const revise = (): void => {
 };
 
 const reopen = (): void => {
+    showReopenDialog.value = true;
+};
+
+const executeReopen = (): void => {
     router.post(
         QuoteController.reopen(props.quote.id).url,
         {
@@ -284,6 +309,7 @@ const reopen = (): void => {
         },
         {
             onSuccess: () => {
+                showReopenDialog.value = false;
                 emit('success');
             },
         },
@@ -291,11 +317,16 @@ const reopen = (): void => {
 };
 
 const archive = (): void => {
+    showArchiveDialog.value = true;
+};
+
+const executeArchive = (): void => {
     router.post(
         QuoteController.archive(props.quote.id).url,
         {},
         {
             onSuccess: () => {
+                showArchiveDialog.value = false;
                 emit('success');
             },
         },
@@ -357,11 +388,18 @@ const downloadPDF = async (): Promise<void> => {
 };
 
 const convertToInvoice = (): void => {
+    showConvertToInvoiceDialog.value = true;
+};
+
+const executeConvertToInvoice = (): void => {
     router.post(
         InvoiceController.convertFromQuote(props.quote.id).url,
         {},
         {
-            onSuccess: () => emit('success'),
+            onSuccess: () => {
+                showConvertToInvoiceDialog.value = false;
+                emit('success');
+            },
         },
     );
 };
@@ -615,6 +653,54 @@ const executeChangeOwner = (): void => {
         description="Are you sure you want to delete this quote? This action cannot be undone."
         confirm-text="Delete"
         @confirm="executeDelete"
+    />
+
+    <ConfirmDialog
+        v-model:open="showConvertToInvoiceDialog"
+        title="Convert to invoice"
+        description="Are you sure you want to convert this quote to an invoice?"
+        confirm-text="Convert"
+        @confirm="executeConvertToInvoice"
+    />
+
+    <ConfirmDialog
+        v-model:open="showMarkWonDialog"
+        title="Mark as won"
+        description="Are you sure you want to mark this quote as won?"
+        confirm-text="Mark as won"
+        @confirm="executeMarkWon"
+    />
+
+    <ConfirmDialog
+        v-model:open="showDuplicateDialog"
+        title="Duplicate quote"
+        description="Are you sure you want to duplicate this quote?"
+        confirm-text="Duplicate"
+        @confirm="executeDuplicate"
+    />
+
+    <ConfirmDialog
+        v-model:open="showReviseDialog"
+        title="Revise quote"
+        description="Are you sure you want to create a revision of this quote?"
+        confirm-text="Revise"
+        @confirm="executeRevise"
+    />
+
+    <ConfirmDialog
+        v-model:open="showReopenDialog"
+        title="Reopen quote"
+        description="Are you sure you want to reopen this quote?"
+        confirm-text="Reopen"
+        @confirm="executeReopen"
+    />
+
+    <ConfirmDialog
+        v-model:open="showArchiveDialog"
+        title="Archive quote"
+        description="Are you sure you want to archive this quote?"
+        confirm-text="Archive"
+        @confirm="executeArchive"
     />
 
     <Dialog v-model:open="showChangeOwnerDialog">
