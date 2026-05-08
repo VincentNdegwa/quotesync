@@ -9,7 +9,7 @@ import { useFormat } from '@/composables/useFormat';
 const { formatCurrency, formatDate } = useFormat();
 
 defineProps<{
-    creditNote: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    creditNote: any;  
 }>();
 
 const statusColors: Record<string, string> = {

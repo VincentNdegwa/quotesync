@@ -12,7 +12,7 @@ import type {
 
 const props = defineProps<{
     invoiceId: number;
-    initialState: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    initialState: any;  
     catalogItems: BuilderCatalogItem[];
     taxes: BuilderTaxOption[];
     units: BuilderConfigurationUnit[];

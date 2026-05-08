@@ -123,7 +123,7 @@ async function fetchEntities(): Promise<void> {
 
         if (data.data) {
             availableEntities.value = data.data.map((item: any) => ({
-                // eslint-disable-line @typescript-eslint/no-explicit-any
+                 
                 id: item.id,
                 title: item.title || item.invoice_number || `#${item.id}`,
                 number: item.quote_number || item.invoice_number,

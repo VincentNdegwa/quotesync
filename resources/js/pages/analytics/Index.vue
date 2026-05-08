@@ -266,7 +266,7 @@ const timeToWinChartConfig: ChartConfig = {
 };
 
 const _timeToWinSummary = computed(() =>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     timeToWinChartData.value.map((item: any) => ({
         id: item.range,
         label: item.range,

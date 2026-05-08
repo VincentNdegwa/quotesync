@@ -32,7 +32,7 @@ const props = defineProps<{
 
 const page = usePage();
 const invoiceStatuses = computed(
-    () => (page.props.enums as any)?.invoiceStatus || [], // eslint-disable-line @typescript-eslint/no-explicit-any
+    () => (page.props.enums as any)?.invoiceStatus || [],  
 );
 
 const viewMode = ref<'table' | 'kanban'>(

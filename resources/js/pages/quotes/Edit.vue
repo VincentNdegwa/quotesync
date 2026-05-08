@@ -55,7 +55,7 @@ const save = (updatedState?: QuoteBuilderState): void => {
     if (updatedState) {
         Object.keys(updatedState).forEach((key) => {
             if (key in form) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                 
                 (form as any)[key] =
                     updatedState[key as keyof QuoteBuilderState];
             }

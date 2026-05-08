@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/select';
 
 const form = defineModel<Record<string, any>>('form', {
-    // eslint-disable-line @typescript-eslint/no-explicit-any
+     
     required: true,
 });
 

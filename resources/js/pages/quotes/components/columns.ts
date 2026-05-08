@@ -73,7 +73,7 @@ export const getQuoteColumns = (
             cell: ({ row }) => {
                 // Use client_status if available (for portal users), otherwise use status
                 const statusValue =
-                    (row.original as any).client_status || row.original.status; // eslint-disable-line @typescript-eslint/no-explicit-any
+                    (row.original as any).client_status || row.original.status;  
                 const status = getQuoteStatus(statusValue);
 
                 return h(

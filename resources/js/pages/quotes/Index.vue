@@ -33,7 +33,7 @@ const props = defineProps<{
 
 const page = usePage();
 const quoteStatuses = computed(
-    () => (page.props.enums as any)?.quoteStatus || [], // eslint-disable-line @typescript-eslint/no-explicit-any
+    () => (page.props.enums as any)?.quoteStatus || [],  
 );
 
 const viewMode = ref<'table' | 'kanban'>(

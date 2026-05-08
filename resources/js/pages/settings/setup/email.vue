@@ -47,7 +47,7 @@ const updateAction = computed(
 const buildFormValues = (
     fields: WorkspaceSettingsField[],
 ): Record<string, any> => {
-    // eslint-disable-line @typescript-eslint/no-explicit-any
+     
     return fields.reduce(
         (values, field) => {
             if (field.encrypted) {
@@ -89,11 +89,11 @@ const buildFormValues = (
 
             return values;
         },
-        {} as Record<string, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
+        {} as Record<string, any>,  
     );
 };
 
-const formValues = reactive<Record<string, any>>( // eslint-disable-line @typescript-eslint/no-explicit-any
+const formValues = reactive<Record<string, any>>(  
     buildFormValues(props.currentGroup.fields),
 );
 

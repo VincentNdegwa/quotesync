@@ -23,7 +23,7 @@ import type {
 const NONE_OPTION = '__none__';
 
 const form = defineModel<Record<string, any>>('form', {
-    // eslint-disable-line @typescript-eslint/no-explicit-any
+     
     required: true,
 });
 

@@ -41,7 +41,7 @@ const updateAction = computed(
 const buildFormValues = (
     fields: WorkspaceSettingsField[],
 ): Record<string, any> => {
-    // eslint-disable-line @typescript-eslint/no-explicit-any
+     
     return fields.reduce(
         (values, field) => {
             if (field.type === 'array') {

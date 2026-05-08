@@ -14,7 +14,7 @@ import {
 import type { WorkspaceSettings, TemplateLayout } from '@/types';
 
 const props = defineProps<{
-    quote: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    quote: any;  
     layout: TemplateLayout | null;
     settings: WorkspaceSettings;
     clientState: 'open' | 'accepted' | 'closed';

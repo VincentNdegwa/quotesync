@@ -37,7 +37,7 @@ const emit = defineEmits<{
 const description = ref('');
 const industry = ref('');
 const loading = ref(false);
-const generated = ref<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+const generated = ref<any>(null);  
 const error = ref<string | null>(null);
 
 const industries = [

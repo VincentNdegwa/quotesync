@@ -121,25 +121,25 @@ const canConvertToInvoice = computed(() =>
 const canApprove = computed(
     () =>
         props.isClient &&
-        ((props.quote as any).client_status === 'sent' || // eslint-disable-line @typescript-eslint/no-explicit-any
-            (props.quote as any).client_status === 'viewed' || // eslint-disable-line @typescript-eslint/no-explicit-any
+        ((props.quote as any).client_status === 'sent' ||  
+            (props.quote as any).client_status === 'viewed' ||  
             props.quote.status === 'sent' ||
             props.quote.status === 'viewed'),
 );
 const canReject = computed(
     () =>
         props.isClient &&
-        ((props.quote as any).client_status === 'sent' || // eslint-disable-line @typescript-eslint/no-explicit-any
-            (props.quote as any).client_status === 'viewed' || // eslint-disable-line @typescript-eslint/no-explicit-any
+        ((props.quote as any).client_status === 'sent' ||  
+            (props.quote as any).client_status === 'viewed' ||  
             props.quote.status === 'sent' ||
             props.quote.status === 'viewed'),
 );
 
 const openSendDialog = (): void => {
     quoteToSend.value = props.quote.id;
-    ccRecipients.value = (props.quote as any).cc_recipients || []; // eslint-disable-line @typescript-eslint/no-explicit-any
-    bccRecipients.value = (props.quote as any).bcc_recipients || []; // eslint-disable-line @typescript-eslint/no-explicit-any
-    scheduledAt.value = (props.quote as any).scheduled_at || null; // eslint-disable-line @typescript-eslint/no-explicit-any
+    ccRecipients.value = (props.quote as any).cc_recipients || [];  
+    bccRecipients.value = (props.quote as any).bcc_recipients || [];  
+    scheduledAt.value = (props.quote as any).scheduled_at || null;  
     ccRecipientInput.value = '';
     bccRecipientInput.value = '';
 
@@ -154,7 +154,7 @@ const openSendDialog = (): void => {
 
 const executeSend = (): void => {
     const payload: any = {
-        // eslint-disable-line @typescript-eslint/no-explicit-any
+         
         cc_recipients: ccRecipients.value,
         bcc_recipients: bccRecipients.value,
     };
@@ -374,7 +374,7 @@ const openChangeOwnerDialog = async (): Promise<void> => {
         const data = await response.json();
         availableUsers.value = data;
         selectedUserId.value =
-            (props.quote as any).assignee?.id?.toString() || null; // eslint-disable-line @typescript-eslint/no-explicit-any
+            (props.quote as any).assignee?.id?.toString() || null;  
         showChangeOwnerDialog.value = true;
     } catch (error) {
         console.error('Failed to fetch users:', error);

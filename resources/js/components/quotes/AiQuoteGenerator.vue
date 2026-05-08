@@ -42,7 +42,7 @@ const emit = defineEmits<{
 
 const description = ref('');
 const loading = ref(false);
-const generated = ref<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+const generated = ref<any>(null);  
 const error = ref<string | null>(null);
 
 const generate = async (): Promise<void> => {
@@ -103,7 +103,7 @@ const apply = (): void => {
 };
 
 const getMatchIcon = (item: any): typeof CheckCircle2 => {
-    // eslint-disable-line @typescript-eslint/no-explicit-any
+     
     if (item.catalog_item_id) {
         return CheckCircle2;
     }
@@ -112,7 +112,7 @@ const getMatchIcon = (item: any): typeof CheckCircle2 => {
 };
 
 const getMatchColor = (item: any): string => {
-    // eslint-disable-line @typescript-eslint/no-explicit-any
+     
     if (item.catalog_item_id) {
         return 'text-green-500';
     }

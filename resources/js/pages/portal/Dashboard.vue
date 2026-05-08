@@ -16,7 +16,7 @@ import { show as showQuote } from '@/routes/portal/quotes';
 const { formatCurrency, formatDate } = useFormat();
 
 defineProps<{
-    quotes: Array<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    quotes: Array<any>;  
     stats: {
         total: number;
         pending: number;
