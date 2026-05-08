@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Head, setLayoutProps, router } from '@inertiajs/vue3';
+import { Head, setLayoutProps, router, Link } from '@inertiajs/vue3';
 import { computed, watchEffect } from 'vue';
+import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import CreditNotesHistory from '@/components/CreditNotesHistory.vue';
 import Heading from '@/components/Heading.vue';
 import PaymentHistory from '@/components/PaymentHistory.vue';
@@ -39,6 +40,22 @@ const { formatCurrency: fmt, formatDate: fmtDate } = useFormat(
     props.invoice.base_currency || props.invoice.currency || undefined,
 );
 
+const quoteLink = computed(() => {
+    const relatedQuote = props.invoice.quote;
+
+    if (!relatedQuote?.id) {
+        return null;
+    }
+
+    return {
+        url: QuoteController.show(relatedQuote.id).url,
+        label:
+            relatedQuote.number ||
+            relatedQuote.title ||
+            `Quote #${relatedQuote.id}`,
+    };
+});
+
 const handleCommentCreated = (): void => {
     router.reload();
 };
@@ -62,6 +79,16 @@ const handleCommentDeleted = (): void => {
                             : 'Invoice details'
                     "
                 />
+
+                <div v-if="quoteLink" class="mt-0 text-muted-foreground">
+                    From quote
+                    <Link
+                        :href="quoteLink.url"
+                        class="font-semibold text-primary hover:underline"
+                    >
+                        {{ quoteLink.label }}
+                    </Link>
+                </div>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">

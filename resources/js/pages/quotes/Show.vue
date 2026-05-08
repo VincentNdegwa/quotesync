@@ -8,6 +8,7 @@ import QuoteChat from '@/components/quotes/QuoteChat.vue';
 import QuoteFollowUps from '@/components/quotes/QuoteFollowUps.vue';
 import QuoteStatsPanel from '@/components/quotes/QuoteStatsPanel.vue';
 import QuoteVersionHistory from '@/components/quotes/QuoteVersionHistory.vue';
+import QuoteInvoicesPanel from '@/components/quotes/QuoteInvoicesPanel.vue';
 import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ const props = defineProps<{
     settings: WorkspaceSettings;
     quoteStatuses: QuoteStatusEnum[];
     teamMembers: Array<{ id: number; name: string; email: string }>;
+    quoteInvoices: import('@/types').QuoteInvoicesPayload;
 }>();
 
 const breadcrumbs = computed(() => [
@@ -411,6 +413,11 @@ const handleCommentDeleted = (): void => {
 
             <div class="space-y-4">
                 <QuoteStatsPanel :quote="quote" />
+
+                <QuoteInvoicesPanel
+                    :quote-id="quote.id"
+                    :invoices="quoteInvoices"
+                />
 
                 <QuoteVersionHistory
                     v-if="

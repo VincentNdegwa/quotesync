@@ -34,6 +34,8 @@ class InvoiceController extends Controller
         $search = $request->get('search');
         $status = $request->get('status');
         $sort = $request->get('sort', 'newest');
+        $quoteId = $request->integer('quote');
+        $view = $request->string('view')->toString();
 
         $query = $workspace->invoices()
             ->with(['client:id,company_name,email', 'quote:id,number']);
@@ -49,6 +51,10 @@ class InvoiceController extends Controller
             $query->where('status', $status);
         }
 
+        if ($quoteId) {
+            $query->where('quote_id', $quoteId);
+        }
+
         match ($sort) {
             'number' => $query->orderBy('invoice_number'),
             'amount' => $query->orderBy('total', 'desc'),
@@ -62,12 +68,24 @@ class InvoiceController extends Controller
             return response()->json($invoices);
         }
 
+        $quoteFilter = null;
+
+        if ($quoteId) {
+            $quoteFilter = Quote::query()
+                ->where('workspace_id', $workspace->id)
+                ->select('id', 'number', 'title')
+                ->find($quoteId);
+        }
+
         return Inertia::render('invoices/Index', [
             'filters' => [
                 'search' => $search,
                 'status' => $status,
                 'sort' => $sort,
+                'quote' => $quoteId,
+                'view' => $view,
             ],
+            'quoteFilter' => $quoteFilter,
             'invoices' => $invoices,
         ]);
     }

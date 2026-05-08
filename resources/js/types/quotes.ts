@@ -8,6 +8,22 @@ export type TaxSnapshot = {
     inclusive: boolean;
 };
 
+export type QuoteInvoiceSummary = {
+    id: number;
+    number: string | null;
+    title: string | null;
+    status: string;
+    total: number;
+    currency: string | null;
+    due_date: string | null;
+    created_at: string | null;
+};
+
+export type QuoteInvoicesPayload = {
+    total: number;
+    items: QuoteInvoiceSummary[];
+};
+
 export type QuoteBuilderLineItem = {
     id: number | null;
     catalog_item_id: number | null;

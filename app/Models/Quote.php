@@ -172,6 +172,14 @@ class Quote extends Model
     }
 
     /**
+     * @return HasMany<Invoice, $this>
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    /**
      * @return HasOne<QuoteShortCode, $this>
      */
     public function shortCode(): HasOne

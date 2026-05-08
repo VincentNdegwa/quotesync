@@ -8,6 +8,8 @@ use App\Http\Requests\Quotes\StoreQuoteRequest;
 use App\Http\Requests\Quotes\UpdateQuoteRequest;
 use App\Http\Requests\Quotes\UpdateQuoteStatusRequest;
 use App\Jobs\SendFollowUpJob;
+use App\Models\Invoice;
+use App\Enums\InvoiceStatus;
 use App\Models\Quote;
 use App\Models\QuoteFollowUp;
 use App\Models\QuoteTemplate;
@@ -176,12 +178,33 @@ class QuoteController extends Controller
 
         $quote = $this->transformQuote($quote);
 
+        $invoicesQuery = $quote->invoices()->withoutGlobalScopes()->orderByDesc('created_at');
+
+        $recentInvoices = (clone $invoicesQuery)
+            ->take(3)
+            ->get(['id', 'invoice_number', 'title', 'status', 'total', 'base_total', 'currency', 'base_currency', 'due_date', 'created_at']);
+
+        $quoteInvoices = [
+            'total' => (clone $invoicesQuery)->count(),
+            'items' => $recentInvoices->map(fn (Invoice $invoice): array => [
+                'id' => $invoice->id,
+                'number' => $invoice->invoice_number,
+                'title' => $invoice->title,
+                'status' => $invoice->status instanceof InvoiceStatus ? $invoice->status->value : $invoice->status,
+                'total' => (float) ($invoice->base_total ?? $invoice->total ?? 0),
+                'currency' => $invoice->base_currency ?? $invoice->currency,
+                'due_date' => $invoice->due_date?->toDateString(),
+                'created_at' => $invoice->created_at?->toISOString(),
+            ])->values()->all(),
+        ];
+
         $teamMembers = User::whereHas('workspaces', function ($query) use ($workspace) {
             $query->where('workspace_id', $workspace->id);
         })->select('id', 'name', 'email')->get();
 
         return Inertia::render('quotes/Show', [
             'quote' => $quote,
+            'quoteInvoices' => $quoteInvoices,
             'settings' => $workspaceSettingsService->builderSettings($workspace),
             'quoteStatuses' => QuoteStatus::all(),
             'teamMembers' => $teamMembers,
