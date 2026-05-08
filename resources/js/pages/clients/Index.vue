@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import { Download, Trash2 } from 'lucide-vue-next';
 import ClientSlideOver from '@/components/clients/ClientSlideOver.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
@@ -292,12 +293,14 @@ const exportSelected = (): void => {
         </div>
 
         <div class="flex items-center gap-2" v-if="selectedIds.length > 0">
-            <Button variant="outline" @click="exportSelected"
-                >Export selected</Button
-            >
-            <Button variant="destructive" @click="bulkDelete"
-                >Delete selected</Button
-            >
+            <Button variant="outline" @click="exportSelected">
+                <Download class="mr-2 h-4 w-4" />
+                Export selected
+            </Button>
+            <Button variant="destructive" @click="bulkDelete">
+                <Trash2 class="mr-2 h-4 w-4" />
+                Delete selected
+            </Button>
         </div>
 
         <ClientsDataTable

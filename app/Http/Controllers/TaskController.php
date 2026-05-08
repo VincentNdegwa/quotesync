@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Invoice;
-use App\Models\Quote;
+use App\Http\Requests\Tasks\TaskBulkActionRequest;
 use App\Models\Task;
 use App\Models\TaskStatus;
 use App\Models\Workspace;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class TaskController extends Controller
@@ -90,6 +91,125 @@ class TaskController extends Controller
                 'sort' => $request->input('sort', 'newest'),
             ],
         ]);
+    }
+
+    public function kanban(Request $request): JsonResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace, 404);
+
+        $statuses = TaskStatus::query()
+            ->where('workspace_id', $workspace->id)
+            ->orderBy('sort_order')
+            ->get(['id', 'name', 'slug', 'color', 'sort_order', 'is_system']);
+
+        $tasksQuery = Task::query()
+            ->where('workspace_id', $workspace->id)
+            ->with([
+                'assignedTo:id,name',
+                'assignedBy:id,name',
+                'status:id,name,slug,color',
+                'taskable',
+            ])
+            ->select([
+                'id',
+                'workspace_id',
+                'taskable_id',
+                'taskable_type',
+                'assigned_to',
+                'assigned_by',
+                'task_status_id',
+                'title',
+                'description',
+                'due_date',
+                'completed_at',
+                'created_at',
+            ]);
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $tasksQuery->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $statusSlug = $request->input('status');
+            $taskStatus = TaskStatus::where('workspace_id', $workspace->id)
+                ->where('slug', $statusSlug)
+                ->first();
+
+            if ($taskStatus) {
+                $tasksQuery->where('task_status_id', $taskStatus->id);
+            }
+        }
+
+        $sort = $request->input('sort', 'newest');
+        if ($sort === 'oldest') {
+            $tasksQuery->orderBy('created_at', 'asc');
+        } elseif ($sort === 'due_date') {
+            $tasksQuery->orderBy('due_date', 'asc');
+        } else {
+            $tasksQuery->orderBy('created_at', 'desc');
+        }
+
+        $tasks = $tasksQuery->get();
+
+        return response()->json([
+            'statuses' => $statuses,
+            'tasks' => $tasks,
+        ]);
+    }
+
+    public function bulkAction(TaskBulkActionRequest $request): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace, 404);
+
+        $validated = $request->validated();
+
+        $tasksQuery = Task::query()
+            ->where('workspace_id', $workspace->id)
+            ->whereIn('id', $validated['ids']);
+
+        if ($validated['action'] === 'delete') {
+            $count = $tasksQuery->delete();
+        } else {
+            $taskStatus = TaskStatus::query()
+                ->where('workspace_id', $workspace->id)
+                ->where('id', $validated['task_status_id'])
+                ->first();
+
+            if (! $taskStatus) {
+                throw ValidationException::withMessages([
+                    'task_status_id' => __('Selected task status is invalid.'),
+                ]);
+            }
+
+            $tasks = $tasksQuery->get();
+
+            foreach ($tasks as $task) {
+                $task->task_status_id = $taskStatus->id;
+
+                if ($taskStatus->slug === 'done' && ! $task->completed_at) {
+                    $task->completed_at = now();
+                }
+
+                $task->save();
+            }
+
+            $count = $tasks->count();
+        }
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => trans_choice(':count task updated.|:count tasks updated.', $count, ['count' => $count]),
+        ]);
+
+        return back();
     }
 
     public function store(Request $request): RedirectResponse

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
+import { Ban, CheckCircle2, Download, Trash2 } from 'lucide-vue-next';
 import CatalogHeaderActions from '@/components/catalog/CatalogHeaderActions.vue';
 import CatalogItemForm from '@/components/catalog/CatalogItemForm.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
@@ -353,26 +354,34 @@ const { formatCurrency } = useFormat(
                 v-if="selectedIds.length > 0"
                 variant="outline"
                 @click="exportSelected"
-                >Export selected</Button
             >
+                <Download class="mr-2 h-4 w-4" />
+                Export selected
+            </Button>
             <Button
                 v-if="selectedIds.length > 0"
                 variant="outline"
                 @click="runBulkAction('activate')"
-                >Activate</Button
             >
+                <CheckCircle2 class="mr-2 h-4 w-4" />
+                Activate
+            </Button>
             <Button
                 v-if="selectedIds.length > 0"
                 variant="outline"
                 @click="runBulkAction('deactivate')"
-                >Deactivate</Button
             >
+                <Ban class="mr-2 h-4 w-4" />
+                Deactivate
+            </Button>
             <Button
                 v-if="selectedIds.length > 0"
                 variant="destructive"
                 @click="runBulkAction('delete')"
-                >Delete</Button
             >
+                <Trash2 class="mr-2 h-4 w-4" />
+                Delete
+            </Button>
         </div>
 
         <CatalogDataTable

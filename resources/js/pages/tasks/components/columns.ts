@@ -1,35 +1,16 @@
 import type { ColumnDef } from '@tanstack/vue-table';
 import { ArrowUpDown } from 'lucide-vue-next';
 import { h } from 'vue';
+import type { VNode } from 'vue';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useFormat } from '@/composables/useFormat';
+import type { TaskModel } from '@/types/models';
 import TaskTableRowActions from './TaskTableRowActions.vue';
 
-type TaskListRecord = {
-    id: number;
-    title: string;
-    description: string | null;
-    due_date: string | null;
-    completed_at: string | null;
-    taskable_type: string;
-    taskable_id: number;
-    assigned_to: { id: number; name: string } | null;
-    assigned_by: { id: number; name: string } | null;
-    status: {
-        id: number;
-        name: string;
-        slug: string;
-        color: string;
-    } | null;
-    taskable: {
-        id: number;
-        title?: string;
-        number?: string;
-        company_name?: string;
-    } | null;
-};
+type TaskListRecord = TaskModel;
 
 type TaskColumnOptions = {
     taskStatuses: Array<{
@@ -68,6 +49,30 @@ export const getTaskColumns = (
 ): ColumnDef<TaskListRecord>[] => {
     const columns: ColumnDef<TaskListRecord>[] = [
         {
+            id: 'select',
+            enableSorting: false,
+            enableHiding: false,
+            header: ({ table }) =>
+                h(Checkbox, {
+                    modelValue:
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected()
+                            ? 'indeterminate'
+                            : false),
+                    'onUpdate:modelValue': (
+                        value: boolean | 'indeterminate',
+                    ) => table.toggleAllPageRowsSelected(!!value),
+                    ariaLabel: 'Select all',
+                }),
+            cell: ({ row }) =>
+                h(Checkbox, {
+                    modelValue: row.getIsSelected(),
+                    'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
+                        row.toggleSelected(!!value),
+                    ariaLabel: 'Select row',
+                }),
+        },
+        {
             accessorKey: 'title',
             header: ({ column }) => sortableHeader('Title', column),
             cell: ({ row }) =>
@@ -80,7 +85,7 @@ export const getTaskColumns = (
                 const taskable = row.original.taskable;
 
                 if (!taskable) {
-                    return '—';
+                    return h('span', { class: 'text-muted-foreground' }, '—');
                 }
 
                 const type = row.original.taskable_type.split('\\').pop();
@@ -104,7 +109,7 @@ export const getTaskColumns = (
                 const assignedTo = row.original.assigned_to;
 
                 if (!assignedTo) {
-                    return '—';
+                    return h('span', { class: 'text-muted-foreground' }, '—');
                 }
 
                 const initials = assignedTo.name
@@ -129,7 +134,7 @@ export const getTaskColumns = (
                 const status = row.original.status;
 
                 if (!status) {
-                    return '—';
+                    return h('span', { class: 'text-muted-foreground' }, '—');
                 }
 
                 return h(
@@ -149,8 +154,11 @@ export const getTaskColumns = (
         {
             accessorKey: 'due_date',
             header: ({ column }) => sortableHeader('Due date', column),
-            cell: ({ row }) =>
-                useFormat().formatDate(row.original.due_date) || '—',
+            cell: ({ row }): VNode => {
+                const formatted = useFormat().formatDate(row.original.due_date);
+
+                return h('span', formatted ?? '—');
+            },
         },
     ];
 
@@ -163,7 +171,7 @@ export const getTaskColumns = (
                 'div',
                 { class: 'text-right' },
                 h(TaskTableRowActions, {
-                    task: row.original,
+                    task: row.original as TaskModel,
                     onEdit: (taskId: number) => options.onEdit(taskId),
                     onDelete: (taskId: number) => options.onDelete(taskId),
                 }),

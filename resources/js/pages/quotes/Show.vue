@@ -138,6 +138,7 @@ const handleCommentDeleted = (): void => {
                 <QuoteActions
                     :quote="quote"
                     :quote-statuses="quoteStatuses"
+                    :task-users="teamMembers"
                     variant="buttons"
                     @success="() => {}"
                 />

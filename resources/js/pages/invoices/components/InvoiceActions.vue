@@ -5,6 +5,7 @@ import {
     Copy,
     Download,
     Eye,
+    ListTodo,
     MoreHorizontal,
     Pencil,
     RefreshCw,
@@ -29,10 +30,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { InvoiceListRecord, InvoiceStatusEnum } from '@/types';
 
+import TaskCreateDialog from '@/pages/tasks/components/CreateDialog.vue';
+
 const props = defineProps<{
     invoice: InvoiceListRecord;
     invoiceStatuses: InvoiceStatusEnum[];
     variant?: 'dropdown' | 'buttons';
+    taskUsers?: Array<{ id: number; name: string; email: string }>;
 }>();
 
 const emit = defineEmits<{
@@ -45,6 +49,7 @@ const showArchiveDialog = ref(false);
 const showSendDialog = ref(false);
 const showPaymentDialog = ref(false);
 const showDuplicateDialog = ref(false);
+const showCreateTaskDialog = ref(false);
 
 const statusData = computed(() =>
     props.invoiceStatuses.find((s) => s.value === props.invoice.status),
@@ -63,6 +68,15 @@ const canDuplicate = computed(() =>
     availableActions.value.includes('duplicate'),
 );
 const canPreview = computed(() => availableActions.value.includes('preview'));
+const taskUsers = computed(() => props.taskUsers ?? []);
+const canCreateTask = computed(() => taskUsers.value.length > 0);
+const taskEntityContext = computed(() => ({
+    type: 'invoice' as const,
+    id: props.invoice.id,
+    title: props.invoice.title,
+    number: props.invoice.invoice_number || null,
+    locked: true,
+}));
 
 const sendButtonText = computed(() =>
     props.invoice.status === 'sent' ? 'Resend' : 'Send',
@@ -176,6 +190,15 @@ const viewAsClient = (): void => {
 const openPaymentDialog = (): void => {
     showPaymentDialog.value = true;
 };
+
+const openTaskDialog = (): void => {
+    if (!canCreateTask.value) {
+        toast.error('Invite a teammate before assigning tasks.');
+        return;
+    }
+
+    showCreateTaskDialog.value = true;
+};
 </script>
 
 <template>
@@ -243,6 +266,15 @@ const openPaymentDialog = (): void => {
                         <Pencil class="h-4 w-4" />
                         <span>Edit</span>
                     </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                    v-if="canCreateTask"
+                    class="gap-2"
+                    @select="openTaskDialog"
+                >
+                    <ListTodo class="h-4 w-4" />
+                    <span>Create task</span>
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator />
@@ -356,6 +388,17 @@ const openPaymentDialog = (): void => {
             </Link>
         </Button>
 
+        <Button
+            v-if="canCreateTask"
+            size="sm"
+            variant="outline"
+            class="gap-1.5"
+            @click="openTaskDialog"
+        >
+            <ListTodo class="h-3.5 w-3.5" />
+            Create task
+        </Button>
+
         <DropdownMenu>
             <DropdownMenuTrigger as-child>
                 <Button variant="outline" size="icon" class="h-8 w-8">
@@ -439,9 +482,15 @@ const openPaymentDialog = (): void => {
     />
 
     <RecordPaymentDialog
-        :open="showPaymentDialog"
+        v-model:open="showPaymentDialog"
         :invoice-id="invoice.id"
-        @update:open="showPaymentDialog = $event"
-        @success="emit('success')"
+        @saved="emit('success')"
+    />
+
+    <TaskCreateDialog
+        v-if="canCreateTask"
+        v-model:open="showCreateTaskDialog"
+        :users="taskUsers"
+        :entity="taskEntityContext"
     />
 </template>

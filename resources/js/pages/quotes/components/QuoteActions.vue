@@ -8,6 +8,7 @@ import {
     Download,
     Edit3,
     Eye,
+    ListTodo,
     MoreHorizontal,
     Pencil,
     RefreshCw,
@@ -23,6 +24,7 @@ import PortalDashboardController from '@/actions/App/Http/Controllers/Portal/Por
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import TaskCreateDialog from '@/pages/tasks/components/CreateDialog.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -59,6 +61,7 @@ const props = defineProps<{
     quoteStatuses: QuoteStatusEnum[];
     variant?: 'dropdown' | 'buttons';
     isClient?: boolean;
+    taskUsers?: Array<{ id: number; name: string; email: string }>;
 }>();
 
 const emit = defineEmits<{
@@ -81,6 +84,7 @@ const showDuplicateDialog = ref(false);
 const showReviseDialog = ref(false);
 const showReopenDialog = ref(false);
 const showArchiveDialog = ref(false);
+const showCreateTaskDialog = ref(false);
 const quoteToSend = ref<number | null>(null);
 const lostReason = ref('');
 const selectedUserId = ref<string | null>(null);
@@ -122,6 +126,18 @@ const canPreview = computed(() => availableActions.value.includes('preview'));
 const canConvertToInvoice = computed(() =>
     availableActions.value.includes('convert_to_invoice'),
 );
+const taskUsers = computed(() => props.taskUsers ?? []);
+const canCreateTask = computed(() => taskUsers.value.length > 0);
+const taskEntityContext = computed(() => ({
+    type: 'quote' as const,
+    id: props.quote.id,
+    title: props.quote.title,
+    number:
+        props.quote.number ||
+        (props.quote as any).quote_number ||
+        null,
+    locked: true,
+}));
 
 // Client-specific actions
 const canApprove = computed(
@@ -174,6 +190,15 @@ const executeSend = (): void => {
             showSendDialog.value = false;
         },
     });
+};
+
+const openTaskDialog = (): void => {
+    if (!canCreateTask.value) {
+        toast.error('Invite a teammate before assigning tasks.');
+        return;
+    }
+
+    showCreateTaskDialog.value = true;
 };
 
 const cancelSchedule = (): void => {
@@ -926,6 +951,15 @@ const executeChangeOwner = (): void => {
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
+                        v-if="canCreateTask"
+                        class="gap-2"
+                        @select="openTaskDialog"
+                    >
+                        <ListTodo class="h-4 w-4" />
+                        <span>Create task</span>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
                         v-if="canPreview"
                         class="gap-2"
                         @select="downloadPDF"
@@ -1005,6 +1039,17 @@ const executeChangeOwner = (): void => {
                     <Pencil class="h-3.5 w-3.5" />
                     Edit
                 </Link>
+            </Button>
+
+            <Button
+                v-if="canCreateTask"
+                size="sm"
+                variant="outline"
+                class="gap-1.5"
+                @click="openTaskDialog"
+            >
+                <ListTodo class="h-3.5 w-3.5" />
+                Create task
             </Button>
 
             <DropdownMenu>
@@ -1125,4 +1170,11 @@ const executeChangeOwner = (): void => {
             </DropdownMenu>
         </template>
     </template>
+
+    <TaskCreateDialog
+        v-if="canCreateTask"
+        v-model:open="showCreateTaskDialog"
+        :users="taskUsers"
+        :entity="taskEntityContext"
+    />
 </template>

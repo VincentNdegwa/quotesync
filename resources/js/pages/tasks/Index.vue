@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import { GitBranch, Trash2 } from 'lucide-vue-next';
 import TaskController from '@/actions/App/Http/Controllers/TaskController';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -12,9 +14,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import TaskCreateDialog from '@/pages/tasks/components/CreateDialog.vue';
 import TaskEditDialog from '@/pages/tasks/components/EditDialog.vue';
 import TaskHeaderActions from '@/pages/tasks/components/TaskHeaderActions.vue';
+import TaskKanban from '@/pages/tasks/components/TaskKanban.vue';
 import TasksDataTable from '@/pages/tasks/components/TasksDataTable.vue';
 import type { Paginator } from '@/types';
 import type { TaskModel, TaskStatusModel, UserModel } from '@/types/models';
@@ -26,6 +35,8 @@ type Filters = {
 };
 
 const ALL = '__all__';
+
+const STORAGE_KEY = 'tasks-view-mode';
 
 const props = defineProps<{
     filters: Filters;
@@ -40,6 +51,19 @@ const query = ref({
     status: props.filters.status || ALL,
     sort: props.filters.sort || 'newest',
 });
+
+const viewMode = ref<'table' | 'kanban'>(
+    (typeof window !== 'undefined'
+        ? (localStorage.getItem(STORAGE_KEY) as 'table' | 'kanban')
+        : null) || 'table'
+);
+
+const toggleView = (): void => {
+    viewMode.value = viewMode.value === 'table' ? 'kanban' : 'table';
+    if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, viewMode.value);
+    }
+};
 
 let handle: ReturnType<typeof setTimeout> | null = null;
 
@@ -80,6 +104,7 @@ const hasTasks = computed(() => props.tasks.data.length > 0);
 
 const showDeleteDialog = ref(false);
 const taskToDelete = ref<number | null>(null);
+const bulkDeleteDialogOpen = ref(false);
 
 const removeTask = (taskId: number): void => {
     taskToDelete.value = taskId;
@@ -101,6 +126,8 @@ const executeDelete = (): void => {
 const showCreateDialog = ref(false);
 const showEditDialog = ref(false);
 const editingTask = ref<TaskModel | null>(null);
+const selectedIds = ref<number[]>([]);
+const bulkActionLoading = ref(false);
 
 const openCreateDialog = (): void => {
     showCreateDialog.value = true;
@@ -113,6 +140,67 @@ const openEditDialog = (taskId: number): void => {
         editingTask.value = task;
         showEditDialog.value = true;
     }
+};
+
+const bulkUpdateStatus = (taskStatusId: number): void => {
+    if (selectedIds.value.length === 0) {
+        return;
+    }
+
+    bulkActionLoading.value = true;
+
+    router.post(
+        '/tasks/bulk-action',
+        {
+            ids: selectedIds.value,
+            action: 'update_status',
+            task_status_id: taskStatusId,
+        },
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                selectedIds.value = [];
+            },
+            onFinish: () => {
+                bulkActionLoading.value = false;
+            },
+        },
+    );
+};
+
+const openBulkDeleteDialog = (): void => {
+    if (selectedIds.value.length === 0) {
+        return;
+    }
+
+    bulkDeleteDialogOpen.value = true;
+};
+
+const executeBulkDelete = (): void => {
+    if (selectedIds.value.length === 0) {
+        bulkDeleteDialogOpen.value = false;
+        return;
+    }
+
+    bulkActionLoading.value = true;
+
+    router.post(
+        '/tasks/bulk-action',
+        {
+            ids: selectedIds.value,
+            action: 'delete',
+        },
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                selectedIds.value = [];
+                bulkDeleteDialogOpen.value = false;
+            },
+            onFinish: () => {
+                bulkActionLoading.value = false;
+            },
+        },
+    );
 };
 </script>
 
@@ -128,7 +216,11 @@ const openEditDialog = (taskId: number): void => {
                 description="Manage tasks across quotes, invoices, and other entities."
             />
 
-            <TaskHeaderActions @open-create-task="openCreateDialog" />
+            <TaskHeaderActions
+                :view-mode="viewMode"
+                @open-create-task="openCreateDialog"
+                @toggle-view="toggleView"
+            />
         </div>
 
         <div class="rounded-lg border p-3">
@@ -169,23 +261,77 @@ const openEditDialog = (taskId: number): void => {
             </div>
         </div>
 
-        <TasksDataTable
-            v-if="hasTasks"
-            :data="tasks.data"
-            :task-statuses="taskStatuses"
-            @delete="removeTask"
-            @edit="openEditDialog"
-        />
+        <template v-if="viewMode === 'kanban'">
+            <TaskKanban
+                :task-statuses="taskStatuses"
+                :filters="query"
+                @edit="openEditDialog"
+                @delete="removeTask"
+            />
+        </template>
+
+        <template v-else>
+            <div
+                v-if="selectedIds.length > 0"
+                class="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/40 p-3"
+            >
+                <span class="text-sm text-muted-foreground">
+                    {{ selectedIds.length }} selected
+                </span>
+
+                <DropdownMenu>
+                    <DropdownMenuTrigger as-child>
+                        <Button variant="outline" size="sm" :disabled="bulkActionLoading">
+                            <GitBranch class="mr-2 h-4 w-4" />
+                            Update status
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent class="max-h-64 w-48 overflow-y-auto">
+                        <DropdownMenuItem
+                            v-for="status in taskStatuses"
+                            :key="status.id"
+                            class="gap-2"
+                            @select="bulkUpdateStatus(status.id)"
+                        >
+                            <span
+                                class="h-2 w-2 rounded-full"
+                                :style="{ backgroundColor: status.color }"
+                            />
+                            <span>{{ status.name }}</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
+                <Button
+                    variant="destructive"
+                    size="sm"
+                    :disabled="bulkActionLoading"
+                    @click="openBulkDeleteDialog"
+                >
+                    <Trash2 class="mr-2 h-4 w-4" />
+                    Delete selected
+                </Button>
+            </div>
+
+            <TasksDataTable
+                v-if="hasTasks"
+                :data="tasks.data"
+                :task-statuses="taskStatuses"
+                @delete="removeTask"
+                @edit="openEditDialog"
+                @update:selected-ids="selectedIds = $event"
+            />
+
+            <div
+                v-else
+                class="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground"
+            >
+                No tasks yet. Create your first task.
+            </div>
+        </template>
 
         <div
-            v-else
-            class="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground"
-        >
-            No tasks yet. Create your first task.
-        </div>
-
-        <div
-            v-if="tasks.links.length > 1"
+            v-if="viewMode === 'table' && tasks.links.length > 1"
             class="flex w-full flex-wrap items-center justify-end gap-2"
         >
             <template
@@ -232,6 +378,16 @@ const openEditDialog = (taskId: number): void => {
             confirm-text="Delete"
             variant="destructive"
             @confirm="executeDelete"
+        />
+
+        <ConfirmDialog
+            v-model:open="bulkDeleteDialogOpen"
+            title="Delete selected tasks"
+            :description="`Are you sure you want to delete ${selectedIds.length} selected task${selectedIds.length === 1 ? '' : 's'}? This action cannot be undone.`"
+            confirm-text="Delete"
+            variant="destructive"
+            :loading="bulkActionLoading"
+            @confirm="executeBulkDelete"
         />
 
         <TaskCreateDialog v-model:open="showCreateDialog" :users="users" />

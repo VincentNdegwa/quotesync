@@ -41,8 +41,17 @@ const open = defineModel<boolean>('open', {
     required: true,
 });
 
-const _props = defineProps<{
+type EntityContext = {
+    type: 'quote' | 'invoice';
+    id: number | null;
+    title?: string | null;
+    number?: string | null;
+    locked?: boolean;
+};
+
+const props = defineProps<{
     users: Array<{ id: number; name: string; email: string }>;
+    entity?: EntityContext | null;
 }>();
 
 const form = useForm({
@@ -62,10 +71,6 @@ const entityPopoverOpen = ref(false);
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const selectedEntityText = computed(() => {
-    if (!form.taskable_id) {
-        return `Select ${form.taskable_type === 'quote' ? 'quote' : 'invoice'}`;
-    }
-
     const entity = availableEntities.value.find(
         (e) => e.id === form.taskable_id,
     );
@@ -79,6 +84,55 @@ const selectedEntityText = computed(() => {
     return `Select ${form.taskable_type === 'quote' ? 'quote' : 'invoice'}`;
 });
 
+const lockedEntity = computed(() => {
+    if (!props.entity?.id) {
+        return null;
+    }
+
+    return props.entity;
+});
+
+const isEntityLocked = computed(
+    () => Boolean(lockedEntity.value?.locked && lockedEntity.value?.id),
+);
+
+const lockedEntityLabel = computed(() => {
+    if (!lockedEntity.value) {
+        return '';
+    }
+
+    const title = lockedEntity.value.title || `#${lockedEntity.value.id}`;
+    if (lockedEntity.value.number) {
+        return `${title} (${lockedEntity.value.number})`;
+    }
+
+    return title;
+});
+
+function ensureLockedEntityOption(): void {
+    if (!lockedEntity.value?.id) {
+        return;
+    }
+
+    const exists = availableEntities.value.some(
+        (entity) => entity.id === lockedEntity.value?.id,
+    );
+
+    if (!exists) {
+        availableEntities.value = [
+            {
+                id: lockedEntity.value.id,
+                title:
+                    lockedEntity.value.title ||
+                    lockedEntityLabel.value ||
+                    `#${lockedEntity.value.id}`,
+                number: lockedEntity.value.number || undefined,
+            },
+            ...availableEntities.value,
+        ];
+    }
+}
+
 watch(
     () => form.taskable_type,
     async (newType) => {
@@ -88,6 +142,24 @@ watch(
 
         entitySearch.value = '';
         await fetchEntities();
+        ensureLockedEntityOption();
+    },
+    { immediate: true },
+);
+
+watch(
+    () => props.entity,
+    (entity) => {
+        if (entity?.type) {
+            form.taskable_type = entity.type;
+        }
+
+        if (entity?.id) {
+            form.taskable_id = entity.id;
+            ensureLockedEntityOption();
+        } else if (!entity?.id && isEntityLocked.value === false) {
+            form.taskable_id = null;
+        }
     },
     { immediate: true },
 );
@@ -142,6 +214,11 @@ const submit = (): void => {
             open.value = false;
             form.reset();
             form.clearErrors();
+            if (lockedEntity.value) {
+                form.taskable_type = lockedEntity.value.type;
+                form.taskable_id = lockedEntity.value.id;
+                ensureLockedEntityOption();
+            }
         },
     });
 };
@@ -222,7 +299,10 @@ const submit = (): void => {
                     <Label for="task_create_taskable_type"
                         >Related Entity Type</Label
                     >
-                    <Select v-model="form.taskable_type">
+                    <Select
+                        v-model="form.taskable_type"
+                        :disabled="isEntityLocked"
+                    >
                         <SelectTrigger
                             class="w-full"
                             id="task_create_taskable_type"
@@ -241,7 +321,10 @@ const submit = (): void => {
                     <Label for="task_create_taskable_id" required
                         >Related Entity</Label
                     >
-                    <Popover v-model:open="entityPopoverOpen">
+                    <div v-if="isEntityLocked" class="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+                        {{ lockedEntityLabel }}
+                    </div>
+                    <Popover v-else v-model:open="entityPopoverOpen">
                         <PopoverTrigger as-child>
                             <Button
                                 variant="outline"

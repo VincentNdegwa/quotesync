@@ -125,6 +125,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('quotes/kanban', [QuoteController::class, 'kanban'])->name('quotes.kanban');
         Route::get('invoices/kanban', [InvoiceController::class, 'kanban'])->name('invoices.kanban');
+        Route::get('tasks/kanban', [TaskController::class, 'kanban'])->name('tasks.kanban');
         Route::resource('quotes', QuoteController::class);
         Route::get('quotes/{quote}/analytics', [QuoteController::class, 'analytics'])->name('quotes.analytics');
         Route::post('quotes/{quote}/send', [QuoteSendController::class, 'store'])->name('quotes.send');
@@ -161,6 +162,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('quotes/{quote}/messages', [QuoteMessageController::class, 'store'])->name('quotes.messages.store');
         Route::resource('tasks', TaskController::class)->except(['index', 'show', 'create', 'edit']);
         Route::get('tasks', [TaskController::class, 'index'])->name('tasks.index');
+        Route::post('tasks/bulk-action', [TaskController::class, 'bulkAction'])->name('tasks.bulk-action');
 
         Route::get('comments/{type}/{id}', [CommentController::class, 'index'])->name('comments.index');
         Route::post('comments/{type}/{id}', [CommentController::class, 'store'])->name('comments.store');

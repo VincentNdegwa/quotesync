@@ -12,6 +12,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceActivity;
 use App\Models\InvoicePayment;
 use App\Models\Quote;
+use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Invoices\InvoiceNumberingService;
 use App\Services\BuilderLookupService;
@@ -121,10 +122,15 @@ class InvoiceController extends Controller
 
         $invoice = $this->transformInvoice($invoice);
 
+        $teamMembers = User::whereHas('workspaces', function ($query) use ($workspace) {
+            $query->where('workspace_id', $workspace->id);
+        })->select('id', 'name', 'email')->get();
+
         return Inertia::render('invoices/Show', [
             'invoice' => $invoice,
             'invoiceStatuses' => InvoiceStatus::all(),
             'settings' => $workspaceSettingsService->builderSettings($workspace),
+            'teamMembers' => $teamMembers,
         ]);
     }
 

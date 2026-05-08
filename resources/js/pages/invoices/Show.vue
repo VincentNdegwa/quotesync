@@ -105,6 +105,7 @@ const handleCommentDeleted = (): void => {
                 <InvoiceActions
                     :invoice="invoice"
                     :invoice-statuses="invoiceStatuses"
+                    :task-users="teamMembers"
                     variant="buttons"
                     @success="() => {}"
                 />

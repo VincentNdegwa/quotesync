@@ -2,6 +2,7 @@ import { usePage } from '@inertiajs/vue3';
 import type { ColumnDef } from '@tanstack/vue-table';
 import { ArrowUpDown } from 'lucide-vue-next';
 import { h } from 'vue';
+import type { VNode } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useFormat } from '@/composables/useFormat';
