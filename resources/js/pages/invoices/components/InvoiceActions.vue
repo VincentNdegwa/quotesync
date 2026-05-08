@@ -44,6 +44,7 @@ const showDeleteDialog = ref(false);
 const showArchiveDialog = ref(false);
 const showSendDialog = ref(false);
 const showPaymentDialog = ref(false);
+const showDuplicateDialog = ref(false);
 
 const statusData = computed(() =>
     props.invoiceStatuses.find((s) => s.value === props.invoice.status),
@@ -116,12 +117,17 @@ const executeArchive = (): void => {
 };
 
 const duplicate = (): void => {
+    showDuplicateDialog.value = true;
+};
+
+const executeDuplicate = (): void => {
     router.post(
         InvoiceController.duplicate(props.invoice.id).url,
         {},
         {
             preserveScroll: true,
             onSuccess: () => {
+                showDuplicateDialog.value = false;
                 toast.success('Invoice duplicated successfully');
                 emit('success');
             },
@@ -422,6 +428,14 @@ const openPaymentDialog = (): void => {
         description="Are you sure you want to archive this invoice? It will be hidden from the main list."
         confirm-text="Archive"
         @confirm="executeArchive"
+    />
+
+    <ConfirmDialog
+        v-model:open="showDuplicateDialog"
+        title="Duplicate invoice"
+        description="Are you sure you want to duplicate this invoice?"
+        confirm-text="Duplicate"
+        @confirm="executeDuplicate"
     />
 
     <RecordPaymentDialog

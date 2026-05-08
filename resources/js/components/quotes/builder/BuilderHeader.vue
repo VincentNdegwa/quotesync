@@ -52,7 +52,7 @@ const handleAiTemplateApply = (data: unknown): void => {
                 :placeholder="
                     mode === 'quote'
                         ? 'Enter quote title'
-                        : 'Enter template name'
+                        : mode === 'invoice' ?'Enter invoice name':'Enter template name'
                 "
                 :disabled="systemLocked"
                 class="w-full lg:max-w-2xl"

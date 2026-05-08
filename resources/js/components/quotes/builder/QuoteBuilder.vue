@@ -1090,7 +1090,6 @@ const ensureDefaultVariants = (): void => {
             item.cost_price = Number(
                 resolvedVariant.cost_price || item.cost_price || 0,
             );
-            updated = true;
         });
     });
 

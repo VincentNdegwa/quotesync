@@ -39,6 +39,7 @@ const builderState = computed(() => {
     return {
         ...props.initialState,
         number: props.initialState.invoice_number,
+        name: props.initialState.name,
         sections: [
             {
                 id: 'default',
@@ -52,7 +53,16 @@ const builderState = computed(() => {
 
 const form = useForm(builderState.value);
 
-const save = (): void => {
+const save = (updatedState?: any): void => {
+    
+    if (updatedState) {
+        Object.keys(updatedState).forEach((key) => {
+            if (key in form) {
+                (form as any)[key] = updatedState[key];
+            }
+        });
+    }
+    
     // Transform back to invoice format
     const invoiceData = {
         ...form.data,
@@ -69,6 +79,7 @@ const save = (): void => {
     delete invoiceData.assigned_to;
     delete invoiceData.sections;
 
+    
     form.put(`/invoices/${props.invoiceId}`, invoiceData, {
         preserveScroll: true,
     });
@@ -77,12 +88,6 @@ const save = (): void => {
 
 <template>
     <Head :title="`Edit invoice #${invoiceId}`" />
-
-    <div class="mb-3 flex justify-end">
-        <Button @click="save" :disabled="form.processing">
-            {{ form.processing ? 'Saving...' : 'Save' }}
-        </Button>
-    </div>
 
     <QuoteBuilder
         v-model="form"

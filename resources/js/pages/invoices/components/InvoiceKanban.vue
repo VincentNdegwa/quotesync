@@ -196,7 +196,12 @@ const onDragEnd = (): void => {
 const showToDraftDialog = ref(false);
 const pendingDraftInvoice = ref<{
     invoiceId: number;
-    fromStatus: StatusKey;
+    fromStatus: string;
+} | null>(null);
+const showStatusChangeDialog = ref(false);
+const pendingStatusChange = ref<{
+    invoiceId: number;
+    toStatus: StatusKey;
 } | null>(null);
 
 const reloadKanban = (): void => {
@@ -229,6 +234,25 @@ const executeToDraft = (): void => {
     pendingDraftInvoice.value = null;
 };
 
+const executeStatusChange = (): void => {
+    if (!pendingStatusChange.value) {
+        return;
+    }
+
+    router.post(
+        `/invoices/${pendingStatusChange.value.invoiceId}/send`,
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                showStatusChangeDialog.value = false;
+                pendingStatusChange.value = null;
+                reloadKanban();
+            },
+        },
+    );
+};
+
 const toDraftDescription = computed<string>(() => {
     const status = pendingDraftInvoice.value?.fromStatus;
 
@@ -256,6 +280,13 @@ const onDrop = (e: DragEvent, toStatus: string): void => {
     if (target === 'draft') {
         pendingDraftInvoice.value = { invoiceId, fromStatus };
         showToDraftDialog.value = true;
+
+        return;
+    }
+
+    if (target === 'sent') {
+        pendingStatusChange.value = { invoiceId, toStatus: target };
+        showStatusChangeDialog.value = true;
 
         return;
     }
@@ -294,6 +325,14 @@ const executeDelete = (): void => {
         :description="toDraftDescription"
         confirm-text="Move to draft"
         @confirm="executeToDraft"
+    />
+
+    <ConfirmDialog
+        v-model:open="showStatusChangeDialog"
+        title="Send invoice"
+        description="This will send the invoice to the client via email. Are you sure?"
+        confirm-text="Send"
+        @confirm="executeStatusChange"
     />
 
     <div v-if="loading" class="flex gap-3 overflow-hidden">
