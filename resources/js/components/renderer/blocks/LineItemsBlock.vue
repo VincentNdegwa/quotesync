@@ -105,8 +105,13 @@ const sections = computed<Section[]>(() => {
     }
 
     const data = props.data as InvoiceData & {
+        sections?: Section[];
         line_items?: DocumentLineItem[];
     };
+
+    if (data.sections && data.sections.length > 0) {
+        return data.sections;
+    }
 
     return [
         {

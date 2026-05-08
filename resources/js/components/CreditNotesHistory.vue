@@ -12,17 +12,19 @@ const props = defineProps<{
     invoiceId: number;
     currency: string;
     total: number;
+    balanceDue: number;
 }>();
 
 const { getCreditNoteStatus } = useEnums();
 const { formatCurrency: fmt, formatDate: fmtDate } = useFormat(props.currency);
 
+const page = usePage();
+const defaultCurrency: string = page.props.workspace_currency as string;
+
 const issuedCreditNotes = computed(() => {
     return props.creditNotes.filter((cn) => cn.status === 'issued');
 });
 
-const page = usePage();
-const defaultCurrency: string = page.props.workspace_currency as string;
 const totalCredited = computed(() => {
     return issuedCreditNotes.value.reduce(
         (sum, cn) => sum + Number(cn.base_total || cn.total),
@@ -30,12 +32,8 @@ const totalCredited = computed(() => {
     );
 });
 
-const balanceAfterCredits = computed(() => {
-    return props.total - totalCredited.value;
-});
-
 const creditStatus = computed(() => {
-    if (totalCredited.value >= props.total) {
+    if (props.balanceDue <= 0) {
         return 'fully_credited';
     }
 
@@ -103,12 +101,12 @@ const getStatusLabel = (status: string): string => {
                     <p
                         class="font-semibold"
                         :class="
-                            balanceAfterCredits > 0
+                            balanceDue > 0
                                 ? 'text-red-600'
                                 : 'text-green-600'
                         "
                     >
-                        {{ fmt(balanceAfterCredits, defaultCurrency) }}
+                        {{ fmt(balanceDue, defaultCurrency) }}
                     </p>
                 </div>
             </div>

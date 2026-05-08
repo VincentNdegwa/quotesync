@@ -6,6 +6,7 @@ enum CreditNoteStatus: string
 {
     case Draft = 'draft';
     case Issued = 'issued';
+    case Applied = 'applied';
     case Voided = 'voided';
 
     public function label(): string
@@ -13,6 +14,7 @@ enum CreditNoteStatus: string
         return match ($this) {
             self::Draft => 'Draft',
             self::Issued => 'Issued',
+            self::Applied => 'Applied',
             self::Voided => 'Voided',
         };
     }
@@ -22,6 +24,7 @@ enum CreditNoteStatus: string
         return match ($this) {
             self::Draft => 'secondary',
             self::Issued => 'default',
+            self::Applied => 'green',
             self::Voided => 'outline',
         };
     }
@@ -30,7 +33,8 @@ enum CreditNoteStatus: string
     {
         return match ($this) {
             self::Draft => 'text-muted-foreground',
-            self::Issued => 'text-primary',
+            self::Issued => 'text-white',
+            self::Applied => 'text-green-600',
             self::Voided => 'text-orange-600',
         };
     }
@@ -64,7 +68,8 @@ enum CreditNoteStatus: string
     {
         return match ($this) {
             self::Draft => [self::Issued, self::Voided],
-            self::Issued => [self::Voided],
+            self::Issued => [self::Applied, self::Voided],
+            self::Applied => [self::Voided],
             self::Voided => [],
         };
     }
@@ -76,7 +81,8 @@ enum CreditNoteStatus: string
     {
         return match ($this) {
             self::Draft => ['edit', 'delete', 'issue', 'void'],
-            self::Issued => ['void'],
+            self::Issued => ['apply', 'void'],
+            self::Applied => ['void'],
             self::Voided => [],
         };
     }

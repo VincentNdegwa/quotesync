@@ -38,7 +38,6 @@ class RecurringInvoiceService
                 'discount_amount' => $recurringInvoice->discount_amount,
                 'total' => $recurringInvoice->total,
                 'paid_amount' => 0,
-                'balance_due' => $recurringInvoice->total,
                 'status' => 'draft',
                 'issue_date' => $recurringInvoice->next_invoice_date,
                 'due_date' => $recurringInvoice->next_invoice_date->copy()->addDays(30),

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'invoice_id',
+    'invoice_section_id',
     'catalog_item_id',
     'catalog_item_variant_id',
     'name',
@@ -32,6 +33,11 @@ class InvoiceLineItem extends Model
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    public function section(): BelongsTo
+    {
+        return $this->belongsTo(InvoiceSection::class, 'invoice_section_id');
     }
 
     public function catalogItem(): BelongsTo

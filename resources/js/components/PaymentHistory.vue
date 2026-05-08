@@ -11,6 +11,7 @@ const props = defineProps<{
     invoiceId: number;
     currency: string;
     total: number;
+    balanceDue: number;
 }>();
 
 const page = usePage();
@@ -21,12 +22,8 @@ const totalPaid = computed(() => {
     return props.payments.reduce((sum, p) => sum + Number(p.amount), 0);
 });
 
-const balanceDue = computed(() => {
-    return props.total - totalPaid.value;
-});
-
 const paymentStatus = computed(() => {
-    if (totalPaid.value >= props.total) {
+    if (props.balanceDue <= 0) {
         return 'paid';
     }
 

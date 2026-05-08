@@ -7,13 +7,14 @@ import type {
     BuilderConfigurationUnit,
     BuilderTaxOption,
     InvoiceModel,
+    QuoteBuilderState,
     WorkspaceSettings,
 } from '@/types';
 import InvoiceController from '@/actions/App/Http/Controllers/InvoiceController';
 
 const props = defineProps<{
     invoice: InvoiceModel;
-    initialState: any;  
+    initialState: QuoteBuilderState;  
     catalogItems: BuilderCatalogItem[];
     taxes: BuilderTaxOption[];
     units: BuilderConfigurationUnit[];
@@ -33,53 +34,20 @@ watchEffect(() => {
     });
 });
 
+const form = useForm<QuoteBuilderState>(props.initialState);
 
-const builderState = computed(() => {
-    return {
-        ...props.initialState,
-        number: props.initialState.invoice_number,
-        name: props.initialState.name,
-        sections: [
-            {
-                id: 'default',
-                title: 'Items',
-                sort_order: 0,
-                line_items: props.initialState.line_items || [],
-            },
-        ],
-    };
-});
-
-const form = useForm(builderState.value);
-
-const save = (updatedState?: any): void => {
-    
+const save = (updatedState?: QuoteBuilderState): void => {
     if (updatedState) {
         Object.keys(updatedState).forEach((key) => {
             if (key in form) {
-                (form as any)[key] = updatedState[key];
+                (form as any)[key] = updatedState[key as keyof QuoteBuilderState];
             }
         });
     }
-    
-    const invoiceData = {
-        ...form.data,
-        invoice_number: form.data.number,
-        line_items: form.data.sections?.[0]?.line_items || [],
-    };
 
-    delete invoiceData.number;
-    delete invoiceData.valid_until;
-    delete invoiceData.requires_deposit;
-    delete invoiceData.deposit_amount;
-    delete invoiceData.template_id;
-    delete invoiceData.assigned_to;
-    delete invoiceData.sections;
-
-
-    form.put(InvoiceController.update(props.invoice).url, invoiceData, {
+    form.put(InvoiceController.update(props.invoice).url, {
         preserveScroll: true,
-    })
+    });
 };
 </script>
 

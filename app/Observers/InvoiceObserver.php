@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Enums\CreditNoteStatus;
 use App\Models\Invoice;
 use App\Services\ExchangeRateService;
 
@@ -13,16 +14,11 @@ class InvoiceObserver
 
     public function saved(Invoice $invoice): void
     {
-        // Recompute amount_credited and balance_due whenever invoice changes
+        // Recompute amount_credited whenever invoice changes
         $invoice->updateQuietly([
             'amount_credited' => $invoice->creditNotes()
-                ->where('status', 'applied')
+                ->whereIn('status', [CreditNoteStatus::Issued->value, CreditNoteStatus::Applied->value])
                 ->sum('total'),
-            'balance_due' => max(0,
-                $invoice->total
-                - $invoice->paid_amount
-                - $invoice->creditNotes()->where('status', 'applied')->sum('total')
-            ),
         ]);
     }
 

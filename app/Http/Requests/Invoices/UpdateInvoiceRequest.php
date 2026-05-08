@@ -37,6 +37,8 @@ class UpdateInvoiceRequest extends FormRequest
     {
         /** @var Workspace|null $workspace */
         $workspace = $this->user()?->currentWorkspace;
+        $user = $this->user();
+
 
         return [
             'invoice_number' => ['nullable', 'string', 'max:60'],
@@ -53,37 +55,85 @@ class UpdateInvoiceRequest extends FormRequest
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'tax_amount' => ['nullable', 'numeric', 'min:0'],
             'total' => ['nullable', 'numeric', 'min:0'],
-            'line_items' => ['required', 'array', 'min:1'],
-            'line_items.*.catalog_item_id' => [
+            'sections' => ['required', 'array', 'min:1'],
+            'sections.*.title' => ['required', 'string', 'max:255'],
+            'sections.*.sort_order' => ['nullable', 'integer', 'min:0'],
+            'sections.*.line_items' => ['required', 'array'],
+            'sections.*.line_items.*.catalog_item_id' => [
                 'nullable',
                 'integer',
                 Rule::exists('catalog_items', 'id')->where(fn ($query) => $query
                     ->where('workspace_id', $workspace?->id)
                     ->whereNull('deleted_at')),
             ],
-            'line_items.*.name' => ['required', 'string', 'max:255'],
-            'line_items.*.description' => ['nullable', 'string'],
-            'line_items.*.quantity' => ['required', 'numeric', 'min:0.01'],
-            'line_items.*.unit' => ['nullable', 'string', 'max:30'],
-            'line_items.*.unit_price' => ['required', 'numeric', 'min:0'],
-            'line_items.*.discount_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'line_items.*.subtotal' => ['nullable', 'numeric', 'min:0'],
-            'line_items.*.tax_amount' => ['nullable', 'numeric', 'min:0'],
-            'line_items.*.total' => ['nullable', 'numeric', 'min:0'],
-            'line_items.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'line_items.*.notes' => ['nullable', 'string'],
-            'line_items.*.sort_order' => ['nullable', 'integer', 'min:0'],
-            'line_items.*.taxes' => ['nullable', 'array'],
-            'line_items.*.taxes.*.tax_id' => [
+            'sections.*.line_items.*.name' => ['required', 'string', 'max:255'],
+            'sections.*.line_items.*.description' => ['nullable', 'string'],
+            'sections.*.line_items.*.quantity' => ['required', 'numeric', 'min:0.01'],
+            'sections.*.line_items.*.unit' => ['nullable', 'string', 'max:30'],
+            'sections.*.line_items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'sections.*.line_items.*.cost_price' => ['nullable', 'numeric', 'min:0'],
+            'sections.*.line_items.*.discount_percent' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:100',
+            ],
+            'sections.*.line_items.*.price_tier_applied' => ['nullable', 'boolean'],
+            'sections.*.line_items.*.subtotal' => ['nullable', 'numeric', 'min:0'],
+            'sections.*.line_items.*.tax_amount' => ['nullable', 'numeric', 'min:0'],
+            'sections.*.line_items.*.total' => ['nullable', 'numeric', 'min:0'],
+            'sections.*.line_items.*.is_optional' => ['nullable', 'boolean'],
+            'sections.*.line_items.*.notes' => ['nullable', 'string'],
+            'sections.*.line_items.*.sort_order' => ['nullable', 'integer', 'min:0'],
+            'sections.*.line_items.*.taxes' => ['nullable', 'array'],
+            'sections.*.line_items.*.taxes.*.tax_id' => [
                 'nullable',
                 'integer',
                 Rule::exists('taxes', 'id')->where(fn ($query) => $query
                     ->where('workspace_id', $workspace?->id)
                     ->whereNull('deleted_at')),
             ],
-            'line_items.*.taxes.*.tax_label' => ['required', 'string', 'max:120'],
-            'line_items.*.taxes.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
-            'line_items.*.taxes.*.inclusive' => ['nullable', 'boolean'],
+            'sections.*.line_items.*.taxes.*.tax_label' => ['required', 'string', 'max:120'],
+            'sections.*.line_items.*.taxes.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
+            'sections.*.line_items.*.taxes.*.inclusive' => ['nullable', 'boolean'],
+        ];
+    }
+
+    public function after(): array
+    {
+        return [
+            function ($validator) {
+                $workspace = $this->user()?->currentWorkspace;
+                $user = $this->user();
+
+                $maxDiscount = null;
+                if ($user && $workspace) {
+                    $pivot = $user->roles()->wherePivot('workspace_id', $workspace->id)->first()?->pivot;
+                    $maxDiscount = $pivot->max_discount_percent ?? null;
+                }
+
+                $sections = $this->input('sections', []);
+                foreach ($sections as $sectionIndex => $section) {
+                    if (!isset($section['line_items'])) {
+                        continue;
+                    }
+
+                    foreach ($section['line_items'] as $lineItemIndex => $lineItem) {
+                        // Skip validation if price tier was applied (admin-set pricing)
+                        if (isset($lineItem['price_tier_applied']) && $lineItem['price_tier_applied']) {
+                            continue;
+                        }
+
+                        // Only validate manual discounts against max discount limit
+                        if ($maxDiscount !== null && isset($lineItem['discount_percent']) && $lineItem['discount_percent'] > $maxDiscount) {
+                            $validator->errors()->add(
+                                "sections.{$sectionIndex}.line_items.{$lineItemIndex}.discount_percent",
+                                "Discount cannot exceed {$maxDiscount}%."
+                            );
+                        }
+                    }
+                }
+            },
         ];
     }
 }

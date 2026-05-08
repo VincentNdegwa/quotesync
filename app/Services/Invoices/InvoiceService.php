@@ -4,16 +4,19 @@ namespace App\Services\Invoices;
 
 use App\Models\Invoice;
 use App\Models\InvoiceActivity;
-use App\Models\InvoiceLineItem;
 use App\Models\InvoiceLineItemTax;
 use App\Models\Quote;
+use App\Services\ExchangeRateService;
 use App\Services\Invoices\InvoiceNumberingService;
+use App\Services\Quotes\TaxCalculator as QuotesTaxCalculator;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
 class InvoiceService
 {
     public function __construct(
         private InvoiceNumberingService $invoiceNumberingService,
+        private ExchangeRateService $exchangeRateService,
     ) {}
 
     public function convertFromQuote(Quote $quote, int $createdBy): Invoice
@@ -45,7 +48,6 @@ class InvoiceService
                 'base_discount_amount' => $quote->base_discount_amount,
                 'base_total' => $quote->base_total,
                 'paid_amount' => 0,
-                'balance_due' => $quote->total,
                 'status' => 'draft',
                 'issue_date' => now(),
                 'due_date' => now()->addDays(30),
@@ -53,8 +55,13 @@ class InvoiceService
             ]);
 
             foreach ($quote->sections as $section) {
+                $invoiceSection = $invoice->sections()->create([
+                    'title' => $section->title,
+                    'sort_order' => $section->sort_order,
+                ]);
+
                 foreach ($section->lineItems as $lineItem) {
-                    $invoiceLineItem = InvoiceLineItem::query()->create([
+                    $invoiceLineItem = $invoiceSection->lineItems()->create([
                         'invoice_id' => $invoice->id,
                         'catalog_item_id' => $lineItem->catalog_item_id,
                         'catalog_item_variant_id' => $lineItem->catalog_item_variant_id,
@@ -108,7 +115,6 @@ class InvoiceService
             $newInvoice->issue_date = now();
             $newInvoice->due_date = now()->addDays(30);
             $newInvoice->paid_amount = 0;
-            $newInvoice->balance_due = $invoice->total;
             $newInvoice->sent_at = null;
             $newInvoice->paid_date = null;
             $newInvoice->invoice_uuid = (string) \Illuminate\Support\Str::uuid();
@@ -147,13 +153,14 @@ class InvoiceService
     public function toBuilderPayload(Invoice $invoice): array
     {
         $invoice->loadMissing([
-            'lineItems.taxes',
+            'sections.lineItems.taxes',
             'client',
         ]);
 
         return [
             'id' => $invoice->id,
-            'invoice_number' => $invoice->invoice_number,
+            'number' => $invoice->invoice_number,
+            'name' => $invoice->title,
             'title' => $invoice->title,
             'status' => $invoice->status,
             'client_id' => $invoice->client_id,
@@ -171,7 +178,7 @@ class InvoiceService
             'base_total' => $invoice->base_total,
             'issue_date' => $invoice->issue_date?->toDateString(),
             'due_date' => $invoice->due_date?->toDateString(),
-            'valid_until' => $invoice->due_date?->toDateString(), // Map to valid_until for builder
+            'valid_until' => $invoice->due_date?->toDateString(),
             'cover_message' => $invoice->cover_message,
             'terms' => $invoice->terms,
             'notes' => $invoice->notes,
@@ -182,29 +189,36 @@ class InvoiceService
             'tax_amount' => $invoice->base_tax_amount,
             'total' => $invoice->base_total,
             'layout' => $invoice->layout_snapshot,
-            'line_items' => $invoice->lineItems->map(function ($lineItem): array {
+            'sections' => $invoice->sections->map(function ($section): array {
                 return [
-                    'id' => $lineItem->id,
-                    'catalog_item_id' => $lineItem->catalog_item_id,
-                    'catalog_item_variant_id' => $lineItem->catalog_item_variant_id,
-                    'name' => $lineItem->name,
-                    'description' => $lineItem->description,
-                    'quantity' => (float) $lineItem->quantity,
-                    'unit' => $lineItem->unit,
-                    'unit_price' => (float) $lineItem->base_unit_price,
-                    'discount_percent' => (float) $lineItem->discount_percent,
-                    'subtotal' => (float) $lineItem->base_subtotal,
-                    'tax_amount' => (float) $lineItem->base_tax_amount,
-                    'total' => (float) $lineItem->base_total,
-                    'tax_rate' => (float) $lineItem->tax_rate,
-                    'notes' => $lineItem->notes,
-                    'sort_order' => $lineItem->sort_order,
-                    'taxes' => $lineItem->taxes->map(fn ($tax): array => [
-                        'tax_id' => $tax->tax_id,
-                        'tax_label' => $tax->tax_label,
-                        'tax_rate' => (float) $tax->tax_rate,
-                        'inclusive' => (bool) $tax->inclusive,
-                    ])->values()->all(),
+                    'id' => $section->id,
+                    'title' => $section->title,
+                    'sort_order' => $section->sort_order,
+                    'line_items' => $section->lineItems->map(function ($lineItem): array {
+                        return [
+                            'id' => $lineItem->id,
+                            'catalog_item_id' => $lineItem->catalog_item_id,
+                            'catalog_item_variant_id' => $lineItem->catalog_item_variant_id,
+                            'name' => $lineItem->name,
+                            'description' => $lineItem->description,
+                            'quantity' => (float) $lineItem->quantity,
+                            'unit' => $lineItem->unit,
+                            'unit_price' => (float) $lineItem->base_unit_price,
+                            'discount_percent' => (float) $lineItem->discount_percent,
+                            'subtotal' => (float) $lineItem->base_subtotal,
+                            'tax_amount' => (float) $lineItem->base_tax_amount,
+                            'total' => (float) $lineItem->base_total,
+                            'tax_rate' => (float) $lineItem->tax_rate,
+                            'notes' => $lineItem->notes,
+                            'sort_order' => $lineItem->sort_order,
+                            'taxes' => $lineItem->taxes->map(fn ($tax): array => [
+                                'tax_id' => $tax->tax_id,
+                                'tax_label' => $tax->tax_label,
+                                'tax_rate' => (float) $tax->tax_rate,
+                                'inclusive' => (bool) $tax->inclusive,
+                            ])->values()->all(),
+                        ];
+                    })->values()->all(),
                 ];
             })->values()->all(),
         ];
@@ -213,57 +227,156 @@ class InvoiceService
     public function update(Invoice $invoice, array $data): Invoice
     {
         return DB::transaction(function () use ($invoice, $data): Invoice {
+            $workspace = $invoice->workspace;
+            $baseCurrency = $workspace->currency ?? 'USD';
+
+            $sections = Arr::pull($data, 'sections', []);
+            $layoutSnapshot = Arr::pull($data, 'layout_snapshot');
+            $layout = Arr::pull($data, 'layout');
+
+            if (! is_array($layoutSnapshot) && is_array($layout)) {
+                $layoutSnapshot = $layout;
+            }
+
+            // Handle currency conversion
+            $currency = $data['currency'] ?? $invoice->currency;
+            if (empty($currency)) {
+                $currency = $baseCurrency;
+            }
+
+            $fxRate = $data['fx_rate'] ?? $invoice->fx_rate;
+            if ($currency !== $baseCurrency && empty($fxRate)) {
+                $fxRate = $this->exchangeRateService->getRate($baseCurrency, $currency);
+            } elseif ($currency === $baseCurrency && empty($fxRate)) {
+                $fxRate = 1.0;
+            }
+
             $invoice->update([
                 'invoice_number' => $data['invoice_number'] ?? $invoice->invoice_number,
                 'title' => $data['title'],
                 'cover_message' => $data['cover_message'] ?? null,
                 'terms' => $data['terms'] ?? null,
                 'notes' => $data['notes'] ?? null,
-                'layout_snapshot' => $data['layout_snapshot'] ?? null,
+                'layout_snapshot' => is_array($layoutSnapshot) ? $layoutSnapshot : null,
                 'issue_date' => $data['issue_date'] ?? $invoice->issue_date,
-                'due_date' => $data['valid_until'] ?? $data['due_date'] ?? $invoice->due_date, // Map valid_until to due_date
-                'subtotal' => $data['subtotal'] ?? 0,
-                'discount_amount' => $data['discount_amount'] ?? 0,
-                'tax_amount' => $data['tax_amount'] ?? 0,
-                'total' => $data['total'] ?? 0,
+                'due_date' => $data['valid_until'] ?? $data['due_date'] ?? $invoice->due_date,
+                'currency' => $currency,
+                'base_currency' => $baseCurrency,
+                'fx_rate' => $fxRate,
             ]);
 
-            // Sync line items
-            $invoice->lineItems()->delete();
-
-            foreach ($data['line_items'] ?? [] as $item) {
-                $invoiceLineItem = InvoiceLineItem::query()->create([
-                    'invoice_id' => $invoice->id,
-                    'catalog_item_id' => $item['catalog_item_id'] ?? null,
-                    'catalog_item_variant_id' => $item['catalog_item_variant_id'] ?? null,
-                    'name' => $item['name'],
-                    'description' => $item['description'] ?? null,
-                    'quantity' => $item['quantity'],
-                    'unit' => $item['unit'] ?? null,
-                    'unit_price' => $item['unit_price'],
-                    'tax_rate' => $item['tax_rate'] ?? 0,
-                    'discount_percent' => $item['discount_percent'] ?? 0,
-                    'subtotal' => $item['subtotal'] ?? 0,
-                    'tax_amount' => $item['tax_amount'] ?? 0,
-                    'total' => $item['total'] ?? 0,
-                    'sort_order' => $item['sort_order'] ?? 0,
-                    'notes' => $item['notes'] ?? null,
-                ]);
-
-                foreach ($item['taxes'] ?? [] as $tax) {
-                    InvoiceLineItemTax::query()->create([
-                        'invoice_line_item_id' => $invoiceLineItem->id,
-                        'tax_id' => $tax['tax_id'] ?? null,
-                        'tax_label' => $tax['tax_label'],
-                        'tax_rate' => $tax['tax_rate'],
-                        'inclusive' => $tax['inclusive'] ?? false,
-                        'tax_amount' => $tax['tax_amount'] ?? 0,
-                        'base_tax_amount' => $tax['base_tax_amount'] ?? 0,
-                    ]);
-                }
-            }
+            $this->syncInvoiceSections($invoice, $sections, $fxRate);
 
             return $invoice->refresh();
         });
+    }
+
+    private function syncInvoiceSections(Invoice $invoice, array $sections, float $fxRate): void
+    {
+        $invoice->sections()->delete();
+        $invoice->lineItems()->delete();
+
+        $baseSubtotal = 0;
+        $baseDiscountAmount = 0;
+        $baseTaxAmount = 0;
+
+        foreach ($sections as $sectionIndex => $sectionData) {
+            $section = $invoice->sections()->create([
+                'title' => (string) Arr::get($sectionData, 'title', 'Section'),
+                'sort_order' => (int) Arr::get($sectionData, 'sort_order', $sectionIndex),
+            ]);
+
+            $lineItems = Arr::get($sectionData, 'line_items', []);
+
+            if (! is_array($lineItems)) {
+                continue;
+            }
+
+            foreach ($lineItems as $lineItemIndex => $lineItemData) {
+                $taxes = Arr::get($lineItemData, 'taxes', []);
+
+                $taxesArray = is_array($taxes) ? collect($taxes)->map(fn ($tax) => [
+                    'tax_rate' => (float) Arr::get($tax, 'tax_rate', 0),
+                    'inclusive' => (bool) (Arr::get($tax, 'inclusive') ?? Arr::get($tax, 'tax_inclusive', false)),
+                ])->values()->all() : [];
+
+                $calculatedTotals = QuotesTaxCalculator::calculateLineItemTotals(
+                    (float) Arr::get($lineItemData, 'quantity', 1),
+                    (float) Arr::get($lineItemData, 'unit_price', 0),
+                    (float) Arr::get($lineItemData, 'discount_percent', 0),
+                    $taxesArray,
+                );
+
+                $lineBaseSubtotal = $calculatedTotals['subtotal'];
+                $lineBaseTotal = $calculatedTotals['total'];
+
+                $lineBaseTax = collect($calculatedTotals['taxBreakdown'])->sum('tax_amount');
+
+                $quantity = (float) Arr::get($lineItemData, 'quantity', 1);
+                $unitPrice = (float) Arr::get($lineItemData, 'unit_price', 0);
+                $discountPercent = (float) Arr::get($lineItemData, 'discount_percent', 0);
+                $lineBaseDiscount = ($quantity * $unitPrice) * ($discountPercent / 100);
+
+                $invoiceLineItem = $section->lineItems()->create([
+                    'invoice_id' => $invoice->id,
+                    'catalog_item_id' => Arr::get($lineItemData, 'catalog_item_id'),
+                    'catalog_item_variant_id' => Arr::get($lineItemData, 'catalog_item_variant_id'),
+                    'name' => (string) Arr::get($lineItemData, 'name', 'Line item'),
+                    'description' => Arr::get($lineItemData, 'description'),
+                    'quantity' => (float) Arr::get($lineItemData, 'quantity', 1),
+                    'unit' => Arr::get($lineItemData, 'unit'),
+                    'unit_price' => (float) Arr::get($lineItemData, 'unit_price', 0) * $fxRate,
+                    'base_unit_price' => (float) Arr::get($lineItemData, 'unit_price', 0),
+                    'tax_rate' => (float) Arr::get($lineItemData, 'tax_rate', 0),
+                    'discount_percent' => (float) Arr::get($lineItemData, 'discount_percent', 0),
+                    'subtotal' => $lineBaseSubtotal * $fxRate,
+                    'base_subtotal' => $lineBaseSubtotal,
+                    'tax_amount' => $lineBaseTax * $fxRate,
+                    'base_tax_amount' => $lineBaseTax,
+                    'total' => $lineBaseTotal * $fxRate,
+                    'base_total' => $lineBaseTotal,
+                    'sort_order' => (int) Arr::get($lineItemData, 'sort_order', $lineItemIndex),
+                    'notes' => Arr::get($lineItemData, 'notes'),
+                ]);
+
+                foreach ($taxes as $index => $taxData) {
+                    $inclusiveValue = Arr::get($taxData, 'inclusive') ?? Arr::get($taxData, 'tax_inclusive', false);
+                    $taxBreakdown = $calculatedTotals['taxBreakdown'][$index] ?? null;
+                    $baseTaxAmount = $taxBreakdown['tax_amount'] ?? 0;
+
+                    InvoiceLineItemTax::query()->create([
+                        'invoice_line_item_id' => $invoiceLineItem->id,
+                        'tax_id' => Arr::get($taxData, 'tax_id'),
+                        'tax_label' => (string) Arr::get($taxData, 'tax_label', 'Tax'),
+                        'tax_rate' => (float) Arr::get($taxData, 'tax_rate', 0),
+                        'inclusive' => (bool) $inclusiveValue,
+                        'tax_amount' => $baseTaxAmount * $fxRate,
+                        'base_tax_amount' => $baseTaxAmount,
+                    ]);
+                }
+
+                $baseSubtotal += $lineBaseSubtotal;
+                $baseDiscountAmount += $lineBaseDiscount;
+                $baseTaxAmount += $lineBaseTax;
+            }
+        }
+
+        $baseTotal = $baseSubtotal + $baseTaxAmount - $baseDiscountAmount;
+
+        $invoiceSubtotal = $baseSubtotal * $fxRate;
+        $invoiceDiscountAmount = $baseDiscountAmount * $fxRate;
+        $invoiceTaxAmount = $baseTaxAmount * $fxRate;
+        $invoiceTotal = $baseTotal * $fxRate;
+
+        $invoice->update([
+            'subtotal' => $invoiceSubtotal,
+            'discount_amount' => $invoiceDiscountAmount,
+            'tax_amount' => $invoiceTaxAmount,
+            'total' => $invoiceTotal,
+            'base_subtotal' => $baseSubtotal,
+            'base_discount_amount' => $baseDiscountAmount,
+            'base_tax_amount' => $baseTaxAmount,
+            'base_total' => $baseTotal,
+        ]);
     }
 }

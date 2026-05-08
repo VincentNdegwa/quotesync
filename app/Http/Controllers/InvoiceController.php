@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\InvoiceActivityType;
+use App\Enums\CreditNoteStatus;
 use App\Enums\InvoiceStatus;
-use App\Enums\QuoteStatus;
 use App\Http\Requests\Invoices\StoreInvoiceRequest;
 use App\Http\Requests\Invoices\UpdateInvoiceRequest;
 use App\Models\Invoice;
@@ -19,6 +18,7 @@ use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -91,7 +91,7 @@ class InvoiceController extends Controller
         $invoice->load([
             'client',
             'quote',
-            'lineItems',
+            'sections.lineItems.taxes',
             'createdBy',
             'activities.user',
             'payments.createdBy:id,name',
@@ -123,287 +123,359 @@ class InvoiceController extends Controller
 
     public function update(UpdateInvoiceRequest $request, Invoice $invoice, InvoiceService $invoiceService): RedirectResponse
     {
-        $workspace = $request->user()?->currentWorkspace;
-        abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
+        try {
+            $workspace = $request->user()?->currentWorkspace;
+            abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
 
-        abort_unless($invoice->status->canBeEdited(), 403, 'Only draft invoices can be edited.');
+            abort_unless($invoice->status->canBeEdited(), 403, 'Only draft invoices can be edited.');
 
-        $invoiceService->update($invoice, $request->validated());
+            $invoiceService->update($invoice, $request->validated());
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice updated.')]);
+            Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice updated.')]);
 
-        return back();
+            return back();
+        } catch (\Exception $e) {
+            Log::error('Error updating invoice: ' . $e->getMessage(), [
+                'exception' => $e,
+                'invoice_id' => $invoice->id,
+                'request' => $request->all(),
+            ]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to update invoice: ' . $e->getMessage())]);
+            return back()->withInput();
+        }
     }
 
     public function updateStatus(Request $request, Invoice $invoice): RedirectResponse
     {
-        $workspace = $request->user()?->currentWorkspace;
-        abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
+        try {
+            $workspace = $request->user()?->currentWorkspace;
+            abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
 
-        $validated = $request->validate(['status' => 'required|string']);
-        $newStatus = InvoiceStatus::from($validated['status']);
+            $validated = $request->validate(['status' => 'required|string']);
+            $newStatus = InvoiceStatus::from($validated['status']);
 
-        $currentStatus = $invoice->status;
-        if (! in_array($newStatus, $currentStatus->allowedTransitions(), true)) {
-            Inertia::flash('toast', [
-                'type' => 'error',
-                'message' => __("Invalid status transition from {$currentStatus->value} to {$newStatus->value}."),
-            ]);
+            $currentStatus = $invoice->status;
+            if (! in_array($newStatus, $currentStatus->allowedTransitions(), true)) {
+                Inertia::flash('toast', [
+                    'type' => 'error',
+                    'message' => __("Invalid status transition from {$currentStatus->value} to {$newStatus->value}."),
+                ]);
+                return back();
+            }
+
+            $invoice->update(['status' => $newStatus->value]);
+
+            // Track activity based on status change
+            $activityType = match ($newStatus) {
+                InvoiceStatus::Sent => InvoiceActivityType::Sent,
+                InvoiceStatus::Paid => InvoiceActivityType::Paid,
+                InvoiceStatus::Void => InvoiceActivityType::Voided,
+                default => null,
+            };
+
+            if ($activityType) {
+                InvoiceActivity::query()->create([
+                    'invoice_id' => $invoice->id,
+                    'workspace_id' => $workspace->id,
+                    'user_id' => $request->user()?->id,
+                    'type' => $activityType->value,
+                    'description' => "Invoice status changed from {$currentStatus->value} to {$newStatus->value}",
+                    'metadata' => ['previous_status' => $currentStatus->value, 'new_status' => $newStatus->value],
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ]);
+            }
+
+            Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice status updated.')]);
+
             return back();
-        }
-
-        $invoice->update(['status' => $newStatus->value]);
-
-        // Track activity based on status change
-        $activityType = match ($newStatus) {
-            InvoiceStatus::Sent => InvoiceActivityType::Sent,
-            InvoiceStatus::Paid => InvoiceActivityType::Paid,
-            InvoiceStatus::Void => InvoiceActivityType::Voided,
-            default => null,
-        };
-
-        if ($activityType) {
-            InvoiceActivity::query()->create([
+        } catch (\Exception $e) {
+            Log::error('Error updating invoice status: ' . $e->getMessage(), [
+                'exception' => $e,
                 'invoice_id' => $invoice->id,
-                'workspace_id' => $workspace->id,
-                'user_id' => $request->user()?->id,
-                'type' => $activityType->value,
-                'description' => "Invoice status changed from {$currentStatus->value} to {$newStatus->value}",
-                'metadata' => ['previous_status' => $currentStatus->value, 'new_status' => $newStatus->value],
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
+                'request' => $request->all(),
             ]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to update invoice status: ' . $e->getMessage())]);
+            return back()->withInput();
         }
-
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice status updated.')]);
-
-        return back();
     }
 
     public function store(StoreInvoiceRequest $request, InvoiceNumberingService $numberingService): RedirectResponse
     {
-        $workspace = $request->user()?->currentWorkspace;
-        abort_unless($workspace instanceof Workspace, 404);
+        try {
+            $workspace = $request->user()?->currentWorkspace;
+            abort_unless($workspace instanceof Workspace, 404);
 
-        $validated = $request->validated();
+            $validated = $request->validated();
 
-        $invoice = Invoice::query()->create([
-            'workspace_id' => $workspace->id,
-            'client_id' => $validated['client_id'],
-            'quote_id' => $validated['quote_id'] ?? null,
-            'invoice_number' => $numberingService->generateNextNumber($workspace),
-            'title' => $validated['title'],
-            'cover_message' => $validated['cover_message'] ?? null,
-            'terms' => $validated['terms'] ?? null,
-            'notes' => $validated['notes'] ?? null,
-            'currency' => $validated['currency'] ?? 'USD',
-            'subtotal' => $validated['subtotal'] ?? 0,
-            'tax_amount' => $validated['tax_amount'] ?? 0,
-            'discount_amount' => $validated['discount_amount'] ?? 0,
-            'total' => $validated['total'] ?? 0,
-            'paid_amount' => 0,
-            'balance_due' => $validated['total'] ?? 0,
-            'status' => InvoiceStatus::Draft->value,
-            'issue_date' => $validated['issue_date'] ?? now(),
-            'due_date' => $validated['due_date'] ?? null,
-            'created_by' => $request->user()?->id,
-        ]);
-
-        foreach ($validated['line_items'] ?? [] as $item) {
-            $invoice->lineItems()->create([
-                'catalog_item_id' => $item['catalog_item_id'] ?? null,
-                'name' => $item['name'],
-                'description' => $item['description'] ?? null,
-                'quantity' => $item['quantity'],
-                'unit_price' => $item['unit_price'],
-                'tax_rate' => $item['tax_rate'] ?? 0,
-                'discount_percent' => $item['discount_percent'] ?? 0,
-                'total' => $item['total'],
-                'sort_order' => $item['sort_order'] ?? 0,
+            $invoice = Invoice::query()->create([
+                'workspace_id' => $workspace->id,
+                'client_id' => $validated['client_id'],
+                'quote_id' => $validated['quote_id'] ?? null,
+                'invoice_number' => $numberingService->generateNextNumber($workspace),
+                'title' => $validated['title'],
+                'cover_message' => $validated['cover_message'] ?? null,
+                'terms' => $validated['terms'] ?? null,
+                'notes' => $validated['notes'] ?? null,
+                'currency' => $validated['currency'] ?? 'USD',
+                'subtotal' => $validated['subtotal'] ?? 0,
+                'tax_amount' => $validated['tax_amount'] ?? 0,
+                'discount_amount' => $validated['discount_amount'] ?? 0,
+                'total' => $validated['total'] ?? 0,
+                'paid_amount' => 0,
+                'status' => InvoiceStatus::Draft->value,
+                'issue_date' => $validated['issue_date'] ?? now(),
+                'due_date' => $validated['due_date'] ?? null,
+                'created_by' => $request->user()?->id,
             ]);
+
+            foreach ($validated['line_items'] ?? [] as $item) {
+                $invoice->lineItems()->create([
+                    'catalog_item_id' => $item['catalog_item_id'] ?? null,
+                    'name' => $item['name'],
+                    'description' => $item['description'] ?? null,
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'tax_rate' => $item['tax_rate'] ?? 0,
+                    'discount_percent' => $item['discount_percent'] ?? 0,
+                    'total' => $item['total'],
+                    'sort_order' => $item['sort_order'] ?? 0,
+                ]);
+            }
+
+            InvoiceActivity::query()->create([
+                'invoice_id' => $invoice->id,
+                'workspace_id' => $workspace->id,
+                'user_id' => $request->user()?->id,
+                'type' => InvoiceActivityType::Created->value,
+                'description' => 'Invoice created',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            Inertia::flash('toast', ['type'=> 'success', 'message'=> __("Invoice created successfully")]);
+
+            return redirect()->route('invoices.show', $invoice);
+        } catch (\Exception $e) {
+            Log::error('Error creating invoice: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all(),
+            ]);
+            Inertia::flash('toast', ['type'=> 'error', 'message'=> __("Failed to create invoice: " . $e->getMessage())]);
+            return back()->withInput();
         }
-
-        InvoiceActivity::query()->create([
-            'invoice_id' => $invoice->id,
-            'workspace_id' => $workspace->id,
-            'user_id' => $request->user()?->id,
-            'type' => InvoiceActivityType::Created->value,
-            'description' => 'Invoice created',
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
-
-        Inertia::flash('toast', ['type'=> 'success', 'message'=> __("Invoice created successfully")]);
-
-        return redirect()->route('invoices.show', $invoice);
     }
 
     public function convertFromQuote(Request $request, Quote $quote, InvoiceService $invoiceService): RedirectResponse
     {
-        $workspace = $request->user()?->currentWorkspace;
-        abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
-        abort_unless($quote->status === QuoteStatus::Won, 403);
+        try {
+            $workspace = $request->user()?->currentWorkspace;
+            abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+            abort_unless($quote->status === QuoteStatus::Won, 403);
 
-        $invoice = $invoiceService->convertFromQuote($quote, $request->user()?->id);
+            $invoice = $invoiceService->convertFromQuote($quote, $request->user()?->id);
 
-        InvoiceActivity::query()->create([
-            'invoice_id' => $invoice->id,
-            'workspace_id' => $workspace->id,
-            'user_id' => $request->user()?->id,
-            'type' => InvoiceActivityType::Created->value,
-            'description' => 'Invoice created from quote',
-            'metadata' => ['quote_id' => $quote->id],
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
+            Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice created from quote successfully.')]);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice created from quote..')]);
-
-        return redirect()->route('invoices.show', $invoice);
+            return redirect()->route('invoices.edit', $invoice);
+        } catch (\Exception $e) {
+            Log::error('Error converting quote to invoice: ' . $e->getMessage(), [
+                'exception' => $e,
+                'quote_id' => $quote->id,
+                'request' => $request->all(),
+            ]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to convert quote to invoice: ' . $e->getMessage())]);
+            return back()->withInput();
+        }
     }
 
     public function duplicate(Request $request, Invoice $invoice, InvoiceService $invoiceService): RedirectResponse
     {
-        $workspace = $request->user()?->currentWorkspace;
-        abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
+        try {
+            $workspace = $request->user()?->currentWorkspace;
+            abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
 
-        $newInvoice = $invoiceService->duplicate($invoice);
+            $newInvoice = $invoiceService->duplicate($invoice);
 
-        InvoiceActivity::query()->create([
-            'invoice_id' => $newInvoice->id,
-            'workspace_id' => $workspace->id,
-            'user_id' => $request->user()?->id,
-            'type' => InvoiceActivityType::Created->value,
-            'description' => 'Invoice duplicated',
-            'metadata' => ['original_invoice_id' => $invoice->id],
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
+            InvoiceActivity::query()->create([
+                'invoice_id' => $newInvoice->id,
+                'workspace_id' => $workspace->id,
+                'user_id' => $request->user()?->id,
+                'type' => InvoiceActivityType::Created->value,
+                'description' => 'Invoice duplicated',
+                'metadata' => ['parent_invoice_id' => $invoice->id],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice duplicated successfully.')]);
+            Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice duplicated successfully.')]);
 
-        return to_route('invoices.edit', $newInvoice);
+            return redirect()->route('invoices.edit', $newInvoice);
+        } catch (\Exception $e) {
+            Log::error('Error duplicating invoice: ' . $e->getMessage(), [
+                'exception' => $e,
+                'invoice_id' => $invoice->id,
+                'request' => $request->all(),
+            ]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to duplicate invoice: ' . $e->getMessage())]);
+            return back()->withInput();
+        }
     }
 
     public function archive(Request $request, Invoice $invoice): RedirectResponse
     {
-        $workspace = $request->user()?->currentWorkspace;
-        abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
+        try {
+            $workspace = $request->user()?->currentWorkspace;
+            abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
 
-        $invoice->delete();
+            $invoice->delete();
 
-        InvoiceActivity::query()->create([
-            'invoice_id' => $invoice->id,
-            'workspace_id' => $invoice->workspace_id,
-            'user_id' => $request->user()?->id,
-            'type' => InvoiceActivityType::Voided->value,
-            'description' => 'Invoice archived',
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
+            InvoiceActivity::query()->create([
+                'invoice_id' => $invoice->id,
+                'workspace_id' => $workspace->id,
+                'user_id' => $request->user()?->id,
+                'type' => InvoiceActivityType::Voided->value,
+                'description' => 'Invoice archived',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice archived successfully.')]);
+            Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice archived successfully.')]);
 
-        return to_route('invoices.index');
+            return redirect()->route('invoices.index');
+        } catch (\Exception $e) {
+            Log::error('Error archiving invoice: ' . $e->getMessage(), [
+                'exception' => $e,
+                'invoice_id' => $invoice->id,
+                'request' => $request->all(),
+            ]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to archive invoice: ' . $e->getMessage())]);
+            return back()->withInput();
+        }
     }
 
     public function destroy(Request $request, Invoice $invoice): RedirectResponse
     {
-        $workspace = $request->user()?->currentWorkspace;
-        abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
+        try {
+            $workspace = $request->user()?->currentWorkspace;
+            abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
 
-        $invoice->forceDelete();
+            $invoice->forceDelete();
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice deleted successfully.')]);
+            Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice deleted successfully.')]);
 
-        return to_route('invoices.index');
+            return redirect()->route('invoices.index');
+        } catch (\Exception $e) {
+            Log::error('Error deleting invoice: ' . $e->getMessage(), [
+                'exception' => $e,
+                'invoice_id' => $invoice->id,
+                'request' => $request->all(),
+            ]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to delete invoice: ' . $e->getMessage())]);
+            return back()->withInput();
+        }
     }
 
     public function recordPayment(Request $request, Invoice $invoice): RedirectResponse
     {
-        $workspace = $request->user()?->currentWorkspace;
-        abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
+        try {
+            $workspace = $request->user()?->currentWorkspace;
+            abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
 
-        $validated = $request->validate([
-            'amount' => 'required|numeric|min:0.01',
-            'payment_date' => 'required|date',
-            'payment_method' => 'nullable|string|max:255',
-            'reference_number' => 'nullable|string|max:255',
-            'notes' => 'nullable|string|max:1000',
-        ]);
-
-        $payment = $invoice->payments()->create([
-            'workspace_id' => $workspace->id,
-            'created_by' => auth()->id(),
-            'amount' => $validated['amount'],
-            'currency' => $invoice->currency,
-            'payment_date' => $validated['payment_date'],
-            'payment_method' => $validated['payment_method'] ?? null,
-            'reference_number' => $validated['reference_number'] ?? null,
-            'notes' => $validated['notes'] ?? null,
-        ]);
-
-        $totalPaid = $invoice->payments()->sum('amount');
-        $invoice->update([
-            'paid_amount' => $totalPaid,
-            'balance_due' => $invoice->total - $totalPaid,
-        ]);
-
-        if ($totalPaid >= $invoice->total) {
-            $invoice->update(['status' => InvoiceStatus::Paid->value]);
-
-            InvoiceActivity::query()->create([
-                'invoice_id' => $invoice->id,
-                'workspace_id' => $workspace->id,
-                'user_id' => $request->user()?->id,
-                'type' => InvoiceActivityType::Paid->value,
-                'description' => 'Payment recorded: ' . number_format($validated['amount'], 2),
-                'metadata' => ['payment_id' => $payment->id, 'amount' => $validated['amount']],
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
+            $validated = $request->validate([
+                'amount' => 'required|numeric|min:0.01',
+                'payment_date' => 'required|date',
+                'payment_method' => 'nullable|string|max:255',
+                'reference_number' => 'nullable|string|max:255',
+                'notes' => 'nullable|string|max:1000',
             ]);
-        } else {
-            InvoiceActivity::query()->create([
-                'invoice_id' => $invoice->id,
+
+            $payment = $invoice->payments()->create([
                 'workspace_id' => $workspace->id,
-                'user_id' => $request->user()?->id,
-                'type' => InvoiceActivityType::Partial->value,
-                'description' => 'Partial payment recorded: ' . number_format($validated['amount'], 2),
-                'metadata' => ['payment_id' => $payment->id, 'amount' => $validated['amount']],
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
+                'created_by' => auth()->id(),
+                'amount' => $validated['amount'],
+                'currency' => $invoice->currency,
+                'payment_date' => $validated['payment_date'],
+                'payment_method' => $validated['payment_method'] ?? null,
+                'reference_number' => $validated['reference_number'] ?? null,
+                'notes' => $validated['notes'] ?? null,
             ]);
+
+            $totalPaid = $invoice->payments()->sum('amount');
+            $totalCredited = $invoice->creditNotes()->whereIn('status', [CreditNoteStatus::Issued->value, CreditNoteStatus::Applied->value])->sum('total');
+            $invoice->update([
+                'paid_amount' => $totalPaid,
+                'amount_credited' => $totalCredited,
+            ]);
+
+            if ($totalPaid >= $invoice->total) {
+                $invoice->update(['status' => InvoiceStatus::Paid->value]);
+
+                InvoiceActivity::query()->create([
+                    'invoice_id' => $invoice->id,
+                    'workspace_id' => $workspace->id,
+                    'user_id' => $request->user()?->id,
+                    'type' => InvoiceActivityType::Paid->value,
+                    'description' => 'Payment recorded: ' . number_format($validated['amount'], 2),
+                    'metadata' => ['payment_id' => $payment->id, 'amount' => $validated['amount']],
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ]);
+            }
+
+            Inertia::flash('toast', ['type' => 'success', 'message' => __('Payment recorded successfully.')]);
+
+            return back();
+        } catch (\Exception $e) {
+            Log::error('Error recording payment: ' . $e->getMessage(), [
+                'exception' => $e,
+                'invoice_id' => $invoice->id,
+                'request' => $request->all(),
+            ]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to record payment: ' . $e->getMessage())]);
+            return back()->withInput();
         }
-
-        return back()->with('success', 'Payment recorded successfully');
     }
 
     public function refundPayment(Request $request, InvoicePayment $payment): RedirectResponse
     {
-        $workspace = $request->user()?->currentWorkspace;
-        abort_unless($workspace instanceof Workspace && $payment->invoice->workspace_id === $workspace->id, 404);
-        abort_if($payment->is_refund, 403, 'This payment is already a refund');
+        try {
+            $workspace = $request->user()?->currentWorkspace;
+            abort_unless($workspace instanceof Workspace && $payment->invoice->workspace_id === $workspace->id, 404);
+            abort_if($payment->is_refund, 403, 'This payment is already a refund');
 
-        $validated = $request->validate([
-            'refund_reason' => 'required|string|max:1000',
-        ]);
+            $validated = $request->validate([
+                'refund_reason' => 'required|string|max:1000',
+            ]);
 
-        $payment->update([
-            'is_refund' => true,
-            'refunded_at' => now(),
-            'refund_reason' => $validated['refund_reason'],
-            'refunded_by' => auth()->id(),
-        ]);
+            $payment->update([
+                'is_refund' => true,
+                'refunded_at' => now(),
+                'refund_reason' => $validated['refund_reason'],
+                'refunded_by' => auth()->id(),
+            ]);
 
-        // Recalculate invoice totals
-        $invoice = $payment->invoice;
-        $totalPaid = $invoice->payments()->where('is_refund', false)->sum('amount');
-        $invoice->update([
-            'paid_amount' => $totalPaid,
-            'balance_due' => $invoice->total - $totalPaid,
-        ]);
+            // Recalculate invoice totals
+            $invoice = $payment->invoice;
+            $totalPaid = $invoice->payments()->where('is_refund', false)->sum('amount');
+            $totalCredited = $invoice->creditNotes()->whereIn('status', [CreditNoteStatus::Issued->value, CreditNoteStatus::Applied->value])->sum('total');
+            $invoice->update([
+                'paid_amount' => $totalPaid,
+                'amount_credited' => $totalCredited,
+            ]);
 
-        return back()->with('success', 'Payment refunded successfully');
+            Inertia::flash('toast', ['type' => 'success', 'message' => __('Payment refunded successfully.')]);
+
+            return back();
+        } catch (\Exception $e) {
+            Log::error('Error refunding payment: ' . $e->getMessage(), [
+                'exception' => $e,
+                'payment_id' => $payment->id,
+                'request' => $request->all(),
+            ]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to refund payment: ' . $e->getMessage())]);
+            return back()->withInput();
+        }
     }
 
     private function transformInvoice(Invoice $invoice): Invoice
@@ -414,16 +486,38 @@ class InvoiceController extends Controller
         $invoice->total = $invoice->base_total;
         $invoice->currency = $invoice->base_currency;
 
-        foreach ($invoice->lineItems as $lineItem) {
-            $lineItem->unit_price = $lineItem->base_unit_price ?? $lineItem->unit_price;
-            $lineItem->subtotal = $lineItem->base_subtotal ?? $lineItem->subtotal;
-            $lineItem->tax_amount = $lineItem->base_tax_amount ?? $lineItem->tax_amount;
-            $lineItem->total = $lineItem->base_total ?? $lineItem->total;
+        $baseSubtotal = 0;
+        $baseTaxAmount = 0;
 
-            foreach ($lineItem->taxes as $tax) {
-                $tax->tax_amount = $tax->base_tax_amount ?? $tax->tax_amount;
+        foreach ($invoice->sections as $section) {
+            foreach ($section->lineItems as $lineItem) {
+                $lineItem->unit_price = $lineItem->base_unit_price ?? $lineItem->unit_price;
+                $lineItem->subtotal = $lineItem->base_subtotal ?? $lineItem->subtotal;
+                $lineItem->tax_amount = $lineItem->base_tax_amount ?? $lineItem->tax_amount;
+                $lineItem->total = $lineItem->base_total ?? $lineItem->total;
+
+                $baseSubtotal += $lineItem->base_subtotal ?? 0;
+                $baseTaxAmount += $lineItem->base_tax_amount ?? 0;
+
+                foreach ($lineItem->taxes as $tax) {
+                    $tax->tax_amount = $tax->base_tax_amount ?? $tax->tax_amount;
+                }
             }
         }
+
+        $invoice->base_subtotal = $baseSubtotal;
+        $invoice->base_tax_amount = $baseTaxAmount;
+        $invoice->base_total = $baseSubtotal + $baseTaxAmount - $invoice->base_discount_amount;
+        $invoice->subtotal = $invoice->base_subtotal;
+        $invoice->tax_amount = $invoice->base_tax_amount;
+        $invoice->total = $invoice->base_total;
+        $invoice->currency = $invoice->base_currency;
+
+        $invoice->paid_amount = $invoice->paid_amount > 0 ? $invoice->paid_amount / ($invoice->fx_rate ?? 1) : 0;
+
+        $invoice->amount_credited = $invoice->creditNotes()
+            ->whereIn('status', [CreditNoteStatus::Issued->value, CreditNoteStatus::Applied->value])
+            ->sum('base_total');
 
         return $invoice;
     }

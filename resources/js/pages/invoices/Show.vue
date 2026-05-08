@@ -151,42 +151,54 @@ const handleCommentDeleted = (): void => {
 
                         <div class="divide-y">
                             <div class="px-6 py-4">
-                                <h4
-                                    class="mb-3 text-sm font-semibold text-foreground"
-                                >
-                                    Line Items
-                                </h4>
-
-                                <div class="space-y-1">
-                                    <div
-                                        v-for="item in invoice.line_items"
-                                        :key="item.id"
-                                        class="grid grid-cols-[1fr_auto_auto] items-start gap-4 rounded-lg px-3 py-2.5 hover:bg-muted/30"
+                                <div class="divide-y">
+                                    <template
+                                        v-for="(section, si) in invoice.sections"
+                                        :key="section.id"
                                     >
-                                        <div class="space-y-1">
-                                            <div
-                                                class="text-sm font-medium text-foreground"
+                                        <div class="px-6 py-4">
+                                            <h4
+                                                class="mb-3 text-sm font-semibold text-foreground"
                                             >
-                                                {{ item.name }}
+                                                {{ section.title }}
+                                            </h4>
+
+                                            <div class="space-y-1">
+                                                <div
+                                                    v-for="item in section.line_items"
+                                                    :key="item.id"
+                                                    class="grid grid-cols-[1fr_auto_auto] items-start gap-4 rounded-lg px-3 py-2.5 hover:bg-muted/30"
+                                                >
+                                                    <div class="min-w-0">
+                                                        <p class="text-sm font-medium">
+                                                            {{ item.name }}
+                                                        </p>
+                                                        <p
+                                                            v-if="item.description"
+                                                            class="mt-0.5 text-xs text-muted-foreground"
+                                                        >
+                                                            {{ item.description }}
+                                                        </p>
+                                                    </div>
+                                                    <div
+                                                        class="text-right text-xs text-muted-foreground tabular-nums"
+                                                    >
+                                                        {{ Number(item.quantity) }} ×
+                                                        {{ fmt(item.unit_price) }}
+                                                    </div>
+                                                    <div
+                                                        class="w-24 text-right text-sm font-semibold tabular-nums"
+                                                    >
+                                                        {{ fmt(item.total) }}
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div
-                                                v-if="item.description"
-                                                class="text-xs text-muted-foreground"
-                                            >
-                                                {{ item.description }}
-                                            </div>
                                         </div>
-                                        <div
-                                            class="text-sm text-muted-foreground"
-                                        >
-                                            {{ item.quantity }}
-                                        </div>
-                                        <div
-                                            class="text-sm font-medium text-foreground"
-                                        >
-                                            {{ fmt(item.total) }}
-                                        </div>
-                                    </div>
+
+                                        <Separator
+                                            v-if="si < invoice.sections.length - 1"
+                                        />
+                                    </template>
                                 </div>
 
                                 <div class="mt-4 space-y-2 border-t pt-4">
@@ -291,6 +303,7 @@ const handleCommentDeleted = (): void => {
                     :invoice-id="invoice.id"
                     :currency="invoice.currency || 'USD'"
                     :total="Number(invoice.total)"
+                    :balance-due="Number(invoice.balance_due)"
                 />
                 <CreditNotesHistory
                     v-if="(invoice as any).credit_notes"
@@ -298,6 +311,7 @@ const handleCommentDeleted = (): void => {
                     :invoice-id="invoice.id"
                     :currency="invoice.currency || 'USD'"
                     :total="Number(invoice.total)"
+                    :balance-due="Number(invoice.balance_due)"
                 />
             </div>
         </div>

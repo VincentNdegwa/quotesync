@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CreditNoteStatus;
 use App\Enums\InvoiceStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -35,7 +36,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'base_total',
     'paid_amount',
     'amount_credited',
-    'balance_due',
     'status',
     'issue_date',
     'due_date',
@@ -47,6 +47,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Invoice extends Model
 {
     use SoftDeletes;
+
+    protected $appends = ['balance_due'];
 
     public function workspace(): BelongsTo
     {
@@ -71,6 +73,11 @@ class Invoice extends Model
     public function lineItems(): HasMany
     {
         return $this->hasMany(InvoiceLineItem::class)->orderBy('sort_order');
+    }
+
+    public function sections(): HasMany
+    {
+        return $this->hasMany(InvoiceSection::class)->orderBy('sort_order');
     }
 
     public function activities(): HasMany
@@ -130,15 +137,13 @@ class Invoice extends Model
         ];
     }
 
-    /**
-     * Get the balance due attribute (computed from payments + credit notes).
-     */
+
     public function getBalanceDueAttribute(): float
     {
-        $credited = $this->creditNotes()
-            ->where('status', 'applied')
-            ->sum('total');
+        $baseCredited = $this->creditNotes()
+            ->whereIn('status', [CreditNoteStatus::Issued->value, CreditNoteStatus::Applied->value])
+            ->sum('base_total');
 
-        return max(0, $this->total - $this->paid_amount - $credited);
+        return max(0, (float) $this->base_total - (float) $this->paid_amount - $baseCredited);
     }
 }
