@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { Head, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Head, setLayoutProps, useForm } from '@inertiajs/vue3';
+import { computed, watchEffect } from 'vue';
 import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
-import { Button } from '@/components/ui/button';
 import type {
     BuilderCatalogItem,
     BuilderConfigurationUnit,
     BuilderTaxOption,
+    InvoiceModel,
     WorkspaceSettings,
 } from '@/types';
+import InvoiceController from '@/actions/App/Http/Controllers/InvoiceController';
 
 const props = defineProps<{
-    invoiceId: number;
+    invoice: InvoiceModel;
     initialState: any;  
     catalogItems: BuilderCatalogItem[];
     taxes: BuilderTaxOption[];
@@ -19,22 +20,20 @@ const props = defineProps<{
     settings: WorkspaceSettings;
 }>();
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Invoices',
-                href: '/invoices',
-            },
-            {
-                title: 'Edit',
-                href: '/invoices',
-            },
-        ],
-    },
+
+const breadcrumbs = computed(() => [
+    { title: 'Invoices', href: InvoiceController.index().url },
+    { title: props.invoice.title || 'Invoice details', href: InvoiceController.show(props.invoice).url },
+    { title: 'Edit', href: "#"}
+]);
+
+watchEffect(() => {
+    setLayoutProps({
+        breadcrumbs: breadcrumbs.value,
+    });
 });
 
-// Transform invoice state to quote builder format
+
 const builderState = computed(() => {
     return {
         ...props.initialState,
@@ -63,14 +62,12 @@ const save = (updatedState?: any): void => {
         });
     }
     
-    // Transform back to invoice format
     const invoiceData = {
         ...form.data,
         invoice_number: form.data.number,
         line_items: form.data.sections?.[0]?.line_items || [],
     };
 
-    // Remove quote-specific fields
     delete invoiceData.number;
     delete invoiceData.valid_until;
     delete invoiceData.requires_deposit;
@@ -79,15 +76,15 @@ const save = (updatedState?: any): void => {
     delete invoiceData.assigned_to;
     delete invoiceData.sections;
 
-    
-    form.put(`/invoices/${props.invoiceId}`, invoiceData, {
+
+    form.put(InvoiceController.update(props.invoice).url, invoiceData, {
         preserveScroll: true,
-    });
+    })
 };
 </script>
 
 <template>
-    <Head :title="`Edit invoice #${invoiceId}`" />
+    <Head :title="`Edit invoice #${invoice.invoice_number}`" />
 
     <QuoteBuilder
         v-model="form"

@@ -117,7 +117,7 @@ class InvoiceController extends Controller
             'initialState' => $invoiceService->toBuilderPayload($invoice),
             'settings' => $workspaceSettingsService->builderSettings($workspace),
             ...$builderLookupService->getBasicLookups($workspace),
-            'invoiceId' => $invoice->id,
+            'invoice' => $invoice,
         ]);
     }
 
