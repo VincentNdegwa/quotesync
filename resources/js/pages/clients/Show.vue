@@ -76,7 +76,7 @@ watchEffect(() => {
 });
 
 const form = useForm({
-    company_name: props.client.company_name ?? '',
+    company_name: props.client.company_name || '',
     contact_name: props.client.contact_name ?? '',
     email: props.client.email ?? '',
     phone: props.client.phone ?? '',
@@ -129,7 +129,7 @@ const statusBadgeVariant = (
     return 'outline';
 };
 
-const quoteHistory = computed(() => props.stats.quote_history ?? []);
+const quoteHistory = computed(() => props.stats.quote_history || []); // eslint-disable-line @typescript-eslint/no-unnecessary-condition
 
 const deleteClient = (): void => {
     deleteClientDialogOpen.value = true;
@@ -338,38 +338,47 @@ const closeContactDialog = (): void => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        <TableRow
+                        <template
                             v-if="client.contacts && client.contacts.length > 0"
-                            v-for="contact in client.contacts"
-                            :key="contact.id"
                         >
-                            <TableCell>{{ contact.name }}</TableCell>
-                            <TableCell>{{ contact.email || '-' }}</TableCell>
-                            <TableCell>{{ contact.phone || '-' }}</TableCell>
-                            <TableCell>{{ contact.position || '-' }}</TableCell>
-                            <TableCell>
-                                <Badge
-                                    v-if="contact.is_primary"
-                                    variant="default"
-                                    >Primary</Badge
-                                >
-                            </TableCell>
-                            <TableCell class="text-right">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    @click="openContactDialog(contact)"
-                                    >Edit</Button
-                                >
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    class="text-destructive"
-                                    @click="deleteContact(contact.id)"
-                                    >Delete</Button
-                                >
-                            </TableCell>
-                        </TableRow>
+                            <TableRow
+                                v-for="contact in client.contacts"
+                                :key="contact.id"
+                            >
+                                <TableCell>{{ contact.name }}</TableCell>
+                                <TableCell>{{
+                                    contact.email || '-'
+                                }}</TableCell>
+                                <TableCell>{{
+                                    contact.phone || '-'
+                                }}</TableCell>
+                                <TableCell>{{
+                                    contact.position || '-'
+                                }}</TableCell>
+                                <TableCell>
+                                    <Badge
+                                        v-if="contact.is_primary"
+                                        variant="default"
+                                        >Primary</Badge
+                                    >
+                                </TableCell>
+                                <TableCell class="text-right">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        @click="openContactDialog(contact)"
+                                        >Edit</Button
+                                    >
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        class="text-destructive"
+                                        @click="deleteContact(contact.id)"
+                                        >Delete</Button
+                                    >
+                                </TableCell>
+                            </TableRow>
+                        </template>
                         <TableRow v-else>
                             <TableCell
                                 colspan="6"

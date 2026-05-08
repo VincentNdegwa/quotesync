@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { computed, onMounted, onUnmounted, ref, provide } from 'vue';
-import PublicInvoiceController from '@/actions/App/Http/Controllers/PublicInvoiceController';
+import { computed, onMounted, onUnmounted } from 'vue';
 import InvoiceRenderer from '@/components/renderer/InvoiceRenderer.vue';
 import { Badge } from '@/components/ui/badge';
 import { ensureTemplateLayout } from '@/types';
@@ -24,9 +23,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-    if (scrollHandler) {
-        window.removeEventListener('scroll', scrollHandler);
-    }
+    window.removeEventListener('scroll', scrollHandler);
 });
 </script>
 

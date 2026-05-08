@@ -41,7 +41,7 @@ defineOptions({
 const ALL = '__all__';
 
 const query = ref({
-    search: props.filters.search ?? '',
+    search: props.filters.search || '',
     is_active: props.filters.is_active || ALL,
 });
 

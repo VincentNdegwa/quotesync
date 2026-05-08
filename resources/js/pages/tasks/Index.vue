@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import TaskController from '@/actions/App/Http/Controllers/TaskController';
-import TaskStatusController from '@/actions/App/Http/Controllers/TaskStatusController';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import { Input } from '@/components/ui/input';
@@ -37,7 +36,7 @@ const props = defineProps<{
 }>();
 
 const query = ref({
-    search: props.filters.search ?? '',
+    search: props.filters.search || '',
     status: props.filters.status || ALL,
     sort: props.filters.sort || 'newest',
 });

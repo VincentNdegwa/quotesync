@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { TaskModel } from '@/types/models';
 
-const props = defineProps<{
+const _props = defineProps<{
     task: TaskModel;
 }>();
 

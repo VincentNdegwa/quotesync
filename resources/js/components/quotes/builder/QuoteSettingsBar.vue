@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronDown, Layers3 } from 'lucide-vue-next';
+import { ChevronDown } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import type {
     BuilderClientOption,
     BuilderTemplateOption,
@@ -103,8 +102,42 @@ const showFxRate = computed(() => {
 const fxRateValue = computed({
     get: () => state.value.fx_rate ?? undefined,
     set: (value) => {
-        state.value.fx_rate =
-            value === undefined || value === null ? null : Number(value);
+        state.value.fx_rate = value ? Number(value) : null;
+    },
+});
+
+const descriptionValue = computed({
+    get: () => state.value.description ?? '',
+    set: (value) => {
+        state.value.description = value || null;
+    },
+});
+
+const industryValue = computed({
+    get: () => state.value.industry ?? '',
+    set: (value) => {
+        state.value.industry = value || null;
+    },
+});
+
+const validUntilValue = computed<string | number | undefined>({
+    get: () => state.value.valid_until ?? '',
+    set: (value) => {
+        state.value.valid_until = value ? String(value) : null;
+    },
+});
+
+const depositAmountValue = computed<string | number | undefined>({
+    get: () => state.value.deposit_amount ?? undefined,
+    set: (value) => {
+        state.value.deposit_amount = value ? Number(value) : null;
+    },
+});
+
+const depositPercentValue = computed<string | number | undefined>({
+    get: () => state.value.deposit_percent ?? undefined,
+    set: (value) => {
+        state.value.deposit_percent = value ? Number(value) : null;
     },
 });
 </script>
@@ -146,7 +179,7 @@ const fxRateValue = computed({
                 <div class="space-y-2 lg:col-span-2">
                     <Label>Description</Label>
                     <Input
-                        v-model="state.description"
+                        v-model="descriptionValue"
                         placeholder="Template description"
                         :disabled="systemLocked"
                     />
@@ -155,7 +188,7 @@ const fxRateValue = computed({
                 <div class="space-y-2">
                     <Label>Industry</Label>
                     <Input
-                        v-model="state.industry"
+                        v-model="industryValue"
                         placeholder="Construction, IT, Services..."
                         :disabled="systemLocked"
                     />
@@ -191,7 +224,7 @@ const fxRateValue = computed({
                 <div class="space-y-2">
                     <Label>Due date</Label>
                     <Input
-                        v-model="state.valid_until"
+                        v-model="validUntilValue"
                         type="date"
                         :disabled="systemLocked"
                     />
@@ -269,7 +302,7 @@ const fxRateValue = computed({
                 <div class="space-y-2">
                     <Label>Valid until</Label>
                     <Input
-                        v-model="state.valid_until"
+                        v-model="validUntilValue"
                         type="date"
                         :disabled="systemLocked"
                     />
@@ -278,7 +311,7 @@ const fxRateValue = computed({
                 <div class="space-y-2">
                     <Label>Deposit amount</Label>
                     <Input
-                        v-model.number="state.deposit_amount"
+                        v-model.number="depositAmountValue"
                         type="number"
                         step="0.01"
                         min="0"
@@ -290,7 +323,7 @@ const fxRateValue = computed({
                 <div class="space-y-2">
                     <Label>Deposit percent (%)</Label>
                     <Input
-                        v-model.number="state.deposit_percent"
+                        v-model.number="depositPercentValue"
                         type="number"
                         step="0.01"
                         min="0"

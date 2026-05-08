@@ -67,8 +67,8 @@ const form = useForm({
     description: props.item.description ?? '',
     sku: props.item.sku ?? '',
     unit_id: props.item.unit_id,
-    unit_price: Number(props.item.unit_price ?? 0),
-    cost_price: Number(props.item.cost_price ?? 0),
+    unit_price: Number(props.item.unit_price || 0),
+    cost_price: Number(props.item.cost_price || 0),
     tax_ids: props.item.tax_ids ?? [],
     is_active: Boolean(props.item.is_active),
     image: null as File | null,
@@ -91,7 +91,7 @@ const selectedTaxIds = computed<string[]>({
 
 const selectedUnitId = computed<string | null>({
     get: () => {
-        if (form.unit_id === null || form.unit_id === undefined) {
+        if (form.unit_id === null) {
             return null;
         }
 
@@ -384,40 +384,41 @@ const confirmDeletePriceTier = (): void => {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    <TableRow
-                        v-if="item.variants && item.variants.length > 0"
-                        v-for="variant in item.variants"
-                        :key="variant.id"
-                    >
-                        <TableCell>{{ variant.name }}</TableCell>
-                        <TableCell>{{ variant.sku || '-' }}</TableCell>
-                        <TableCell>{{
-                            formatCurrency(variant.unit_price)
-                        }}</TableCell>
-                        <TableCell>{{
-                            formatCurrency(variant.cost_price)
-                        }}</TableCell>
-                        <TableCell>
-                            <Badge variant="default">{{
-                                variant.is_default ? 'Yes' : 'No'
-                            }}</Badge>
-                        </TableCell>
-                        <TableCell class="text-right">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                @click="openVariantDialog(variant)"
-                                >Edit</Button
-                            >
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                class="text-destructive"
-                                @click="deleteVariant(variant.id)"
-                                >Delete</Button
-                            >
-                        </TableCell>
-                    </TableRow>
+                    <template v-if="item.variants && item.variants.length > 0">
+                        <TableRow
+                            v-for="variant in item.variants"
+                            :key="variant.id"
+                        >
+                            <TableCell>{{ variant.name }}</TableCell>
+                            <TableCell>{{ variant.sku || '-' }}</TableCell>
+                            <TableCell>{{
+                                formatCurrency(variant.unit_price)
+                            }}</TableCell>
+                            <TableCell>{{
+                                formatCurrency(variant.cost_price)
+                            }}</TableCell>
+                            <TableCell>
+                                <Badge variant="default">{{
+                                    variant.is_default ? 'Yes' : 'No'
+                                }}</Badge>
+                            </TableCell>
+                            <TableCell class="text-right">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    @click="openVariantDialog(variant)"
+                                    >Edit</Button
+                                >
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    class="text-destructive"
+                                    @click="deleteVariant(variant.id)"
+                                    >Delete</Button
+                                >
+                            </TableCell>
+                        </TableRow>
+                    </template>
                     <TableRow v-else>
                         <TableCell
                             colspan="6"
@@ -451,60 +452,64 @@ const confirmDeletePriceTier = (): void => {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    <TableRow
+                    <template
                         v-if="item.priceTiers && item.priceTiers.length > 0"
-                        v-for="tier in item.priceTiers"
-                        :key="tier.id"
                     >
-                        <TableCell>{{ tier.min_quantity }}</TableCell>
-                        <TableCell>{{
-                            tier.max_quantity || 'Unlimited'
-                        }}</TableCell>
-                        <TableCell>
-                            <span
-                                v-if="tier.pricing_type === 'fixed_price'"
-                                class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold transition-colors focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none"
-                            >
-                                Fixed Price
-                            </span>
-                            <span
-                                v-else
-                                class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold transition-colors focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none"
-                            >
-                                % Off
-                            </span>
-                        </TableCell>
-                        <TableCell>
-                            {{
-                                tier.variant_id
-                                    ? item.variants?.find(
-                                          (v) => v.id === tier.variant_id,
-                                      )?.name || 'Unknown'
-                                    : 'All variants'
-                            }}
-                        </TableCell>
-                        <TableCell>
-                            <span v-if="tier.pricing_type === 'fixed_price'">{{
-                                formatCurrency(tier.unit_price)
-                            }}</span>
-                            <span v-else>{{ tier.discount_percent }}%</span>
-                        </TableCell>
-                        <TableCell class="text-right">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                @click="openPriceTierDialog(tier)"
-                                >Edit</Button
-                            >
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                class="text-destructive"
-                                @click="deletePriceTier(tier.id)"
-                                >Delete</Button
-                            >
-                        </TableCell>
-                    </TableRow>
+                        <TableRow
+                            v-for="tier in item.priceTiers"
+                            :key="tier.id"
+                        >
+                            <TableCell>{{ tier.min_quantity }}</TableCell>
+                            <TableCell>{{
+                                tier.max_quantity || 'Unlimited'
+                            }}</TableCell>
+                            <TableCell>
+                                <span
+                                    v-if="tier.pricing_type === 'fixed_price'"
+                                    class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold transition-colors focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none"
+                                >
+                                    Fixed Price
+                                </span>
+                                <span
+                                    v-else
+                                    class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold transition-colors focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none"
+                                >
+                                    % Off
+                                </span>
+                            </TableCell>
+                            <TableCell>
+                                {{
+                                    tier.variant_id
+                                        ? item.variants?.find(
+                                              (v) => v.id === tier.variant_id,
+                                          )?.name || 'Unknown'
+                                        : 'All variants'
+                                }}
+                            </TableCell>
+                            <TableCell>
+                                <span
+                                    v-if="tier.pricing_type === 'fixed_price'"
+                                    >{{ formatCurrency(tier.unit_price) }}</span
+                                >
+                                <span v-else>{{ tier.discount_percent }}%</span>
+                            </TableCell>
+                            <TableCell class="text-right">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    @click="openPriceTierDialog(tier)"
+                                    >Edit</Button
+                                >
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    class="text-destructive"
+                                    @click="deletePriceTier(tier.id)"
+                                    >Delete</Button
+                                >
+                            </TableCell>
+                        </TableRow>
+                    </template>
                     <TableRow v-else>
                         <TableCell
                             colspan="6"

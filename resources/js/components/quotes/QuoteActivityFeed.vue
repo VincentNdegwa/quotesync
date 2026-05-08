@@ -16,10 +16,8 @@ import {
     BadgeCheck,
 } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import TiptapEditor from '@/components/ui/tiptap-editor/TiptapEditor.vue';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
@@ -53,7 +51,7 @@ const mentions = computed(() => {
     }));
 });
 
-const iconForType = (type: string) => {
+const iconForType = (type: string): unknown => {
     const map: Record<string, unknown> = {
         created: Pencil,
         sent: Send,
@@ -128,15 +126,7 @@ const displayTimeline = computed(() => {
     return timeline.value.slice(-10);
 });
 
-const submitComment = async () => {
-    if (editorRef.value?.isEmpty) {
-        return;
-    }
-
-    if (!newComment.value.trim()) {
-        return;
-    }
-
+const submitComment = async (): Promise<void> => {
     try {
         const response = await fetch(
             `/comments/${props.commentableType}/${props.commentableId}`,
@@ -157,12 +147,12 @@ const submitComment = async () => {
             newComment.value = '';
             emit('commentCreated');
         }
-    } catch (error) {
-        console.error('Failed to submit comment:', error);
+    } catch {
+        console.error('Failed to submit comment:');
     }
 };
 
-const deleteComment = async (commentId: number) => {
+const deleteComment = async (commentId: number): Promise<void> => {
     if (!confirm('Are you sure you want to delete this comment?')) {
         return;
     }
@@ -181,7 +171,7 @@ const deleteComment = async (commentId: number) => {
     }
 };
 
-const handleKeyDown = (event: KeyboardEvent) => {
+const handleKeyDown = (event: KeyboardEvent): void => {
     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
         event.preventDefault();
         submitComment();

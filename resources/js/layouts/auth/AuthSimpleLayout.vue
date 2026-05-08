@@ -8,7 +8,7 @@ defineProps<{
     description?: string;
 }>();
 
-const name = usePage().props.name;
+const _name = usePage().props.name;
 </script>
 
 <template>

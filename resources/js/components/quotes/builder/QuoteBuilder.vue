@@ -1,14 +1,13 @@
 #resources/js/components/quotes/builder/QuoteBuilder.vue
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3';
 import { useEventListener } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
 import BlockConfigPanel from '@/components/builder/BlockConfigPanel.vue';
 import BlockList from '@/components/builder/BlockList.vue';
 import BuilderHeader from '@/components/quotes/builder/BuilderHeader.vue';
+import LineItemDetailPanel from '@/components/quotes/builder/LineItemDetailPanel.vue';
 import QuoteSettingsBar from '@/components/quotes/builder/QuoteSettingsBar.vue';
 import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
-import LineItemDetailPanel from '@/components/quotes/builder/LineItemDetailPanel.vue';
 // import { useQuoteBuilder } from '@/composables/useQuoteBuilder';
 import {
     ADDABLE_BLOCK_TYPES,
@@ -59,8 +58,8 @@ const props = withDefaults(
 const emit = defineEmits<{
     (e: 'update:modelValue', value: QuoteBuilderState): void;
     (e: 'save', value: QuoteBuilderState): void;
-    (e: 'apply-ai-generation', data: any): void;
-    (e: 'apply-ai-template', data: any): void;
+    (e: 'apply-ai-generation', data: any): void; // eslint-disable-line @typescript-eslint/no-explicit-any
+    (e: 'apply-ai-template', data: any): void; // eslint-disable-line @typescript-eslint/no-explicit-any
 }>();
 
 const localState = ref<QuoteBuilderState>(
@@ -180,30 +179,38 @@ const canvasMode = ref<'edit' | 'preview'>('edit');
 const aiGeneratorOpen = ref(false);
 const aiTemplateOpen = ref(false);
 
-const applyAiGeneration = (data: any) => {
+const applyAiGeneration = (data: any): void => {
+    // eslint-disable-line @typescript-eslint/no-explicit-any
     if (data.sections && data.sections.length > 0) {
         const newSections = data.sections.map(
-            (section: any, index: number) => ({
+            (
+                section: any /* eslint-disable-line @typescript-eslint/no-explicit-any */,
+                index: number,
+            ) => ({
                 id: null,
                 title: section.title,
                 sort_order: index,
-                line_items: section.line_items.map((item: any) => ({
-                    id: null,
-                    catalog_item_id: item.catalog_item_id,
-                    name: item.name,
-                    description: item.description,
-                    quantity: item.quantity,
-                    unit: item.unit,
-                    unit_price: item.unit_price,
-                    discount_percent: 0,
-                    subtotal: item.quantity * item.unit_price,
-                    tax_amount: 0,
-                    total: item.quantity * item.unit_price,
-                    is_optional: item.is_optional,
-                    notes: null,
-                    sort_order: 0,
-                    taxes: [],
-                })),
+                line_items: section.line_items.map(
+                    (
+                        item: any /* eslint-disable-line @typescript-eslint/no-explicit-any */,
+                    ) => ({
+                        id: null,
+                        catalog_item_id: item.catalog_item_id,
+                        name: item.name,
+                        description: item.description,
+                        quantity: item.quantity,
+                        unit: item.unit,
+                        unit_price: item.unit_price,
+                        discount_percent: 0,
+                        subtotal: item.quantity * item.unit_price,
+                        tax_amount: 0,
+                        total: item.quantity * item.unit_price,
+                        is_optional: item.is_optional,
+                        notes: null,
+                        sort_order: 0,
+                        taxes: [],
+                    }),
+                ),
             }),
         );
 
@@ -273,6 +280,7 @@ const applyAiGeneration = (data: any) => {
             (b) => b.type === 'timeline',
         );
         const timelineRows = data.timeline.rows.map((row: any) => ({
+            // eslint-disable-line @typescript-eslint/no-explicit-any
             id: crypto.randomUUID(),
             phase: row.phase,
             description: row.description,
@@ -281,7 +289,7 @@ const applyAiGeneration = (data: any) => {
         }));
 
         if (timelineBlock) {
-            const config = timelineBlock.config as any;
+            const config = timelineBlock.config as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
             if (data.timeline.label_text) {
                 config.labelText = data.timeline.label_text;
@@ -291,7 +299,7 @@ const applyAiGeneration = (data: any) => {
         } else {
             // Add timeline block if it doesn't exist
             const newTimelineBlock = createBlock('timeline');
-            const config = newTimelineBlock.config as any;
+            const config = newTimelineBlock.config as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
             if (data.timeline.label_text) {
                 config.labelText = data.timeline.label_text;
@@ -303,7 +311,8 @@ const applyAiGeneration = (data: any) => {
     }
 };
 
-const applyAiTemplate = (data: any) => {
+const applyAiTemplate = (data: any): void => {
+    // eslint-disable-line @typescript-eslint/no-explicit-any
     if (data.layout) {
         const validatedLayout = ensureTemplateLayout(data.layout);
         currentLayout.value = validatedLayout;
@@ -379,10 +388,6 @@ const moveBlock = (fromIndex: number, toIndex: number): void => {
     const blocks = currentLayout.value.blocks;
     const [moved] = blocks.splice(fromIndex, 1);
 
-    if (!moved) {
-        return;
-    }
-
     blocks.splice(toIndex, 0, moved);
     selectedBlockId.value = moved.id;
 };
@@ -424,7 +429,7 @@ const deleteBlock = (blockId: string): void => {
 
     const block = currentLayout.value.blocks[index];
 
-    if (!block || block.locked) {
+    if (block.locked) {
         return;
     }
 
@@ -432,8 +437,8 @@ const deleteBlock = (blockId: string): void => {
 
     if (selectedBlockId.value === blockId) {
         selectedBlockId.value =
-            currentLayout.value.blocks[index]?.id ??
-            currentLayout.value.blocks[index - 1]?.id ??
+            currentLayout.value.blocks[index].id ||
+            currentLayout.value.blocks[index - 1].id ||
             null;
     }
 };
@@ -459,22 +464,18 @@ const duplicateBlock = (blockId: string): void => {
 
     const source = currentLayout.value.blocks[sourceIndex];
 
-    if (!source) {
-        return;
-    }
-
-    const duplicated = createBlock(source.type);
+    const newBlock = cloneBlockConfig(source);
     const clonedConfig = cloneBlockConfig(source.config);
 
-    duplicated.visible = source.visible;
-    duplicated.locked = false;
-    duplicated.label = source.label ?? null;
-    duplicated.config = clonedConfig;
+    newBlock.visible = source.visible;
+    newBlock.locked = false;
+    newBlock.label = source.label ?? null;
+    newBlock.config = clonedConfig;
 
     const insertionIndex = sourceIndex + 1;
 
-    currentLayout.value.blocks.splice(insertionIndex, 0, duplicated);
-    selectedBlockId.value = duplicated.id;
+    currentLayout.value.blocks.splice(insertionIndex, 0, newBlock);
+    selectedBlockId.value = newBlock.id;
 };
 
 const createEmptyLineItem = (sortOrder: number): QuoteBuilderLineItem => ({
@@ -525,10 +526,6 @@ const selectedLineItem = computed(() => {
     const section =
         localState.value.sections[selectedLineItemPointer.value.sectionIndex];
 
-    if (!section) {
-        return null;
-    }
-
     return (
         section.line_items[selectedLineItemPointer.value.lineItemIndex] ?? null
     );
@@ -541,15 +538,7 @@ const withLineItem = (
 ): void => {
     const section = localState.value.sections[sectionIndex];
 
-    if (!section) {
-        return;
-    }
-
     const item = section.line_items[lineItemIndex];
-
-    if (!item) {
-        return;
-    }
 
     callback(item);
     recompute();
@@ -566,12 +555,6 @@ const withSelectedLineItem = (
 };
 
 const selectLineItem = (payload: LineItemPointer): void => {
-    const section = localState.value.sections[payload.sectionIndex];
-
-    if (!section || !section.line_items[payload.lineItemIndex]) {
-        return;
-    }
-
     selectedBlockId.value = payload.blockId;
     selectedLineItemPointer.value = { ...payload };
 };
@@ -605,7 +588,7 @@ const removeSelectedLineItem = (): void => {
 
 const updateSelectedLineItemField = (
     field: keyof QuoteBuilderLineItem,
-    value: any,
+    value: any, // eslint-disable-line @typescript-eslint/no-explicit-any
 ): void => {
     withSelectedLineItem(({ sectionIndex, lineItemIndex }) => {
         updateLineItemField(
@@ -708,7 +691,7 @@ const toggleLineItemTax = (
                     tax_id: tax.id,
                     tax_label: tax.name,
                     tax_rate: tax.rate,
-                    inclusive: tax.inclusive ?? false,
+                    inclusive: tax.inclusive,
                 });
             }
 
@@ -739,10 +722,6 @@ const addLineItem = (
     catalogItem?: BuilderCatalogItem | null,
 ): number | null => {
     const section = localState.value.sections[sectionIndex];
-
-    if (!section) {
-        return null;
-    }
 
     const newItem = createEmptyLineItem(section.line_items.length + 1);
     section.line_items.push(newItem);
@@ -779,11 +758,7 @@ const quickAddLineItem = (payload: {
 const removeLineItem = (sectionIndex: number, lineItemIndex: number): void => {
     const section = localState.value.sections[sectionIndex];
 
-    if (
-        !section ||
-        lineItemIndex < 0 ||
-        lineItemIndex >= section.line_items.length
-    ) {
+    if (lineItemIndex < 0 || lineItemIndex >= section.line_items.length) {
         return;
     }
 
@@ -808,23 +783,15 @@ const updateLineItemField = (
     sectionIndex: number,
     lineItemIndex: number,
     field: string,
-    value: any,
+    value: any, // eslint-disable-line @typescript-eslint/no-explicit-any
 ): void => {
     const section = localState.value.sections[sectionIndex];
 
-    if (
-        !section ||
-        lineItemIndex < 0 ||
-        lineItemIndex >= section.line_items.length
-    ) {
+    if (lineItemIndex < 0 || lineItemIndex >= section.line_items.length) {
         return;
     }
 
     const item = section.line_items[lineItemIndex];
-
-    if (!item) {
-        return;
-    }
 
     item[field] = value;
     recompute();
@@ -846,23 +813,21 @@ const applyCatalogItemToLineItem = (
         tax_id: tax.id,
         tax_label: tax.name,
         tax_rate: tax.rate,
-        inclusive: tax.inclusive ?? false,
+        inclusive: tax.inclusive,
     }));
     item.price_tier_applied = false;
 
     const resolvedVariant =
-        catalogItem.variants.find((variant) => variant.is_default) ??
+        catalogItem.variants.find((variant) => variant.is_default) ||
         catalogItem.variants[0];
 
-    if (resolvedVariant) {
-        item.catalog_item_variant_id = resolvedVariant.id;
-        item.unit_price = Number(
-            resolvedVariant.unit_price ?? item.unit_price ?? 0,
-        );
-        item.cost_price = Number(
-            resolvedVariant.cost_price ?? item.cost_price ?? 0,
-        );
-    }
+    item.catalog_item_variant_id = resolvedVariant.id;
+    item.unit_price = Number(
+        resolvedVariant.unit_price || item.unit_price || 0,
+    );
+    item.cost_price = Number(
+        resolvedVariant.cost_price || item.cost_price || 0,
+    );
 };
 
 const selectCatalogItem = (
@@ -906,10 +871,6 @@ const insertBlockRelative = (
 
 const updateSectionTitle = (sectionIndex: number, title: string): void => {
     const section = localState.value.sections[sectionIndex];
-
-    if (!section) {
-        return;
-    }
 
     section.title = title;
 };
@@ -1028,13 +989,13 @@ const updateSignatureContent = (
 
 const brandingData = computed<BrandingData>(() => {
     return {
-        company_name: props.settings.workspace.name ?? null,
-        logo_url: props.settings.workspace.logo_url ?? null,
-        primary_color: props.settings.workspace.primary_color ?? '#2563EB',
-        accent_color: props.settings.workspace.accent_color ?? '#F59E0B',
-        company_email: props.settings.workspace.company_email ?? null,
-        company_phone: props.settings.workspace.company_phone ?? null,
-        company_address: props.settings.workspace.company_address ?? null,
+        company_name: props.settings.workspace.name,
+        logo_url: props.settings.workspace.logo_url,
+        primary_color: props.settings.workspace.primary_color || '#2563EB',
+        accent_color: props.settings.workspace.accent_color || '#F59E0B',
+        company_email: props.settings.workspace.company_email,
+        company_phone: props.settings.workspace.company_phone,
+        company_address: props.settings.workspace.company_address,
         company_tagline: null,
     };
 });
@@ -1044,13 +1005,11 @@ const resolvedClient = computed(() => {
         return localState.value.client;
     }
 
-    if (!localState.value.client_id || !props.clients) {
+    if (!localState.value.client_id) {
         return null;
     }
 
-    return (
-        props.clients.find((c) => c.id === localState.value.client_id) ?? null
-    );
+    return props.clients.find((c) => c.id === localState.value.client_id);
 });
 
 const builderTitle = computed({
@@ -1106,8 +1065,6 @@ const recompute = (): void => {
 };
 
 const ensureDefaultVariants = (): void => {
-    let updated = false;
-
     localState.value.sections.forEach((section) => {
         section.line_items.forEach((item) => {
             if (!item.catalog_item_id || item.catalog_item_variant_id) {
@@ -1123,27 +1080,21 @@ const ensureDefaultVariants = (): void => {
             }
 
             const resolvedVariant =
-                catalogItem.variants.find((variant) => variant.is_default) ??
+                catalogItem.variants.find((variant) => variant.is_default) ||
                 catalogItem.variants[0];
-
-            if (!resolvedVariant) {
-                return;
-            }
 
             item.catalog_item_variant_id = resolvedVariant.id;
             item.unit_price = Number(
-                resolvedVariant.unit_price ?? item.unit_price ?? 0,
+                resolvedVariant.unit_price || item.unit_price || 0,
             );
             item.cost_price = Number(
-                resolvedVariant.cost_price ?? item.cost_price ?? 0,
+                resolvedVariant.cost_price || item.cost_price || 0,
             );
             updated = true;
         });
     });
 
-    if (updated) {
-        recompute();
-    }
+    recompute();
 };
 
 ensureDefaultVariants();
@@ -1215,8 +1166,8 @@ useEventListener(
             }
 
             const activeBlockId =
-                selectedBlockId.value ??
-                currentLayout.value.blocks[0]?.id ??
+                selectedBlockId.value ||
+                currentLayout.value.blocks[0]?.id ||
                 null;
 
             if (!activeBlockId) {

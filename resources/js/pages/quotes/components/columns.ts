@@ -25,7 +25,7 @@ const sortableHeader = (
         toggleSorting: (desc?: boolean) => void;
     },
     align: 'left' | 'right' = 'left',
-) =>
+): VNode =>
     h(
         Button,
         {
@@ -73,7 +73,7 @@ export const getQuoteColumns = (
             cell: ({ row }) => {
                 // Use client_status if available (for portal users), otherwise use status
                 const statusValue =
-                    (row.original as any).client_status || row.original.status;
+                    (row.original as any).client_status || row.original.status; // eslint-disable-line @typescript-eslint/no-explicit-any
                 const status = getQuoteStatus(statusValue);
 
                 return h(
@@ -131,17 +131,13 @@ export const getQuoteColumns = (
             cell: ({ row }) => {
                 const winProb = row.original.win_probability;
 
-                if (
-                    !winProb ||
-                    winProb.probability === null ||
-                    winProb.probability === undefined
-                ) {
+                if (!winProb || winProb.probability == null) {
                     return '—';
                 }
 
                 const probability = winProb.probability;
 
-                const getColor = (p: number) => {
+                const getColor = (p: number): string => {
                     if (p >= 70) {
                         return 'text-green-600';
                     }
@@ -200,10 +196,10 @@ export const getQuoteColumns = (
                     onSend: (quoteId: number) => options.onSend(quoteId),
                     onDelete: (quoteId: number) => options.onDelete(quoteId),
                     onApprove: options.onApprove
-                        ? (quoteId: number) => options.onApprove!(quoteId)
+                        ? (quoteId: number): void => options.onApprove!(quoteId)
                         : undefined,
                     onReject: options.onReject
-                        ? (quoteId: number) => options.onReject!(quoteId)
+                        ? (quoteId: number): void => options.onReject!(quoteId)
                         : undefined,
                     isClient: options.isClient ?? false,
                 }),

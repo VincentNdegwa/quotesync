@@ -11,7 +11,6 @@ import {
     ChevronDown,
     ChevronUp,
     DollarSign,
-    FileText,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { Button } from '@/components/ui/button';
@@ -27,7 +26,7 @@ const props = defineProps<{
 const { getInvoiceActivityType } = useEnums();
 const { formatDateTime: fmtDateTime } = useFormat();
 
-const iconForType = (type: string) => {
+const iconForType = (type: string): unknown => {
     const map: Record<string, unknown> = {
         created: Pencil,
         sent: Send,

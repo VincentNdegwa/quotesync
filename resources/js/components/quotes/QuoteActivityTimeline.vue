@@ -28,7 +28,7 @@ const props = defineProps<{
 const { getQuoteActivityType } = useEnums();
 const { formatDateTime: fmtDateTime } = useFormat();
 
-const iconForType = (type: string) => {
+const iconForType = (type: string): unknown => {
     const map: Record<string, unknown> = {
         created: Pencil,
         sent: Send,

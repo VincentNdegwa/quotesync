@@ -24,7 +24,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-    messageSent: [message: any];
+    messageSent: [message: unknown];
 }>();
 
 const isOpen = ref(false);
@@ -33,7 +33,7 @@ const newMessage = ref('');
 const sendingMessage = ref(false);
 const localMessages = ref([...(props.messages || [])]);
 
-const loadMessages = () => {
+const loadMessages = (): void => {
     const indexEndpoint = props.isClient
         ? indexFromPortal(props.quoteId).url
         : index(Number(props.quoteId)).url;
@@ -56,14 +56,14 @@ const loadMessages = () => {
         });
 };
 
-const formatTime = (date: string) => {
+const formatTime = (date: string): string => {
     return new Date(date).toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit',
     });
 };
 
-const toggleChat = () => {
+const toggleChat = (): void => {
     isOpen.value = !isOpen.value;
 
     if (isOpen.value) {
@@ -72,11 +72,11 @@ const toggleChat = () => {
     }
 };
 
-const toggleMinimize = () => {
+const toggleMinimize = (): void => {
     isMinimized.value = !isMinimized.value;
 };
 
-const sendMessage = () => {
+const sendMessage = (): void => {
     if (!newMessage.value.trim()) {
         return;
     }
@@ -240,7 +240,7 @@ const sendMessage = () => {
                         >
                             <div
                                 :class="[
-                                    'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-semibold',
+                                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
                                     (props.isClient &&
                                         message.sender_type ===
                                             'portal_user') ||

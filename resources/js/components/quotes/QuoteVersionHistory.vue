@@ -1,14 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import {
-    Eye,
-    Pencil,
-    RotateCcw,
-    CheckCircle2,
-    Clock,
-    MoreHorizontal,
-} from 'lucide-vue-next';
-import { ref } from 'vue';
+import { Eye, RotateCcw, CheckCircle2, MoreHorizontal } from 'lucide-vue-next';
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,7 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import type { QuoteData } from '@/types';
 
-const props = defineProps<{
+const _props = defineProps<{
     quote: QuoteData;
     versions: QuoteData[];
 }>();
@@ -31,7 +23,7 @@ const emit = defineEmits<{
     restore: [versionId: number];
 }>();
 
-const restoreVersion = (versionId: number) => {
+const restoreVersion = (versionId: number): void => {
     if (
         confirm(
             'Are you sure you want to restore this version? This will set it as the active version.',
@@ -41,7 +33,7 @@ const restoreVersion = (versionId: number) => {
     }
 };
 
-const formatDate = (date: string) => {
+const formatDate = (date: string): string => {
     return new Date(date).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',

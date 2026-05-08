@@ -19,7 +19,7 @@ const sortableHeader = (
         toggleSorting: (desc?: boolean) => void;
     },
     align: 'left' | 'right' = 'left',
-) =>
+): VNode =>
     h(
         Button,
         {

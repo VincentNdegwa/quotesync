@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -42,10 +42,9 @@ watch(
     () => props.open,
     (isOpen) => {
         if (isOpen && props.priceTier) {
-            priceTierForm.pricing_type =
-                (props.priceTier.pricing_type as
-                    | 'fixed_price'
-                    | 'discount_percent') || 'fixed_price';
+            priceTierForm.pricing_type = props.priceTier.pricing_type as
+                | 'fixed_price'
+                | 'discount_percent';
             priceTierForm.min_quantity = props.priceTier.min_quantity;
             priceTierForm.max_quantity = props.priceTier.max_quantity;
             priceTierForm.unit_price = Number(props.priceTier.unit_price);
@@ -59,7 +58,7 @@ watch(
     },
 );
 
-const savePriceTier = () => {
+const savePriceTier = (): void => {
     if (props.priceTier) {
         priceTierForm.put(
             `/catalog/${props.catalogItemId}/price-tiers/${props.priceTier.id}`,

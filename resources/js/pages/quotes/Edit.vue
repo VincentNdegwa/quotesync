@@ -5,7 +5,6 @@ import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
-import { Button } from '@/components/ui/button';
 import type {
     BuilderCatalogItem,
     BuilderConfigurationUnit,
@@ -34,7 +33,7 @@ const breadcrumbs = computed(() => {
             href: '/quotes',
         },
         {
-            title: props.initialState?.title ?? 'Quote details',
+            title: props.initialState.title || 'Quote details',
             href: QuoteController.show(props.quoteId).url,
         },
         {
@@ -50,15 +49,15 @@ watchEffect(() => {
     });
 });
 
-const form = useForm<QuoteBuilderState>(
-    JSON.parse(JSON.stringify(props.initialState)) as QuoteBuilderState,
-);
+const form = useForm<QuoteBuilderState>(props.initialState);
 
 const save = (updatedState?: QuoteBuilderState): void => {
     if (updatedState) {
         Object.keys(updatedState).forEach((key) => {
             if (key in form) {
-                form[key] = updatedState[key];
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (form as any)[key] =
+                    updatedState[key as keyof QuoteBuilderState];
             }
         });
     }

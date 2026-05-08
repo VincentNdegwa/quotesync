@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
 import { Button } from '@/components/ui/button';
 import type {
@@ -13,7 +12,7 @@ import type {
 
 const props = defineProps<{
     invoiceId: number;
-    initialState: any;
+    initialState: any; // eslint-disable-line @typescript-eslint/no-explicit-any
     catalogItems: BuilderCatalogItem[];
     taxes: BuilderTaxOption[];
     units: BuilderConfigurationUnit[];

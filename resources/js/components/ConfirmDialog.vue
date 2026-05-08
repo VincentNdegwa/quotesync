@@ -50,12 +50,12 @@ const emit = defineEmits<{
 
 const inputValue = ref('');
 
-const handleConfirm = () => {
+const handleConfirm = (): void => {
     emit('confirm', props.showInput ? inputValue.value : undefined);
     inputValue.value = '';
 };
 
-const handleCancel = () => {
+const handleCancel = (): void => {
     emit('update:open', false);
     emit('cancel');
     inputValue.value = '';

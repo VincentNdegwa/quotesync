@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, Download, FileText } from 'lucide-vue-next';
+import { ArrowLeft, Download } from 'lucide-vue-next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -8,8 +8,8 @@ import { useFormat } from '@/composables/useFormat';
 
 const { formatCurrency, formatDate } = useFormat();
 
-const props = defineProps<{
-    creditNote: any;
+defineProps<{
+    creditNote: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 }>();
 
 const statusColors: Record<string, string> = {

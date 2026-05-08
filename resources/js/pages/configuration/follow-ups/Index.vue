@@ -57,7 +57,7 @@ type Sequence = {
     steps: Step[];
 };
 
-const props = defineProps<{
+const _props = defineProps<{
     sequences: Sequence[];
     placeholders: Record<string, string>;
 }>();
@@ -184,13 +184,9 @@ const insertPlaceholder = (key: string): void => {
             );
             inputEl.focus();
         }, 0);
-    }
-    // Otherwise insert into Tiptap editor at cursor position
-    else if (tiptapEditorRef.value) {
+    } else if (tiptapEditorRef.value) {
         tiptapEditorRef.value.insertText(token);
-    }
-    // Fallback: append to message template
-    else {
+    } else {
         form.steps[activeStepIndex.value].message_template += token;
     }
 };

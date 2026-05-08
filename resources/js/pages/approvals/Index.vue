@@ -16,7 +16,6 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
@@ -97,7 +96,7 @@ const newRuleForm = useForm({
 
 const pendingCount = computed(() => props.pendingApprovals.length);
 
-const { formatCurrency: fmt, formatDate } = useFormat(props.currency);
+const { formatCurrency: fmt } = useFormat(props.currency);
 
 const daysAgo = (val: string): string => {
     const diff = Math.floor((Date.now() - new Date(val).getTime()) / 86400000);

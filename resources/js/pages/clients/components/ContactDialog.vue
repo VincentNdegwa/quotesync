@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -55,7 +55,7 @@ watch(
     },
 );
 
-const saveContact = () => {
+const saveContact = (): void => {
     if (props.contact) {
         contactForm.put(
             `/clients/${props.client.id}/contacts/${props.contact.id}`,

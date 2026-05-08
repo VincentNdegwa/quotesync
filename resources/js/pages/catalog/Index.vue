@@ -64,11 +64,11 @@ defineOptions({
 });
 
 const filters = useForm({
-    search: props.filters.search ?? '',
+    search: props.filters.search || '',
     category_id: props.filters.category_id
         ? props.filters.category_id
         : ALL_OPTION,
-    is_active: props.filters.is_active ? props.filters.is_active : ALL_OPTION,
+    is_active: props.filters.is_active || ALL_OPTION,
 });
 
 let debounceHandle: ReturnType<typeof setTimeout> | null = null;
@@ -150,8 +150,8 @@ const openEdit = (item: CatalogItemRecord): void => {
         description: item.description ?? '',
         sku: item.sku ?? '',
         unit_id: item.unit_id,
-        unit_price: Number(item.unit_price ?? 0),
-        cost_price: Number(item.cost_price ?? 0),
+        unit_price: Number(item.unit_price || 0),
+        cost_price: Number(item.cost_price || 0),
         catalog_category_id: item.category?.id
             ? String(item.category.id)
             : NONE_OPTION,

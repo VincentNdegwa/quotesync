@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -54,7 +54,7 @@ watch(
     },
 );
 
-const saveVariant = () => {
+const saveVariant = (): void => {
     if (props.variant) {
         variantForm.put(
             `/catalog/${props.catalogItemId}/variants/${props.variant.id}`,

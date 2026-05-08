@@ -4,7 +4,6 @@ import {
     Archive,
     Copy,
     Download,
-    Edit3,
     Eye,
     MoreHorizontal,
     Pencil,
@@ -28,8 +27,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import type { InvoiceListRecord, InvoiceStatusEnum } from '@/types';
 
 const props = defineProps<{
@@ -165,7 +162,7 @@ const downloadPDF = async (): Promise<void> => {
 };
 
 const viewAsClient = (): void => {
-    if (props.invoice?.invoice_uuid) {
+    if (props.invoice.invoice_uuid) {
         window.open(`/i/${props.invoice.invoice_uuid}`, '_blank');
     }
 };

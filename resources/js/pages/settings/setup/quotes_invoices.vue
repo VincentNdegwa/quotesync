@@ -7,13 +7,6 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import TiptapEditor from '@/components/ui/tiptap-editor/TiptapEditor.vue';
 import type {
@@ -41,6 +34,7 @@ const updateAction = computed(
 const buildFormValues = (
     fields: WorkspaceSettingsField[],
 ): Record<string, any> => {
+    // eslint-disable-line @typescript-eslint/no-explicit-any
     return fields.reduce(
         (values, field) => {
             if (field.type === 'array') {
@@ -71,7 +65,7 @@ const buildFormValues = (
                 return values;
             }
 
-            if (field.value === null || field.value === undefined) {
+            if (field.value === null) {
                 values[field.key] = '';
 
                 return values;
@@ -89,11 +83,11 @@ const buildFormValues = (
 
             return values;
         },
-        {} as Record<string, any>,
+        {} as Record<string, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
     );
 };
 
-const formValues = reactive<Record<string, any>>(
+const formValues = reactive<Record<string, any>>( // eslint-disable-line @typescript-eslint/no-explicit-any
     buildFormValues(props.currentGroup.fields),
 );
 
@@ -107,7 +101,7 @@ watch(
     { immediate: true, deep: true },
 );
 
-const inputType = (field: WorkspaceSettingsField): string => {
+const _inputType = (field: WorkspaceSettingsField): string => {
     if (field.type === 'email') {
         return 'email';
     }
@@ -127,7 +121,7 @@ const inputType = (field: WorkspaceSettingsField): string => {
     return 'text';
 };
 
-const optionDisplayLabel = (option: string): string => {
+const _optionDisplayLabel = (option: string): string => {
     if (option === 'in_app') {
         return 'In-app notifications';
     }
@@ -142,23 +136,23 @@ const optionDisplayLabel = (option: string): string => {
         .join(' ');
 };
 
-const isColorField = (field: WorkspaceSettingsField): boolean => {
+const _isColorField = (field: WorkspaceSettingsField): boolean => {
     return field.key.toLowerCase().includes('color');
 };
 
-const isQuotesField = (key: string): boolean => {
+const _isQuotesField = (key: string): boolean => {
     return key.startsWith('quote_');
 };
 
-const isInvoicesField = (key: string): boolean => {
+const _isInvoicesField = (key: string): boolean => {
     return key.startsWith('invoice_');
 };
 
-const quotesFields = computed(() =>
-    props.currentGroup.fields.filter((f) => isQuotesField(f.key)),
+const _quotesFields = computed(() =>
+    props.currentGroup.fields.filter((f) => _isQuotesField(f.key)),
 );
-const invoicesFields = computed(() =>
-    props.currentGroup.fields.filter((f) => isInvoicesField(f.key)),
+const _invoicesFields = computed(() =>
+    props.currentGroup.fields.filter((f) => _isInvoicesField(f.key)),
 );
 </script>
 

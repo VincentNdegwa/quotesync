@@ -2,14 +2,7 @@
 import { Head } from '@inertiajs/vue3';
 import { usePage } from '@inertiajs/vue3';
 import { CurveType, Orientation } from '@unovis/ts';
-import {
-    VisAxis,
-    VisLine,
-    VisXYContainer,
-    VisDonut,
-    VisSingleContainer,
-    VisGroupedBar,
-} from '@unovis/vue';
+import { VisAxis, VisLine, VisXYContainer, VisGroupedBar } from '@unovis/vue';
 import {
     BarChart3,
     CalendarClock,
@@ -17,7 +10,6 @@ import {
     Globe,
     TrendingDown,
     TrendingUp,
-    Users,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
@@ -51,16 +43,51 @@ const props = defineProps<{
         revenue_captured: number;
         revenue_trend: Array<{ month: string; won: number; average: number }>;
     };
-    win_loss_analysis: Array<{
-        reason: string;
-        count: number;
-        total_value: number;
-    }>;
-    quote_performance: Array<{
-        template: string;
-        total_quotes: number;
-        win_rate: number;
-        avg_value: number;
+    win_loss_analysis: {
+        decline_reasons: Array<{ decline_reason: string; count: number }>;
+        loss_reasons: Array<{
+            reason: string;
+            count: number;
+            total_value: number;
+            range?: string;
+        }>;
+        time_to_win: Array<{
+            label: string;
+            value: number;
+            range?: string;
+            count?: number;
+        }>;
+    };
+    quote_performance: {
+        by_template: Array<{
+            template: string;
+            template_name?: string;
+            total_quotes: number;
+            win_rate: number;
+            avg_value: number;
+        }>;
+        by_deal_size: Array<{
+            label: string;
+            count: number;
+            total_value: number;
+            range?: string;
+        }>;
+        by_discount: Array<{
+            label: string;
+            count: number;
+            total_value: number;
+            range?: string;
+            win_rate?: number;
+        }>;
+    };
+    client_performance: Array<{
+        client_id: number;
+        client_name: string;
+        quotes_count: number;
+        won_count: number;
+        avg_response_days: number;
+        total_won: number;
+        win_rate?: number;
     }>;
     client_intelligence: Array<{
         client_id: number;
@@ -69,6 +96,7 @@ const props = defineProps<{
         won_count: number;
         avg_response_days: number;
         total_won: number;
+        win_rate?: number;
     }>;
     currency_breakdown: Array<{
         currency: string;
@@ -101,7 +129,7 @@ const formatPercent = (value: number): string => `${formatNumber(value, 0)}%`;
 const formatTrendValue = (value: number): string =>
     formatNumber(value, Math.abs(value) < 10 ? 1 : 0);
 
-const applyFilters = () => {
+const applyFilters = (): void => {
     window.location.href = `/analytics?start_date=${startDate.value}&end_date=${endDate.value}`;
 };
 
@@ -188,9 +216,7 @@ const revenueTimeline = computed(() => {
         .map((entry, index, arr) => {
             const previous = arr[index - 1]?.won ?? null;
             const delta =
-                previous !== null && previous > 0
-                    ? ((entry.won - previous) / previous) * 100
-                    : null;
+                previous > 0 ? ((entry.won - previous) / previous) * 100 : null;
 
             return {
                 id: `${entry.month}-${index}`,
@@ -209,7 +235,7 @@ const declineReasonsChartData = computed(() =>
         count: item.count,
     })),
 );
-type DeclineData = (typeof declineReasonsChartData.value)[number];
+const _declineReasonsChartData = declineReasonsChartData.value;
 
 const declineTimeline = computed(() =>
     props.win_loss_analysis.loss_reasons.map((item, index) => ({
@@ -220,7 +246,7 @@ const declineTimeline = computed(() =>
     })),
 );
 
-const declineChartConfig: ChartConfig = {
+const _declineChartConfig: ChartConfig = {
     count: {
         label: 'Declines',
         color: 'var(--chart-1)',
@@ -239,8 +265,9 @@ const timeToWinChartConfig: ChartConfig = {
     },
 };
 
-const timeToWinSummary = computed(() =>
-    timeToWinChartData.value.map((item) => ({
+const _timeToWinSummary = computed(() =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    timeToWinChartData.value.map((item: any) => ({
         id: item.range,
         label: item.range,
         count: item.count,
@@ -729,7 +756,7 @@ const forecastCards = computed(() => [
                                     bucket.range
                                 }}</span>
                                 <span class="font-medium">{{
-                                    formatPercent(bucket.win_rate)
+                                    formatPercent(bucket.win_rate || 0)
                                 }}</span>
                             </div>
                             <div class="h-2 w-full rounded-full bg-muted">
@@ -773,7 +800,7 @@ const forecastCards = computed(() => [
                                     bucket.range
                                 }}</span>
                                 <span class="font-medium">{{
-                                    formatPercent(bucket.win_rate)
+                                    formatPercent(bucket.win_rate || 0)
                                 }}</span>
                             </div>
                             <div class="h-2 w-full rounded-full bg-muted">
@@ -820,7 +847,7 @@ const forecastCards = computed(() => [
                                 }}</span>
                                 <Badge variant="outline"
                                     >{{
-                                        formatPercent(client.win_rate)
+                                        formatPercent(client.win_rate || 0)
                                     }}
                                     win</Badge
                                 >

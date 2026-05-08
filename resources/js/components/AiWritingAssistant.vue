@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Loader2, Sparkles, X, Check } from 'lucide-vue-next';
+import { Sparkles, X, Check } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,7 +27,7 @@ const actions = [
     { id: 'rewrite', label: 'Rewrite from scratch' },
 ];
 
-const improveText = async (action: string) => {
+const improveText = async (action: string): Promise<void> => {
     selectedAction.value = action;
     isStreaming.value = true;
     improvedText.value = '';
@@ -36,7 +36,7 @@ const improveText = async (action: string) => {
         `/ai/writing/improve?content=${encodeURIComponent(props.content)}&action=${action}`,
     );
 
-    eventSource.value.onmessage = (event) => {
+    eventSource.value.onmessage = (event: MessageEvent): void => {
         if (event.data === '[DONE]') {
             isStreaming.value = false;
             eventSource.value?.close();
@@ -48,22 +48,22 @@ const improveText = async (action: string) => {
         improvedText.value += data.chunk;
     };
 
-    eventSource.value.onerror = () => {
+    eventSource.value.onerror = (): void => {
         isStreaming.value = false;
         eventSource.value?.close();
     };
 };
 
-const accept = () => {
+const accept = (): void => {
     props.onUpdate(improvedText.value);
     close();
 };
 
-const reject = () => {
+const reject = (): void => {
     close();
 };
 
-const close = () => {
+const close = (): void => {
     isOpen.value = false;
     isStreaming.value = false;
     selectedAction.value = null;

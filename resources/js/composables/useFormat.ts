@@ -1,15 +1,33 @@
 import { usePage } from '@inertiajs/vue3';
 
-export function useFormat(defaultCurrency?: string) {
+export function useFormat(defaultCurrency?: string): {
+    formatCurrency: (
+        val: number | string | null | undefined,
+        currency?: string,
+    ) => string;
+    formatNumber: (
+        val: number | string | null | undefined,
+        decimals?: number,
+    ) => string;
+    formatDate: (val: string | null | undefined) => string;
+    formatDateTime: (val: string | null | undefined) => string;
+    formatTime: (val: string | null | undefined) => string;
+    formatRelativeTime: (val: string | null | undefined) => string;
+    convertTimezone: (val: string | null | undefined) => string;
+} {
     const page = usePage();
-    const localization = (page.props.localization as Record<string, any>) || {};
+    const localization = page.props.localization as Record<string, unknown>;
 
-    const getDateFormat = () => localization.date_format || 'MMM d, yyyy';
-    const getTimeFormat = () => localization.time_format || 'h:mm a';
-    const getCurrencyPosition = () =>
-        localization.currency_position || 'before';
-    const getNumberFormat = () => localization.number_format || '1,234.56';
-    const getTimezone = () => localization.timezone || 'UTC';
+    const getDateFormat = (): string =>
+        (localization.date_format as string) || 'MMM d, yyyy';
+    const getTimeFormat = (): string =>
+        (localization.time_format as string) || 'h:mm a';
+    const getCurrencyPosition = (): string =>
+        (localization.currency_position as string) || 'before';
+    const getNumberFormat = (): string =>
+        (localization.number_format as string) || '1,234.56';
+    const getTimezone = (): string =>
+        (localization.timezone as string) || 'UTC';
 
     const formatCurrency = (
         val: number | string | null | undefined,

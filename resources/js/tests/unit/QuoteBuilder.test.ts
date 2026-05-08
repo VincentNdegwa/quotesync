@@ -12,7 +12,7 @@ import type {
 
 // Mock Inertia page props
 vi.mock('@inertiajs/vue3', () => ({
-    usePage: () => ({
+    usePage: (): { props: Record<string, unknown> } => ({
         props: {
             localization: {
                 date_format: 'MMM d, yyyy',

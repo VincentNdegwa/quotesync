@@ -47,6 +47,7 @@ const updateAction = computed(
 const buildFormValues = (
     fields: WorkspaceSettingsField[],
 ): Record<string, any> => {
+    // eslint-disable-line @typescript-eslint/no-explicit-any
     return fields.reduce(
         (values, field) => {
             if (field.encrypted) {
@@ -69,7 +70,7 @@ const buildFormValues = (
                 return values;
             }
 
-            if (field.value === null || field.value === undefined) {
+            if (field.value === null) {
                 values[field.key] = '';
 
                 return values;
@@ -88,11 +89,11 @@ const buildFormValues = (
 
             return values;
         },
-        {} as Record<string, any>,
+        {} as Record<string, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
     );
 };
 
-const formValues = reactive<Record<string, any>>(
+const formValues = reactive<Record<string, any>>( // eslint-disable-line @typescript-eslint/no-explicit-any
     buildFormValues(props.currentGroup.fields),
 );
 
@@ -106,7 +107,7 @@ watch(
     { immediate: true, deep: true },
 );
 
-const inputType = (field: WorkspaceSettingsField): string => {
+const _inputType = (field: WorkspaceSettingsField): string => {
     if (field.type === 'email') {
         return 'email';
     }

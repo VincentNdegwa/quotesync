@@ -26,7 +26,7 @@ const page = usePage();
 
 const sharedNotifications = computed<NotificationSharedData>(() => {
     return (
-        (page.props.notifications as NotificationSharedData | undefined) ?? {
+        (page.props.notifications as NotificationSharedData | null) ?? {
             unread_count: 0,
             items: [],
         }
@@ -34,10 +34,10 @@ const sharedNotifications = computed<NotificationSharedData>(() => {
 });
 
 const unreadCount = computed<number>(
-    () => sharedNotifications.value.unread_count ?? 0,
+    () => sharedNotifications.value.unread_count,
 );
 const items = computed<NotificationSummary[]>(
-    () => sharedNotifications.value.items ?? [],
+    () => sharedNotifications.value.items,
 );
 
 const iconMap = {
@@ -50,7 +50,8 @@ const iconMap = {
     warning: AlertTriangle,
 } as const;
 
-const iconFor = (item: NotificationSummary) => {
+const iconFor = (item: NotificationSummary): typeof Bell => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     return iconMap[item.icon as keyof typeof iconMap] ?? Bell;
 };
 

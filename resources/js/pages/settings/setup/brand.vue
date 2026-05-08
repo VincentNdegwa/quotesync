@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Form, useForm } from '@inertiajs/vue3';
-import { Globe } from 'lucide-vue-next';
 import {
     Building2,
     Mail,
@@ -88,8 +87,7 @@ const industryId = computed({
     get: () =>
         brandForm.industry_id ? String(brandForm.industry_id) : undefined,
     set: (value) => {
-        brandForm.industry_id =
-            value === undefined || value === null ? undefined : String(value);
+        brandForm.industry_id = value ? String(value) : undefined;
     },
 });
 </script>

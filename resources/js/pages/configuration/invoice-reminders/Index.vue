@@ -49,7 +49,7 @@ type Sequence = {
     steps: Step[];
 };
 
-const props = defineProps<{
+const _props = defineProps<{
     sequences: Sequence[];
 }>();
 

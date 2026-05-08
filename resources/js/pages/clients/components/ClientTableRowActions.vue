@@ -12,7 +12,7 @@ import {
 import type { ClientRecord } from '@/types';
 import InvitePortalDialog from './InvitePortalDialog.vue';
 
-const props = defineProps<{
+const _props = defineProps<{
     client: ClientRecord;
 }>();
 

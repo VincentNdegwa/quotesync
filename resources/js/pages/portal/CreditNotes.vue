@@ -7,8 +7,8 @@ import { useFormat } from '@/composables/useFormat';
 
 const { formatCurrency, formatDate } = useFormat();
 
-const props = defineProps<{
-    creditNotes: any;
+defineProps<{
+    creditNotes: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 }>();
 
 const statusColors: Record<string, string> = {
@@ -150,6 +150,7 @@ const statusLabels: Record<string, string> = {
                     {{ creditNotes.total }} results
                 </div>
                 <div class="flex gap-2">
+                    <!-- eslint-disable vue/no-v-text-v-html-on-component -->
                     <Link
                         v-for="(link, index) in creditNotes.links"
                         :key="index"
@@ -163,6 +164,7 @@ const statusLabels: Record<string, string> = {
                             'pointer-events-none opacity-50': !link.url,
                         }"
                     />
+                    <!-- eslint-enable vue/no-v-text-v-html-on-component -->
                 </div>
             </div>
         </div>

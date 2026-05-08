@@ -17,8 +17,8 @@ const emit = defineEmits<{
     (e: 'set-canvas-mode', mode: 'edit' | 'preview'): void;
     (e: 'toggle-block-list'): void;
     (e: 'save'): void;
-    (e: 'apply-ai-generation', data: any): void;
-    (e: 'apply-ai-template', data: any): void;
+    (e: 'apply-ai-generation', data: unknown): void;
+    (e: 'apply-ai-template', data: unknown): void;
 }>();
 
 const title = defineModel<string>('title', {
@@ -32,11 +32,11 @@ const aiTemplateOpen = defineModel<boolean>('aiTemplateOpen', {
     default: false,
 });
 
-const handleAiApply = (data: any) => {
+const handleAiApply = (data: unknown): void => {
     emit('apply-ai-generation', data);
 };
 
-const handleAiTemplateApply = (data: any) => {
+const handleAiTemplateApply = (data: unknown): void => {
     emit('apply-ai-template', data);
 };
 </script>

@@ -37,7 +37,7 @@ function blockAs<T extends BlockType>(b: Block): LayoutBlock<T> {
     return b as LayoutBlock<T>;
 }
 
-function configOf<T extends BlockType>(b: Block): BlockConfigMap[T] {
+function _configOf<T extends BlockType>(b: Block): BlockConfigMap[T] {
     return b.config as BlockConfigMap[T];
 }
 </script>
@@ -54,7 +54,9 @@ function configOf<T extends BlockType>(b: Block): BlockConfigMap[T] {
                     :model-value="block.visible"
                     :disabled="block.locked"
                     @update:model-value="
-                        (value) => (block.visible = Boolean(value))
+                        (value) => {
+                            if (block) block.visible = Boolean(value);
+                        }
                     "
                 />
             </div>

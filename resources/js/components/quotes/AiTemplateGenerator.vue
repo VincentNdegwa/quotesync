@@ -18,7 +18,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { TemplateLayout } from '@/types/builder';
@@ -38,7 +37,7 @@ const emit = defineEmits<{
 const description = ref('');
 const industry = ref('');
 const loading = ref(false);
-const generated = ref<any>(null);
+const generated = ref<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
 const error = ref<string | null>(null);
 
 const industries = [
@@ -54,7 +53,7 @@ const industries = [
     'general',
 ];
 
-const generate = async () => {
+const generate = async (): Promise<void> => {
     if (!description.value.trim()) {
         return;
     }
@@ -74,11 +73,11 @@ const generate = async () => {
                         document.querySelector(
                             'meta[name="csrf-token"]',
                         ) as HTMLMetaElement
-                    )?.content || '',
+                    ).content || '',
             },
             body: JSON.stringify({
                 description: description.value,
-                industry: industry.value || null,
+                industry: industry.value,
             }),
         });
 
@@ -93,14 +92,14 @@ const generate = async () => {
         }
 
         generated.value = data;
-    } catch (e) {
+    } catch {
         error.value = 'Failed to generate template. Please try again.';
     } finally {
         loading.value = false;
     }
 };
 
-const apply = () => {
+const apply = (): void => {
     if (generated.value?.layout) {
         emit('apply', {
             layout: generated.value.layout,

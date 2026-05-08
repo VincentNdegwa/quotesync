@@ -26,7 +26,7 @@ const props = defineProps<{
 
 const breadcrumbs = computed(() => [
     { title: 'Quotes', href: '/quotes' },
-    { title: props.quote?.title ?? 'Quote details', href: '#' },
+    { title: props.quote.title || 'Quote details', href: '#' },
 ]);
 
 watchEffect(() => {
@@ -40,7 +40,7 @@ const { formatCurrency: fmt, formatDate: fmtDate } = useFormat(
     props.quote.base_currency || props.quote.currency || undefined,
 );
 
-const getWinProbabilityColor = (probability: number) => {
+const getWinProbabilityColor = (probability: number): string => {
     if (probability >= 70) {
         return 'text-green-600';
     }
@@ -52,7 +52,7 @@ const getWinProbabilityColor = (probability: number) => {
     return 'text-red-600';
 };
 
-const getWinProbabilityBgColor = (probability: number) => {
+const getWinProbabilityBgColor = (probability: number): string => {
     if (probability >= 70) {
         return 'bg-green-500';
     }
@@ -66,7 +66,7 @@ const getWinProbabilityBgColor = (probability: number) => {
 
 const approvalComments = ref('');
 
-const approveApproval = () => {
+const approveApproval = (): void => {
     router.post(
         `/approvals/${props.quote.id}/approve`,
         {
@@ -80,7 +80,7 @@ const approveApproval = () => {
     );
 };
 
-const rejectApproval = () => {
+const rejectApproval = (): void => {
     router.post(
         `/approvals/${props.quote.id}/reject`,
         {
@@ -94,11 +94,11 @@ const rejectApproval = () => {
     );
 };
 
-const handleCommentCreated = () => {
+const handleCommentCreated = (): void => {
     router.reload();
 };
 
-const handleCommentDeleted = () => {
+const handleCommentDeleted = (): void => {
     router.reload();
 };
 </script>

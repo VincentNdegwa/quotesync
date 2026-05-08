@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ArrowLeft, AlertCircle, MessageSquare } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { ArrowLeft, AlertCircle } from 'lucide-vue-next';
 import QuoteChat from '@/components/quotes/QuoteChat.vue';
 import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +14,7 @@ import {
 import type { WorkspaceSettings, TemplateLayout } from '@/types';
 
 const props = defineProps<{
-    quote: any;
+    quote: any; // eslint-disable-line @typescript-eslint/no-explicit-any
     layout: TemplateLayout | null;
     settings: WorkspaceSettings;
     clientState: 'open' | 'accepted' | 'closed';
@@ -37,11 +36,11 @@ const declineForm = useForm({
     reason: '',
 });
 
-const accept = () => {
+const accept = (): void => {
     acceptForm.post(acceptQuote(props.quote.quote_uuid).url);
 };
 
-const decline = () => {
+const decline = (): void => {
     declineForm.post(declineQuote(props.quote.quote_uuid).url);
 };
 </script>

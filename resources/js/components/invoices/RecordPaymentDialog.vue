@@ -30,7 +30,7 @@ const formData = ref({
     notes: '',
 });
 
-const submitPayment = () => {
+const submitPayment = (): void => {
     router.post(
         `/invoices/${props.invoiceId}/record-payment`,
         {
@@ -57,7 +57,7 @@ const submitPayment = () => {
     );
 };
 
-const closeDialog = () => {
+const closeDialog = (): void => {
     emit('update:open', false);
 };
 </script>

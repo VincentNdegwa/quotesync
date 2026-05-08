@@ -10,7 +10,6 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -18,7 +17,7 @@ const open = defineModel<boolean>('open', { default: false });
 const emit = defineEmits<{
     apply: [
         data: {
-            sections: Array<{ title: string; line_items: any[] }>;
+            sections: Array<{ title: string; line_items: unknown[] }>;
             cover_message: {
                 label_text: string;
                 context_text: string | null;
@@ -43,10 +42,10 @@ const emit = defineEmits<{
 
 const description = ref('');
 const loading = ref(false);
-const generated = ref<any>(null);
+const generated = ref<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
 const error = ref<string | null>(null);
 
-const generate = async () => {
+const generate = async (): Promise<void> => {
     if (!description.value.trim()) {
         return;
     }
@@ -66,7 +65,7 @@ const generate = async () => {
                         document.querySelector(
                             'meta[name="csrf-token"]',
                         ) as HTMLMetaElement
-                    )?.content || '',
+                    ).content || '',
             },
             body: JSON.stringify({ description: description.value }),
         });
@@ -81,14 +80,14 @@ const generate = async () => {
         }
 
         generated.value = data;
-    } catch (e) {
+    } catch {
         error.value = 'Failed to generate quote. Please try again.';
     } finally {
         loading.value = false;
     }
 };
 
-const apply = () => {
+const apply = (): void => {
     if (generated.value) {
         emit('apply', {
             sections: generated.value.sections,
@@ -103,7 +102,8 @@ const apply = () => {
     }
 };
 
-const getMatchIcon = (item: any) => {
+const getMatchIcon = (item: any): typeof CheckCircle2 => {
+    // eslint-disable-line @typescript-eslint/no-explicit-any
     if (item.catalog_item_id) {
         return CheckCircle2;
     }
@@ -111,7 +111,8 @@ const getMatchIcon = (item: any) => {
     return AlertCircle;
 };
 
-const getMatchColor = (item: any) => {
+const getMatchColor = (item: any): string => {
+    // eslint-disable-line @typescript-eslint/no-explicit-any
     if (item.catalog_item_id) {
         return 'text-green-500';
     }
@@ -189,7 +190,7 @@ const getMatchColor = (item: any) => {
                             <component
                                 :is="getMatchIcon(item)"
                                 :class="getMatchColor(item)"
-                                class="mt-0.5 h-4 w-4 flex-shrink-0"
+                                class="mt-0.5 h-4 w-4 shrink-0"
                             />
                             <div class="min-w-0 flex-1">
                                 <div class="font-medium">{{ item.name }}</div>

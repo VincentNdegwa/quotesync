@@ -220,7 +220,7 @@ export type QuoteModel = {
     version: number;
     pdf_url: string | null;
     template_id: number | null;
-    layout_snapshot: any;
+    layout_snapshot: unknown;
     active_version_id: number | null;
     parent_quote_id: number | null;
     subtotal: number;

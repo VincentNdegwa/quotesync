@@ -11,7 +11,6 @@ import {
 } from '@unovis/vue';
 import {
     ArrowLeft,
-    BarChart3,
     CheckCircle2,
     CircleHelp,
     Clock3,
@@ -84,8 +83,7 @@ const props = defineProps<{
 }>();
 
 const { getQuoteStatus } = useEnums();
-const { formatCurrency, formatDateTime, formatRelativeTime, formatNumber } =
-    useFormat();
+const { formatDateTime, formatRelativeTime, formatNumber } = useFormat();
 
 type TimelineIconKey =
     | 'send'
@@ -152,7 +150,7 @@ const timelineIconMap: Record<TimelineIconKey, Component> = {
 };
 
 const getTimelineIcon = (icon: string): Component =>
-    timelineIconMap[icon as TimelineIconKey] ?? MessageSquare;
+    timelineIconMap[icon as TimelineIconKey];
 
 const deviceIconMap: Record<DeviceIconKey, Component> = {
     mobile: Smartphone,
@@ -162,14 +160,14 @@ const deviceIconMap: Record<DeviceIconKey, Component> = {
 };
 
 const getDeviceIcon = (device: string): Component =>
-    deviceIconMap[device as DeviceIconKey] ?? CircleHelp;
+    deviceIconMap[device as DeviceIconKey];
 const getDeviceLabel = (device: string): string =>
     device.charAt(0).toUpperCase() + device.slice(1);
 
 const breadcrumbs = computed(() => [
     { title: 'Quotes', href: QuoteController.index().url },
     {
-        title: props.quote?.title ?? 'Quote details',
+        title: props.quote.title || 'Quote details',
         href: QuoteController.show({ quote: props.quote.id }).url,
     },
     { title: 'Quote analytics', href: '' },
@@ -191,7 +189,7 @@ const deviceChartConfig = computed<ChartConfig>(() =>
         const key = item.device as DeviceIconKey;
         config[item.device] = {
             label: `${getDeviceLabel(item.device)} · ${item.percentage}%`,
-            color: devicePalette[key] ?? 'var(--chart-4)',
+            color: devicePalette[key] || 'var(--chart-4)',
             icon: getDeviceIcon(item.device),
         };
 

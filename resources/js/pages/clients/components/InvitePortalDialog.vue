@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -35,7 +35,7 @@ watch(
     },
 );
 
-const sendInvitation = () => {
+const sendInvitation = (): void => {
     inviteForm.post(`/clients/${props.client.id}/invite-portal`, {
         onSuccess: () => {
             emit('update:open', false);

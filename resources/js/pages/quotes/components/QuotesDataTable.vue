@@ -42,7 +42,7 @@ const columns = computed(() =>
         onApprove: (quoteId) => emit('approve', quoteId),
         onReject: (quoteId) => emit('reject', quoteId),
         quoteStatuses: props.quoteStatuses,
-        isClient: props.isClient ?? false,
+        isClient: props.isClient || false,
     }),
 );
 

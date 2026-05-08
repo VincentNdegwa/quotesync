@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Plus } from 'lucide-vue-next';
-import type { ComputedRef } from 'vue';
 import { computed, inject } from 'vue';
+import type { ComputedRef } from 'vue';
+import CatalogSearchPopover from '@/components/quotes/builder/CatalogSearchPopover.vue';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,7 +25,6 @@ import type {
 } from '@/types';
 import type { BuilderCatalogItem } from '@/types';
 import type { QuoteLineItemModel, InvoiceLineItemModel } from '@/types/models';
-import CatalogSearchPopover from '@/components/quotes/builder/CatalogSearchPopover.vue';
 
 type DocumentLineItem = QuoteLineItemModel | InvoiceLineItemModel;
 
@@ -61,7 +61,7 @@ const emit = defineEmits<{
             sectionIndex: number;
             lineItemIndex: number;
             field: string;
-            value: any;
+            value: any; // eslint-disable-line @typescript-eslint/no-explicit-any
         },
     ): void;
     (
@@ -194,7 +194,7 @@ const itemTax = (item: DocumentLineItem): number => {
 };
 
 const itemTotal = (item: DocumentLineItem): number => {
-    const totalValue = Number(item.total ?? 0);
+    const totalValue = Number(item.total || 0);
 
     if (totalValue > 0) {
         return totalValue;

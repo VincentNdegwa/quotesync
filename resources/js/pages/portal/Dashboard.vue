@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { FileText, Eye, CheckCircle2, XCircle, Clock } from 'lucide-vue-next';
+import { Eye, CheckCircle2, XCircle, Clock } from 'lucide-vue-next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,8 +15,8 @@ import { show as showQuote } from '@/routes/portal/quotes';
 
 const { formatCurrency, formatDate } = useFormat();
 
-const props = defineProps<{
-    quotes: Array<any>;
+defineProps<{
+    quotes: Array<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
     stats: {
         total: number;
         pending: number;
@@ -39,18 +39,18 @@ const getStatusBadge = (
         declined: 'destructive',
     };
 
-    return colors[status] || 'secondary';
+    return colors[status] ?? 'secondary';
 };
 
-const getStatusIcon = (status: string) => {
-    const icons: Record<string, any> = {
+const _getStatusIcon = (status: string): Component => {
+    const icons: Record<string, Component> = {
         sent: Clock,
         viewed: Eye,
         accepted: CheckCircle2,
         declined: XCircle,
     };
 
-    return icons[status] || FileText;
+    return icons[status] ?? CircleHelp;
 };
 </script>
 

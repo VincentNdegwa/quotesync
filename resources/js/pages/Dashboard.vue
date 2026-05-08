@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { usePage } from '@inertiajs/vue3';
-import { CurveType, Orientation } from '@unovis/ts';
+import { CurveType } from '@unovis/ts';
 import {
     VisArea,
     VisAxis,
@@ -145,7 +145,7 @@ const statCards = computed<StatCard[]>(() => [
         key: 'win_rate',
         title: 'Win Rate',
         value: formatPercent(props.stats.win.rate),
-        trend: props.stats.win.trend ?? 0,
+        trend: props.stats.win.trend || 0,
         trendText: 'vs last month',
         valueText: `${props.stats.win.win_count} / ${props.stats.win.sent_count} quotes`,
     },
@@ -153,7 +153,7 @@ const statCards = computed<StatCard[]>(() => [
         key: 'revenue_captured',
         title: 'Revenue Captured',
         value: formatCurrency(props.stats.won_this_month),
-        trend: props.stats.won_trend ?? 0,
+        trend: props.stats.won_trend || 0,
         trendText: 'vs last month',
         note: 'of total sent value',
     },
@@ -161,21 +161,21 @@ const statCards = computed<StatCard[]>(() => [
         key: 'pipeline',
         title: 'Pipeline Value',
         value: formatCurrency(props.stats.pipeline_value),
-        trend: props.stats.pipeline_trend ?? 0,
+        trend: props.stats.pipeline_trend || 0,
         trendText: 'vs last month',
     },
     {
         key: 'average_deal_size',
         title: 'Average Deal Size',
         value: formatCurrency(props.stats.average_deal_size),
-        trend: props.stats.average_deal_size_trend ?? 0,
+        trend: props.stats.average_deal_size_trend || 0,
         trendText: 'vs last month',
     },
     {
         key: 'average_time_to_close',
         title: 'Avg Time to Close',
         value: `${formatNumber(props.stats.average_time_to_close)} days`,
-        trend: props.stats.average_time_to_close_trend ?? 0,
+        trend: props.stats.average_time_to_close_trend || 0,
         trendText: 'vs last month',
     },
     {
@@ -268,7 +268,7 @@ type QuoteActivityDatum = {
 };
 
 const quoteActivityData = computed<QuoteActivityDatum[]>(
-    () => props.quote_activity ?? [],
+    () => props.quote_activity,
 );
 
 const quoteActivityChartConfig: ChartConfig = {

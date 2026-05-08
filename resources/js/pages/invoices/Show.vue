@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { Head, setLayoutProps, router } from '@inertiajs/vue3';
 import { computed, watchEffect } from 'vue';
+import CreditNotesHistory from '@/components/CreditNotesHistory.vue';
 import Heading from '@/components/Heading.vue';
 import PaymentHistory from '@/components/PaymentHistory.vue';
-import CreditNotesHistory from '@/components/CreditNotesHistory.vue';
 import QuoteActivityFeed from '@/components/quotes/QuoteActivityFeed.vue';
 import InvoiceRenderer from '@/components/renderer/InvoiceRenderer.vue';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
 import type {
@@ -26,7 +25,7 @@ const props = defineProps<{
 
 const breadcrumbs = computed(() => [
     { title: 'Invoices', href: '/invoices' },
-    { title: props.invoice?.title ?? 'Invoice details', href: '#' },
+    { title: props.invoice.title || 'Invoice details', href: '#' },
 ]);
 
 watchEffect(() => {
@@ -40,11 +39,11 @@ const { formatCurrency: fmt, formatDate: fmtDate } = useFormat(
     props.invoice.base_currency || props.invoice.currency || undefined,
 );
 
-const handleCommentCreated = () => {
+const handleCommentCreated = (): void => {
     router.reload();
 };
 
-const handleCommentDeleted = () => {
+const handleCommentDeleted = (): void => {
     router.reload();
 };
 </script>

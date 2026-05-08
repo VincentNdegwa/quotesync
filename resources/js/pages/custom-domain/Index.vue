@@ -27,7 +27,7 @@ import { useFormat } from '@/composables/useFormat';
 
 const { formatDate } = useFormat();
 
-const props = defineProps<{
+const _props = defineProps<{
     domains: Array<{
         id: number;
         domain: string;
@@ -44,7 +44,7 @@ const adding = ref(false);
 const deleteOpen = ref(false);
 const domainToDelete = ref<number | null>(null);
 
-const addDomain = () => {
+const addDomain = (): void => {
     if (!newDomain.value.trim()) {
         return;
     }
@@ -62,7 +62,7 @@ const addDomain = () => {
     });
 };
 
-const verifyDomain = (domainId: number) => {
+const verifyDomain = (domainId: number): void => {
     router.post(
         `/custom-domains/${domainId}/verify`,
         {},
@@ -72,7 +72,7 @@ const verifyDomain = (domainId: number) => {
     );
 };
 
-const setPrimary = (domainId: number) => {
+const setPrimary = (domainId: number): void => {
     router.post(
         `/custom-domains/${domainId}/set-primary`,
         {},
@@ -82,7 +82,7 @@ const setPrimary = (domainId: number) => {
     );
 };
 
-const deleteDomain = (domainId: number) => {
+const deleteDomain = (domainId: number): void => {
     domainToDelete.value = domainId;
     deleteOpen.value = true;
 };

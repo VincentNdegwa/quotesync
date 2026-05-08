@@ -17,15 +17,13 @@ type Props = {
     user: User;
 };
 
-const handleLogout = () => {
+const handleLogout = (): void => {
     router.flushAll();
 };
 
 const page = usePage();
 const auth = computed(() => page.props.auth as Auth);
-const workspaces = computed<WorkspaceSummary[]>(
-    () => auth.value.workspaces ?? [],
-);
+const workspaces = computed<WorkspaceSummary[]>(() => auth.value.workspaces);
 const currentWorkspace = computed<WorkspaceSummary | null>(
     () => auth.value.currentWorkspace ?? null,
 );

@@ -9,7 +9,7 @@ import {
     ChevronsUpDown,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -33,10 +33,10 @@ import {
 import { getInitials } from '@/composables/useInitials';
 
 const page = usePage();
-const portalUser = computed(() => page.props.auth?.portal_user);
-const currentWorkspace = computed(() => page.props.auth?.currentWorkspace);
-const workspaces = computed(() => page.props.auth?.workspaces || []);
-const appName = computed(() => page.props.name || 'QuoteSync');
+const portalUser = computed(() => page.props.auth.portal_user);
+const currentWorkspace = computed(() => page.props.auth.currentWorkspace);
+const workspaces = computed(() => page.props.auth.workspaces);
+const appName = computed(() => page.props.name);
 const { isMobile, state } = useSidebar();
 
 const mainNavItems = computed(() => [
@@ -52,10 +52,10 @@ const mainNavItems = computed(() => [
     },
 ]);
 
-const logoutForm = useForm({});
+const _logoutForm = useForm({});
 const switchWorkspaceForm = useForm({ workspace_id: '' as number | string });
 
-const switchWorkspace = (workspaceId: number) => {
+const switchWorkspace = (workspaceId: number): void => {
     switchWorkspaceForm.workspace_id = workspaceId;
     switchWorkspaceForm.post('/portal/switch-workspace');
 };

@@ -6,7 +6,6 @@ import { computed, reactive, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import CountryCombobox from '@/components/location/CountryCombobox.vue';
 import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
-import LanguageCombobox from '@/components/location/LanguageCombobox.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -84,7 +83,7 @@ const props = defineProps({
     },
 });
 
-const stepIndex = ref(props.currentStepIndex ?? 1);
+const stepIndex = ref(props.currentStepIndex ?? 1); // eslint-disable-line @typescript-eslint/no-unnecessary-condition
 
 watch(
     () => props.currentStepIndex,
@@ -109,7 +108,7 @@ const wizardSteps = [
     },
 ];
 
-const languageOptions = computed<LanguageOption[]>(() => {
+const _languageOptions = computed<LanguageOption[]>(() => {
     if (props.availableLanguages.length === 0) {
         return translationLanguageOptions;
     }
@@ -133,24 +132,24 @@ const onboardingForm = reactive({
     data: {
         step_index: stepIndex.value,
         navigation: 'next',
-        company_name: props.business?.company_name ?? '',
-        country: props.business?.country ?? '',
-        logo_url: props.business?.logo_url ?? '',
-        industry_id: props.workspace?.industry_id ?? null,
-        currency: props.business?.currency ?? 'USD',
-        quote_prefix: props.quoteDefaults?.quote_prefix ?? 'QS',
-        invoice_prefix: props.quoteDefaults?.invoice_prefix ?? 'INV',
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC',
+        company_name: props.business.company_name ?? '',
+        country: props.business.country ?? '',
+        logo_url: props.business.logo_url ?? '',
+        industry_id: props.workspace.industry_id ?? null,
+        currency: props.business.currency ?? 'USD',
+        quote_prefix: props.quoteDefaults.quote_prefix ?? 'QS',
+        invoice_prefix: props.quoteDefaults.invoice_prefix ?? 'INV',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
     },
 });
 
 watch(
     () => props.business,
     (business) => {
-        onboardingForm.data.company_name = business?.company_name ?? '';
-        onboardingForm.data.country = business?.country ?? '';
-        onboardingForm.data.logo_url = business?.logo_url ?? '';
-        onboardingForm.data.currency = business?.currency ?? 'USD';
+        onboardingForm.data.company_name = business.company_name ?? '';
+        onboardingForm.data.country = business.country ?? '';
+        onboardingForm.data.logo_url = business.logo_url ?? '';
+        onboardingForm.data.currency = business.currency ?? 'USD';
     },
     { immediate: true },
 );
@@ -158,9 +157,9 @@ watch(
 watch(
     () => props.quoteDefaults,
     (quoteDefaults) => {
-        onboardingForm.data.quote_prefix = quoteDefaults?.quote_prefix ?? 'QS';
+        onboardingForm.data.quote_prefix = quoteDefaults.quote_prefix ?? 'QS';
         onboardingForm.data.invoice_prefix =
-            quoteDefaults?.invoice_prefix ?? 'INV';
+            quoteDefaults.invoice_prefix ?? 'INV';
     },
     { immediate: true },
 );

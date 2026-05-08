@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-import { Bell, Mail, Clock, Zap, Shield } from 'lucide-vue-next';
+import { Bell, Mail, Clock, Shield } from 'lucide-vue-next';
 import { computed, reactive, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -12,7 +12,6 @@ import {
     SelectContent,
     SelectGroup,
     SelectItem,
-    SelectLabel,
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
@@ -42,6 +41,7 @@ const updateAction = computed(
 const buildFormValues = (
     fields: WorkspaceSettingsField[],
 ): Record<string, any> => {
+    // eslint-disable-line @typescript-eslint/no-explicit-any
     return fields.reduce(
         (values, field) => {
             if (field.type === 'array') {
@@ -58,7 +58,7 @@ const buildFormValues = (
                 return values;
             }
 
-            if (field.value === null || field.value === undefined) {
+            if (field.value == null) {
                 values[field.key] = '';
 
                 return values;
@@ -70,11 +70,11 @@ const buildFormValues = (
 
             return values;
         },
-        {} as Record<string, any>,
+        {} as Record<string, string | boolean | string[]>,
     );
 };
 
-const formValues = reactive<Record<string, any>>(
+const formValues = reactive<Record<string, string | boolean | string[]>>(
     buildFormValues(props.currentGroup.fields),
 );
 
@@ -88,7 +88,7 @@ watch(
     { immediate: true, deep: true },
 );
 
-const optionDisplayLabel = (option: string): string => {
+const _optionDisplayLabel = (option: string): string => {
     if (option === 'in_app') {
         return 'In-app notifications';
     }

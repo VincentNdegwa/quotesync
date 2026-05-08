@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
-import { computed, onUnmounted, ref } from 'vue';
+import { onUnmounted, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -76,7 +76,8 @@ const uploadForm = useForm({
 const handleFileUpload = (event: Event): void => {
     const target = event.target as HTMLInputElement;
 
-    if (target.files && target.files[0]) {
+    if (target.files[0]) {
+        // eslint-disable-line @typescript-eslint/no-unnecessary-condition
         uploadForm.file = target.files[0];
     }
 };

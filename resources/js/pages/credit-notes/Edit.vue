@@ -695,9 +695,7 @@ const submit = (): void => {
                         class="mt-3 rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground"
                     >
                         {{ form.line_items.length }}
-                        item{{
-                            form.line_items.length !== 1 ? 's' : ''
-                        }}
+                        item{{ form.line_items.length !== 1 ? 's' : '' }}
                         selected for credit
                     </div>
 

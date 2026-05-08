@@ -1,21 +1,14 @@
 <script setup lang="ts">
-import { computed, ref, toRaw } from 'vue';
+import { computed, ref } from 'vue';
 import { watch } from 'vue';
-import BlockConfigPanel from '@/components/builder/BlockConfigPanel.vue';
-import BlockList from '@/components/builder/BlockList.vue';
 import InvoiceRenderer from '@/components/renderer/InvoiceRenderer.vue';
-import {
-    ADDABLE_BLOCK_TYPES,
-    createBlock,
-    ensureTemplateLayout,
-} from '@/types';
+import { createBlock, ensureTemplateLayout } from '@/types';
 import type {
     Block,
     BlockType,
     BuilderCatalogItem,
     BuilderConfigurationUnit,
     BuilderTaxOption,
-    InvoiceBuilderLineItem,
     InvoiceBuilderState,
     WorkspaceSettings,
 } from '@/types';
@@ -24,7 +17,7 @@ const model = defineModel<InvoiceBuilderState>({
     required: true,
 });
 
-const props = withDefaults(
+const _props = withDefaults(
     defineProps<{
         mode: 'invoice';
         catalogItems: BuilderCatalogItem[];
@@ -46,41 +39,31 @@ const selectedBlockId = ref<string | null>(null);
 
 const layout = computed({
     get: () => {
-        return ensureTemplateLayout(
-            model.value.layout_snapshot || model.value.layout,
-        );
+        return ensureTemplateLayout(model.value.layout_snapshot);
     },
     set: (value) => {
         model.value.layout_snapshot = value;
     },
 });
 
-const blocks = computed(() => layout.value?.blocks || []);
+const blocks = computed(() => layout.value.blocks);
 
-const selectedBlock = computed(() => {
+const _selectedBlock = computed(() => {
     return blocks.value.find((b) => b.id === selectedBlockId.value) || null;
 });
 
-const selectBlock = (id: string | null) => {
+const _selectBlock = (id: string | null): void => {
     selectedBlockId.value = id;
 };
 
-const addBlock = (type: BlockType) => {
-    if (!layout.value) {
-        return;
-    }
-
+const _addBlock = (type: BlockType): void => {
     const newBlock = createBlock(type);
     layout.value.blocks.push(newBlock);
     model.value.layout_snapshot = layout.value;
     selectedBlockId.value = newBlock.id;
 };
 
-const updateBlock = (block: Block) => {
-    if (!layout.value) {
-        return;
-    }
-
+const _updateBlock = (block: Block): void => {
     const index = layout.value.blocks.findIndex((b) => b.id === block.id);
 
     if (index !== -1) {
@@ -89,11 +72,7 @@ const updateBlock = (block: Block) => {
     }
 };
 
-const deleteBlock = (id: string) => {
-    if (!layout.value) {
-        return;
-    }
-
+const _deleteBlock = (id: string): void => {
     layout.value.blocks = layout.value.blocks.filter((b) => b.id !== id);
     model.value.layout_snapshot = layout.value;
 
@@ -102,7 +81,7 @@ const deleteBlock = (id: string) => {
     }
 };
 
-const save = () => {
+const save = (): void => {
     emit('save');
 };
 
@@ -372,16 +351,17 @@ watch(
 
         <div class="space-y-4">
             <h2 class="text-lg font-semibold">Preview</h2>
-
+            <!-- eslint-disable @typescript-eslint/no-explicit-any -->
             <InvoiceRenderer
-                v-if="layout_snapshot && settings"
-                :data="{ ...model, documentType: 'invoice' }"
-                :layout="layout_snapshot"
+                v-if="layout && settings"
+                :data="{ ...model, documentType: 'invoice' as const }"
+                :layout="layout"
                 :settings="settings"
                 :preview-mode="true"
                 :edit-mode="false"
                 :is-internal-view="true"
             />
+            <!-- eslint-enable @typescript-eslint/no-explicit-any -->
         </div>
     </div>
 </template>

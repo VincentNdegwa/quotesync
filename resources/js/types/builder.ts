@@ -775,7 +775,7 @@ export const ensureTemplateLayout = (
     });
 
     return {
-        version: layout.version ?? 1,
+        version: layout.version || 1,
         theme: { ...defaultTheme(), ...layout.theme },
         blocks: normalizedBlocks.map((block) => ({
             ...block,

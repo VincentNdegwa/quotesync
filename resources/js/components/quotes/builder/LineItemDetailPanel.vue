@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { ArrowLeft, Trash2, ChevronsUpDownIcon } from 'lucide-vue-next';
+import { computed } from 'vue';
 import CatalogSearchPopover from '@/components/quotes/builder/CatalogSearchPopover.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useFormat } from '@/composables/useFormat';
 import type {
@@ -38,7 +37,7 @@ const emit = defineEmits<{
     (e: 'remove'): void;
     (
         e: 'update-field',
-        payload: { field: keyof QuoteBuilderLineItem; value: any },
+        payload: { field: keyof QuoteBuilderLineItem; value: unknown },
     ): void;
     (e: 'select-catalog-item', catalogItem: BuilderCatalogItem): void;
     (e: 'select-unit', unitId: number | null): void;
@@ -49,7 +48,11 @@ const emit = defineEmits<{
     ): void;
 }>();
 
-const { formatCurrency: fmt } = useFormat(props.currency ?? 'USD');
+const {
+    formatCurrency: fmt,
+}: { formatCurrency: (value: number, currency?: string) => string } = useFormat(
+    props.currency,
+);
 
 const hasLineItem = computed(() => Boolean(props.lineItem));
 

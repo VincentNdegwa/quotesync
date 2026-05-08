@@ -17,7 +17,7 @@ export const countryOptions: CountryOption[] = Object.entries(countries)
     .map(([code, country]) => ({
         code,
         label: country.name,
-        currency: country.currency?.[0] ?? 'USD',
+        currency: country.currency[0] || 'USD',
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 

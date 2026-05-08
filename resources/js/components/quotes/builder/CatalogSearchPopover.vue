@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { ChevronsUpDownIcon } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-import { ChevronsUpDownIcon, CheckIcon, Plus } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import {
     Command,
@@ -31,7 +31,7 @@ const emit = defineEmits<{
 const open = ref(false);
 const query = ref('');
 
-const recentItems = computed(() => {
+const _recentItems = computed(() => {
     if (!props.recentItemIds?.length) {
         return [];
     }

@@ -13,7 +13,7 @@ import type {
     WinProbabilityConfidenceEnum,
 } from '@/types/quotes';
 
-export function useEnums() {
+export function useEnums(): Record<string, unknown> {
     const page = usePage();
     const enums = page.props.enums as GlobalEnums;
 
@@ -54,7 +54,7 @@ export function useEnums() {
     const getWinProbabilityConfidence = (
         value: string,
     ): WinProbabilityConfidenceEnum | undefined => {
-        return enums.winProbabilityConfidence?.find(
+        return enums.winProbabilityConfidence.find(
             (confidence) => confidence.value === value,
         );
     };
@@ -62,7 +62,7 @@ export function useEnums() {
     const getSignalDirection = (
         value: string,
     ): SignalDirectionEnum | undefined => {
-        return enums.signalDirection?.find(
+        return enums.signalDirection.find(
             (direction) => direction.value === value,
         );
     };
@@ -70,10 +70,10 @@ export function useEnums() {
     const getCreditNoteStatus = (
         value: string,
     ): CreditNoteStatusEnum | undefined => {
-        return enums.creditNoteStatus?.find((status) => status.value === value);
+        return enums.creditNoteStatus.find((status) => status.value === value);
     };
 
-    const getFollowUpChannelIcon = (channel: string) => {
+    const getFollowUpChannelIcon = (channel: string): unknown => {
         return (
             { email: Mail, whatsapp: MessageSquare, sms: Phone }[channel] ??
             Mail

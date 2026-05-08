@@ -21,7 +21,7 @@ const sortableHeader = (
         toggleSorting: (desc?: boolean) => void;
     },
     align: 'left' | 'right' = 'left',
-) =>
+): VNode =>
     h(
         Button,
         {
@@ -43,14 +43,17 @@ export const getInvoiceColumns = (
     const defaultCurrency =
         (page.props.workspace_currency as string) || undefined;
 
-    const formatCurrency = (val: number | string, currency?: string | null) => {
+    const formatCurrency = (
+        val: number | string,
+        currency?: string | null,
+    ): string => {
         return useFormat(currency || defaultCurrency).formatCurrency(
             val,
             currency || defaultCurrency,
         );
     };
 
-    const formatDate = (val: string | null) => {
+    const formatDate = (val: string | null): string => {
         return useFormat().formatDate(val);
     };
 
@@ -74,7 +77,7 @@ export const getInvoiceColumns = (
         {
             accessorKey: 'status',
             header: 'Status',
-            cell: ({ row }) => {
+            cell: ({ row }): VNode => {
                 const status = getInvoiceStatus(row.original.status);
 
                 return h(

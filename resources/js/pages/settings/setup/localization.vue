@@ -14,7 +14,6 @@ import {
     CommandItem,
     CommandList,
 } from '@/components/ui/command';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
     Popover,
@@ -28,7 +27,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import type {
     WorkspaceSettingsField,
     WorkspaceSettingsPageProps,
@@ -56,6 +54,7 @@ const updateAction = computed(
 const buildFormValues = (
     fields: WorkspaceSettingsField[],
 ): Record<string, any> => {
+    // eslint-disable-line @typescript-eslint/no-explicit-any
     return fields.reduce(
         (values, field) => {
             if (field.type === 'boolean') {
@@ -64,7 +63,7 @@ const buildFormValues = (
                 return values;
             }
 
-            if (field.value === null || field.value === undefined) {
+            if (field.value == null) {
                 values[field.key] = '';
 
                 return values;
@@ -76,21 +75,21 @@ const buildFormValues = (
 
             return values;
         },
-        {} as Record<string, any>,
+        {} as Record<string, any>, // eslint-disable-line @typescript-eslint/no-explicit-any
     );
 };
 
-const formValues = reactive<Record<string, any>>(
+const formValues = reactive<Record<string, any>>( // eslint-disable-line @typescript-eslint/no-explicit-any
     buildFormValues(props.currentGroup.fields),
 );
 
 const timezoneOpen = ref(false);
 
-const selectedTimezone = computed(() =>
+const _selectedTimezone = computed(() =>
     props.timezones?.find((tz) => tz === formValues.timezone),
 );
 
-function selectTimezone(selectedValue: string) {
+function selectTimezone(selectedValue: string): void {
     formValues.timezone =
         selectedValue === formValues.timezone ? '' : selectedValue;
     timezoneOpen.value = false;

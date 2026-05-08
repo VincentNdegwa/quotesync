@@ -4,7 +4,6 @@ import {
     CheckCircle2,
     Clock,
     Circle,
-    XCircle,
     Plus,
     Trash2,
     Calendar,
@@ -12,7 +11,6 @@ import {
 } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 import { toast } from 'vue-sonner';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -79,7 +77,7 @@ const formData = ref({
     task_status_id: null as number | null,
 });
 
-const statusColors = computed(() => {
+const _statusColors = computed(() => {
     const colors: Record<string, string> = {};
     props.taskStatuses?.forEach((status) => {
         colors[status.slug] = status.color;
@@ -88,14 +86,14 @@ const statusColors = computed(() => {
     return colors;
 });
 
-const statusIcons = {
+const statusIcons: Record<string, typeof Clock> = {
     todo: Clock,
     in_progress: Circle,
     in_review: Circle,
     done: CheckCircle2,
 };
 
-const openCreateDialog = () => {
+const openCreateDialog = (): void => {
     formData.value = {
         title: '',
         description: '',
@@ -106,7 +104,7 @@ const openCreateDialog = () => {
     showCreateDialog.value = true;
 };
 
-const openEditDialog = (task: (typeof props.tasks)[0]) => {
+const openEditDialog = (task: (typeof props.tasks)[0]): void => {
     editingTask.value = task;
     formData.value = {
         title: task.title,
@@ -118,7 +116,7 @@ const openEditDialog = (task: (typeof props.tasks)[0]) => {
     showEditDialog.value = true;
 };
 
-const submitTask = async () => {
+const submitTask = async (): Promise<void> => {
     try {
         if (editingTask.value) {
             await router.put(`/tasks/${editingTask.value.id}`, formData.value);
@@ -137,27 +135,30 @@ const submitTask = async () => {
         showCreateDialog.value = false;
         showEditDialog.value = false;
         editingTask.value = null;
-    } catch (error) {
+    } catch {
         toast.error('Failed to save task');
     }
 };
 
-const updateStatus = async (task: (typeof props.tasks)[0], status: string) => {
+const _updateStatus = async (
+    task: (typeof props.tasks)[0],
+    status: string,
+): Promise<void> => {
     try {
         await router.put(`/quotes/tasks/${task.id}`, { status });
         toast.success('Task status updated');
         emit('taskUpdated');
-    } catch (error) {
+    } catch {
         toast.error('Failed to update task status');
     }
 };
 
-const deleteTask = async (taskId: number) => {
+const deleteTask = async (taskId: number): Promise<void> => {
     try {
         await router.delete(`/tasks/${taskId}`);
         toast.success('Task deleted successfully');
         emit('taskDeleted');
-    } catch (error) {
+    } catch {
         toast.error('Failed to delete task');
     }
 };

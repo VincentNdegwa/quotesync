@@ -53,7 +53,7 @@ const cancelledFollowUps = computed(() =>
     props.followUps.filter((f) => f.status === 'cancelled'),
 );
 
-const getStatusBadge = (status: string) => {
+const getStatusBadge = (status: string): { variant: string; label: string } => {
     switch (status) {
         case 'pending':
             return { variant: 'secondary' as const, label: 'Scheduled' };
@@ -66,17 +66,17 @@ const getStatusBadge = (status: string) => {
     }
 };
 
-const handleCancel = (id: number) => {
+const handleCancel = (id: number): void => {
     selectedFollowUpId.value = id;
     cancelDialogOpen.value = true;
 };
 
-const handleSendNow = (id: number) => {
+const handleSendNow = (id: number): void => {
     selectedFollowUpId.value = id;
     sendNowDialogOpen.value = true;
 };
 
-const confirmCancel = () => {
+const confirmCancel = (): void => {
     if (!selectedFollowUpId.value) {
         return;
     }
@@ -96,7 +96,7 @@ const confirmCancel = () => {
     );
 };
 
-const confirmSendNow = () => {
+const confirmSendNow = (): void => {
     if (!selectedFollowUpId.value) {
         return;
     }

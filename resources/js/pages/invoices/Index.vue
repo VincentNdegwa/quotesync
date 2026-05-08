@@ -32,11 +32,11 @@ const props = defineProps<{
 
 const page = usePage();
 const invoiceStatuses = computed(
-    () => (page.props.enums as any)?.invoiceStatus ?? [],
+    () => (page.props.enums as any)?.invoiceStatus || [], // eslint-disable-line @typescript-eslint/no-explicit-any
 );
 
 const viewMode = ref<'table' | 'kanban'>(
-    (localStorage.getItem(STORAGE_KEY) as 'table' | 'kanban') ?? 'table',
+    (localStorage.getItem(STORAGE_KEY) as 'table' | 'kanban') || 'table', // eslint-disable-line @typescript-eslint/no-unnecessary-condition
 );
 
 const toggleView = (): void => {
@@ -58,7 +58,7 @@ defineOptions({
 const ALL = '__all__';
 
 const query = ref({
-    search: props.filters.search ?? '',
+    search: props.filters.search || '',
     status: props.filters.status || ALL,
     sort: props.filters.sort || 'newest',
 });

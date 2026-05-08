@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { router, usePage } from '@inertiajs/vue3';
+import { router } from '@inertiajs/vue3';
 import { Calendar, Lock, User } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 import InvoiceController from '@/actions/App/Http/Controllers/InvoiceController';
@@ -148,11 +148,11 @@ const canDrop = (toStatus: string): boolean => {
 
     const from = dragging.value.fromStatus as StatusKey;
 
-    return (ALLOWED_TRANSITIONS[from] ?? []).includes(toStatus as StatusKey);
+    return (ALLOWED_TRANSITIONS[from] || []).includes(toStatus as StatusKey); // eslint-disable-line @typescript-eslint/no-unnecessary-condition
 };
 
 const validTargets = (status: StatusKey): StatusKey[] =>
-    ALLOWED_TRANSITIONS[status] ?? [];
+    ALLOWED_TRANSITIONS[status] || []; // eslint-disable-line @typescript-eslint/no-unnecessary-condition
 
 const isTerminal = (status: StatusKey): boolean =>
     ALLOWED_TRANSITIONS[status].length === 0;

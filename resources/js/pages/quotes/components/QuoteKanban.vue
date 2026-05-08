@@ -182,11 +182,11 @@ const canDrop = (toStatus: string): boolean => {
 
     const from = dragging.value.fromStatus as StatusKey;
 
-    return (ALLOWED_TRANSITIONS[from] ?? []).includes(toStatus as StatusKey);
+    return ALLOWED_TRANSITIONS[from].includes(toStatus as StatusKey);
 };
 
 const validTargets = (status: StatusKey): StatusKey[] =>
-    ALLOWED_TRANSITIONS[status] ?? [];
+    ALLOWED_TRANSITIONS[status];
 
 const isTerminal = (status: StatusKey): boolean =>
     ALLOWED_TRANSITIONS[status].length === 0;
@@ -383,7 +383,7 @@ const formatDate = (date: string | null): string => {
     return useFormat().formatDate(date);
 };
 
-const getWinProbabilityBgColor = (probability: number) => {
+const getWinProbabilityBgColor = (probability: number): string => {
     if (probability >= 70) {
         return 'bg-green-500';
     }

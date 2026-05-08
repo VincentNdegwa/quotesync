@@ -86,7 +86,7 @@ const emit = defineEmits<{
             sectionIndex: number;
             lineItemIndex: number;
             field: string;
-            value: any;
+            value: any; // eslint-disable-line @typescript-eslint/no-explicit-any
         },
     ): void;
     (

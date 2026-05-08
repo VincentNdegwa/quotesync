@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
@@ -25,20 +25,16 @@ const props = defineProps<{
     quotes: Paginator<QuoteListRecord>;
 }>();
 
-const page = usePage();
-const quoteStatuses = computed(
-    () =>
-        [
-            { value: 'sent', label: 'Sent' },
-            { value: 'accepted', label: 'Accepted' },
-            { value: 'rejected', label: 'Rejected' },
-        ] as any,
-);
+const quoteStatuses = computed<QuoteStatusEnum[]>(() => [
+    { value: 'sent', label: 'Sent' },
+    { value: 'accepted', label: 'Accepted' },
+    { value: 'rejected', label: 'Rejected' },
+]);
 
 const ALL = '__all__';
 
 const query = ref({
-    search: props.filters.search ?? '',
+    search: props.filters.search || '',
     status: props.filters.status || ALL,
     sort: props.filters.sort || 'newest',
 });

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
-import { CheckCircle2, XCircle, AlertCircle } from 'lucide-vue-next';
+import { CheckCircle2, AlertCircle } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref, provide } from 'vue';
 import { toast } from 'vue-sonner';
 import PublicQuoteController from '@/actions/App/Http/Controllers/PublicQuoteController';
@@ -58,7 +58,7 @@ const declineForm = useForm({
     decline_reason: '',
 });
 
-function handleApprove() {
+function handleApprove(): void {
     approveForm.post(PublicQuoteController.accept(props.quote_uuid).url, {
         onSuccess: () => {
             showApproveModal.value = false;
@@ -72,7 +72,7 @@ function handleApprove() {
     });
 }
 
-function handleDecline() {
+function handleDecline(): void {
     declineForm.post(PublicQuoteController.decline(props.quote_uuid).url, {
         onSuccess: () => {
             showDeclineModal.value = false;
@@ -83,7 +83,7 @@ function handleDecline() {
 
 onMounted(() => {
     if (tracking) {
-        tracking.start();
+        (tracking as { start: () => void }).start();
 
         scrollHandler = (): void => {
             const scrollTop = window.scrollY;
@@ -91,7 +91,10 @@ onMounted(() => {
                 document.documentElement.scrollHeight - window.innerHeight;
             const scrollPercent =
                 docHeight > 0 ? Math.round((scrollTop / docHeight) * 100) : 0;
-            tracking.trackScrollDepth(scrollPercent);
+
+            (
+                tracking as { trackScrollDepth: (percent: number) => void }
+            ).trackScrollDepth(scrollPercent);
         };
 
         window.addEventListener('scroll', scrollHandler, { passive: true });
@@ -104,7 +107,7 @@ onUnmounted(() => {
     }
 
     if (tracking) {
-        tracking.stop();
+        (tracking as { stop: () => void }).stop();
     }
 });
 </script>

@@ -1,4 +1,4 @@
-import type { BrandingData, QuoteData, TemplateLayout } from './builder';
+import type { BrandingData, TemplateLayout } from './builder';
 import type { QuoteWinProbabilityModel } from './models';
 
 export type TaxSnapshot = {
@@ -317,7 +317,7 @@ export type InvoiceBuilderState = {
     discount_amount: number;
     tax_amount: number;
     total: number;
-    layout_snapshot: any | null;
+    layout_snapshot: unknown | null;
     line_items: InvoiceBuilderLineItem[];
 };
 

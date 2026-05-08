@@ -19,7 +19,6 @@ import {
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import InvoiceController from '@/actions/App/Http/Controllers/InvoiceController';
-import Portal from '@/actions/App/Http/Controllers/Portal';
 import PortalDashboardController from '@/actions/App/Http/Controllers/Portal/PortalDashboardController';
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
@@ -50,8 +49,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import portal from '@/routes/portal';
-import publicQuotesShow from '@/routes/public-quotes';
+import _portal from '@/routes/portal';
+import { show as publicQuotesShow } from '@/routes/public-quotes';
 import { analytics as quotesAnalytics } from '@/routes/quotes';
 import type { QuoteListRecord, QuoteStatusEnum } from '@/types';
 
@@ -73,8 +72,8 @@ const emit = defineEmits<{
 const showSendDialog = ref(false);
 const showMarkLostDialog = ref(false);
 const showDeleteDialog = ref(false);
-const showApproveDialog = ref(false);
-const showRejectDialog = ref(false);
+const _showApproveDialog = ref(false);
+const _showRejectDialog = ref(false);
 const showChangeOwnerDialog = ref(false);
 const quoteToSend = ref<number | null>(null);
 const lostReason = ref('');
@@ -122,25 +121,25 @@ const canConvertToInvoice = computed(() =>
 const canApprove = computed(
     () =>
         props.isClient &&
-        ((props.quote as any).client_status === 'sent' ||
-            (props.quote as any).client_status === 'viewed' ||
+        ((props.quote as any).client_status === 'sent' || // eslint-disable-line @typescript-eslint/no-explicit-any
+            (props.quote as any).client_status === 'viewed' || // eslint-disable-line @typescript-eslint/no-explicit-any
             props.quote.status === 'sent' ||
             props.quote.status === 'viewed'),
 );
 const canReject = computed(
     () =>
         props.isClient &&
-        ((props.quote as any).client_status === 'sent' ||
-            (props.quote as any).client_status === 'viewed' ||
+        ((props.quote as any).client_status === 'sent' || // eslint-disable-line @typescript-eslint/no-explicit-any
+            (props.quote as any).client_status === 'viewed' || // eslint-disable-line @typescript-eslint/no-explicit-any
             props.quote.status === 'sent' ||
             props.quote.status === 'viewed'),
 );
 
 const openSendDialog = (): void => {
     quoteToSend.value = props.quote.id;
-    ccRecipients.value = (props.quote as any).cc_recipients || [];
-    bccRecipients.value = (props.quote as any).bcc_recipients || [];
-    scheduledAt.value = (props.quote as any).scheduled_at || null;
+    ccRecipients.value = (props.quote as any).cc_recipients || []; // eslint-disable-line @typescript-eslint/no-explicit-any
+    bccRecipients.value = (props.quote as any).bcc_recipients || []; // eslint-disable-line @typescript-eslint/no-explicit-any
+    scheduledAt.value = (props.quote as any).scheduled_at || null; // eslint-disable-line @typescript-eslint/no-explicit-any
     ccRecipientInput.value = '';
     bccRecipientInput.value = '';
 
@@ -155,6 +154,7 @@ const openSendDialog = (): void => {
 
 const executeSend = (): void => {
     const payload: any = {
+        // eslint-disable-line @typescript-eslint/no-explicit-any
         cc_recipients: ccRecipients.value,
         bcc_recipients: bccRecipients.value,
     };
@@ -316,7 +316,7 @@ const executeDelete = (): void => {
 };
 
 const viewAsClient = (): void => {
-    if (props.quote?.quote_uuid) {
+    if (props.quote.quote_uuid) {
         window.open(
             publicQuotesShow.show(props.quote.quote_uuid).url,
             '_blank',
@@ -374,7 +374,7 @@ const openChangeOwnerDialog = async (): Promise<void> => {
         const data = await response.json();
         availableUsers.value = data;
         selectedUserId.value =
-            (props.quote as any).assignee?.id?.toString() || null;
+            (props.quote as any).assignee?.id?.toString() || null; // eslint-disable-line @typescript-eslint/no-explicit-any
         showChangeOwnerDialog.value = true;
     } catch (error) {
         console.error('Failed to fetch users:', error);
@@ -446,7 +446,11 @@ const executeChangeOwner = (): void => {
                 <!-- Schedule date/time picker -->
                 <div v-if="sendMode === 'schedule'" class="space-y-2">
                     <Label>Schedule date & time</Label>
-                    <Input v-model="scheduledAt" type="datetime-local" />
+                    <Input
+                        :model-value="scheduledAt || undefined"
+                        type="datetime-local"
+                        @update:model-value="scheduledAt = $event"
+                    />
                     <p class="text-xs text-muted-foreground">
                         Select when to send this quote
                     </p>

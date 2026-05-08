@@ -80,7 +80,7 @@ defineOptions({
 });
 
 const query = useForm({
-    search: props.filters.search ?? '',
+    search: props.filters.search || '',
     country: props.filters.country ? props.filters.country : ALL_OPTION,
     currency: props.filters.currency ? props.filters.currency : ALL_OPTION,
     tag: props.filters.tag ? props.filters.tag : ALL_OPTION,
@@ -147,7 +147,7 @@ const openCreate = (): void => {
 const openEdit = (client: ClientRecord): void => {
     editingClient.value = client;
     form.defaults({
-        company_name: client.company_name ?? '',
+        company_name: client.company_name || '',
         contact_name: client.contact_name ?? '',
         email: client.email ?? '',
         phone: client.phone ?? '',

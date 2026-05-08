@@ -42,14 +42,14 @@ type TaskColumnOptions = {
     onDelete: (taskId: number) => void;
 };
 
-const sortableHeader = (
+export const sortableHeader = (
     label: string,
     column: {
         getIsSorted: () => false | 'asc' | 'desc';
         toggleSorting: (desc?: boolean) => void;
     },
     align: 'left' | 'right' = 'left',
-) =>
+): VNode =>
     h(
         Button,
         {
@@ -76,7 +76,7 @@ export const getTaskColumns = (
         {
             accessorKey: 'taskable',
             header: 'Related to',
-            cell: ({ row }) => {
+            cell: ({ row }): VNode => {
                 const taskable = row.original.taskable;
 
                 if (!taskable) {
@@ -100,7 +100,7 @@ export const getTaskColumns = (
         {
             accessorKey: 'assigned_to',
             header: 'Assigned to',
-            cell: ({ row }) => {
+            cell: ({ row }): VNode => {
                 const assignedTo = row.original.assigned_to;
 
                 if (!assignedTo) {
@@ -125,7 +125,7 @@ export const getTaskColumns = (
         {
             accessorKey: 'status',
             header: 'Status',
-            cell: ({ row }) => {
+            cell: ({ row }): VNode => {
                 const status = row.original.status;
 
                 if (!status) {

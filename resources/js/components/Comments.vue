@@ -19,10 +19,10 @@ const emit = defineEmits<{
 }>();
 
 const newComment = ref('');
-const mentionQuery = ref('');
-const mentionedUsers = ref<number[]>([]);
+const _mentionQuery = ref('');
+const _mentionedUsers = ref<number[]>([]);
 
-const submitComment = async () => {
+const submitComment = async (): Promise<void> => {
     if (!newComment.value.trim()) {
         return;
     }
@@ -56,7 +56,7 @@ const submitComment = async () => {
     }
 };
 
-const deleteComment = async (commentId: number) => {
+const deleteComment = async (commentId: number): Promise<void> => {
     if (!confirm('Are you sure you want to delete this comment?')) {
         return;
     }
@@ -80,7 +80,7 @@ const deleteComment = async (commentId: number) => {
     }
 };
 
-const getInitials = (name: string) => {
+const getInitials = (name: string): string => {
     return name
         .split(' ')
         .map((n) => n[0])
@@ -89,7 +89,7 @@ const getInitials = (name: string) => {
         .slice(0, 2);
 };
 
-const formatDate = (date: string | null) => {
+const formatDate = (date: string | null): string => {
     if (!date) {
         return '—';
     }
@@ -103,7 +103,7 @@ const formatDate = (date: string | null) => {
     });
 };
 
-const handleMention = (e: KeyboardEvent) => {
+const handleMention = (e: KeyboardEvent): void => {
     if (e.key === '@') {
         // Trigger mention picker
     }

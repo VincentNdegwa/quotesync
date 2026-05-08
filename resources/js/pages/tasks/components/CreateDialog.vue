@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useForm, router } from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3';
 import { Check, ChevronsUpDown } from 'lucide-vue-next';
 import { ref, watch, computed } from 'vue';
 import InputError from '@/components/InputError.vue';
@@ -41,7 +41,7 @@ const open = defineModel<boolean>('open', {
     required: true,
 });
 
-const props = defineProps<{
+const _props = defineProps<{
     users: Array<{ id: number; name: string; email: string }>;
 }>();
 
@@ -92,7 +92,7 @@ watch(
     { immediate: true },
 );
 
-watch(entitySearch, (search: string) => {
+watch(entitySearch, (_search: string) => {
     if (searchTimeout) {
         clearTimeout(searchTimeout);
     }
@@ -102,7 +102,7 @@ watch(entitySearch, (search: string) => {
     }, 300);
 });
 
-async function fetchEntities() {
+async function fetchEntities(): Promise<void> {
     if (!form.taskable_type) {
         return;
     }
@@ -123,6 +123,7 @@ async function fetchEntities() {
 
         if (data.data) {
             availableEntities.value = data.data.map((item: any) => ({
+                // eslint-disable-line @typescript-eslint/no-explicit-any
                 id: item.id,
                 title: item.title || item.invoice_number || `#${item.id}`,
                 number: item.quote_number || item.invoice_number,
