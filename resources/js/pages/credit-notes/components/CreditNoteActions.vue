@@ -51,6 +51,7 @@ const creditNoteStatuses = computed(
 
 const showDeleteDialog = ref(false);
 const showIssueDialog = ref(false);
+const showApplyDialog = ref(false);
 const showVoidDialog = ref(false);
 const voidReason = ref('');
 
@@ -116,12 +117,17 @@ const executeVoid = (): void => {
 };
 
 const handleApply = (): void => {
+    showApplyDialog.value = true;
+};
+
+const executeApply = (): void => {
     router.post(
         `/credit-notes/${props.creditNote.id}/apply`,
         {},
         {
             preserveScroll: true,
             onSuccess: () => {
+                showApplyDialog.value = false;
                 emit('success');
             },
         },
@@ -145,6 +151,14 @@ const handleApply = (): void => {
         description="Are you sure you want to issue this credit note? This will send it to the client."
         confirm-text="Issue"
         @confirm="executeIssue"
+    />
+
+    <ConfirmDialog
+        v-model:open="showApplyDialog"
+        title="Apply credit note"
+        description="Are you sure you want to apply this credit note to the invoice? This will credit the invoice balance."
+        confirm-text="Apply"
+        @confirm="executeApply"
     />
 
     <Dialog v-model:open="showVoidDialog">

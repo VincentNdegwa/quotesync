@@ -91,4 +91,9 @@ enum CreditNoteStatus: string
     {
         return $this === self::Draft;
     }
+
+    public static function creditedStatuses(): array
+    {
+        return [self::Applied->value];
+    }
 }

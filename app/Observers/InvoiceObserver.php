@@ -17,7 +17,7 @@ class InvoiceObserver
         // Recompute amount_credited whenever invoice changes
         $invoice->updateQuietly([
             'amount_credited' => $invoice->creditNotes()
-                ->whereIn('status', [CreditNoteStatus::Issued->value, CreditNoteStatus::Applied->value])
+                ->whereIn('status', CreditNoteStatus::creditedStatuses())
                 ->sum('total'),
         ]);
     }

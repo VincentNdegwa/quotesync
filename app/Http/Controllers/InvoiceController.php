@@ -470,7 +470,7 @@ class InvoiceController extends Controller
             ]);
 
             $totalPaid = $invoice->payments()->sum('amount');
-            $totalCredited = $invoice->creditNotes()->whereIn('status', [CreditNoteStatus::Issued->value, CreditNoteStatus::Applied->value])->sum('total');
+            $totalCredited = $invoice->creditNotes()->whereIn('status', CreditNoteStatus::creditedStatuses())->sum('total');
             $invoice->update([
                 'paid_amount' => $totalPaid,
                 'amount_credited' => $totalCredited,
@@ -526,7 +526,7 @@ class InvoiceController extends Controller
             // Recalculate invoice totals
             $invoice = $payment->invoice;
             $totalPaid = $invoice->payments()->where('is_refund', false)->sum('amount');
-            $totalCredited = $invoice->creditNotes()->whereIn('status', [CreditNoteStatus::Issued->value, CreditNoteStatus::Applied->value])->sum('total');
+            $totalCredited = $invoice->creditNotes()->whereIn('status', CreditNoteStatus::creditedStatuses())->sum('total');
             $invoice->update([
                 'paid_amount' => $totalPaid,
                 'amount_credited' => $totalCredited,
@@ -584,7 +584,7 @@ class InvoiceController extends Controller
         $invoice->paid_amount = $invoice->paid_amount > 0 ? $invoice->paid_amount / ($invoice->fx_rate ?? 1) : 0;
 
         $invoice->amount_credited = $invoice->creditNotes()
-            ->whereIn('status', [CreditNoteStatus::Issued->value, CreditNoteStatus::Applied->value])
+            ->whereIn('status', CreditNoteStatus::creditedStatuses())
             ->sum('base_total');
 
         return $invoice;

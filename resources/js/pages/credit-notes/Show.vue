@@ -26,8 +26,7 @@ const breadcrumbs = computed(() => [
     {
         title: props.creditNote.credit_note_number,
         href: `/credit-notes/${props.creditNote.id}`,
-    },
-    { title: 'View', href: '#' },
+    }
 ]);
 
 watchEffect(() => setLayoutProps({ breadcrumbs: breadcrumbs.value }));

@@ -166,6 +166,29 @@ class CreditNoteController extends Controller
         }
     }
 
+    public function apply(Request $request, CreditNote $creditNote): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+        abort_unless($workspace instanceof Workspace && $creditNote->workspace_id === $workspace->id, 404);
+
+        if ($creditNote->status !== CreditNoteStatus::Issued) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Only issued credit notes can be applied.')]);
+            return back();
+        }
+
+        try {
+            $this->creditNoteService->apply($creditNote);
+
+            Inertia::flash('toast', ['type' => 'success', 'message' => __('Credit note applied.')]);
+
+            return back();
+        } catch (\Exception $e) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage()]);
+
+            return back();
+        }
+    }
+
     public function void(Request $request, CreditNote $creditNote): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;

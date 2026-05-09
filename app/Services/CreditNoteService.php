@@ -242,6 +242,16 @@ class CreditNoteService
                 'status' => 'issued',
                 'issued_at' => now(),
             ]);
+        });
+    }
+
+    public function apply(CreditNote $creditNote): void
+    {
+        DB::transaction(function () use ($creditNote) {
+            $creditNote->update([
+                'status' => 'applied',
+                'applied_at' => now(),
+            ]);
 
             if ($creditNote->invoice) {
                 $invoice = $creditNote->invoice;
@@ -255,7 +265,7 @@ class CreditNoteService
     public function void(CreditNote $creditNote, string $voidReason): void
     {
         DB::transaction(function () use ($creditNote, $voidReason) {
-            $wasIssued = $creditNote->status === 'issued' && $creditNote->issued_at !== null;
+            $wasApplied = $creditNote->status === 'applied' && $creditNote->applied_at !== null;
 
             $creditNote->update([
                 'status' => 'voided',
@@ -263,7 +273,7 @@ class CreditNoteService
                 'void_reason' => $voidReason,
             ]);
 
-            if ($creditNote->invoice && $wasIssued) {
+            if ($creditNote->invoice && $wasApplied) {
                 $invoice = $creditNote->invoice;
                 $invoice->updateQuietly([
                     'amount_credited' => max(0, $invoice->amount_credited - $creditNote->total),

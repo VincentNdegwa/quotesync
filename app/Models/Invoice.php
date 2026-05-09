@@ -141,7 +141,7 @@ class Invoice extends Model
     public function getBalanceDueAttribute(): float
     {
         $baseCredited = $this->creditNotes()
-            ->whereIn('status', [CreditNoteStatus::Issued->value, CreditNoteStatus::Applied->value])
+            ->whereIn('status', CreditNoteStatus::creditedStatuses())
             ->sum('base_total');
 
         return max(0, (float) $this->base_total - (float) $this->paid_amount - $baseCredited);
