@@ -14,7 +14,7 @@ import {
 import type { WorkspaceSettings, TemplateLayout } from '@/types';
 
 const props = defineProps<{
-    quote: any;  
+    quote: any;
     layout: TemplateLayout | null;
     settings: WorkspaceSettings;
     clientState: 'open' | 'accepted' | 'closed';

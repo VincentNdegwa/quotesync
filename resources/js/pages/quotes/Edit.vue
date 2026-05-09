@@ -55,7 +55,6 @@ const save = (updatedState?: QuoteBuilderState): void => {
     if (updatedState) {
         Object.keys(updatedState).forEach((key) => {
             if (key in form) {
-                 
                 (form as any)[key] =
                     updatedState[key as keyof QuoteBuilderState];
             }

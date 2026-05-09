@@ -25,6 +25,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class InvoiceController extends Controller
 {
@@ -339,6 +340,7 @@ class InvoiceController extends Controller
         try {
             $workspace = $request->user()?->currentWorkspace;
             abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+
             abort_unless($quote->status === QuoteStatus::Won, 403);
 
             $invoice = $invoiceService->convertFromQuote($quote, $request->user()?->id);
@@ -346,12 +348,12 @@ class InvoiceController extends Controller
             Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice created from quote successfully.')]);
 
             return redirect()->route('invoices.edit', $invoice);
-        } catch (\Exception $e) {
-            Log::error('Error converting quote to invoice: ' . $e->getMessage(), [
-                'exception' => $e,
-                'quote_id' => $quote->id,
-                'request' => $request->all(),
-            ]);
+        } catch (\Throwable $e) {
+            if ($e instanceof HttpExceptionInterface) {
+                throw $e;
+            }
+
+        
             Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to convert quote to invoice: ' . $e->getMessage())]);
             return back()->withInput();
         }

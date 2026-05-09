@@ -41,7 +41,6 @@ const updateAction = computed(
 const buildFormValues = (
     fields: WorkspaceSettingsField[],
 ): Record<string, any> => {
-     
     return fields.reduce(
         (values, field) => {
             if (field.type === 'array') {

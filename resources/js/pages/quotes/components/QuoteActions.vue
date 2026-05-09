@@ -132,10 +132,7 @@ const taskEntityContext = computed(() => ({
     type: 'quote' as const,
     id: props.quote.id,
     title: props.quote.title,
-    number:
-        props.quote.number ||
-        (props.quote as any).quote_number ||
-        null,
+    number: props.quote.number || (props.quote as any).quote_number || null,
     locked: true,
 }));
 
@@ -143,25 +140,25 @@ const taskEntityContext = computed(() => ({
 const canApprove = computed(
     () =>
         props.isClient &&
-        ((props.quote as any).client_status === 'sent' ||  
-            (props.quote as any).client_status === 'viewed' ||  
+        ((props.quote as any).client_status === 'sent' ||
+            (props.quote as any).client_status === 'viewed' ||
             props.quote.status === 'sent' ||
             props.quote.status === 'viewed'),
 );
 const canReject = computed(
     () =>
         props.isClient &&
-        ((props.quote as any).client_status === 'sent' ||  
-            (props.quote as any).client_status === 'viewed' ||  
+        ((props.quote as any).client_status === 'sent' ||
+            (props.quote as any).client_status === 'viewed' ||
             props.quote.status === 'sent' ||
             props.quote.status === 'viewed'),
 );
 
 const openSendDialog = (): void => {
     quoteToSend.value = props.quote.id;
-    ccRecipients.value = (props.quote as any).cc_recipients || [];  
-    bccRecipients.value = (props.quote as any).bcc_recipients || [];  
-    scheduledAt.value = (props.quote as any).scheduled_at || null;  
+    ccRecipients.value = (props.quote as any).cc_recipients || [];
+    bccRecipients.value = (props.quote as any).bcc_recipients || [];
+    scheduledAt.value = (props.quote as any).scheduled_at || null;
     ccRecipientInput.value = '';
     bccRecipientInput.value = '';
 
@@ -176,7 +173,6 @@ const openSendDialog = (): void => {
 
 const executeSend = (): void => {
     const payload: any = {
-         
         cc_recipients: ccRecipients.value,
         bcc_recipients: bccRecipients.value,
     };
@@ -374,10 +370,7 @@ const executeDelete = (): void => {
 
 const viewAsClient = (): void => {
     if (props.quote.quote_uuid) {
-        window.open(
-            publicQuotesShow(props.quote.quote_uuid).url,
-            '_blank',
-        );
+        window.open(publicQuotesShow(props.quote.quote_uuid).url, '_blank');
     }
 };
 
@@ -438,7 +431,7 @@ const openChangeOwnerDialog = async (): Promise<void> => {
         const data = await response.json();
         availableUsers.value = data;
         selectedUserId.value =
-            (props.quote as any).assignee?.id?.toString() || null;  
+            (props.quote as any).assignee?.id?.toString() || null;
         showChangeOwnerDialog.value = true;
     } catch (error) {
         console.error('Failed to fetch users:', error);
@@ -1002,8 +995,7 @@ const executeChangeOwner = (): void => {
             class="gap-1.5"
             @click="reject"
         >
-            <XCircle class="h-3.5 w-3.5" />a
-            Reject
+            <XCircle class="h-3.5 w-3.5" />a Reject
         </Button>
 
         <!-- Regular user buttons (hidden for clients) -->

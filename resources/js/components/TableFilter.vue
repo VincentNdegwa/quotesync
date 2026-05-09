@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import { X, SlidersHorizontal, Search, ChevronDown, Check } from 'lucide-vue-next';
+import {
+    X,
+    SlidersHorizontal,
+    Search,
+    ChevronDown,
+    Check,
+} from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -59,17 +65,21 @@ const popoverOpen = ref(false);
 // Local draft — only committed when user closes popover
 const draft = ref<ActiveFilters>({ ...props.modelValue });
 
-watch(() => props.modelValue, (val) => {
-    draft.value = { ...val };
-}, { deep: true });
+watch(
+    () => props.modelValue,
+    (val) => {
+        draft.value = { ...val };
+    },
+    { deep: true },
+);
 
 // ─── Computed ─────────────────────────────────────────────────────────────────
 
 const activeCount = computed(() => {
     return Object.values(props.modelValue).filter((v) => {
         if (Array.isArray(v)) {
-return v.length > 0;
-}
+            return v.length > 0;
+        }
 
         return v !== '';
     }).length;
@@ -77,45 +87,51 @@ return v.length > 0;
 
 // Active filter badges for display below the search bar
 const activeBadges = computed(() => {
-    const badges: Array<{ key: string; label: string; value: string; displayValue: string }> = [];
+    const badges: Array<{
+        key: string;
+        label: string;
+        value: string;
+        displayValue: string;
+    }> = [];
 
     for (const group of props.groups) {
         const val = props.modelValue[group.key];
 
         if (!val) {
-continue;
-}
+            continue;
+        }
 
         if (Array.isArray(val)) {
             for (const v of val) {
-                const opt = group.options?.find(o => o.value === v);
+                const opt = group.options?.find((o) => o.value === v);
                 badges.push({
-                    key:          group.key,
-                    label:        group.label,
-                    value:        v,
+                    key: group.key,
+                    label: group.label,
+                    value: v,
                     displayValue: opt?.label ?? v,
                 });
             }
         } else if (val !== '') {
             if (group.type === 'date_range') {
                 const parts = val.split('|');
-                const from  = parts[0] ?? '';
-                const to    = parts[1] ?? '';
+                const from = parts[0] ?? '';
+                const to = parts[1] ?? '';
 
                 if (from || to) {
                     badges.push({
-                        key:          group.key,
-                        label:        group.label,
-                        value:        val,
-                        displayValue: from && to ? `${from} → ${to}` : from || to,
+                        key: group.key,
+                        label: group.label,
+                        value: val,
+                        displayValue:
+                            from && to ? `${from} → ${to}` : from || to,
                     });
                 }
             } else {
-                const opt = group.options?.find(o => o.value === val);
+                const opt = group.options?.find((o) => o.value === val);
                 badges.push({
-                    key:          group.key,
-                    label:        group.label,
-                    value:        val,
+                    key: group.key,
+                    label: group.label,
+                    value: val,
                     displayValue: opt?.label ?? val,
                 });
             }
@@ -127,7 +143,10 @@ continue;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const _getDraftValue = (key: string, type: FilterGroup['type']): string | string[] => {
+const _getDraftValue = (
+    key: string,
+    type: FilterGroup['type'],
+): string | string[] => {
     if (type === 'multi') {
         const v = draft.value[key];
 
@@ -137,7 +156,11 @@ const _getDraftValue = (key: string, type: FilterGroup['type']): string | string
     return draft.value[key] as string;
 };
 
-const isOptionActive = (key: string, value: string, type: FilterGroup['type']): boolean => {
+const isOptionActive = (
+    key: string,
+    value: string,
+    type: FilterGroup['type'],
+): boolean => {
     const v = draft.value[key];
 
     if (type === 'multi') {
@@ -147,13 +170,17 @@ const isOptionActive = (key: string, value: string, type: FilterGroup['type']): 
     return v === value;
 };
 
-const toggleOption = (key: string, value: string, type: FilterGroup['type']): void => {
+const toggleOption = (
+    key: string,
+    value: string,
+    type: FilterGroup['type'],
+): void => {
     if (type === 'multi') {
         const current = draft.value[key] as string[];
         draft.value = {
             ...draft.value,
             [key]: current.includes(value)
-                ? current.filter(v => v !== value)
+                ? current.filter((v) => v !== value)
                 : [...current, value],
         };
     } else {
@@ -174,10 +201,10 @@ const getDatePart = (key: string, part: 'from' | 'to'): string => {
 
 const setDatePart = (key: string, part: 'from' | 'to', value: string): void => {
     const current = draft.value[key] as string;
-    const parts   = current.split('|');
-    const from    = parts[0] ?? '';
-    const to      = parts[1] ?? '';
-    draft.value   = {
+    const parts = current.split('|');
+    const from = parts[0] ?? '';
+    const to = parts[1] ?? '';
+    draft.value = {
         ...draft.value,
         [key]: part === 'from' ? `${value}|${to}` : `${from}|${value}`,
     };
@@ -208,13 +235,17 @@ const clearAll = (): void => {
     emit('update:modelValue', cleared);
 };
 
-const removeBadge = (key: string, value: string, type: FilterGroup['type']): void => {
+const removeBadge = (
+    key: string,
+    value: string,
+    type: FilterGroup['type'],
+): void => {
     const current = props.modelValue[key];
 
     if (type === 'multi' && Array.isArray(current)) {
         emit('update:modelValue', {
             ...props.modelValue,
-            [key]: current.filter(v => v !== value),
+            [key]: current.filter((v) => v !== value),
         });
     } else {
         emit('update:modelValue', { ...props.modelValue, [key]: '' });
@@ -233,22 +264,22 @@ const onPopoverOpen = (open: boolean): void => {
 
 <template>
     <div class="space-y-2">
-
         <!-- ── Search + filter trigger ─────────────────────────────────────── -->
         <div class="flex items-center gap-2">
-
             <!-- Search -->
             <div class="relative flex-1">
-                <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search
+                    class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                />
                 <Input
                     :model-value="search"
                     :placeholder="searchPlaceholder"
-                    class="pl-9 pr-4"
+                    class="pr-4 pl-9"
                     @update:model-value="emit('update:search', String($event))"
                 />
                 <button
                     v-if="search"
-                    class="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground/60 hover:text-foreground transition-colors"
+                    class="absolute top-1/2 right-2.5 -translate-y-1/2 rounded p-0.5 text-muted-foreground/60 transition-colors hover:text-foreground"
                     type="button"
                     @click="emit('update:search', '')"
                 >
@@ -262,7 +293,9 @@ const onPopoverOpen = (open: boolean): void => {
                     <Button
                         variant="outline"
                         class="gap-2 whitespace-nowrap"
-                        :class="activeCount > 0 ? 'border-primary text-primary' : ''"
+                        :class="
+                            activeCount > 0 ? 'border-primary text-primary' : ''
+                        "
                     >
                         <SlidersHorizontal class="h-4 w-4" />
                         Filters
@@ -280,16 +313,15 @@ const onPopoverOpen = (open: boolean): void => {
                 </PopoverTrigger>
 
                 <!-- Filter popover -->
-                <PopoverContent
-                    align="end"
-                    class="w-80 p-0"
-                >
+                <PopoverContent align="end" class="w-80 p-0">
                     <!-- Popover header -->
-                    <div class="flex items-center justify-between border-b px-4 py-3">
+                    <div
+                        class="flex items-center justify-between border-b px-4 py-3"
+                    >
                         <span class="text-sm font-semibold">Filters</span>
                         <button
                             type="button"
-                            class="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                            class="text-xs text-muted-foreground transition-colors hover:text-foreground"
                             @click="clearDraft"
                         >
                             Clear all
@@ -298,40 +330,69 @@ const onPopoverOpen = (open: boolean): void => {
 
                     <!-- Filter groups -->
                     <div class="max-h-[70vh] overflow-y-auto">
-                        <div
-                            v-for="(group, gi) in groups"
-                            :key="group.key"
-                        >
+                        <div v-for="(group, gi) in groups" :key="group.key">
                             <div class="px-4 py-3">
-                                <p class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                <p
+                                    class="mb-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
+                                >
                                     {{ group.label }}
                                 </p>
 
                                 <!-- Select / Multi — pill options -->
-                                <template v-if="group.type === 'select' || group.type === 'multi'">
+                                <template
+                                    v-if="
+                                        group.type === 'select' ||
+                                        group.type === 'multi'
+                                    "
+                                >
                                     <div class="flex flex-wrap gap-1.5">
                                         <button
                                             v-for="opt in group.options"
                                             :key="opt.value"
                                             type="button"
                                             class="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all"
-                                            :class="isOptionActive(group.key, opt.value, group.type)
-                                                ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                                                : 'border-muted-foreground/20 text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground'"
-                                            @click="toggleOption(group.key, opt.value, group.type)"
+                                            :class="
+                                                isOptionActive(
+                                                    group.key,
+                                                    opt.value,
+                                                    group.type,
+                                                )
+                                                    ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                                                    : 'border-muted-foreground/20 text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground'
+                                            "
+                                            @click="
+                                                toggleOption(
+                                                    group.key,
+                                                    opt.value,
+                                                    group.type,
+                                                )
+                                            "
                                         >
                                             <!-- Status dot -->
                                             <span
                                                 v-if="opt.color"
                                                 class="h-1.5 w-1.5 rounded-full"
-                                                :class="isOptionActive(group.key, opt.value, group.type)
-                                                    ? 'bg-primary-foreground'
-                                                    : opt.color"
+                                                :class="
+                                                    isOptionActive(
+                                                        group.key,
+                                                        opt.value,
+                                                        group.type,
+                                                    )
+                                                        ? 'bg-primary-foreground'
+                                                        : opt.color
+                                                "
                                             />
 
                                             <!-- Check for multi -->
                                             <Check
-                                                v-else-if="group.type === 'multi' && isOptionActive(group.key, opt.value, group.type)"
+                                                v-else-if="
+                                                    group.type === 'multi' &&
+                                                    isOptionActive(
+                                                        group.key,
+                                                        opt.value,
+                                                        group.type,
+                                                    )
+                                                "
                                                 class="h-3 w-3"
                                             />
 
@@ -341,9 +402,15 @@ const onPopoverOpen = (open: boolean): void => {
                                             <span
                                                 v-if="opt.count !== undefined"
                                                 class="rounded-full px-1 text-[10px] font-bold"
-                                                :class="isOptionActive(group.key, opt.value, group.type)
-                                                    ? 'bg-primary-foreground/20 text-primary-foreground'
-                                                    : 'bg-muted text-muted-foreground'"
+                                                :class="
+                                                    isOptionActive(
+                                                        group.key,
+                                                        opt.value,
+                                                        group.type,
+                                                    )
+                                                        ? 'bg-primary-foreground/20 text-primary-foreground'
+                                                        : 'bg-muted text-muted-foreground'
+                                                "
                                             >
                                                 {{ opt.count }}
                                             </span>
@@ -352,24 +419,53 @@ const onPopoverOpen = (open: boolean): void => {
                                 </template>
 
                                 <!-- Date range -->
-                                <template v-else-if="group.type === 'date_range'">
+                                <template
+                                    v-else-if="group.type === 'date_range'"
+                                >
                                     <div class="grid grid-cols-2 gap-2">
                                         <div class="space-y-1">
-                                            <label class="text-[10px] text-muted-foreground">From</label>
+                                            <label
+                                                class="text-[10px] text-muted-foreground"
+                                                >From</label
+                                            >
                                             <Input
                                                 type="date"
-                                                :model-value="getDatePart(group.key, 'from')"
+                                                :model-value="
+                                                    getDatePart(
+                                                        group.key,
+                                                        'from',
+                                                    )
+                                                "
                                                 class="h-8 text-xs"
-                                                @update:model-value="v => setDatePart(group.key, 'from', String(v))"
+                                                @update:model-value="
+                                                    (v) =>
+                                                        setDatePart(
+                                                            group.key,
+                                                            'from',
+                                                            String(v),
+                                                        )
+                                                "
                                             />
                                         </div>
                                         <div class="space-y-1">
-                                            <label class="text-[10px] text-muted-foreground">To</label>
+                                            <label
+                                                class="text-[10px] text-muted-foreground"
+                                                >To</label
+                                            >
                                             <Input
                                                 type="date"
-                                                :model-value="getDatePart(group.key, 'to')"
+                                                :model-value="
+                                                    getDatePart(group.key, 'to')
+                                                "
                                                 class="h-8 text-xs"
-                                                @update:model-value="v => setDatePart(group.key, 'to', String(v))"
+                                                @update:model-value="
+                                                    (v) =>
+                                                        setDatePart(
+                                                            group.key,
+                                                            'to',
+                                                            String(v),
+                                                        )
+                                                "
                                             />
                                         </div>
                                     </div>
@@ -401,14 +497,21 @@ const onPopoverOpen = (open: boolean): void => {
                 v-for="badge in activeBadges"
                 :key="`${badge.key}-${badge.value}`"
                 variant="secondary"
-                class="gap-1 pl-2 pr-1 text-xs font-medium"
+                class="gap-1 pr-1 pl-2 text-xs font-medium"
             >
                 <span class="text-muted-foreground">{{ badge.label }}:</span>
                 {{ badge.displayValue }}
                 <button
                     type="button"
-                    class="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20 transition-colors"
-                    @click="removeBadge(badge.key, badge.value, groups.find(g => g.key === badge.key)?.type ?? 'select')"
+                    class="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-muted-foreground/20"
+                    @click="
+                        removeBadge(
+                            badge.key,
+                            badge.value,
+                            groups.find((g) => g.key === badge.key)?.type ??
+                                'select',
+                        )
+                    "
                 >
                     <X class="h-2.5 w-2.5" />
                 </button>
@@ -416,7 +519,7 @@ const onPopoverOpen = (open: boolean): void => {
 
             <button
                 type="button"
-                class="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                class="text-xs text-muted-foreground transition-colors hover:text-foreground"
                 @click="clearAll"
             >
                 Clear all
@@ -429,7 +532,10 @@ const onPopoverOpen = (open: boolean): void => {
             class="text-xs text-muted-foreground"
         >
             {{ resultCount }} result{{ resultCount !== 1 ? 's' : '' }}
-            <span v-if="search"> for "<strong>{{ search }}</strong>"</span>
+            <span v-if="search">
+                for "<strong>{{ search }}</strong
+                >"</span
+            >
         </p>
     </div>
 </template>

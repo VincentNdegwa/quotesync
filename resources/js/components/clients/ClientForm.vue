@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/select';
 
 const form = defineModel<Record<string, any>>('form', {
-     
     required: true,
 });
 

@@ -35,7 +35,7 @@ const props = defineProps<{
 
 const page = usePage();
 const quoteStatuses = computed(
-    () => (page.props.enums as any)?.quoteStatus || [],  
+    () => (page.props.enums as any)?.quoteStatus || [],
 );
 
 const viewMode = ref<'table' | 'kanban'>(

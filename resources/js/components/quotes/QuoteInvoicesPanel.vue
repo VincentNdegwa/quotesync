@@ -30,7 +30,9 @@ type EnumsHelpers = ReturnType<typeof useEnums> & {
 const { getInvoiceStatus } = useEnums() as EnumsHelpers;
 
 const hasInvoices = computed(() => props.invoices.items.length > 0);
-const remainingCount = computed(() => Math.max(props.invoices.total - props.invoices.items.length, 0));
+const remainingCount = computed(() =>
+    Math.max(props.invoices.total - props.invoices.items.length, 0),
+);
 
 const viewAllUrl = computed(() =>
     InvoiceController.index.url({
@@ -41,10 +43,13 @@ const viewAllUrl = computed(() =>
     }),
 );
 
-const invoiceViewUrl = (invoiceId: number): string => InvoiceController.show(invoiceId).url;
+const invoiceViewUrl = (invoiceId: number): string =>
+    InvoiceController.show(invoiceId).url;
 
-const formatAmount = (total: number, currency: string | null): string => fmt(total, currency ?? undefined);
-const statusMeta = (status: string): ReturnType<typeof getInvoiceStatus> => getInvoiceStatus(status);
+const formatAmount = (total: number, currency: string | null): string =>
+    fmt(total, currency ?? undefined);
+const statusMeta = (status: string): ReturnType<typeof getInvoiceStatus> =>
+    getInvoiceStatus(status);
 </script>
 
 <template>
@@ -56,9 +61,13 @@ const statusMeta = (status: string): ReturnType<typeof getInvoiceStatus> => getI
                     Track invoices generated from this quote
                 </p>
             </div>
-            <div class="flex justify-end w-full gap-2">
-
-                <Button variant="ghost" size="sm" asChild class="gap-1 text-xs font-medium">
+            <div class="flex w-full justify-end gap-2">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    asChild
+                    class="gap-1 text-xs font-medium"
+                >
                     <Link :href="viewAllUrl">
                         View all
                         <ArrowUpRight class="h-3.5 w-3.5" />
@@ -81,26 +90,44 @@ const statusMeta = (status: string): ReturnType<typeof getInvoiceStatus> => getI
                             </p>
                             <p class="text-xs text-muted-foreground">
                                 Created
-                                {{ invoice.created_at ? fmtDate(invoice.created_at) : '—' }}
+                                {{
+                                    invoice.created_at
+                                        ? fmtDate(invoice.created_at)
+                                        : '—'
+                                }}
                             </p>
                         </div>
 
                         <Badge variant="secondary" class="text-xs font-medium">
-                            {{ statusMeta(invoice.status)?.label ?? invoice.status }}
+                            {{
+                                statusMeta(invoice.status)?.label ??
+                                invoice.status
+                            }}
                         </Badge>
                     </div>
 
-                    <div class="mt-3 grid gap-4 text-xs text-muted-foreground md:grid-cols-3">
+                    <div
+                        class="mt-3 grid gap-4 text-xs text-muted-foreground md:grid-cols-3"
+                    >
                         <div>
                             <p class="text-muted-foreground">Amount</p>
                             <p class="font-semibold text-foreground">
-                                {{ formatAmount(invoice.total, invoice.currency) }}
+                                {{
+                                    formatAmount(
+                                        invoice.total,
+                                        invoice.currency,
+                                    )
+                                }}
                             </p>
                         </div>
                         <div>
                             <p class="text-muted-foreground">Due date</p>
                             <p class="font-semibold text-foreground">
-                                {{ invoice.due_date ? fmtDate(invoice.due_date) : '—' }}
+                                {{
+                                    invoice.due_date
+                                        ? fmtDate(invoice.due_date)
+                                        : '—'
+                                }}
                             </p>
                         </div>
                         <div class="flex items-center justify-end">
@@ -113,12 +140,18 @@ const statusMeta = (status: string): ReturnType<typeof getInvoiceStatus> => getI
                     </div>
                 </div>
 
-                <p v-if="remainingCount > 0" class="text-xs font-medium text-muted-foreground">
+                <p
+                    v-if="remainingCount > 0"
+                    class="text-xs font-medium text-muted-foreground"
+                >
                     +{{ remainingCount }} more invoices
                 </p>
             </div>
 
-            <div v-else class="rounded-lg border border-dashed bg-muted/40 p-6 text-center text-sm text-muted-foreground">
+            <div
+                v-else
+                class="rounded-lg border border-dashed bg-muted/40 p-6 text-center text-sm text-muted-foreground"
+            >
                 No invoices have been generated from this quote yet.
             </div>
         </ScrollArea>

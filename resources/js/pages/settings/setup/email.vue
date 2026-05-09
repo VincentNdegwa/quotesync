@@ -47,7 +47,6 @@ const updateAction = computed(
 const buildFormValues = (
     fields: WorkspaceSettingsField[],
 ): Record<string, any> => {
-     
     return fields.reduce(
         (values, field) => {
             if (field.encrypted) {
@@ -89,11 +88,11 @@ const buildFormValues = (
 
             return values;
         },
-        {} as Record<string, any>,  
+        {} as Record<string, any>,
     );
 };
 
-const formValues = reactive<Record<string, any>>(  
+const formValues = reactive<Record<string, any>>(
     buildFormValues(props.currentGroup.fields),
 );
 

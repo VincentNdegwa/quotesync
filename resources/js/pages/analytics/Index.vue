@@ -230,7 +230,6 @@ const revenueTimeline = computed(() => {
         .reverse();
 });
 
-
 const declineTimeline = computed(() =>
     props.win_loss_analysis.loss_reasons.map((item, index) => ({
         id: `${item.reason}-${index}`,
@@ -239,7 +238,6 @@ const declineTimeline = computed(() =>
         value: formatCurrency(item.total_value),
     })),
 );
-
 
 const timeToWinChartData = computed(() =>
     props.win_loss_analysis.time_to_win.map((item, index) => ({
@@ -317,7 +315,6 @@ const forecastCards = computed(() => [
     },
 ]);
 
-
 defineOptions({
     layout: () => ({
         breadcrumbs: [
@@ -328,7 +325,6 @@ defineOptions({
         ],
     }),
 });
-
 </script>
 
 <template>
@@ -416,8 +412,8 @@ defineOptions({
             </Card>
         </section>
 
-        <section class="grid gap-4 grid-cols-1 lg:grid-cols-3 ">
-            <Card class="border col-span-2 border-sidebar-border/70">
+        <section class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <Card class="col-span-2 border border-sidebar-border/70">
                 <CardHeader class="pb-0">
                     <CardTitle class="text-base font-semibold"
                         >Revenue (last 12 months)</CardTitle
@@ -557,7 +553,7 @@ defineOptions({
             </Card>
         </section>
 
-        <section class="grid gap-4 grid-cols-1 lg:grid-cols-2">
+        <section class="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Card class="border border-sidebar-border/70">
                 <CardHeader class="pb-0">
                     <CardTitle class="text-base font-semibold"
@@ -581,9 +577,7 @@ defineOptions({
                         cursor
                         class="h-full"
                     >
-                        <VisXYContainer
-                            :data="timeToWinChartData"
-                        >
+                        <VisXYContainer :data="timeToWinChartData">
                             <VisGroupedBar
                                 :x="(d: TimeToWinData) => d.order"
                                 :y="(d: TimeToWinData) => d.count"

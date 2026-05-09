@@ -9,7 +9,7 @@ import { useFormat } from '@/composables/useFormat';
 const { formatCurrency, formatDate } = useFormat();
 
 defineProps<{
-    creditNote: any;  
+    creditNote: any;
 }>();
 
 const statusColors: Record<string, string> = {

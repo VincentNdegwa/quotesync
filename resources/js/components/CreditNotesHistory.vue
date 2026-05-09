@@ -31,7 +31,6 @@ const totalCredited = computed(() => {
         0,
     );
 });
-
 </script>
 
 <template>
@@ -43,7 +42,6 @@ const totalCredited = computed(() => {
                     Track credit notes applied to this invoice
                 </p>
             </div>
-           
         </div>
 
         <!-- Credit Summary -->
@@ -66,9 +64,7 @@ const totalCredited = computed(() => {
                     <p
                         class="font-semibold"
                         :class="
-                            balanceDue > 0
-                                ? 'text-red-600'
-                                : 'text-green-600'
+                            balanceDue > 0 ? 'text-red-600' : 'text-green-600'
                         "
                     >
                         {{ fmt(balanceDue, defaultCurrency) }}
@@ -102,7 +98,10 @@ const totalCredited = computed(() => {
                                             ?.cssColor,
                                         'text-xs',
                                     ]"
-                                    :variant="getCreditNoteStatus(creditNote.status)?.badgeColor"
+                                    :variant="
+                                        getCreditNoteStatus(creditNote.status)
+                                            ?.badgeColor
+                                    "
                                 >
                                     {{
                                         getCreditNoteStatus(creditNote.status)

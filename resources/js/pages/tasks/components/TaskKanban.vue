@@ -117,7 +117,9 @@ const columns = computed(() =>
 
         return {
             status,
-            tasks: tasks.value.filter((task) => task.task_status_id === status.id),
+            tasks: tasks.value.filter(
+                (task) => task.task_status_id === status.id,
+            ),
             style: {
                 dot: { backgroundColor: color },
                 topBar: { backgroundColor: color },
@@ -138,7 +140,9 @@ const columns = computed(() =>
     }),
 );
 
-const dragging = ref<{ task: TaskModel; fromStatusId: number | null } | null>(null);
+const dragging = ref<{ task: TaskModel; fromStatusId: number | null } | null>(
+    null,
+);
 const dragOverStatus = ref<number | null>(null);
 const hoveredTaskId = ref<number | null>(null);
 
@@ -267,7 +271,9 @@ const { formatDate: fmtDate } = useFormat();
                             class="h-2.5 w-2.5 shrink-0 rounded-full"
                             :style="col.style.dot"
                         />
-                        <span class="truncate text-sm font-semibold text-foreground">
+                        <span
+                            class="truncate text-sm font-semibold text-foreground"
+                        >
                             {{ col.status.name }}
                         </span>
                     </div>
@@ -304,7 +310,10 @@ const { formatDate: fmtDate } = useFormat();
                     </div>
                 </div>
 
-                <div class="mx-3 mb-2 h-0.5 rounded-full" :style="col.style.topBar" />
+                <div
+                    class="mx-3 mb-2 h-0.5 rounded-full"
+                    :style="col.style.topBar"
+                />
 
                 <div
                     class="flex flex-1 flex-col gap-2 overflow-y-auto px-2 pb-3"
@@ -337,11 +346,17 @@ const { formatDate: fmtDate } = useFormat();
                         @dragstart="onDragStart($event, task)"
                         @dragend="onDragEnd"
                     >
-                        <div class="mb-1.5 flex items-start justify-between gap-1">
-                            <span class="font-mono text-xs text-muted-foreground">
+                        <div
+                            class="mb-1.5 flex items-start justify-between gap-1"
+                        >
+                            <span
+                                class="font-mono text-xs text-muted-foreground"
+                            >
                                 #{{ task.id }}
                             </span>
-                            <div class="-mt-0.5 -mr-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <div
+                                class="-mt-0.5 -mr-1 opacity-0 transition-opacity group-hover:opacity-100"
+                            >
                                 <TaskTableRowActions
                                     :task="task"
                                     @edit="handleEdit"
@@ -350,7 +365,9 @@ const { formatDate: fmtDate } = useFormat();
                             </div>
                         </div>
 
-                        <p class="mb-2 line-clamp-2 text-sm leading-snug font-medium text-foreground">
+                        <p
+                            class="mb-2 line-clamp-2 text-sm leading-snug font-medium text-foreground"
+                        >
                             {{ task.title }}
                         </p>
 
@@ -362,9 +379,9 @@ const { formatDate: fmtDate } = useFormat();
                             <span class="truncate">
                                 {{
                                     task.taskable.title ||
-                                        task.taskable.number ||
-                                        (task.taskable as any)?.invoice_number ||
-                                        `#${task.taskable.id}`
+                                    task.taskable.number ||
+                                    (task.taskable as any)?.invoice_number ||
+                                    `#${task.taskable.id}`
                                 }}
                             </span>
                         </div>
@@ -392,11 +409,15 @@ const { formatDate: fmtDate } = useFormat();
                                 class="mt-2 border-t border-border/30 pt-2"
                             >
                                 <div class="flex flex-wrap items-center gap-1">
-                                    <span class="mr-0.5 text-[10px] leading-none text-muted-foreground">
+                                    <span
+                                        class="mr-0.5 text-[10px] leading-none text-muted-foreground"
+                                    >
                                         Move to:
                                     </span>
                                     <span
-                                        v-for="target in validTargets(col.status.id)"
+                                        v-for="target in validTargets(
+                                            col.status.id,
+                                        )"
                                         :key="target.id"
                                         class="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] leading-none font-semibold"
                                         :style="{
@@ -404,7 +425,8 @@ const { formatDate: fmtDate } = useFormat();
                                                 target.color || fallbackColor,
                                                 0.16,
                                             ),
-                                            color: target.color || fallbackColor,
+                                            color:
+                                                target.color || fallbackColor,
                                         }"
                                     >
                                         {{ target.name }}

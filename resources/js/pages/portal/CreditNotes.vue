@@ -8,7 +8,7 @@ import { useFormat } from '@/composables/useFormat';
 const { formatCurrency, formatDate } = useFormat();
 
 defineProps<{
-    creditNotes: any;  
+    creditNotes: any;
 }>();
 
 const statusColors: Record<string, string> = {

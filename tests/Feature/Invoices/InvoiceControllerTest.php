@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\InvoiceStatus;
+use App\Enums\QuoteStatus;
 use App\Http\Middleware\EnsureWorkspaceSettingsOnboarded;
 use App\Models\Client;
 use App\Models\Invoice;
@@ -17,7 +18,7 @@ test('invoice can be created from a won quote', function () {
     $quote = Quote::query()->create([
         'workspace_id' => $workspace->id,
         'title' => 'Won Quote',
-        'status' => 'won',
+        'status' => QuoteStatus::Won->value,
         'client_id' => $client->id,
         'currency' => 'USD',
         'total' => 1000,
@@ -44,11 +45,9 @@ test('invoice cannot be created from non-won quote', function () {
     $workspace->update(['settings_onboarded_at' => now()]);
     $client = Client::factory()->for($workspace, 'workspace')->create();
 
-    $quote = Quote::query()->create([
-        'workspace_id' => $workspace->id,
+    $quote = Quote::factory()->for($client, 'client')->for($workspace, 'workspace')->create([
         'title' => 'Pending Quote',
-        'status' => 'sent',
-        'client_id' => $client->id,
+        'status' => QuoteStatus::Sent->value,
         'currency' => 'USD',
         'total' => 1000,
     ]);
@@ -68,7 +67,7 @@ test('invoice numbering increments correctly', function () {
     $quote1 = Quote::query()->create([
         'workspace_id' => $workspace->id,
         'title' => 'Quote 1',
-        'status' => 'won',
+        'status' => QuoteStatus::Won->value,
         'client_id' => $client->id,
         'currency' => 'USD',
         'total' => 1000,
@@ -80,7 +79,7 @@ test('invoice numbering increments correctly', function () {
     $quote2 = Quote::query()->create([
         'workspace_id' => $workspace->id,
         'title' => 'Quote 2',
-        'status' => 'won',
+        'status' => QuoteStatus::Won->value,
         'client_id' => $client->id,
         'currency' => 'USD',
         'total' => 2000,
@@ -113,7 +112,7 @@ test('invoice line items are copied from quote', function () {
     $quote = Quote::query()->create([
         'workspace_id' => $workspace->id,
         'title' => 'Quote with items',
-        'status' => 'won',
+        'status' => QuoteStatus::Won->value,
         'client_id' => $client->id,
         'currency' => 'USD',
         'total' => 1000,
@@ -139,7 +138,7 @@ test('user cannot access invoice from another workspace', function () {
     $quote = Quote::query()->create([
         'workspace_id' => $workspaceA->id,
         'title' => 'Quote A',
-        'status' => 'won',
+        'status' => QuoteStatus::Won->value,
         'client_id' => $clientA->id,
         'currency' => 'USD',
         'total' => 1000,

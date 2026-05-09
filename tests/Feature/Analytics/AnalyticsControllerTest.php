@@ -190,7 +190,13 @@ test('analytics handles empty data gracefully', function () {
             ->where('revenue_intelligence.win_rate', 0)
             ->has('revenue_intelligence.revenue_trend', 12)
             ->where('win_loss_analysis.decline_reasons', [])
-            ->where('win_loss_analysis.time_to_win', [])
+            ->where('win_loss_analysis.time_to_win', [
+                ['count' => 0, 'range' => '0-2 days'],
+                ['count' => 0, 'range' => '3-7 days'],
+                ['count' => 0, 'range' => '8-14 days'],
+                ['count' => 0, 'range' => '15+ days'],
+                ['count' => 0, 'range' => 'Never'],
+            ])
             ->where('win_loss_analysis.loss_reasons', [])
             ->where('quote_performance.by_template', [])
             ->has('quote_performance.by_deal_size', 4)

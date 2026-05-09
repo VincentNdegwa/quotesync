@@ -32,6 +32,9 @@ const handleInvite = (): void => {
             @invite="handleInvite"
         />
 
-        <InvitePortalDialog v-model:open="inviteDialogOpen" :client="props.client" />
+        <InvitePortalDialog
+            v-model:open="inviteDialogOpen"
+            :client="props.client"
+        />
     </div>
 </template>

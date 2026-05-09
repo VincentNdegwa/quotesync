@@ -15,7 +15,12 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
-import type { WorkspaceSettings, QuoteData, QuoteStatusEnum, QuoteInvoicesPayload } from '@/types';
+import type {
+    WorkspaceSettings,
+    QuoteData,
+    QuoteStatusEnum,
+    QuoteInvoicesPayload,
+} from '@/types';
 import QuoteActions from './components/QuoteActions.vue';
 
 const props = defineProps<{

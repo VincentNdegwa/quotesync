@@ -91,7 +91,10 @@ const viewIcon = computed(() =>
                 >
                     <span>Quick create task</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem class="gap-2" @select="showStatusDialog = true">
+                <DropdownMenuItem
+                    class="gap-2"
+                    @select="showStatusDialog = true"
+                >
                     <ListPlus class="h-4 w-4" />
                     <span>New task status</span>
                 </DropdownMenuItem>

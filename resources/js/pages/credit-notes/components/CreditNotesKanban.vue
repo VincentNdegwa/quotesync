@@ -142,10 +142,7 @@ const validTargets = (status: StatusKey): StatusKey[] =>
 const isTerminal = (status: StatusKey): boolean =>
     ALLOWED_TRANSITIONS[status].length === 0;
 
-const onDragStart = (
-    e: DragEvent,
-    creditNote: CreditNoteListRecord,
-): void => {
+const onDragStart = (e: DragEvent, creditNote: CreditNoteListRecord): void => {
     hoveredCreditNoteId.value = null;
     dragging.value = { creditNote, fromStatus: creditNote.status };
 
@@ -540,20 +537,25 @@ const executeDelete = (): void => {
                                 class="flex items-center gap-1 text-xs text-muted-foreground"
                             >
                                 <Calendar class="h-3 w-3 shrink-0" />
-                                <span>{{ fmtDate(creditNote.issue_date) }}</span>
+                                <span>{{
+                                    fmtDate(creditNote.issue_date)
+                                }}</span>
                             </div>
                         </div>
 
                         <Transition name="hint-slide">
                             <div
                                 v-if="
-                                    hoveredCreditNoteId === creditNote.id && !dragging
+                                    hoveredCreditNoteId === creditNote.id &&
+                                    !dragging
                                 "
                                 class="mt-2 border-t border-border/30 pt-2"
                             >
                                 <div
                                     v-if="
-                                        isTerminal(creditNote.status as StatusKey)
+                                        isTerminal(
+                                            creditNote.status as StatusKey,
+                                        )
                                     "
                                     class="text-[10px] text-muted-foreground italic"
                                 >

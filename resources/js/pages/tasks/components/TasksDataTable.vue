@@ -68,12 +68,13 @@ const table = useVueTable({
 watch(
     () => [rowSelection.value, props.data],
     () => {
-        const ids = table.getSelectedRowModel().rows.map((row) => row.original.id);
+        const ids = table
+            .getSelectedRowModel()
+            .rows.map((row) => row.original.id);
         emit('update:selectedIds', ids);
     },
     { deep: true, immediate: true },
 );
-
 </script>
 
 <template>

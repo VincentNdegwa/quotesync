@@ -69,9 +69,8 @@ export const getCreditNoteColumns = (
                         (table.getIsSomePageRowsSelected()
                             ? 'indeterminate'
                             : false),
-                    'onUpdate:modelValue': (
-                        value: boolean | 'indeterminate',
-                    ) => table.toggleAllPageRowsSelected(!!value),
+                    'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
+                        table.toggleAllPageRowsSelected(!!value),
                     ariaLabel: 'Select all',
                 }),
             cell: ({ row }) =>

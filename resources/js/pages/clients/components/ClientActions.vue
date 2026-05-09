@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { Eye, Mail, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-vue-next';
+import {
+    Eye,
+    Mail,
+    MoreHorizontal,
+    Pencil,
+    Plus,
+    Trash2,
+} from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -40,7 +47,10 @@ const handleDelete = (): void => {
 </script>
 
 <template>
-    <div v-if="props.variant === 'buttons'" class="flex flex-wrap items-center gap-2">
+    <div
+        v-if="props.variant === 'buttons'"
+        class="flex flex-wrap items-center gap-2"
+    >
         <Button size="sm" variant="ghost" as-child>
             <Link
                 :href="`/quotes/create?client_id=${props.client.id}`"
@@ -70,11 +80,17 @@ const handleDelete = (): void => {
                         View
                     </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem class="flex items-center gap-2" @select="handleInvite">
+                <DropdownMenuItem
+                    class="flex items-center gap-2"
+                    @select="handleInvite"
+                >
                     <Mail class="h-4 w-4" />
                     <span>Invite to portal</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem class="flex items-center gap-2" @select="handleDelete">
+                <DropdownMenuItem
+                    class="flex items-center gap-2"
+                    @select="handleDelete"
+                >
                     <Trash2 class="h-4 w-4" />
                     <span>Delete</span>
                 </DropdownMenuItem>
@@ -112,15 +128,24 @@ const handleDelete = (): void => {
                     New quote
                 </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem class="flex items-center gap-2" @select="handleEdit">
+            <DropdownMenuItem
+                class="flex items-center gap-2"
+                @select="handleEdit"
+            >
                 <Pencil class="h-4 w-4" />
                 <span>Edit</span>
             </DropdownMenuItem>
-            <DropdownMenuItem class="flex items-center gap-2" @select="handleInvite">
+            <DropdownMenuItem
+                class="flex items-center gap-2"
+                @select="handleInvite"
+            >
                 <Mail class="h-4 w-4" />
                 <span>Invite to Portal</span>
             </DropdownMenuItem>
-            <DropdownMenuItem class="flex items-center gap-2" @select="handleDelete">
+            <DropdownMenuItem
+                class="flex items-center gap-2"
+                @select="handleDelete"
+            >
                 <Trash2 class="h-4 w-4" />
                 <span>Delete</span>
             </DropdownMenuItem>

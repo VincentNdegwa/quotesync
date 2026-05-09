@@ -184,7 +184,9 @@ const executeBulkAction = (): void => {
 
             <CreditHeaderActions
                 :view-mode="viewMode"
-                @open-create-credit-note="() => router.visit('/credit-notes/create')"
+                @open-create-credit-note="
+                    () => router.visit('/credit-notes/create')
+                "
                 @toggle-view="toggleView"
             />
         </div>

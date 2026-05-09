@@ -108,7 +108,8 @@ const uploadForm = useForm({
 const handleFileUpload = (event: Event): void => {
     const target = event.target as HTMLInputElement;
 
-    if (target.files[0]) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
+    if (target.files[0]) {
+        // eslint-disable-line @typescript-eslint/no-unnecessary-condition
         uploadForm.file = target.files[0];
     }
 };

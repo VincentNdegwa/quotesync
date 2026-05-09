@@ -61,7 +61,7 @@ const emit = defineEmits<{
             sectionIndex: number;
             lineItemIndex: number;
             field: string;
-            value: any;  
+            value: any;
         },
     ): void;
     (

@@ -105,7 +105,9 @@ const quickFacts = computed(() => {
         {
             label: 'Status',
             value: props.item.is_active ? 'Active' : 'Inactive',
-            badge: (props.item.is_active ? 'default' : 'destructive') as 'default' | 'destructive',
+            badge: (props.item.is_active ? 'default' : 'destructive') as
+                | 'default'
+                | 'destructive',
         },
         { label: 'Unit', value: unitDisplay.value?.name || '—' },
         {
@@ -240,8 +242,13 @@ const catalogActionsRef = ref<{
 
                             <Separator />
 
-                            <div v-if="appliedTaxBadges.length" class="space-y-2">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            <div
+                                v-if="appliedTaxBadges.length"
+                                class="space-y-2"
+                            >
+                                <p
+                                    class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                                >
                                     Taxes
                                 </p>
                                 <div class="flex flex-wrap gap-2">
@@ -258,16 +265,24 @@ const catalogActionsRef = ref<{
                                         <span
                                             class="text-xs text-muted-foreground"
                                         >
-                                            ({{ tax.inclusive ? 'inclusive' : 'exclusive' }})
+                                            ({{
+                                                tax.inclusive
+                                                    ? 'inclusive'
+                                                    : 'exclusive'
+                                            }})
                                         </span>
                                     </Badge>
                                 </div>
                             </div>
                             <div v-else class="space-y-2">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                <p
+                                    class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                                >
                                     Taxes
                                 </p>
-                                <p class="text-sm text-muted-foreground">No taxes applied.</p>
+                                <p class="text-sm text-muted-foreground">
+                                    No taxes applied.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -352,7 +367,9 @@ const catalogActionsRef = ref<{
                                                                 )
                                                             "
                                                         >
-                                                            <Edit class="h-4 w-4" />
+                                                            <Edit
+                                                                class="h-4 w-4"
+                                                            />
                                                         </Button>
                                                     </TooltipTrigger>
                                                     <TooltipContent>
@@ -373,7 +390,9 @@ const catalogActionsRef = ref<{
                                                                 )
                                                             "
                                                         >
-                                                            <Trash2 class="h-4 w-4" />
+                                                            <Trash2
+                                                                class="h-4 w-4"
+                                                            />
                                                         </Button>
                                                     </TooltipTrigger>
                                                     <TooltipContent>
@@ -413,7 +432,9 @@ const catalogActionsRef = ref<{
                         <Button
                             variant="outline"
                             size="sm"
-                            @click="catalogActionsRef?.openPriceTierDialog(null)"
+                            @click="
+                                catalogActionsRef?.openPriceTierDialog(null)
+                            "
                         >
                             <Plus class="mr-2 h-4 w-4" />
                             Add Price Tier
@@ -486,7 +507,9 @@ const catalogActionsRef = ref<{
                                                                 )
                                                             "
                                                         >
-                                                            <Edit class="h-4 w-4" />
+                                                            <Edit
+                                                                class="h-4 w-4"
+                                                            />
                                                         </Button>
                                                     </TooltipTrigger>
                                                     <TooltipContent>
@@ -507,7 +530,9 @@ const catalogActionsRef = ref<{
                                                                 )
                                                             "
                                                         >
-                                                            <Trash2 class="h-4 w-4" />
+                                                            <Trash2
+                                                                class="h-4 w-4"
+                                                            />
                                                         </Button>
                                                     </TooltipTrigger>
                                                     <TooltipContent>

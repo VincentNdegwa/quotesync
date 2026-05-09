@@ -23,7 +23,6 @@ import type {
 const NONE_OPTION = '__none__';
 
 const form = defineModel<Record<string, any>>('form', {
-     
     required: true,
 });
 

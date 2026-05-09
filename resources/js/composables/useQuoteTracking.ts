@@ -40,7 +40,8 @@ export function useQuoteTracking(
 
         const payload = JSON.stringify({ events: batch });
 
-        if (navigator.sendBeacon) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
+        if (navigator.sendBeacon) {
+            // eslint-disable-line @typescript-eslint/no-unnecessary-condition
             const formData = new FormData();
             formData.append('events', JSON.stringify(batch));
             navigator.sendBeacon(options.endpoint, formData);

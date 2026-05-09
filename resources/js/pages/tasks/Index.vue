@@ -55,7 +55,7 @@ const query = ref({
 const viewMode = ref<'table' | 'kanban'>(
     (typeof window !== 'undefined'
         ? (localStorage.getItem(STORAGE_KEY) as 'table' | 'kanban')
-        : null) || 'table'
+        : null) || 'table',
 );
 
 const toggleView = (): void => {
@@ -283,7 +283,11 @@ const executeBulkDelete = (): void => {
 
                 <DropdownMenu>
                     <DropdownMenuTrigger as-child>
-                        <Button variant="outline" size="sm" :disabled="bulkActionLoading">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            :disabled="bulkActionLoading"
+                        >
                             <GitBranch class="mr-2 h-4 w-4" />
                             Update status
                         </Button>

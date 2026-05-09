@@ -41,7 +41,10 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
             <div class="flex flex-col gap-6 lg:flex-row lg:gap-10">
                 <aside class="w-full lg:w-56">
                     <nav class="space-y-1" aria-label="Configuration sections">
-                        <template v-for="(item, index) in navItems" :key="item.href">
+                        <template
+                            v-for="(item, index) in navItems"
+                            :key="item.href"
+                        >
                             <Button
                                 variant="ghost"
                                 :class="[

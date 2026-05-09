@@ -14,18 +14,20 @@ import type {
 
 const props = defineProps<{
     invoice: InvoiceModel;
-    initialState: QuoteBuilderState;  
+    initialState: QuoteBuilderState;
     catalogItems: BuilderCatalogItem[];
     taxes: BuilderTaxOption[];
     units: BuilderConfigurationUnit[];
     settings: WorkspaceSettings;
 }>();
 
-
 const breadcrumbs = computed(() => [
     { title: 'Invoices', href: InvoiceController.index().url },
-    { title: props.invoice.title || 'Invoice details', href: InvoiceController.show(props.invoice).url },
-    { title: 'Edit', href: "#"}
+    {
+        title: props.invoice.title || 'Invoice details',
+        href: InvoiceController.show(props.invoice).url,
+    },
+    { title: 'Edit', href: '#' },
 ]);
 
 watchEffect(() => {
@@ -40,7 +42,8 @@ const save = (updatedState?: QuoteBuilderState): void => {
     if (updatedState) {
         Object.keys(updatedState).forEach((key) => {
             if (key in form) {
-                (form as any)[key] = updatedState[key as keyof QuoteBuilderState];
+                (form as any)[key] =
+                    updatedState[key as keyof QuoteBuilderState];
             }
         });
     }

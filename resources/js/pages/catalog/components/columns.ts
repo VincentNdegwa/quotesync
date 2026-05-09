@@ -92,7 +92,11 @@ export const getCatalogColumns = (
                           {
                               class: 'flex h-10 w-10 items-center justify-center rounded-md bg-muted',
                           },
-                          [h(ImageIcon, { class: 'h-5 w-5 text-muted-foreground' })],
+                          [
+                              h(ImageIcon, {
+                                  class: 'h-5 w-5 text-muted-foreground',
+                              }),
+                          ],
                       ),
             ]),
     },

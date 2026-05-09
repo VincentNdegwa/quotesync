@@ -91,7 +91,8 @@ const openCreate = (): void => {
     editingItem.value = null;
     form.reset();
     form.clearErrors();
-    form.unit_id = props.units && props.units.length > 0 ? props.units[0].id : null;
+    form.unit_id =
+        props.units && props.units.length > 0 ? props.units[0].id : null;
     form.catalog_category_id = NONE_OPTION;
     form.tax_ids = [];
     form.is_active = true;
@@ -266,9 +267,11 @@ defineExpose({
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" class="w-48">
-
                 <DropdownMenuItem :as-child="true">
-                    <Link href="/catalog" class="flex w-full items-center gap-2">
+                    <Link
+                        href="/catalog"
+                        class="flex w-full items-center gap-2"
+                    >
                         <span>Back to catalog</span>
                     </Link>
                 </DropdownMenuItem>
@@ -358,8 +361,8 @@ defineExpose({
                             : 'Add catalog item'
                     }}</SheetTitle>
                     <SheetDescription>
-                        Manage reusable product and service records for
-                        quote line items.
+                        Manage reusable product and service records for quote
+                        line items.
                     </SheetDescription>
                 </SheetHeader>
 

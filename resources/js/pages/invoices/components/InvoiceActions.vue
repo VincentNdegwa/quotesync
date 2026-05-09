@@ -31,7 +31,6 @@ import {
 import TaskCreateDialog from '@/pages/tasks/components/CreateDialog.vue';
 import type { InvoiceListRecord, InvoiceStatusEnum } from '@/types';
 
-
 const props = defineProps<{
     invoice: InvoiceListRecord;
     invoiceStatuses: InvoiceStatusEnum[];

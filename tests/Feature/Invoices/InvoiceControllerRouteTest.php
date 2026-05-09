@@ -76,15 +76,38 @@ it('can update an invoice via controller', function () {
         'total' => 220.00,
         'issue_date' => now()->toDateString(),
         'due_date' => now()->addDays(30)->toDateString(),
-        'line_items' => [
+        'sections' => [
             [
-                'name' => 'Updated Item',
-                'quantity' => 2,
-                'unit_price' => 100.00,
-                'tax_rate' => 10,
-                'discount_percent' => 0,
-                'total' => 220.00,
+                'title' => 'Items',
                 'sort_order' => 0,
+                'line_items' => [
+                    [
+                        'catalog_item_id' => null,
+                        'catalog_item_variant_id' => null,
+                        'name' => 'Updated Item',
+                        'description' => null,
+                        'quantity' => 2,
+                        'unit' => null,
+                        'unit_price' => 100.00,
+                        'cost_price' => 0,
+                        'discount_percent' => 0,
+                        'price_tier_applied' => false,
+                        'subtotal' => 200.00,
+                        'tax_amount' => 20.00,
+                        'total' => 220.00,
+                        'is_optional' => false,
+                        'notes' => null,
+                        'sort_order' => 0,
+                        'taxes' => [
+                            [
+                                'tax_id' => null,
+                                'tax_label' => 'Sales Tax',
+                                'tax_rate' => 10,
+                                'inclusive' => false,
+                            ],
+                        ],
+                    ],
+                ],
             ],
         ],
     ];

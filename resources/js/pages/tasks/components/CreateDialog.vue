@@ -92,8 +92,8 @@ const lockedEntity = computed(() => {
     return props.entity;
 });
 
-const isEntityLocked = computed(
-    () => Boolean(lockedEntity.value?.locked && lockedEntity.value.id),
+const isEntityLocked = computed(() =>
+    Boolean(lockedEntity.value?.locked && lockedEntity.value.id),
 );
 
 const lockedEntityLabel = computed(() => {
@@ -196,7 +196,6 @@ async function fetchEntities(): Promise<void> {
 
         if (data.data) {
             availableEntities.value = data.data.map((item: any) => ({
-                 
                 id: item.id,
                 title: item.title || item.invoice_number || `#${item.id}`,
                 number: item.quote_number || item.invoice_number,
@@ -323,7 +322,10 @@ const submit = (): void => {
                     <Label for="task_create_taskable_id" required
                         >Related Entity</Label
                     >
-                    <div v-if="isEntityLocked" class="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+                    <div
+                        v-if="isEntityLocked"
+                        class="rounded-md border bg-muted/40 px-3 py-2 text-sm"
+                    >
                         {{ lockedEntityLabel }}
                     </div>
                     <Popover v-else v-model:open="entityPopoverOpen">

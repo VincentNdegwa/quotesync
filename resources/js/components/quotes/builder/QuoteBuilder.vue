@@ -58,8 +58,8 @@ const props = withDefaults(
 const emit = defineEmits<{
     (e: 'update:modelValue', value: QuoteBuilderState): void;
     (e: 'save', value: QuoteBuilderState): void;
-    (e: 'apply-ai-generation', data: any): void;  
-    (e: 'apply-ai-template', data: any): void;  
+    (e: 'apply-ai-generation', data: any): void;
+    (e: 'apply-ai-template', data: any): void;
 }>();
 
 const localState = ref<QuoteBuilderState>(
@@ -180,37 +180,29 @@ const aiGeneratorOpen = ref(false);
 const aiTemplateOpen = ref(false);
 
 const applyAiGeneration = (data: any): void => {
-     
     if (data.sections && data.sections.length > 0) {
         const newSections = data.sections.map(
-            (
-                section: any  ,
-                index: number,
-            ) => ({
+            (section: any, index: number) => ({
                 id: null,
                 title: section.title,
                 sort_order: index,
-                line_items: section.line_items.map(
-                    (
-                        item: any  ,
-                    ) => ({
-                        id: null,
-                        catalog_item_id: item.catalog_item_id,
-                        name: item.name,
-                        description: item.description,
-                        quantity: item.quantity,
-                        unit: item.unit,
-                        unit_price: item.unit_price,
-                        discount_percent: 0,
-                        subtotal: item.quantity * item.unit_price,
-                        tax_amount: 0,
-                        total: item.quantity * item.unit_price,
-                        is_optional: item.is_optional,
-                        notes: null,
-                        sort_order: 0,
-                        taxes: [],
-                    }),
-                ),
+                line_items: section.line_items.map((item: any) => ({
+                    id: null,
+                    catalog_item_id: item.catalog_item_id,
+                    name: item.name,
+                    description: item.description,
+                    quantity: item.quantity,
+                    unit: item.unit,
+                    unit_price: item.unit_price,
+                    discount_percent: 0,
+                    subtotal: item.quantity * item.unit_price,
+                    tax_amount: 0,
+                    total: item.quantity * item.unit_price,
+                    is_optional: item.is_optional,
+                    notes: null,
+                    sort_order: 0,
+                    taxes: [],
+                })),
             }),
         );
 
@@ -280,7 +272,6 @@ const applyAiGeneration = (data: any): void => {
             (b) => b.type === 'timeline',
         );
         const timelineRows = data.timeline.rows.map((row: any) => ({
-             
             id: crypto.randomUUID(),
             phase: row.phase,
             description: row.description,
@@ -289,7 +280,7 @@ const applyAiGeneration = (data: any): void => {
         }));
 
         if (timelineBlock) {
-            const config = timelineBlock.config as any;  
+            const config = timelineBlock.config as any;
 
             if (data.timeline.label_text) {
                 config.labelText = data.timeline.label_text;
@@ -299,7 +290,7 @@ const applyAiGeneration = (data: any): void => {
         } else {
             // Add timeline block if it doesn't exist
             const newTimelineBlock = createBlock('timeline');
-            const config = newTimelineBlock.config as any;  
+            const config = newTimelineBlock.config as any;
 
             if (data.timeline.label_text) {
                 config.labelText = data.timeline.label_text;
@@ -312,7 +303,6 @@ const applyAiGeneration = (data: any): void => {
 };
 
 const applyAiTemplate = (data: any): void => {
-     
     if (data.layout) {
         const validatedLayout = ensureTemplateLayout(data.layout);
         currentLayout.value = validatedLayout;
@@ -588,7 +578,7 @@ const removeSelectedLineItem = (): void => {
 
 const updateSelectedLineItemField = (
     field: keyof QuoteBuilderLineItem,
-    value: any,  
+    value: any,
 ): void => {
     withSelectedLineItem(({ sectionIndex, lineItemIndex }) => {
         updateLineItemField(
@@ -783,7 +773,7 @@ const updateLineItemField = (
     sectionIndex: number,
     lineItemIndex: number,
     field: string,
-    value: any,  
+    value: any,
 ): void => {
     const section = localState.value.sections[sectionIndex];
 

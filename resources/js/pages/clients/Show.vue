@@ -1,12 +1,16 @@
 <script setup lang="ts">
+import { Head, Link, router, setLayoutProps, usePage } from '@inertiajs/vue3';
 import {
-    Head,
-    Link,
-    router,
-    setLayoutProps,
-    usePage,
-} from '@inertiajs/vue3';
-import { Edit, Globe, Mail, MapPin, Phone, Plus, Tag, Trash2, Users } from 'lucide-vue-next';
+    Edit,
+    Globe,
+    Mail,
+    MapPin,
+    Phone,
+    Plus,
+    Tag,
+    Trash2,
+    Users,
+} from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
@@ -61,7 +65,9 @@ const quoteHistory = computed(() => props.stats.quote_history);
 
 const contactList = computed(() => props.client.contacts ?? []);
 const tagNames = computed<string[]>(() => {
-    const tags = (props.client.tags ?? []) as Array<string | { name?: string; id?: number }>;
+    const tags = (props.client.tags ?? []) as Array<
+        string | { name?: string; id?: number }
+    >;
 
     return tags
         .map((tag) => {
@@ -69,7 +75,11 @@ const tagNames = computed<string[]>(() => {
                 return tag;
             }
 
-            return tag.name ?? (tag as Record<string, unknown>).id?.toString() ?? null;
+            return (
+                tag.name ??
+                (tag as Record<string, unknown>).id?.toString() ??
+                null
+            );
         })
         .filter((tag): tag is string => Boolean(tag));
 });
@@ -248,20 +258,30 @@ const closeContactDialog = (): void => {
                 :key="metric.label"
                 class="rounded-md border border-border bg-card p-4"
             >
-                <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <p
+                    class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                >
                     {{ metric.label }}
                 </p>
-                <p class="text-2xl font-bold text-foreground">{{ metric.value }}</p>
+                <p class="text-2xl font-bold text-foreground">
+                    {{ metric.value }}
+                </p>
             </article>
         </div>
 
         <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
             <div class="space-y-6">
-                <article class="rounded-md border border-border bg-card p-6 space-y-6">
+                <article
+                    class="space-y-6 rounded-md border border-border bg-card p-6"
+                >
                     <div class="flex items-center justify-between gap-3">
                         <div>
-                            <h3 class="text-lg font-semibold text-foreground">Client summary</h3>
-                            <p class="text-sm text-muted-foreground">Overview</p>
+                            <h3 class="text-lg font-semibold text-foreground">
+                                Client summary
+                            </h3>
+                            <p class="text-sm text-muted-foreground">
+                                Overview
+                            </p>
                         </div>
                         <Badge v-if="tagNames.length" variant="outline">
                             {{ tagNames[0] }}
@@ -270,7 +290,9 @@ const closeContactDialog = (): void => {
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="space-y-1">
-                            <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            <p
+                                class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                            >
                                 Company contact
                             </p>
                             <p class="text-sm font-semibold text-foreground">
@@ -281,7 +303,9 @@ const closeContactDialog = (): void => {
                             </p>
                         </div>
                         <div class="space-y-1">
-                            <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            <p
+                                class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                            >
                                 Currency
                             </p>
                             <p class="text-sm font-semibold text-foreground">
@@ -294,30 +318,52 @@ const closeContactDialog = (): void => {
                     </div>
 
                     <div class="space-y-3">
-                        <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div
+                            class="flex items-center gap-2 text-sm text-muted-foreground"
+                        >
                             <Mail class="h-4 w-4" />
-                            <span>{{ client.email ?? 'Email not shared' }}</span>
+                            <span>{{
+                                client.email ?? 'Email not shared'
+                            }}</span>
                         </div>
-                        <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div
+                            class="flex items-center gap-2 text-sm text-muted-foreground"
+                        >
                             <Phone class="h-4 w-4" />
-                            <span>{{ client.whatsapp ?? client.phone ?? 'No phone provided' }}</span>
+                            <span>{{
+                                client.whatsapp ??
+                                client.phone ??
+                                'No phone provided'
+                            }}</span>
                         </div>
-                        <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div
+                            class="flex items-center gap-2 text-sm text-muted-foreground"
+                        >
                             <MapPin class="h-4 w-4" />
                             <span>{{ formattedAddress }}</span>
                         </div>
-                        <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div
+                            class="flex items-center gap-2 text-sm text-muted-foreground"
+                        >
                             <Globe class="h-4 w-4" />
-                            <span>{{ client.country ?? 'Country not set' }}</span>
+                            <span>{{
+                                client.country ?? 'Country not set'
+                            }}</span>
                         </div>
                     </div>
                 </article>
 
-                <article class="rounded-md border border-border bg-card p-6 space-y-5">
+                <article
+                    class="space-y-5 rounded-md border border-border bg-card p-6"
+                >
                     <div class="flex items-center justify-between gap-2">
                         <div>
-                            <h3 class="text-lg font-semibold text-foreground">Stakeholders</h3>
-                            <p class="text-sm text-muted-foreground">Contacts</p>
+                            <h3 class="text-lg font-semibold text-foreground">
+                                Stakeholders
+                            </h3>
+                            <p class="text-sm text-muted-foreground">
+                                Contacts
+                            </p>
                         </div>
                         <Button size="sm" @click="openContactDialog()">
                             <Plus class="mr-2 h-4 w-4" />
@@ -332,19 +378,32 @@ const closeContactDialog = (): void => {
                                 :key="contact.id"
                                 class="space-y-3 rounded-md border border-dashed border-border p-4"
                             >
-                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div
+                                    class="flex flex-wrap items-center justify-between gap-2"
+                                >
                                     <div>
-                                        <p class="text-sm font-semibold text-foreground">
+                                        <p
+                                            class="text-sm font-semibold text-foreground"
+                                        >
                                             {{ contact.name }}
                                         </p>
-                                        <p class="text-xs text-muted-foreground">
-                                            {{ contact.position ?? 'No role specified' }}
+                                        <p
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            {{
+                                                contact.position ??
+                                                'No role specified'
+                                            }}
                                         </p>
                                     </div>
-                                    <Badge v-if="contact.is_primary">Primary</Badge>
+                                    <Badge v-if="contact.is_primary"
+                                        >Primary</Badge
+                                    >
                                 </div>
 
-                                <div class="grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
+                                <div
+                                    class="grid gap-2 text-xs text-muted-foreground sm:grid-cols-3"
+                                >
                                     <div class="flex items-center gap-1">
                                         <Mail class="h-4 w-4" />
                                         <span>{{ contact.email ?? '—' }}</span>
@@ -355,7 +414,9 @@ const closeContactDialog = (): void => {
                                     </div>
                                     <div class="flex items-center gap-1">
                                         <Users class="h-4 w-4" />
-                                        <span>{{ contact.position ?? '—' }}</span>
+                                        <span>{{
+                                            contact.position ?? '—'
+                                        }}</span>
                                     </div>
                                 </div>
 
@@ -367,7 +428,11 @@ const closeContactDialog = (): void => {
                                                     variant="outline"
                                                     size="icon"
                                                     class="h-8 w-8"
-                                                    @click="openContactDialog(contact)"
+                                                    @click="
+                                                        openContactDialog(
+                                                            contact,
+                                                        )
+                                                    "
                                                 >
                                                     <Edit class="h-4 w-4" />
                                                 </Button>
@@ -384,7 +449,11 @@ const closeContactDialog = (): void => {
                                                     variant="ghost"
                                                     size="icon"
                                                     class="h-8 w-8 text-destructive"
-                                                    @click="deleteContact(contact.id)"
+                                                    @click="
+                                                        deleteContact(
+                                                            contact.id,
+                                                        )
+                                                    "
                                                 >
                                                     <Trash2 class="h-4 w-4" />
                                                 </Button>
@@ -401,19 +470,28 @@ const closeContactDialog = (): void => {
                             v-else
                             class="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground"
                         >
-                            No contacts added yet. Add one to keep everyone in the loop.
+                            No contacts added yet. Add one to keep everyone in
+                            the loop.
                         </div>
                     </div>
                 </article>
 
-                <article class="rounded-md border border-border bg-card p-6 space-y-4">
+                <article
+                    class="space-y-4 rounded-md border border-border bg-card p-6"
+                >
                     <div class="flex items-center justify-between gap-2">
                         <div>
-                            <h3 class="text-lg font-semibold text-foreground">Recent activity</h3>
-                            <p class="text-sm text-muted-foreground">Quote history</p>
+                            <h3 class="text-lg font-semibold text-foreground">
+                                Recent activity
+                            </h3>
+                            <p class="text-sm text-muted-foreground">
+                                Quote history
+                            </p>
                         </div>
                         <Button variant="ghost" size="sm" as-child>
-                            <Link :href="`/quotes?client_id=${client.id}`">See all</Link>
+                            <Link :href="`/quotes?client_id=${client.id}`"
+                                >See all</Link
+                            >
                         </Button>
                     </div>
 
@@ -423,19 +501,35 @@ const closeContactDialog = (): void => {
                             :key="quote.id"
                             class="rounded-md border border-border p-4"
                         >
-                            <div class="flex flex-wrap items-start justify-between gap-2">
+                            <div
+                                class="flex flex-wrap items-start justify-between gap-2"
+                            >
                                 <Link
                                     :href="`/quotes/${quote.id}`"
                                     class="text-sm font-semibold text-foreground underline-offset-4 hover:underline"
                                 >
-                                    {{ quote.number || quote.title || `Quote #${quote.id}` }}
+                                    {{
+                                        quote.number ||
+                                        quote.title ||
+                                        `Quote #${quote.id}`
+                                    }}
                                 </Link>
                                 <div class="flex items-center gap-2">
-                                    <Badge :variant="statusBadgeVariant(quote.status)">
+                                    <Badge
+                                        :variant="
+                                            statusBadgeVariant(quote.status)
+                                        "
+                                    >
                                         {{ quote.status || 'unknown' }}
                                     </Badge>
-                                    <p class="text-sm font-semibold text-foreground">
-                                        {{ formatCurrency(quote.base_total ?? 0) }}
+                                    <p
+                                        class="text-sm font-semibold text-foreground"
+                                    >
+                                        {{
+                                            formatCurrency(
+                                                quote.base_total ?? 0,
+                                            )
+                                        }}
                                     </p>
                                 </div>
                             </div>
@@ -447,21 +541,30 @@ const closeContactDialog = (): void => {
                             v-if="recentQuotes.length === 0"
                             class="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground"
                         >
-                            No quotes yet. Generate one to start the relationship.
+                            No quotes yet. Generate one to start the
+                            relationship.
                         </div>
                     </div>
                 </article>
             </div>
 
             <div class="space-y-4">
-                <article class="rounded-md border border-border bg-card p-6 space-y-4">
+                <article
+                    class="space-y-4 rounded-md border border-border bg-card p-6"
+                >
                     <div class="flex items-center justify-between gap-2">
                         <div>
-                            <h3 class="text-lg font-semibold text-foreground">Status breakdown</h3>
-                            <p class="text-sm text-muted-foreground">Relationship pulse</p>
+                            <h3 class="text-lg font-semibold text-foreground">
+                                Status breakdown
+                            </h3>
+                            <p class="text-sm text-muted-foreground">
+                                Relationship pulse
+                            </p>
                         </div>
                         <Button variant="ghost" size="sm" as-child>
-                            <Link :href="`/quotes?client_id=${client.id}`">Refresh</Link>
+                            <Link :href="`/quotes?client_id=${client.id}`"
+                                >Refresh</Link
+                            >
                         </Button>
                     </div>
 
@@ -472,32 +575,56 @@ const closeContactDialog = (): void => {
                             class="space-y-2"
                         >
                             <div class="flex items-center justify-between">
-                                <p class="text-sm capitalize text-muted-foreground">{{ stat.status }}</p>
-                                <p class="text-sm font-semibold text-foreground">{{ stat.count }} quote(s)</p>
+                                <p
+                                    class="text-sm text-muted-foreground capitalize"
+                                >
+                                    {{ stat.status }}
+                                </p>
+                                <p
+                                    class="text-sm font-semibold text-foreground"
+                                >
+                                    {{ stat.count }} quote(s)
+                                </p>
                             </div>
                             <div class="h-1 bg-muted/20">
                                 <div
                                     class="h-full bg-linear-to-r from-emerald-500 to-green-500"
-                                    :style="{ width: `${(stat.count / (quoteHistory.length || 1)) * 100}%` }"
+                                    :style="{
+                                        width: `${(stat.count / (quoteHistory.length || 1)) * 100}%`,
+                                    }"
                                 />
                             </div>
                         </div>
                     </div>
 
-                    <p v-else class="text-sm text-muted-foreground">No quote activity recorded yet.</p>
+                    <p v-else class="text-sm text-muted-foreground">
+                        No quote activity recorded yet.
+                    </p>
 
                     <div class="space-y-3 pt-4">
-                        <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div
+                            class="flex items-center gap-2 text-sm text-muted-foreground"
+                        >
                             <Tag class="h-4 w-4" />
                             <span>
-                                {{ tagNames.length ? tagNames.join(', ') : 'No tags assigned' }}
+                                {{
+                                    tagNames.length
+                                        ? tagNames.join(', ')
+                                        : 'No tags assigned'
+                                }}
                             </span>
                         </div>
-                        <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div
+                            class="flex items-center gap-2 text-sm text-muted-foreground"
+                        >
                             <Globe class="h-4 w-4" />
-                            <span>{{ client.country ?? 'Country missing' }}</span>
+                            <span>{{
+                                client.country ?? 'Country missing'
+                            }}</span>
                         </div>
-                        <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div
+                            class="flex items-center gap-2 text-sm text-muted-foreground"
+                        >
                             <MapPin class="h-4 w-4" />
                             <span>{{ formattedAddress }}</span>
                         </div>

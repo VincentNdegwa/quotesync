@@ -17,7 +17,6 @@ type MinimalClient = {
 };
 
 const form = defineModel<Record<string, any>>('form', {
-     
     required: true,
 });
 

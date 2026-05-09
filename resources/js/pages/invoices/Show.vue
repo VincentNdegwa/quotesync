@@ -181,7 +181,9 @@ const handleCommentDeleted = (): void => {
                             <div class="px-6 py-4">
                                 <div class="divide-y">
                                     <template
-                                        v-for="(section, si) in invoice.sections"
+                                        v-for="(
+                                            section, si
+                                        ) in invoice.sections"
                                         :key="section.id"
                                     >
                                         <div class="px-6 py-4">
@@ -198,21 +200,34 @@ const handleCommentDeleted = (): void => {
                                                     class="grid grid-cols-[1fr_auto_auto] items-start gap-4 rounded-lg px-3 py-2.5 hover:bg-muted/30"
                                                 >
                                                     <div class="min-w-0">
-                                                        <p class="text-sm font-medium">
+                                                        <p
+                                                            class="text-sm font-medium"
+                                                        >
                                                             {{ item.name }}
                                                         </p>
                                                         <p
-                                                            v-if="item.description"
+                                                            v-if="
+                                                                item.description
+                                                            "
                                                             class="mt-0.5 text-xs text-muted-foreground"
                                                         >
-                                                            {{ item.description }}
+                                                            {{
+                                                                item.description
+                                                            }}
                                                         </p>
                                                     </div>
                                                     <div
                                                         class="text-right text-xs text-muted-foreground tabular-nums"
                                                     >
-                                                        {{ Number(item.quantity) }} ×
-                                                        {{ fmt(item.unit_price) }}
+                                                        {{
+                                                            Number(
+                                                                item.quantity,
+                                                            )
+                                                        }}
+                                                        ×
+                                                        {{
+                                                            fmt(item.unit_price)
+                                                        }}
                                                     </div>
                                                     <div
                                                         class="w-24 text-right text-sm font-semibold tabular-nums"
@@ -224,7 +239,9 @@ const handleCommentDeleted = (): void => {
                                         </div>
 
                                         <Separator
-                                            v-if="si < invoice.sections.length - 1"
+                                            v-if="
+                                                si < invoice.sections.length - 1
+                                            "
                                         />
                                     </template>
                                 </div>
