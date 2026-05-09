@@ -153,6 +153,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('credit-notes/{creditNote}/issue', [CreditNoteController::class, 'issue'])->name('credit-notes.issue');
         Route::post('credit-notes/{creditNote}/apply', [CreditNoteController::class, 'apply'])->name('credit-notes.apply');
         Route::post('credit-notes/{creditNote}/void', [CreditNoteController::class, 'void'])->name('credit-notes.void');
+        Route::post('credit-notes/bulk-action', [CreditNoteController::class, 'bulkAction'])->name('credit-notes.bulk-action');
         Route::post('quotes/{quote}/duplicate', [QuoteController::class, 'duplicate'])->name('quotes.duplicate');
         Route::post('quotes/{quote}/revise', [QuoteController::class, 'revise'])->name('quotes.revise');
         Route::post('quotes/{quote}/versions/{version}/restore', [QuoteController::class, 'restoreVersion'])->name('quotes.versions.restore');

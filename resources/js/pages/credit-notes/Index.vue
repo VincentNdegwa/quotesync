@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { Trash2 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -11,8 +13,19 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import type { Paginator, CreditNoteListRecord } from '@/types';
 import CreditNotesDataTable from './components/CreditNotesDataTable.vue';
+import CreditHeaderActions from './components/CreditHeaderActions.vue';
+
+const STORAGE_KEY = 'credit-notes-view-mode';
 
 type Filters = {
     search: string;
@@ -31,6 +44,15 @@ const creditNoteStatuses = computed(
         (page.props.enums as { creditNoteStatus?: unknown[] })
             .creditNoteStatus ?? [],
 );
+
+const viewMode = ref<'table' | 'kanban'>(
+    (localStorage.getItem(STORAGE_KEY) as 'table' | 'kanban') || 'table',
+);
+
+const toggleView = (): void => {
+    viewMode.value = viewMode.value === 'table' ? 'kanban' : 'table';
+    localStorage.setItem(STORAGE_KEY, viewMode.value);
+};
 
 defineOptions({
     layout: {
@@ -84,6 +106,10 @@ const hasCreditNotes = computed(() => props.creditNotes.data.length > 0);
 
 const showDeleteDialog = ref(false);
 const creditNoteToDelete = ref<number | null>(null);
+const selectedIds = ref<number[]>([]);
+const bulkActionDialogOpen = ref(false);
+const bulkActionType = ref<'delete' | null>(null);
+const bulkActionLoading = ref(false);
 
 const removeCreditNote = (creditNoteId: number): void => {
     creditNoteToDelete.value = creditNoteId;
@@ -101,6 +127,46 @@ const executeDelete = (): void => {
         });
     }
 };
+
+const hasSelection = computed(() => selectedIds.value.length > 0);
+
+const openBulkActionDialog = (action: 'delete'): void => {
+    if (selectedIds.value.length === 0) {
+        return;
+    }
+
+    bulkActionType.value = action;
+    bulkActionDialogOpen.value = true;
+};
+
+const executeBulkAction = (): void => {
+    if (!bulkActionType.value || selectedIds.value.length === 0) {
+        bulkActionDialogOpen.value = false;
+
+        return;
+    }
+
+    bulkActionLoading.value = true;
+
+    router.post(
+        '/credit-notes/bulk-action',
+        {
+            ids: selectedIds.value,
+            action: bulkActionType.value,
+        },
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                selectedIds.value = [];
+                bulkActionDialogOpen.value = false;
+                bulkActionType.value = null;
+            },
+            onFinish: () => {
+                bulkActionLoading.value = false;
+            },
+        },
+    );
+};
 </script>
 
 <template>
@@ -115,13 +181,11 @@ const executeDelete = (): void => {
                 description="Create and manage credit notes for your clients."
             />
 
-            <Link href="/credit-notes/create">
-                <button
-                    class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                >
-                    New Credit Note
-                </button>
-            </Link>
+            <CreditHeaderActions
+                :view-mode="viewMode"
+                @open-create-credit-note="() => router.visit('/credit-notes/create')"
+                @toggle-view="toggleView"
+            />
         </div>
 
         <div class="rounded-lg border p-3">
@@ -165,18 +229,45 @@ const executeDelete = (): void => {
             </div>
         </div>
 
-        <CreditNotesDataTable
-            v-if="hasCreditNotes"
-            :data="creditNotes.data"
-            @delete="removeCreditNote"
-        />
+        <template v-if="viewMode === 'kanban'">
+            <div class="rounded-lg border p-10 text-center text-muted-foreground">
+                Kanban view coming soon
+            </div>
+        </template>
 
-        <div
-            v-else
-            class="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground"
-        >
-            No credit notes yet. Create your first credit note.
-        </div>
+        <template v-else>
+            <div
+                v-if="hasSelection"
+                class="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/40 p-3"
+            >
+                <span class="text-sm text-muted-foreground">
+                    {{ selectedIds.length }} selected
+                </span>
+
+                <Button
+                    variant="destructive"
+                    size="sm"
+                    @click="openBulkActionDialog('delete')"
+                >
+                    <Trash2 class="mr-2 h-4 w-4" />
+                    Delete selected
+                </Button>
+            </div>
+
+            <CreditNotesDataTable
+                v-if="hasCreditNotes"
+                :data="creditNotes.data"
+                @delete="removeCreditNote"
+                @update:selected-ids="selectedIds = $event"
+            />
+
+            <div
+                v-else
+                class="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground"
+            >
+                No credit notes yet. Create your first credit note.
+            </div>
+        </template>
 
         <div
             v-if="creditNotes.links.length > 1"
@@ -227,5 +318,41 @@ const executeDelete = (): void => {
             variant="destructive"
             @confirm="executeDelete"
         />
+
+        <Dialog v-model:open="bulkActionDialogOpen">
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>
+                        {{
+                            bulkActionType === 'delete'
+                                ? 'Delete selected credit notes'
+                                : 'Bulk action'
+                        }}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {{
+                            bulkActionType === 'delete'
+                                ? `Are you sure you want to delete ${selectedIds.length} credit note${selectedIds.length > 1 ? 's' : ''}? This action cannot be undone.`
+                                : 'Are you sure you want to proceed with this bulk action?'
+                        }}
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button
+                        variant="outline"
+                        @click="bulkActionDialogOpen = false"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        :disabled="bulkActionLoading"
+                        @click="executeBulkAction"
+                    >
+                        {{ bulkActionLoading ? 'Processing...' : 'Confirm' }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>

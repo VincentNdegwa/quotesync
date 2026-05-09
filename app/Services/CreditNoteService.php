@@ -281,4 +281,66 @@ class CreditNoteService
             }
         });
     }
+
+    /**
+     * @param  array<int, int>  $ids
+     * @return array{processed:int,skipped:int,missing:int,skipped_details:array<int, array{id:int,status:string,reason:string}>}
+     */
+    public function bulkAction(Workspace $workspace, array $ids, string $action): array
+    {
+        $creditNotes = CreditNote::query()
+            ->where('workspace_id', $workspace->id)
+            ->whereIn('id', $ids)
+            ->get(['id', 'workspace_id', 'status']);
+
+        $eligibleIds = [];
+        $skipped = [];
+
+        foreach ($creditNotes as $creditNote) {
+            $status = $creditNote->status instanceof \App\Enums\CreditNoteStatus
+                ? $creditNote->status
+                : \App\Enums\CreditNoteStatus::from($creditNote->status);
+
+            $canProceed = match ($action) {
+                'delete' => in_array('delete', $status->availableActions()),
+                'void' => in_array('void', $status->availableActions()),
+                default => false,
+            };
+
+            if ($canProceed) {
+                $eligibleIds[] = $creditNote->id;
+            } else {
+                $skipped[] = [
+                    'id' => $creditNote->id,
+                    'status' => $status->value,
+                    'reason' => "Action '{$action}' not permitted for status {$status->value}.",
+                ];
+            }
+        }
+
+        if ($eligibleIds !== []) {
+            if ($action === 'delete') {
+                CreditNote::query()
+                    ->where('workspace_id', $workspace->id)
+                    ->whereIn('id', $eligibleIds)
+                    ->delete();
+            } elseif ($action === 'void') {
+                CreditNote::query()
+                    ->where('workspace_id', $workspace->id)
+                    ->whereIn('id', $eligibleIds)
+                    ->update([
+                        'status' => 'voided',
+                        'voided_at' => now(),
+                        'void_reason' => 'Bulk voided',
+                    ]);
+            }
+        }
+
+        return [
+            'processed' => count($eligibleIds),
+            'skipped' => count($skipped),
+            'missing' => count($ids) - count($creditNotes),
+            'skipped_details' => $skipped,
+        ];
+    }
 }

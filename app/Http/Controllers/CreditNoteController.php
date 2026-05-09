@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\CreditNoteStatus;
 use App\Http\Requests\CreditNotes\StoreCreditNoteRequest;
 use App\Http\Requests\CreditNotes\UpdateCreditNoteRequest;
+use App\Http\Requests\CreditNotes\CreditNoteBulkActionRequest;
 use App\Models\CreditNote;
 use App\Models\Invoice;
 use App\Models\Workspace;
@@ -221,5 +222,45 @@ class CreditNoteController extends Controller
 
             return back();
         }
+    }
+
+    public function bulkAction(CreditNoteBulkActionRequest $request, CreditNoteService $creditNoteService): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace, 404);
+
+        $validated = $request->validated();
+
+        $result = $creditNoteService->bulkAction(
+            $workspace,
+            $validated['ids'],
+            $validated['action'],
+        );
+
+        $processed = $result['processed'];
+        $skipped = $result['skipped'];
+        $missing = $result['missing'];
+
+        $message = __('No credit notes were updated.');
+        $type = $processed > 0 ? 'success' : 'warning';
+
+        if ($processed > 0) {
+            $message = trans_choice(':count credit note processed.|:count credit notes processed.', $processed, ['count' => $processed]);
+
+            if ($skipped > 0) {
+                $message .= ' ' . trans_choice(':count skipped.|:count skipped.', $skipped, ['count' => $skipped]);
+            }
+
+            if ($missing > 0) {
+                $message .= ' ' . trans_choice(':count not found.|:count not found.', $missing, ['count' => $missing]);
+            }
+        } elseif ($skipped > 0) {
+            $message = trans_choice(':count credit note skipped.|:count credit notes skipped.', $skipped, ['count' => $skipped]);
+        }
+
+        Inertia::flash('toast', ['type' => $type, 'message' => $message]);
+
+        return back();
     }
 }
