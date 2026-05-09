@@ -9,6 +9,7 @@ import {
     Settings2,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import ConfigurationController from '@/actions/App/Http/Controllers/ConfigurationController';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -18,7 +19,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import ConfigurationController from '@/actions/App/Http/Controllers/ConfigurationController';
 import TaskStatusCreateDialog from '@/pages/configuration/task-status/components/CreateDialog.vue';
 
 const props = defineProps<{

@@ -102,6 +102,7 @@ const lockedEntityLabel = computed(() => {
     }
 
     const title = lockedEntity.value.title || `#${lockedEntity.value.id}`;
+
     if (lockedEntity.value.number) {
         return `${title} (${lockedEntity.value.number})`;
     }
@@ -214,6 +215,7 @@ const submit = (): void => {
             open.value = false;
             form.reset();
             form.clearErrors();
+
             if (lockedEntity.value) {
                 form.taskable_type = lockedEntity.value.type;
                 form.taskable_id = lockedEntity.value.id;

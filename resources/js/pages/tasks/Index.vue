@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { computed, ref, watch } from 'vue';
 import { GitBranch, Trash2 } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
 import TaskController from '@/actions/App/Http/Controllers/TaskController';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -14,12 +20,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import TaskCreateDialog from '@/pages/tasks/components/CreateDialog.vue';
 import TaskEditDialog from '@/pages/tasks/components/EditDialog.vue';
 import TaskHeaderActions from '@/pages/tasks/components/TaskHeaderActions.vue';
@@ -60,6 +60,7 @@ const viewMode = ref<'table' | 'kanban'>(
 
 const toggleView = (): void => {
     viewMode.value = viewMode.value === 'table' ? 'kanban' : 'table';
+
     if (typeof window !== 'undefined') {
         localStorage.setItem(STORAGE_KEY, viewMode.value);
     }
@@ -179,6 +180,7 @@ const openBulkDeleteDialog = (): void => {
 const executeBulkDelete = (): void => {
     if (selectedIds.value.length === 0) {
         bulkDeleteDialogOpen.value = false;
+
         return;
     }
 

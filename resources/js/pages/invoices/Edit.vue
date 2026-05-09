@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, setLayoutProps, useForm } from '@inertiajs/vue3';
 import { computed, watchEffect } from 'vue';
+import InvoiceController from '@/actions/App/Http/Controllers/InvoiceController';
 import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
 import type {
     BuilderCatalogItem,
@@ -10,7 +11,6 @@ import type {
     QuoteBuilderState,
     WorkspaceSettings,
 } from '@/types';
-import InvoiceController from '@/actions/App/Http/Controllers/InvoiceController';
 
 const props = defineProps<{
     invoice: InvoiceModel;

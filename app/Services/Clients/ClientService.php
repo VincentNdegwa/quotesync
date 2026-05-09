@@ -169,10 +169,10 @@ class ClientService
         $acceptedDurations = $wonQuotes
             ->filter(fn ($quote): bool => $quote->accepted_at !== null)
             ->map(function ($quote): float {
-                $createdAt = now()->parse($quote->created_at);
-                $closedAt = now()->parse($quote->accepted_at);
+                $createdAt = $quote->created_at;
+                $closedAt = $quote->accepted_at;
 
-                return $closedAt->diffInSeconds($createdAt) / 86400;
+                return $createdAt->diffInSeconds($closedAt) / 86400;
             });
 
         return [

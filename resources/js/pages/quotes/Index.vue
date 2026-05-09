@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { computed, ref, watch } from 'vue';
 import { Archive, Download, Trash2 } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
@@ -194,6 +194,7 @@ const openBulkActionDialog = (action: 'delete' | 'archive'): void => {
 const executeBulkAction = (): void => {
     if (!bulkActionType.value || selectedIds.value.length === 0) {
         bulkActionDialogOpen.value = false;
+
         return;
     }
 

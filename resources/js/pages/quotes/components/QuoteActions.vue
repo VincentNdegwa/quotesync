@@ -24,7 +24,6 @@ import PortalDashboardController from '@/actions/App/Http/Controllers/Portal/Por
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
-import TaskCreateDialog from '@/pages/tasks/components/CreateDialog.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -51,6 +50,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import TaskCreateDialog from '@/pages/tasks/components/CreateDialog.vue';
 import _portal from '@/routes/portal';
 import { show as publicQuotesShow } from '@/routes/public-quotes';
 import { analytics as quotesAnalytics } from '@/routes/quotes';
@@ -195,6 +195,7 @@ const executeSend = (): void => {
 const openTaskDialog = (): void => {
     if (!canCreateTask.value) {
         toast.error('Invite a teammate before assigning tasks.');
+
         return;
     }
 
@@ -1001,7 +1002,7 @@ const executeChangeOwner = (): void => {
             class="gap-1.5"
             @click="reject"
         >
-            <XCircle class="h-3.5 w-3.5" />
+            <XCircle class="h-3.5 w-3.5" />a
             Reject
         </Button>
 

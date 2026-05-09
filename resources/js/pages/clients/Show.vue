@@ -4,40 +4,18 @@ import {
     Link,
     router,
     setLayoutProps,
-    useForm,
     usePage,
 } from '@inertiajs/vue3';
-import { computed, watchEffect, ref } from 'vue';
+import { Globe, Mail, MapPin, Phone, Tag, Users } from 'lucide-vue-next';
+import { computed, ref, watchEffect } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
-import CountryCombobox from '@/components/location/CountryCombobox.vue';
-import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectLabel,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFormat } from '@/composables/useFormat';
 import type { ClientRecord, ClientStats } from '@/types';
+import ClientActions from './components/ClientActions.vue';
 import ContactDialog from './components/ContactDialog.vue';
-import InvitePortalDialog from './components/InvitePortalDialog.vue';
 
 const props = defineProps<{
     client: ClientRecord;
@@ -75,40 +53,86 @@ watchEffect(() => {
     });
 });
 
-const form = useForm({
-    company_name: props.client.company_name || '',
-    contact_name: props.client.contact_name ?? '',
-    email: props.client.email ?? '',
-    phone: props.client.phone ?? '',
-    whatsapp: props.client.whatsapp ?? '',
-    address: props.client.address ?? '',
-    city: props.client.city ?? '',
-    country: props.client.country ?? '',
-    currency: props.client.currency ?? '',
-    language: props.client.language ?? '',
-    tax_number: props.client.tax_number ?? '',
-    tag_ids: props.client.tag_ids ?? [],
+const quoteHistory = computed(() => props.stats.quote_history || []);
+
+const contactList = computed(() => props.client.contacts ?? []);
+const tagNames = computed<string[]>(() => {
+    const tags = (props.client.tags ?? []) as Array<string | { name?: string; id?: number }>;
+
+    return tags
+        .map((tag) => {
+            if (typeof tag === 'string') {
+                return tag;
+            }
+
+            return tag?.name ?? (tag as Record<string, unknown>)?.id?.toString() ?? null;
+        })
+        .filter((tag): tag is string => Boolean(tag));
+});
+const primaryContact = computed(
+    () => contactList.value.find((contact) => contact.is_primary) ?? null,
+);
+
+const formattedAddress = computed(() => {
+    const parts = [
+        props.client.address,
+        props.client.city,
+        props.client.country,
+    ].filter(Boolean);
+
+    return parts.length ? parts.join(', ') : 'Not provided';
 });
 
-const saveClient = (): void => {
-    form.put(`/clients/${props.client.id}`, {
-        preserveScroll: true,
-    });
-};
+const heroMetrics = computed(() => [
+    {
+        label: 'Total quotes sent',
+        value: Number(props.stats.total_quotes_sent ?? 0),
+    },
+    {
+        label: 'Win rate',
+        value: `${props.stats.win_rate ?? 0}%`,
+    },
+    {
+        label: 'Value won',
+        value: formatCurrency(props.stats.total_value_won ?? 0),
+    },
+    {
+        label: 'Average quote value',
+        value: formatCurrency(props.stats.average_quote_value ?? 0),
+    },
+    {
+        label: 'Avg days to acceptance',
+        value: `${props.stats.average_time_to_acceptance_days ?? 0} days`,
+    },
+]);
 
-const selectedTagIds = computed<string[]>({
-    get: () => {
-        if (!Array.isArray(form.tag_ids)) {
-            return [];
+const recentQuotes = computed(() => quoteHistory.value.slice(0, 4));
+
+const statusDistribution = computed(() => {
+    const buckets: Record<string, number> = {};
+
+    quoteHistory.value.forEach((quote) => {
+        const raw = quote.status;
+        let key: string;
+
+        if (typeof raw === 'string') {
+            key = raw;
+        } else if (raw && typeof raw === 'object') {
+            key = String((raw as { label?: string; value?: string }).label ?? (raw as { value?: string }).value ?? 'unknown');
+        } else {
+            key = 'unknown';
         }
 
-        return form.tag_ids.map((id: number | string) => String(id));
-    },
-    set: (values) => {
-        form.tag_ids = values
-            .map((value) => Number(value))
-            .filter((value) => Number.isFinite(value));
-    },
+        buckets[key] = (buckets[key] ?? 0) + 1;
+    });
+
+    return Object.entries(buckets)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 3)
+        .map(([status, count]) => ({
+            status,
+            count,
+        }));
 });
 
 const statusBadgeVariant = (
@@ -129,8 +153,6 @@ const statusBadgeVariant = (
     return 'outline';
 };
 
-const quoteHistory = computed(() => props.stats.quote_history || []); // eslint-disable-line @typescript-eslint/no-unnecessary-condition
-
 const deleteClient = (): void => {
     deleteClientDialogOpen.value = true;
 };
@@ -141,6 +163,10 @@ const confirmDeleteClient = (): void => {
             router.visit('/clients');
         },
     });
+};
+
+const handleEditClient = (client: ClientRecord): void => {
+    router.visit(`/clients/${client.id}/edit`);
 };
 
 const deleteContact = (contactId: number): void => {
@@ -187,252 +213,270 @@ const closeContactDialog = (): void => {
     <Head :title="client.company_name" />
 
     <div class="space-y-6">
-        <div class="flex items-center justify-between">
-            <Heading
-                :title="client.company_name"
-                description="Client profile, quote history, and performance stats"
-            />
-
-            <div class="flex gap-2">
-                <Button as-child>
-                    <Link :href="`/quotes/create?client_id=${client.id}`"
-                        >New quote</Link
-                    >
-                </Button>
-                <!-- <Button variant="outline" @click="inviteDialogOpen = true">Invite to Portal</Button> -->
-                <Button variant="destructive" @click="deleteClient"
-                    >Delete</Button
-                >
+        <section class="flex flex-wrap items-start justify-between gap-4">
+            <div class="space-y-3">
+                <Heading
+                    :title="client.company_name"
+                    :description="
+                        primaryContact
+                            ? `Primary contact · ${primaryContact.name}`
+                            : 'Client profile, quote history, and performance stats'
+                    "
+                />
             </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <ClientActions
+                    :client="client"
+                    variant="buttons"
+                    @edit="handleEditClient"
+                    @invite="inviteDialogOpen = true"
+                    @delete="deleteClient"
+                />
+            </div>
+        </section>
+
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            <article
+                v-for="metric in heroMetrics"
+                :key="metric.label"
+                class="rounded-md border border-border bg-card/80 p-4"
+            >
+                <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {{ metric.label }}
+                </p>
+                <p class="text-2xl font-bold text-foreground">{{ metric.value }}</p>
+            </article>
         </div>
 
-        <div class="grid gap-4 md:grid-cols-5">
-            <div class="rounded-md border p-4">
-                <p class="text-xs text-muted-foreground">Total quotes sent</p>
-                <p class="text-2xl font-semibold">
-                    {{ stats.total_quotes_sent }}
-                </p>
-            </div>
-            <div class="rounded-md border p-4">
-                <p class="text-xs text-muted-foreground">Win rate</p>
-                <p class="text-2xl font-semibold">{{ stats.win_rate }}%</p>
-            </div>
-            <div class="rounded-md border p-4">
-                <p class="text-xs text-muted-foreground">Total value won</p>
-                <p class="text-2xl font-semibold">
-                    {{ formatCurrency(stats.total_value_won) }}
-                </p>
-            </div>
-            <div class="rounded-md border p-4">
-                <p class="text-xs text-muted-foreground">Average quote value</p>
-                <p class="text-2xl font-semibold">
-                    {{ formatCurrency(stats.average_quote_value) }}
-                </p>
-            </div>
-            <div class="rounded-md border p-4">
-                <p class="text-xs text-muted-foreground">
-                    Avg days to acceptance
-                </p>
-                <p class="text-2xl font-semibold">
-                    {{ stats.average_time_to_acceptance_days }}
-                </p>
-            </div>
-        </div>
-
-        <Tabs default-value="profile" class="space-y-4">
-            <TabsList>
-                <TabsTrigger value="profile">Profile</TabsTrigger>
-                <TabsTrigger value="contacts">Contacts</TabsTrigger>
-                <TabsTrigger value="history">Quote history</TabsTrigger>
-            </TabsList>
-
-            <TabsContent
-                value="profile"
-                class="space-y-4 rounded-md border p-4"
-            >
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div class="grid gap-2">
-                        <Label for="company_name">Company name</Label>
-                        <Input id="company_name" v-model="form.company_name" />
+        <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div class="space-y-6">
+                <article class="rounded-md border border-border bg-card/80 p-6 space-y-6">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <p class="text-xs uppercase tracking-wide text-muted-foreground">Overview</p>
+                            <h3 class="text-lg font-semibold text-foreground">Client summary</h3>
+                        </div>
+                        <Badge v-if="tagNames.length" variant="outline">
+                            {{ tagNames[0] }}
+                        </Badge>
                     </div>
-                    <div class="grid gap-2">
-                        <Label for="contact_name">Contact name</Label>
-                        <Input id="contact_name" v-model="form.contact_name" />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label for="email">Email</Label>
-                        <Input id="email" v-model="form.email" type="email" />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label for="phone">Phone</Label>
-                        <Input id="phone" v-model="form.phone" />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label for="country">Country</Label>
-                        <CountryCombobox
-                            v-model="form.country"
-                            trigger-class="w-full"
-                        />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label for="currency">Currency</Label>
-                        <CurrencyCombobox
-                            v-model="form.currency"
-                            trigger-class="w-full"
-                        />
-                    </div>
-                </div>
 
-                <div class="grid gap-2">
-                    <Label>Tags</Label>
-                    <Select v-model="selectedTagIds" multiple>
-                        <SelectTrigger class="w-full md:w-[320px]">
-                            <SelectValue placeholder="Select tags" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectLabel>Available tags</SelectLabel>
-                                <SelectItem
-                                    v-for="tag in availableTags"
-                                    :key="tag.id"
-                                    :value="String(tag.id)"
-                                >
-                                    {{ tag.name }}
-                                </SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                    <p
-                        v-if="availableTags.length === 0"
-                        class="text-sm text-muted-foreground"
-                    >
-                        No tags found. Create tags in Configuration.
-                    </p>
-                </div>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="space-y-1">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Company contact
+                            </p>
+                            <p class="text-sm font-semibold text-foreground">
+                                {{ client.contact_name ?? 'Not provided' }}
+                            </p>
+                            <p class="text-xs text-muted-foreground">
+                                {{ client.phone ?? 'Phone not shared' }}
+                            </p>
+                        </div>
+                        <div class="space-y-1">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Currency
+                            </p>
+                            <p class="text-sm font-semibold text-foreground">
+                                {{ client.currency ?? 'Not configured' }}
+                            </p>
+                            <p class="text-xs text-muted-foreground">
+                                {{ client.language ?? 'Language not set' }}
+                            </p>
+                        </div>
+                    </div>
 
-                <div class="flex justify-end">
-                    <Button :disabled="form.processing" @click="saveClient"
-                        >Save profile</Button
-                    >
-                </div>
-            </TabsContent>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Mail class="h-4 w-4" />
+                            <span>{{ client.email ?? 'Email not shared' }}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Phone class="h-4 w-4" />
+                            <span>{{ client.whatsapp ?? client.phone ?? 'No phone provided' }}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                            <MapPin class="h-4 w-4" />
+                            <span>{{ formattedAddress }}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Globe class="h-4 w-4" />
+                            <span>{{ client.country ?? 'Country not set' }}</span>
+                        </div>
+                    </div>
+                </article>
 
-            <TabsContent
-                value="contacts"
-                class="space-y-4 rounded-md border p-4"
-            >
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-semibold">Contacts</h3>
-                    <Button @click="openContactDialog()">Add Contact</Button>
-                </div>
+                <article class="rounded-md border border-border bg-card/80 p-6 space-y-5">
+                    <div class="flex items-center justify-between gap-2">
+                        <div>
+                            <p class="text-xs uppercase tracking-wide text-muted-foreground">Contacts</p>
+                            <h3 class="text-lg font-semibold text-foreground">Stakeholders</h3>
+                        </div>
+                        <Button size="sm" @click="openContactDialog()">Add contact</Button>
+                    </div>
 
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Phone</TableHead>
-                            <TableHead>Position</TableHead>
-                            <TableHead>Primary</TableHead>
-                            <TableHead class="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        <template
-                            v-if="client.contacts && client.contacts.length > 0"
-                        >
-                            <TableRow
-                                v-for="contact in client.contacts"
+                    <div class="space-y-4">
+                        <template v-if="contactList.length">
+                            <div
+                                v-for="contact in contactList"
                                 :key="contact.id"
+                                class="space-y-3 rounded-md border border-dashed border-border p-4"
                             >
-                                <TableCell>{{ contact.name }}</TableCell>
-                                <TableCell>{{
-                                    contact.email || '-'
-                                }}</TableCell>
-                                <TableCell>{{
-                                    contact.phone || '-'
-                                }}</TableCell>
-                                <TableCell>{{
-                                    contact.position || '-'
-                                }}</TableCell>
-                                <TableCell>
-                                    <Badge
-                                        v-if="contact.is_primary"
-                                        variant="default"
-                                        >Primary</Badge
-                                    >
-                                </TableCell>
-                                <TableCell class="text-right">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <div>
+                                        <p class="text-sm font-semibold text-foreground">
+                                            {{ contact.name }}
+                                        </p>
+                                        <p class="text-xs text-muted-foreground">
+                                            {{ contact.position ?? 'No role specified' }}
+                                        </p>
+                                    </div>
+                                    <Badge v-if="contact.is_primary">Primary</Badge>
+                                </div>
+
+                                <div class="grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
+                                    <div class="flex items-center gap-1">
+                                        <Mail class="h-4 w-4" />
+                                        <span>{{ contact.email ?? '—' }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <Phone class="h-4 w-4" />
+                                        <span>{{ contact.phone ?? '—' }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <Users class="h-4 w-4" />
+                                        <span>{{ contact.position ?? '—' }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-wrap gap-2">
                                     <Button
                                         variant="ghost"
                                         size="sm"
                                         @click="openContactDialog(contact)"
-                                        >Edit</Button
                                     >
+                                        Edit
+                                    </Button>
                                     <Button
                                         variant="ghost"
                                         size="sm"
                                         class="text-destructive"
                                         @click="deleteContact(contact.id)"
-                                        >Delete</Button
                                     >
-                                </TableCell>
-                            </TableRow>
+                                        Delete
+                                    </Button>
+                                </div>
+                            </div>
                         </template>
-                        <TableRow v-else>
-                            <TableCell
-                                colspan="6"
-                                class="text-center text-muted-foreground"
-                            >
-                                No contacts added yet. Click "Add Contact" to
-                                create one.
-                            </TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
-            </TabsContent>
+                        <div
+                            v-else
+                            class="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground"
+                        >
+                            No contacts added yet. Add one to keep everyone in the loop.
+                        </div>
+                    </div>
+                </article>
 
-            <TabsContent value="history" class="rounded-md border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Quote</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead class="text-right">Amount</TableHead>
-                            <TableHead>Date</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        <TableRow v-for="quote in quoteHistory" :key="quote.id">
-                            <TableCell>{{
-                                quote.number || quote.title || `#${quote.id}`
-                            }}</TableCell>
-                            <TableCell>
-                                <Badge
-                                    :variant="statusBadgeVariant(quote.status)"
+                <article class="rounded-md border border-border bg-card/80 p-6 space-y-4">
+                    <div class="flex items-center justify-between gap-2">
+                        <div>
+                            <p class="text-xs uppercase tracking-wide text-muted-foreground">Quote history</p>
+                            <h3 class="text-lg font-semibold text-foreground">Recent activity</h3>
+                        </div>
+                        <Button variant="ghost" size="sm" as-child>
+                            <Link :href="`/quotes?client_id=${client.id}`">See all</Link>
+                        </Button>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div
+                            v-for="quote in recentQuotes"
+                            :key="quote.id"
+                            class="rounded-md border border-border p-4"
+                        >
+                            <div class="flex flex-wrap items-start justify-between gap-2">
+                                <Link
+                                    :href="`/quotes/${quote.id}`"
+                                    class="text-sm font-semibold text-foreground underline-offset-4 hover:underline"
                                 >
-                                    {{ quote.status || 'unknown' }}
-                                </Badge>
-                            </TableCell>
-                            <TableCell class="text-right">{{
-                                formatCurrency(quote.base_total ?? 0)
-                            }}</TableCell>
-                            <TableCell>{{
-                                formatDate(quote.created_at)
-                            }}</TableCell>
-                        </TableRow>
-                        <TableRow v-if="quoteHistory.length === 0">
-                            <TableCell
-                                colspan="4"
-                                class="text-center text-muted-foreground"
-                            >
-                                No quote history available yet.
-                            </TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
-            </TabsContent>
-        </Tabs>
+                                    {{ quote.number || quote.title || `Quote #${quote.id}` }}
+                                </Link>
+                                <div class="flex items-center gap-2">
+                                    <Badge :variant="statusBadgeVariant(quote.status)">
+                                        {{ quote.status || 'unknown' }}
+                                    </Badge>
+                                    <p class="text-sm font-semibold text-foreground">
+                                        {{ formatCurrency(quote.base_total ?? 0) }}
+                                    </p>
+                                </div>
+                            </div>
+                            <p class="text-xs text-muted-foreground">
+                                {{ formatDate(quote.created_at) }}
+                            </p>
+                        </div>
+                        <div
+                            v-if="recentQuotes.length === 0"
+                            class="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground"
+                        >
+                            No quotes yet. Generate one to start the relationship.
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <div class="space-y-4">
+                <article class="rounded-md border border-border bg-card/80 p-6 space-y-4">
+                    <div class="flex items-center justify-between gap-2">
+                        <div>
+                            <p class="text-xs uppercase tracking-wide text-muted-foreground">Relationship pulse</p>
+                            <h3 class="text-lg font-semibold text-foreground">Status breakdown</h3>
+                        </div>
+                        <Button variant="ghost" size="sm" as-child>
+                            <Link :href="`/quotes?client_id=${client.id}`">Refresh</Link>
+                        </Button>
+                    </div>
+
+                    <div v-if="statusDistribution.length" class="space-y-3">
+                        <div
+                            v-for="stat in statusDistribution"
+                            :key="stat.status"
+                            class="space-y-2"
+                        >
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm capitalize text-muted-foreground">{{ stat.status }}</p>
+                                <p class="text-sm font-semibold text-foreground">{{ stat.count }} quote(s)</p>
+                            </div>
+                            <div class="h-1 bg-muted/20">
+                                <div
+                                    class="h-full bg-linear-to-r from-emerald-500 to-green-500"
+                                    :style="{ width: `${(stat.count / (quoteHistory.length || 1)) * 100}%` }"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <p v-else class="text-sm text-muted-foreground">No quote activity recorded yet.</p>
+
+                    <div class="space-y-3 pt-4">
+                        <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Tag class="h-4 w-4" />
+                            <span>
+                                {{ tagNames.length ? tagNames.join(', ') : 'No tags assigned' }}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Globe class="h-4 w-4" />
+                            <span>{{ client.country ?? 'Country missing' }}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                            <MapPin class="h-4 w-4" />
+                            <span>{{ formattedAddress }}</span>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
 
         <InvitePortalDialog v-model:open="inviteDialogOpen" :client="client" />
         <ContactDialog

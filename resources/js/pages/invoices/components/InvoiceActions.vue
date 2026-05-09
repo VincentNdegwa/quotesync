@@ -28,9 +28,9 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import TaskCreateDialog from '@/pages/tasks/components/CreateDialog.vue';
 import type { InvoiceListRecord, InvoiceStatusEnum } from '@/types';
 
-import TaskCreateDialog from '@/pages/tasks/components/CreateDialog.vue';
 
 const props = defineProps<{
     invoice: InvoiceListRecord;
@@ -194,6 +194,7 @@ const openPaymentDialog = (): void => {
 const openTaskDialog = (): void => {
     if (!canCreateTask.value) {
         toast.error('Invite a teammate before assigning tasks.');
+
         return;
     }
 

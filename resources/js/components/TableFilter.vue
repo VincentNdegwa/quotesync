@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { X, SlidersHorizontal, Search, ChevronDown, Check } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -67,7 +67,10 @@ watch(() => props.modelValue, (val) => {
 
 const activeCount = computed(() => {
     return Object.values(props.modelValue).filter((v) => {
-        if (Array.isArray(v)) return v.length > 0;
+        if (Array.isArray(v)) {
+return v.length > 0;
+}
+
         return v !== '' && v !== null && v !== undefined;
     }).length;
 });
@@ -78,7 +81,10 @@ const activeBadges = computed(() => {
 
     for (const group of props.groups) {
         const val = props.modelValue[group.key];
-        if (!val) continue;
+
+        if (!val) {
+continue;
+}
 
         if (Array.isArray(val)) {
             for (const v of val) {
@@ -95,6 +101,7 @@ const activeBadges = computed(() => {
                 const parts = val.split('|');
                 const from  = parts[0] ?? '';
                 const to    = parts[1] ?? '';
+
                 if (from || to) {
                     badges.push({
                         key:          group.key,
@@ -123,16 +130,20 @@ const activeBadges = computed(() => {
 const getDraftValue = (key: string, type: FilterGroup['type']): string | string[] => {
     if (type === 'multi') {
         const v = draft.value[key];
+
         return Array.isArray(v) ? v : v ? [v] : [];
     }
+
     return (draft.value[key] as string) ?? '';
 };
 
 const isOptionActive = (key: string, value: string, type: FilterGroup['type']): boolean => {
     const v = draft.value[key];
+
     if (type === 'multi') {
         return Array.isArray(v) ? v.includes(value) : v === value;
     }
+
     return v === value;
 };
 
@@ -157,6 +168,7 @@ const toggleOption = (key: string, value: string, type: FilterGroup['type']): vo
 const getDatePart = (key: string, part: 'from' | 'to'): string => {
     const v = (draft.value[key] as string) ?? '';
     const parts = v.split('|');
+
     return part === 'from' ? (parts[0] ?? '') : (parts[1] ?? '');
 };
 
@@ -178,22 +190,27 @@ const applyFilters = (): void => {
 
 const clearDraft = (): void => {
     const cleared: ActiveFilters = {};
+
     for (const group of props.groups) {
         cleared[group.key] = group.type === 'multi' ? [] : '';
     }
+
     draft.value = cleared;
 };
 
 const clearAll = (): void => {
     const cleared: ActiveFilters = {};
+
     for (const group of props.groups) {
         cleared[group.key] = group.type === 'multi' ? [] : '';
     }
+
     emit('update:modelValue', cleared);
 };
 
 const removeBadge = (key: string, value: string, type: FilterGroup['type']): void => {
     const current = props.modelValue[key];
+
     if (type === 'multi' && Array.isArray(current)) {
         emit('update:modelValue', {
             ...props.modelValue,
@@ -209,6 +226,7 @@ const onPopoverOpen = (open: boolean): void => {
         // Sync draft from committed filters when opening
         draft.value = { ...props.modelValue };
     }
+
     popoverOpen.value = open;
 };
 </script>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
 import { Ban, CheckCircle2, Download, Trash2 } from 'lucide-vue-next';
+import { ref, watch } from 'vue';
 import CatalogHeaderActions from '@/components/catalog/CatalogHeaderActions.vue';
 import CatalogItemForm from '@/components/catalog/CatalogItemForm.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';

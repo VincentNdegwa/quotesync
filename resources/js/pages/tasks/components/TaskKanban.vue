@@ -34,6 +34,7 @@ const withAlpha = (hex: string | null | undefined, alpha: number): string => {
     }
 
     let sanitized = hex.replace('#', '');
+
     if (sanitized.length === 3) {
         sanitized = sanitized
             .split('')
@@ -42,6 +43,7 @@ const withAlpha = (hex: string | null | undefined, alpha: number): string => {
     }
 
     const int = Number.parseInt(sanitized, 16);
+
     if (Number.isNaN(int)) {
         return `rgba(71, 85, 105, ${alpha})`;
     }
@@ -73,6 +75,7 @@ const buildQueryString = (): string => {
     }
 
     const query = params.toString();
+
     return query ? `?${query}` : '';
 };
 
@@ -209,6 +212,7 @@ const onDrop = (event: DragEvent, statusId: number): void => {
 
     if (!dragging.value || !canDrop(statusId)) {
         onDragEnd();
+
         return;
     }
 

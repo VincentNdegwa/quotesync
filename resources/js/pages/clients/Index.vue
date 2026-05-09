@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { computed, ref, watch } from 'vue';
 import { Download, Trash2 } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
 import ClientSlideOver from '@/components/clients/ClientSlideOver.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
