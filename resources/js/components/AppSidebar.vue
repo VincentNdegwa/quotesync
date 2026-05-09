@@ -48,6 +48,11 @@ const mainNavItems = computed<NavItem[]>(() => [
         icon: Users,
     },
     {
+        title: 'Catalog',
+        href: '/catalog',
+        icon: Tags,
+    },
+    {
         title: 'Quotes',
         href: '/quotes',
         icon: FileText,
@@ -61,11 +66,6 @@ const mainNavItems = computed<NavItem[]>(() => [
         title: 'Tasks',
         href: '/tasks',
         icon: CheckSquare2,
-    },
-    {
-        title: 'Catalog',
-        href: '/catalog',
-        icon: Tags,
     },
     {
         title: 'Analytics',

@@ -10,14 +10,14 @@ import type { NavItem } from '@/types';
 
 const navItems: NavItem[] = [
     { title: 'Taxes', href: '/configuration/taxes' },
+    { title: 'Units', href: '/configuration/units' },
     { title: 'Categories', href: '/configuration/categories' },
     { title: 'Tags', href: '/configuration/tags' },
-    { title: 'Units', href: '/configuration/units' },
     { title: 'Industries', href: '/configuration/industries' },
-    { title: 'Follow-ups', href: '/configuration/follow-ups' },
     { title: 'Templates', href: '/configuration/templates' },
-    { title: 'Task Statuses', href: '/configuration/task-status' },
+    { title: 'Follow-ups', href: '/configuration/follow-ups' },
     { title: 'Invoice Reminders', href: configuration.invoiceReminders().url },
+    { title: 'Task Statuses', href: '/configuration/task-status' },
 ];
 
 const { isCurrentOrParentUrl } = useCurrentUrl();
@@ -41,18 +41,27 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
             <div class="flex flex-col gap-6 lg:flex-row lg:gap-10">
                 <aside class="w-full lg:w-56">
                     <nav class="space-y-1" aria-label="Configuration sections">
-                        <Button
-                            v-for="item in navItems"
-                            :key="item.href"
-                            variant="ghost"
-                            class="w-full justify-start"
-                            :class="{
-                                'bg-muted': isCurrentOrParentUrl(item.href),
-                            }"
-                            as-child
-                        >
-                            <Link :href="item.href">{{ item.title }}</Link>
-                        </Button>
+                        <template v-for="(item, index) in navItems" :key="item.href">
+                            <Button
+                                variant="ghost"
+                                :class="[
+                                    'w-full justify-start text-sm',
+                                    isCurrentOrParentUrl(item.href)
+                                        ? 'bg-accent text-accent-foreground'
+                                        : 'text-muted-foreground hover:text-foreground',
+                                ]"
+                                as-child
+                            >
+                                <Link :href="item.href">
+                                    {{ item.title }}
+                                </Link>
+                            </Button>
+
+                            <Separator
+                                v-if="index === 4 || index === 7"
+                                class="my-2"
+                            />
+                        </template>
                     </nav>
                 </aside>
 
