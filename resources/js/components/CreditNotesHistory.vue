@@ -22,7 +22,7 @@ const page = usePage();
 const defaultCurrency: string = page.props.workspace_currency as string;
 
 const issuedCreditNotes = computed(() => {
-    return props.creditNotes.filter((cn) => cn.status === 'issued');
+    return props.creditNotes.filter((cn) => cn.status === 'applied');
 });
 
 const totalCredited = computed(() => {
@@ -44,27 +44,6 @@ const creditStatus = computed(() => {
     return 'none';
 });
 
-const getStatusColor = (status: string): string => {
-    switch (status) {
-        case 'fully_credited':
-            return 'bg-green-100 text-green-800 border-green-200';
-        case 'partial':
-            return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-        default:
-            return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-};
-
-const getStatusLabel = (status: string): string => {
-    switch (status) {
-        case 'fully_credited':
-            return 'Fully Credited';
-        case 'partial':
-            return 'Partial Credit';
-        default:
-            return 'No Credits';
-    }
-};
 </script>
 
 <template>
@@ -76,9 +55,7 @@ const getStatusLabel = (status: string): string => {
                     Track credit notes applied to this invoice
                 </p>
             </div>
-            <Badge :class="[getStatusColor(creditStatus), 'text-xs']">
-                {{ getStatusLabel(creditStatus) }}
-            </Badge>
+           
         </div>
 
         <!-- Credit Summary -->
@@ -137,6 +114,7 @@ const getStatusLabel = (status: string): string => {
                                             ?.cssColor,
                                         'text-xs',
                                     ]"
+                                    :variant="getCreditNoteStatus(creditNote.status)?.badgeColor"
                                 >
                                     {{
                                         getCreditNoteStatus(creditNote.status)

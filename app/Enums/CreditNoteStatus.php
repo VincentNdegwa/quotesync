@@ -22,9 +22,9 @@ enum CreditNoteStatus: string
     public function badgeColor(): string
     {
         return match ($this) {
-            self::Draft => 'secondary',
-            self::Issued => 'default',
-            self::Applied => 'green',
+            self::Draft => 'outline',
+            self::Issued => 'outline',
+            self::Applied => 'outline',
             self::Voided => 'outline',
         };
     }
@@ -33,7 +33,7 @@ enum CreditNoteStatus: string
     {
         return match ($this) {
             self::Draft => 'text-muted-foreground',
-            self::Issued => 'text-white',
+            self::Issued => 'text-primary',
             self::Applied => 'text-green-600',
             self::Voided => 'text-orange-600',
         };
