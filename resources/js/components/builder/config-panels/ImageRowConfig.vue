@@ -31,19 +31,6 @@ const gapOptions = [
     { value: 'lg', label: 'L' },
 ] as const;
 
-const radiusOptions = [
-    { value: 'none', label: 'None' },
-    { value: 'sm', label: 'S' },
-    { value: 'md', label: 'M' },
-    { value: 'lg', label: 'L' },
-] as const;
-
-const paddingOptions = [
-    { value: 'sm', label: 'S' },
-    { value: 'md', label: 'M' },
-    { value: 'lg', label: 'L' },
-] as const;
-
 const syncImageSlots = (columns: 2 | 3): void => {
     if (config.value.images.length < columns) {
         const needed = columns - config.value.images.length;
@@ -108,50 +95,22 @@ const syncImageSlots = (columns: 2 | 3): void => {
         </div>
 
         <div class="border-b px-4 py-3">
-            <div>
-                <p class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Layout</p>
-
-                <div class="mb-3">
-                    <p class="mb-1.5 text-xs text-muted-foreground">Aspect ratio</p>
-                    <div class="grid grid-cols-2 gap-1">
-                        <button v-for="option in aspectOptions" :key="option.value" type="button" class="rounded border py-1 text-xs font-semibold transition-colors" :class="config.aspectRatio === option.value ? 'border-primary bg-primary/10 text-primary' : 'hover:border-muted-foreground/50'" @click="config.aspectRatio = option.value">
-                            {{ option.label }}
-                        </button>
-                    </div>
-                </div>
-
-                <div>
-                    <p class="mb-1.5 text-xs text-muted-foreground">Padding</p>
-                    <div class="flex gap-1">
-                        <button v-for="size in paddingOptions" :key="size.value" type="button" class="flex-1 rounded border py-1 text-sm font-semibold transition-colors" :class="config.paddingSize === size.value ? 'border-primary bg-primary/10 text-primary' : 'hover:border-muted-foreground/50'" @click="config.paddingSize = size.value">
-                            {{ size.label }}
-                        </button>
-                    </div>
-                </div>
+            <p class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Layout</p>
+            <p class="mb-1.5 text-xs text-muted-foreground">Aspect ratio</p>
+            <div class="grid grid-cols-2 gap-1">
+                <button v-for="option in aspectOptions" :key="option.value" type="button" class="rounded border py-1 text-xs font-semibold transition-colors" :class="config.aspectRatio === option.value ? 'border-primary bg-primary/10 text-primary' : 'hover:border-muted-foreground/50'" @click="config.aspectRatio = option.value">
+                    {{ option.label }}
+                </button>
             </div>
         </div>
 
         <div class="px-4 py-3">
-            <div>
-                <p class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Appearance</p>
-
-                <div class="mb-3">
-                    <p class="mb-1.5 text-xs text-muted-foreground">Gap</p>
-                    <div class="flex gap-1">
-                        <button v-for="option in gapOptions" :key="option.value" type="button" class="flex-1 rounded border py-1 text-sm font-semibold transition-colors" :class="config.gap === option.value ? 'border-primary bg-primary/10 text-primary' : 'hover:border-muted-foreground/50'" @click="config.gap = option.value">
-                            {{ option.label }}
-                        </button>
-                    </div>
-                </div>
-
-                <div>
-                    <p class="mb-1.5 text-xs text-muted-foreground">Corner radius</p>
-                    <div class="flex flex-wrap gap-1">
-                        <button v-for="option in radiusOptions" :key="option.value" type="button" class="min-w-10 rounded border px-2 py-1 text-xs font-semibold transition-colors" :class="config.borderRadius === option.value ? 'border-primary bg-primary/10 text-primary' : 'hover:border-muted-foreground/50'" @click="config.borderRadius = option.value">
-                            {{ option.label }}
-                        </button>
-                    </div>
-                </div>
+            <p class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Appearance</p>
+            <p class="mb-1.5 text-xs text-muted-foreground">Gap</p>
+            <div class="flex gap-1">
+                <button v-for="option in gapOptions" :key="option.value" type="button" class="flex-1 rounded border py-1 text-sm font-semibold transition-colors" :class="config.gap === option.value ? 'border-primary bg-primary/10 text-primary' : 'hover:border-muted-foreground/50'" @click="config.gap = option.value">
+                    {{ option.label }}
+                </button>
             </div>
         </div>
     </div>

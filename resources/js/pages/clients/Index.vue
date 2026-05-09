@@ -2,6 +2,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import ClientSlideOver from '@/components/clients/ClientSlideOver.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import CountryCombobox from '@/components/location/CountryCombobox.vue';
 import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
@@ -112,6 +113,7 @@ watch(
 const selectedIds = ref<number[]>([]);
 const isSlideOverOpen = ref(false);
 const editingClient = ref<ClientRecord | null>(null);
+const deleteDialogOpen = ref(false);
 const tagDialogOpen = ref(false);
 
 const form = useForm({
@@ -177,6 +179,10 @@ const bulkDelete = (): void => {
         return;
     }
 
+    deleteDialogOpen.value = true;
+};
+
+const executeDelete = (): void => {
     router.post(
         '/clients/bulk-delete',
         { ids: selectedIds.value },
@@ -184,6 +190,7 @@ const bulkDelete = (): void => {
             preserveScroll: true,
             onSuccess: () => {
                 selectedIds.value = [];
+                deleteDialogOpen.value = false;
             },
         },
     );
@@ -194,7 +201,19 @@ const exportSelected = (): void => {
         return;
     }
 
-    window.location.href = `/clients/export/csv?ids=${selectedIds.value.join(',')}`;
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/clients/export/selected';
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'ids';
+    input.value = JSON.stringify(selectedIds.value);
+
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
 };
 </script>
 
@@ -329,5 +348,14 @@ const exportSelected = (): void => {
         />
 
         <ConfigurationTagCreateDialog v-model:open="tagDialogOpen" />
+
+        <ConfirmDialog
+            v-model:open="deleteDialogOpen"
+            title="Delete selected clients"
+            :description="`Are you sure you want to delete ${selectedIds.length} selected client${selectedIds.length > 1 ? 's' : ''}? This action cannot be undone.`"
+            confirm-text="Delete"
+            variant="destructive"
+            @confirm="executeDelete"
+        />
     </div>
 </template>

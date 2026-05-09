@@ -1,23 +1,31 @@
 <script setup lang="ts">
-import { inject } from 'vue';
+import { inject, computed } from 'vue';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
 import { Button } from '@/components/ui/button';
-import type { BrandingData, QuoteData, SignatureBlockConfig } from '@/types';
+import { blockBaseStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
+import { useFormat } from '@/composables/useFormat';
+import type { DocumentData, SignatureBlockConfig, WorkspaceSettings } from '@/types';
 
-defineProps<{
+const props = defineProps<{
     config: SignatureBlockConfig;
-    quote: QuoteData & { status?: string; signature_url?: string | null; signer_name?: string | null; accepted_at?: string | null };
-    branding: BrandingData;
+    data: DocumentData;
+    settings: WorkspaceSettings;
     previewMode: boolean;
     editMode?: boolean;
 }>();
 
+const isQuote = computed(() => props.data.documentType === 'quote');
+
 const emit = defineEmits<{
-    (e: 'update-signature-content', payload: { acceptButtonText?: string | null; declineButtonText?: string | null; legalText?: string | null }): void;
+    (e: 'update-signature-content', payload: { acceptButtonText?: string | null; declineButtonText?: string | null; contextText?: string | null }): void;
 }>();
+
+const effectiveContextText = computed(() => props.config.contextText);
 
 const openApproveModal = inject('openApproveModal', () => {});
 const openDeclineModal = inject('openDeclineModal', () => {});
+
+const { formatDateTime } = useFormat();
 
 const updateAcceptText = (value: string | null): void => {
     emit('update-signature-content', { acceptButtonText: value });
@@ -27,31 +35,13 @@ const updateDeclineText = (value: string | null): void => {
     emit('update-signature-content', { declineButtonText: value });
 };
 
-const updateLegalText = (value: string | null): void => {
-    emit('update-signature-content', { legalText: value });
-};
-
-const formatDate = (dateString?: string | null) => {
-    if (!dateString) {
-return '';
-}
-
-    return new Date(dateString).toLocaleString(undefined, { 
-        year: 'numeric', month: 'long', day: 'numeric', 
-        hour: '2-digit', minute: '2-digit' 
-    });
+const updateContextText = (value: string | null): void => {
+    emit('update-signature-content', { contextText: value });
 };
 </script>
 
 <template>
-    <div
-        class="px-6"
-        :style="{
-            backgroundColor: config.backgroundColor ?? 'transparent',
-            paddingTop: config.paddingSize === 'sm' ? '12px' : config.paddingSize === 'lg' ? '28px' : '20px',
-            paddingBottom: config.paddingSize === 'sm' ? '12px' : config.paddingSize === 'lg' ? '28px' : '20px',
-        }"
-    >
+    <div :style="blockBaseStyle(config)" :class="blockFontSizeClass(config.fontSize)">
         <template v-if="editMode">
             <div class="flex flex-wrap gap-3">
                 <div class="min-w-40 rounded-md px-4 py-2 text-sm font-medium text-primary-foreground" :style="{ backgroundColor: config.acceptButtonColor ?? undefined }">
@@ -79,19 +69,19 @@ return '';
             </div>
         </template>
 
-        <template v-else-if="quote.status === 'accepted'">
-            <div class="flex items-center gap-6">
+        <template v-else-if="isQuote && (data.status === 'accepted' || data.status === 'won')">
+            <div class="flex flex-col items-start gap-6">
                 <div class="flex flex-col">
-                    <img v-if="quote.signature_url" :src="quote.signature_url" alt="Signature" class="h-20 w-auto object-contain" />
-                    <span v-if="quote.signer_name" class="mt-1 text-sm" style="font-family: 'Dancing Script', cursive; font-size: 1.25rem; line-height: 1;">{{ quote.signer_name }}</span>
+                    <img v-if="data.signature_url" :src="data.signature_url" alt="Signature" class="h-20 w-auto object-contain" />
+                    <span v-if="data.signer_name" class="mt-1 text-sm" style="font-family: 'Dancing Script', cursive; font-size: 1.25rem; line-height: 1;">{{ data.signer_name }}</span>
                 </div>
                 <div class="text-sm text-muted-foreground">
-                    <p>Signed on {{ formatDate(quote.accepted_at) }}</p>
+                    <p>Signed on {{ formatDateTime(data.accepted_at) }}</p>
                 </div>
             </div>
         </template>
 
-        <template v-else-if="quote.status === 'declined'">
+        <template v-else-if="isQuote && data.status === 'declined'">
             <p class="text-sm text-muted-foreground">This quote was declined.</p>
         </template>
 
@@ -107,14 +97,14 @@ return '';
         </template>
 
         <InlineEditableText
-            v-if="config.showLegalText || editMode"
-            :model-value="config.legalText"
+            v-if="config.showContextText || editMode"
+            :model-value="effectiveContextText"
             :edit-mode="editMode"
             :rows="2"
             placeholder="By signing you agree to the terms listed above."
             empty-text="By signing you agree to the terms listed above."
             display-class="text-xs text-muted-foreground whitespace-pre-wrap mt-3"
-            @update:model-value="updateLegalText"
+            @update:model-value="updateContextText"
         />
 
     </div>

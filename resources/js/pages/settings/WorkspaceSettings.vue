@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
+import { Form, Head, Link, useForm } from '@inertiajs/vue3';
+import { Globe } from 'lucide-vue-next';
 import { computed, reactive, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -20,16 +21,15 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import type {
-    WorkspaceSettingsField,
-    WorkspaceSettingsPageProps,
-} from '@/types';
+import type { IndustryModel, WorkspaceSettingsField, WorkspaceSettingsPageProps } from '@/types';
 import {
     translationLanguageOptions,
 } from '@/utils/location-options';
 import type { LanguageOption } from '@/utils/location-options';
 
-const props = defineProps<WorkspaceSettingsPageProps>();
+const props = defineProps<WorkspaceSettingsPageProps & {
+    industries: IndustryModel[];
+}>();
 
 defineOptions({
     layout: {
@@ -190,6 +190,20 @@ const languageOptionsForField = (field: WorkspaceSettingsField): LanguageOption[
         label: labels.get(code) ?? optionDisplayLabel(code),
     }));
 };
+
+const isColorField = (field: WorkspaceSettingsField): boolean => {
+    return field.key.toLowerCase().includes('color');
+};
+
+const industryForm = useForm({
+    industry_id: props.workspace.industry_id ?? null,
+});
+
+const updateIndustry = (): void => {
+    industryForm.put(`/business-setup/${props.currentGroup.group}`, {
+        preserveScroll: true,
+    });
+};
 </script>
 
 <template>
@@ -197,11 +211,40 @@ const languageOptionsForField = (field: WorkspaceSettingsField): LanguageOption[
     <h1 class="sr-only">{{ currentGroup.label }}</h1>
 
     <div class="space-y-6">
-        <Heading
-            variant="small"
-            :title="currentGroup.label"
-            :description="currentGroup.description ?? undefined"
-        />
+        <div class="flex items-center justify-between">
+            <Heading
+                variant="small"
+                :title="currentGroup.label"
+                :description="currentGroup.description ?? undefined"
+            />
+            <Button
+                v-if="currentGroup.group === 'brand'"
+                variant="outline"
+                as-child
+            >
+                <Link href="/custom-domains">
+                    <Globe class="h-4 w-4 mr-2" />
+                    Custom Domains
+                </Link>
+            </Button>
+        </div>
+
+        <div v-if="currentGroup.group === 'brand'" class="space-y-2">
+            <Label>Industry</Label>
+            <Select v-model="industryForm.industry_id" name="industry_id" @update:model-value="updateIndustry">
+                <SelectTrigger class="w-full" ><SelectValue placeholder="Select your industry" /></SelectTrigger>
+                <SelectContent>
+                    <SelectItem v-for="industry in industries" :key="industry.id" :value="String(industry.id)">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: industry.color || '#000' }" />
+                            {{ industry.name }}
+                        </div>
+                    </SelectItem>
+                </SelectContent>
+            </Select>
+            <InputError :message="industryForm.errors.industry_id" />
+        </div>
+
         <Form
             :action="updateAction"
             method="put"
@@ -393,6 +436,31 @@ const languageOptionsForField = (field: WorkspaceSettingsField): LanguageOption[
                     >
                         Current file: {{ asString(field.value) }}
                     </p>
+                </div>
+
+                <div v-else-if="isColorField(field)" class="space-y-2">
+                    <div class="flex items-center gap-3">
+                        <Input
+                            :id="`setting-${field.key}`"
+                            :name="`settings[${field.key}]`"
+                            type="color"
+                            class="w-16 h-10 p-1 cursor-pointer"
+                            v-model="formValues[field.key]"
+                        />
+                        <Input
+                            :id="`setting-${field.key}-text`"
+                            :name="`settings[${field.key}]`"
+                            type="text"
+                            placeholder="#000000"
+                            v-model="formValues[field.key]"
+                            class="flex-1"
+                        />
+                    </div>
+                    <input
+                        :name="`settings[${field.key}]`"
+                        type="hidden"
+                        :value="formValues[field.key]"
+                    />
                 </div>
 
                 <Input

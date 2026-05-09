@@ -29,8 +29,6 @@ test('workspace onboarding page renders and accepts required settings', function
             ->where('currentStepIndex', 1)
             ->has('business')
             ->has('quoteDefaults')
-            ->has('localization')
-            ->has('availableLanguages')
             ->has('availableRoles')
             ->has('defaultRoleId'),
         );
@@ -42,40 +40,36 @@ test('workspace onboarding page renders and accepts required settings', function
             'company_name' => 'Epochweave Ltd',
             'country' => 'NG',
             'logo_path' => null,
+            'currency' => 'NGN',
         ])
         ->assertRedirect(route('business-setup.onboarding', ['step' => 2]));
 
     $this->actingAs($user)
         ->put('/business-setup/onboarding', [
             'step_index' => 2,
-            'navigation' => 'next',
-            'currency' => 'NGN',
-            'language' => 'en',
-            'quote_prefix' => 'QS',
-        ])
-        ->assertRedirect(route('business-setup.onboarding', ['step' => 3]));
-
-    $this->actingAs($user)
-        ->put('/business-setup/onboarding', [
-            'step_index' => 3,
             'navigation' => 'finish',
-            'invites' => [],
+            'quote_prefix' => 'QS',
+            'invoice_prefix' => 'INV',
         ])
         ->assertRedirect(route('dashboard'));
 
     expect($workspace->fresh()->settings_onboarded_at)->not->toBeNull();
 
-    $this->assertDatabaseHas((new WorkspaceSetting)->getTable(), [
-        'workspace_id' => $workspace->id,
-        'group' => 'brand',
-        'key' => 'company_name',
-        'value' => 'Epochweave Ltd',
-    ]);
+    expect($workspace->fresh()->name)->toBe('Epochweave Ltd');
+    expect($workspace->fresh()->currency)->toBe('NGN');
+    expect($workspace->fresh()->country)->toBe('NG');
 
     $this->assertDatabaseHas((new WorkspaceSetting)->getTable(), [
         'workspace_id' => $workspace->id,
         'group' => 'quotes',
         'key' => 'quote_prefix',
         'value' => 'QS',
+    ]);
+
+    $this->assertDatabaseHas((new WorkspaceSetting)->getTable(), [
+        'workspace_id' => $workspace->id,
+        'group' => 'invoices',
+        'key' => 'invoice_prefix',
+        'value' => 'INV',
     ]);
 });

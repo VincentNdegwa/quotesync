@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -71,14 +72,28 @@ watch(
     { deep: true },
 );
 
+const deleteOpen = ref(false);
+const templateToDelete = ref<QuoteTemplateRecord | null>(null);
+
 const removeTemplate = (template: QuoteTemplateRecord): void => {
     if (template.is_system) {
         return;
     }
 
-    router.delete(`/quote-templates/${template.id}`, {
-        preserveScroll: true,
-    });
+    templateToDelete.value = template;
+    deleteOpen.value = true;
+};
+
+const executeDelete = (): void => {
+    if (templateToDelete.value) {
+        router.delete(`/quote-templates/${templateToDelete.value.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                deleteOpen.value = false;
+                templateToDelete.value = null;
+            },
+        });
+    }
 };
 
 const hasTemplates = computed(() => props.templates.data.length > 0);
@@ -198,5 +213,14 @@ const hasTemplates = computed(() => props.templates.data.length > 0);
                 </span>
             </template>
         </div>
+
+        <ConfirmDialog
+            v-model:open="deleteOpen"
+            title="Delete template"
+            description="Are you sure you want to delete this template? This action cannot be undone."
+            confirm-text="Delete"
+            variant="destructive"
+            @confirm="executeDelete"
+        />
     </div>
 </template>

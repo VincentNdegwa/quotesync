@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, Link, router, setLayoutProps, useForm } from '@inertiajs/vue3';
-import { computed, watchEffect } from 'vue';
+import { Head, Link, router, setLayoutProps, useForm, usePage } from '@inertiajs/vue3';
+import { computed, watchEffect, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
 import CountryCombobox from '@/components/location/CountryCombobox.vue';
 import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
@@ -31,13 +31,19 @@ import {
     TabsList,
     TabsTrigger,
 } from '@/components/ui/tabs';
+import { useFormat } from '@/composables/useFormat';
 import type { ClientRecord, ClientStats } from '@/types';
+import InvitePortalDialog from './components/InvitePortalDialog.vue';
 
 const props = defineProps<{
     client: ClientRecord;
     stats: ClientStats;
     availableTags: Array<{ id: number; name: string }>;
 }>();
+
+const inviteDialogOpen = ref(false);
+
+const { formatCurrency, formatDate } = useFormat(usePage().props.workspace_currency as string || undefined);
 
 const breadcrumbs = computed(() => [
     { title: 'Clients', href: '/clients' },
@@ -127,6 +133,7 @@ const deleteClient = (): void => {
                 <Button as-child>
                     <Link :href="`/quotes/create?client_id=${client.id}`">New quote</Link>
                 </Button>
+                <!-- <Button variant="outline" @click="inviteDialogOpen = true">Invite to Portal</Button> -->
                 <Button variant="destructive" @click="deleteClient">Delete</Button>
             </div>
         </div>
@@ -142,11 +149,11 @@ const deleteClient = (): void => {
             </div>
             <div class="rounded-md border p-4">
                 <p class="text-xs text-muted-foreground">Total value won</p>
-                <p class="text-2xl font-semibold">{{ stats.total_value_won }}</p>
+                <p class="text-2xl font-semibold">{{ formatCurrency(stats.total_value_won) }}</p>
             </div>
             <div class="rounded-md border p-4">
                 <p class="text-xs text-muted-foreground">Average quote value</p>
-                <p class="text-2xl font-semibold">{{ stats.average_quote_value }}</p>
+                <p class="text-2xl font-semibold">{{ formatCurrency(stats.average_quote_value) }}</p>
             </div>
             <div class="rounded-md border p-4">
                 <p class="text-xs text-muted-foreground">Avg days to acceptance</p>
@@ -235,8 +242,8 @@ const deleteClient = (): void => {
                                     {{ quote.status || 'unknown' }}
                                 </Badge>
                             </TableCell>
-                            <TableCell class="text-right">{{ quote.total ?? 0 }}</TableCell>
-                            <TableCell>{{ quote.created_at ? new Date(quote.created_at).toLocaleDateString() : '—' }}</TableCell>
+                            <TableCell class="text-right">{{ formatCurrency(quote.base_total ?? 0) }}</TableCell>
+                            <TableCell>{{ formatDate(quote.created_at) }}</TableCell>
                         </TableRow>
                         <TableRow v-if="quoteHistory.length === 0">
                             <TableCell colspan="4" class="text-center text-muted-foreground">
@@ -247,5 +254,7 @@ const deleteClient = (): void => {
                 </Table>
             </TabsContent>
         </Tabs>
+
+        <InvitePortalDialog v-model:open="inviteDialogOpen" :client="client" />
     </div>
 </template>

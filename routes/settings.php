@@ -25,9 +25,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('business-setup/onboarding/{group}', [WorkspaceOnboardingController::class, 'update'])
         ->name('business-setup.onboarding.update');
     Route::get('business-setup/{group?}', [WorkspaceSettingsController::class, 'show'])
-        ->name('business-setup.show');
+        ->name('business-setup.show')
+        ->whereIn('group', ['brand', 'quotes_invoices', 'email', 'notifications', 'localization']);
     Route::put('business-setup/{group}', [WorkspaceSettingsController::class, 'update'])
-        ->name('business-setup.update');
+        ->name('business-setup.update')
+        ->whereIn('group', ['brand', 'quotes_invoices', 'email', 'notifications', 'localization']);
 
     Route::put('settings/password', [SecurityController::class, 'update'])
         ->middleware('throttle:6,1')
@@ -35,7 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('teams/invitations', [InvitationController::class, 'store'])
         ->name('invitations.store');
-    Route::delete('teams/invitations/{invitation}', [InvitationController::class, 'destroy'])
+    Route::delete('teams/invitations/{code}', [InvitationController::class, 'destroy'])
         ->name('invitations.destroy');
 
     Route::inertia('settings/appearance', 'settings/Appearance')->name('appearance.edit');

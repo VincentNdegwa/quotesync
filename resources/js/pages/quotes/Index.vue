@@ -14,8 +14,11 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import QuoteHeaderActions from '@/pages/quotes/components/QuoteHeaderActions.vue';
+import QuoteKanban from '@/pages/quotes/components/QuoteKanban.vue';
 import QuotesDataTable from '@/pages/quotes/components/QuotesDataTable.vue';
 import type { Paginator, QuoteListRecord } from '@/types';
+
+const STORAGE_KEY = 'quotes-view-mode';
 
 type Filters = {
     search: string;
@@ -31,6 +34,15 @@ const props = defineProps<{
 
 const page = usePage();
 const quoteStatuses = computed(() => (page.props.enums as any)?.quoteStatus ?? []);
+
+const viewMode = ref<'table' | 'kanban'>(
+    (localStorage.getItem(STORAGE_KEY) as 'table' | 'kanban') ?? 'table',
+);
+
+const toggleView = (): void => {
+    viewMode.value = viewMode.value === 'table' ? 'kanban' : 'table';
+    localStorage.setItem(STORAGE_KEY, viewMode.value);
+};
 
 defineOptions({
     layout: {
@@ -132,7 +144,11 @@ const executeSend = (): void => {
                 description="Create and manage reusable, trackable quotes from one dynamic builder."
             />
 
-            <QuoteHeaderActions @open-create-quote="() => router.visit('/quotes/create')" />
+            <QuoteHeaderActions
+                :view-mode="viewMode"
+                @open-create-quote="() => router.visit('/quotes/create')"
+                @toggle-view="toggleView"
+            />
         </div>
 
         <div class="rounded-lg border p-3">
@@ -170,19 +186,26 @@ const executeSend = (): void => {
             </div>
         </div>
 
-        <QuotesDataTable
-            v-if="hasQuotes"
-            :data="quotes.data"
-            :quote-statuses="quoteStatuses"
-            @send="sendQuote"
-            @delete="removeQuote"
-        />
+        <template v-if="viewMode === 'kanban'">
+            <QuoteKanban :quote-statuses="quoteStatuses" />
+        </template>
 
-        <div v-else class="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
-            No quotes yet. Create your first quote from scratch or from a template.
-        </div>
+        <template v-else>
+            <QuotesDataTable
+                v-if="hasQuotes"
+                :data="quotes.data"
+                :quote-statuses="quoteStatuses"
+                :is-client="false"
+                @send="sendQuote"
+                @delete="removeQuote"
+            />
 
-        <div class="flex w-full flex-wrap items-center justify-end gap-2" v-if="quotes.links.length > 1">
+            <div v-else class="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
+                No quotes yet. Create your first quote from scratch or from a template.
+            </div>
+        </template>
+
+        <div v-if="viewMode === 'table' && quotes.links.length > 1" class="flex w-full flex-wrap items-center justify-end gap-2">
             <template v-for="(link, index) in quotes.links" :key="`${link.label}-${index}`">
                 <Link
                     v-if="link.url"

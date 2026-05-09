@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\CatalogCategory;
+use App\Models\ConfigIndustry;
 use App\Models\ConfigurationTag;
 use App\Models\ConfigurationUnit;
 use App\Models\Tax;
 use App\Models\Workspace;
+use App\Services\Quotes\QuotePlaceholderService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -28,7 +30,7 @@ class ConfigurationController extends Controller
                 ->where('workspace_id', $workspace->id)
                 ->orderByDesc('is_default')
                 ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'rate', 'is_default', 'is_active', 'created_at']),
+                ->get(['id', 'name', 'rate', 'is_default', 'is_active', 'inclusive' ,'created_at']),
         ]);
     }
 
@@ -66,6 +68,45 @@ class ConfigurationController extends Controller
                 ->where('workspace_id', $workspace->id)
                 ->orderByRaw('LOWER(name)')
                 ->get(['id', 'name', 'symbol', 'is_active', 'created_at']),
+        ]);
+    }
+
+    public function industries(Request $request): Response
+    {
+        $workspace = $this->workspaceFromRequest($request);
+
+        return Inertia::render('configuration/industries/Index', [
+            'industries' => ConfigIndustry::query()
+                ->where('workspace_id', $workspace->id)
+                ->orderByRaw('LOWER(name)')
+                ->get(['id', 'name', 'description', 'icon', 'color', 'is_active', 'created_at']),
+        ]);
+    }
+
+    public function followUps(Request $request): Response
+    {
+        $workspace = $this->workspaceFromRequest($request);
+
+        return Inertia::render('configuration/follow-ups/Index', [
+            'sequences' => $workspace->followUpSequences()
+                ->with(['steps' => fn ($query) => $query->orderBy('sort_order')])
+                ->orderByDesc('is_default')
+                ->orderBy('name')
+                ->get()
+                ->map(fn ($sequence): array => [
+                    'id' => $sequence->id,
+                    'name' => $sequence->name,
+                    'is_default' => $sequence->is_default,
+                    'steps' => $sequence->steps->map(fn ($step): array => [
+                        'id' => $step->id,
+                        'day_offset' => $step->day_offset,
+                        'channel' => $step->channel->value,
+                        'subject' => $step->subject,
+                        'message_template' => $step->message_template,
+                        'sort_order' => $step->sort_order,
+                    ])->all(),
+                ])->all(),
+            'placeholders' => QuotePlaceholderService::getPlaceholderDescriptions(),
         ]);
     }
 

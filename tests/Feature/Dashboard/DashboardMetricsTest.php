@@ -29,6 +29,10 @@ test('dashboard renders workspace-scoped quote metrics and activity', function (
         'title' => 'Draft quote',
         'status' => 'draft',
         'total' => 100,
+        'base_total' => 100,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
     ]);
 
     Quote::query()->create([
@@ -37,6 +41,10 @@ test('dashboard renders workspace-scoped quote metrics and activity', function (
         'title' => 'Sent quote',
         'status' => 'sent',
         'total' => 200,
+        'base_total' => 200,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
         'sent_at' => now(),
     ]);
 
@@ -46,7 +54,13 @@ test('dashboard renders workspace-scoped quote metrics and activity', function (
         'title' => 'Accepted quote',
         'status' => 'accepted',
         'total' => 300,
+        'base_total' => 300,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
+        'sent_at' => now(),
         'accepted_at' => now(),
+        'won_at' => now(),
     ]);
 
     Quote::query()->create([
@@ -55,7 +69,13 @@ test('dashboard renders workspace-scoped quote metrics and activity', function (
         'title' => 'Declined quote',
         'status' => 'declined',
         'total' => 90,
+        'base_total' => 90,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
+        'sent_at' => now(),
         'declined_at' => now(),
+        'lost_at' => now(),
     ]);
 
     Quote::query()->create([
@@ -64,7 +84,12 @@ test('dashboard renders workspace-scoped quote metrics and activity', function (
         'title' => 'Other workspace quote',
         'status' => 'accepted',
         'total' => 999,
+        'base_total' => 999,
+        'currency' => 'USD',
+        'base_currency' => 'USD',
+        'fx_rate' => 1.0,
         'accepted_at' => now(),
+        'won_at' => now(),
     ]);
 
     QuoteActivity::query()->create([
@@ -81,18 +106,42 @@ test('dashboard renders workspace-scoped quote metrics and activity', function (
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard')
-            ->where('metrics.total_quotes', 4)
-            ->where('metrics.draft_quotes', 1)
-            ->where('metrics.sent_quotes', 1)
-            ->where('metrics.accepted_quotes', 1)
-            ->where('metrics.declined_quotes', 1)
-            ->where('metrics.accepted_revenue', 300)
-            ->where('metrics.open_pipeline', 300)
-            ->has('trend', 30)
-            ->has('recentActivity', 1)
-            ->where('recentActivity.0.description', 'Draft quote updated.')
-            ->has('topClients', 1)
-            ->where('topClients.0.client_name', $client->company_name),
+            ->has('stats', fn (Assert $stats) => $stats
+                ->where('pipeline_value', 200)
+                ->where('pipeline_trend', 100)
+                ->where('won_this_month', 300)
+                ->where('won_trend', 100)
+                ->where('win.rate', 33.3)
+                ->where('win.trend', 100)
+                ->where('quotes_expiring', 0)
+            )
+            ->has('revenue_trend', 6)
+            ->has('quote_activity', 9)
+            ->where('quote_activity.0.status', 'draft')
+            ->where('quote_activity.0.count', 1)
+            ->where('quote_activity.1.status', 'sent')
+            ->where('quote_activity.1.count', 1)
+            ->where('quote_activity.2.status', 'viewed')
+            ->where('quote_activity.2.count', 0)
+            ->where('quote_activity.3.status', 'accepted')
+            ->where('quote_activity.3.count', 1)
+            ->where('quote_activity.4.status', 'declined')
+            ->where('quote_activity.4.count', 1)
+            ->where('quote_activity.5.status', 'won')
+            ->where('quote_activity.5.count', 0)
+            ->where('quote_activity.6.status', 'lost')
+            ->where('quote_activity.6.count', 0)
+            ->where('quote_activity.7.status', 'expired')
+            ->where('quote_activity.7.count', 0)
+            ->where('quote_activity.8.status', 'pending_approval')
+            ->where('quote_activity.8.count', 0)
+            ->has('needs_attention.hot_leads', 0)
+            ->has('needs_attention.follow_up_due', 0)
+            ->has('needs_attention.expiring_soon', 0)
+            ->has('recent_activity', 1)
+            ->where('recent_activity.0.description', 'Draft quote updated.')
+            ->has('team_performance', 0)
+            ->whereType('generated_at', 'string'),
         );
 });
 

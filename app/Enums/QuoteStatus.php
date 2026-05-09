@@ -12,6 +12,7 @@ enum QuoteStatus: string
     case Won = 'won';
     case Lost = 'lost';
     case Expired = 'expired';
+    case PendingApproval = 'pending_approval';
 
     public function label(): string
     {
@@ -24,6 +25,7 @@ enum QuoteStatus: string
             self::Won => 'Won',
             self::Lost => 'Lost',
             self::Expired => 'Expired',
+            self::PendingApproval => 'Pending Approval',
         };
     }
 
@@ -34,30 +36,70 @@ enum QuoteStatus: string
             self::Sent => 'outline',
             self::Viewed => 'outline',
             self::Accepted => 'outline',
-            self::Declined => 'destructive',
+            self::Declined => 'dafault',
             self::Won => 'default',
-            self::Lost => 'destructive',
+            self::Lost => 'dafult',
             self::Expired => 'secondary',
+            self::PendingApproval => 'outline',
         };
     }
 
     public function cssColor(): string
     {
         return match ($this) {
-            self::Draft => '',
-            self::Sent => 'border-primary text-primary',
-            self::Viewed => 'border-secondary text-secondary',
-            self::Accepted => 'border-primary text-primary',
-            self::Declined => 'border-destructive text-white',
-            self::Won => 'bg-primary hover:bg-primary text-primary-foreground',
-            self::Lost => 'border-destructive text-white',
-            self::Expired => 'border-muted text-muted-foreground',
+            self::Draft => 'border-slate-400 text-slate-600',
+            self::Sent => 'border-blue-500 text-blue-600',
+            self::Viewed => 'border-cyan-500 text-cyan-600',
+            self::Accepted => 'border-emerald-500 text-emerald-600',
+            self::Won => 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600',
+            self::Declined => 'border-rose-500 text-rose-600',
+            self::Lost => 'border-orange-500 text-orange-600',
+            self::Expired => 'border-amber-400 text-amber-700',
+            self::PendingApproval => 'border-amber-500 text-amber-600',
         };
     }
 
     public static function values(): array
     {
         return array_column(self::cases(), 'value');
+    }
+
+    public static function pipelineStatuses(): array
+    {
+        return [
+            self::Sent->value,
+            self::Viewed->value,
+            self::PendingApproval->value,
+        ];
+    }
+
+    public static function sentStatuses(): array
+    {
+        return [
+            self::Sent->value,
+            self::Viewed->value,
+            self::Accepted->value,
+            self::Won->value,
+            self::Lost->value,
+            self::Expired->value,
+            self::Declined->value,
+        ];
+    }
+
+    public static function closedWonStatuses(): array
+    {
+        return [
+            self::Won->value,
+            self::Accepted->value,
+        ];
+    }
+
+    public static function closedLostStatuses(): array
+    {
+        return [
+            self::Lost->value,
+            self::Declined->value,
+        ];
     }
 
     public static function all(): array
@@ -74,7 +116,7 @@ enum QuoteStatus: string
     public function allowedTransitions(): array
     {
         return match ($this) {
-            self::Draft => [self::Sent],
+            self::Draft => [self::Sent, self::PendingApproval],
             self::Sent => [self::Viewed, self::Won, self::Lost, self::Expired, self::Draft],
             self::Viewed => [self::Accepted, self::Declined, self::Won, self::Lost, self::Expired, self::Draft],
             self::Accepted => [self::Won, self::Lost],
@@ -82,6 +124,7 @@ enum QuoteStatus: string
             self::Won => [],
             self::Lost => [],
             self::Expired => [self::Draft],
+            self::PendingApproval => [self::Sent, self::Draft],
         };
     }
 
@@ -147,6 +190,7 @@ enum QuoteStatus: string
             self::Won => ['archive', 'duplicate', 'preview', 'convert_to_invoice'],
             self::Lost => ['archive', 'revise', 'duplicate', 'preview'],
             self::Expired => ['reopen', 'duplicate', 'preview'],
+            self::PendingApproval => ['duplicate', 'preview'],
         };
     }
 }

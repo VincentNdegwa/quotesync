@@ -3,11 +3,12 @@ import { Head, useForm } from '@inertiajs/vue3';
 import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
 import type {
     BuilderCatalogItem,
-    BuilderBranding,
+    BuilderConfigurationUnit,
     BuilderClientOption,
     BuilderTaxOption,
     BuilderTemplateOption,
     QuoteBuilderState,
+    WorkspaceSettings,
 } from '@/types';
 
 const props = defineProps<{
@@ -16,7 +17,8 @@ const props = defineProps<{
     templates: BuilderTemplateOption[];
     catalogItems: BuilderCatalogItem[];
     taxes: BuilderTaxOption[];
-    branding: BuilderBranding;
+    units: BuilderConfigurationUnit[];
+    settings: WorkspaceSettings;
 }>();
 
 defineOptions({
@@ -36,7 +38,14 @@ defineOptions({
 
 const form = useForm<QuoteBuilderState>(JSON.parse(JSON.stringify(props.initialState)) as QuoteBuilderState);
 
-const save = (): void => {
+const save = (updatedState?: QuoteBuilderState): void => {
+    if (updatedState) {
+        Object.keys(updatedState).forEach((key) => {
+            if (key in form) {
+                form[key] = updatedState[key];
+            }
+        });
+    }
     form.post('/quotes', {
         preserveScroll: true,
     });
@@ -47,13 +56,14 @@ const save = (): void => {
     <Head title="Create quote" />
 
     <QuoteBuilder
-        v-model="form"
+        :model-value="form"
         mode="quote"
         :clients="clients"
         :templates="templates"
         :catalog-items="catalogItems"
         :taxes="taxes"
-        :branding="branding"
+        :units="units"
+        :settings="settings"
         :processing="form.processing"
         @save="save"
     />

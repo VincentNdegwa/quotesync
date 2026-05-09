@@ -1,19 +1,24 @@
 <script setup lang="ts">
 import { Head, setLayoutProps } from '@inertiajs/vue3';
-import { computed, watchEffect } from 'vue';
+import { router } from '@inertiajs/vue3';
+import { computed, ref, watchEffect } from 'vue';
 import Heading from '@/components/Heading.vue';
 import QuoteActivityTimeline from '@/components/quotes/QuoteActivityTimeline.vue';
+import QuoteChat from '@/components/quotes/QuoteChat.vue';
+import QuoteFollowUps from '@/components/quotes/QuoteFollowUps.vue';
 import QuoteStatsPanel from '@/components/quotes/QuoteStatsPanel.vue';
 import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
-import type { BrandingData, QuoteData, QuoteStatusEnum } from '@/types';
+import type { WorkspaceSettings, QuoteData, QuoteStatusEnum } from '@/types';
 import QuoteActions from './components/QuoteActions.vue';
 
 const props = defineProps<{
     quote: QuoteData;
-    branding: BrandingData;
+    settings: WorkspaceSettings;
     quoteStatuses: QuoteStatusEnum[];
 }>();
 
@@ -29,7 +34,53 @@ watchEffect(() => {
 });
 
 const { getQuoteStatus } = useEnums();
-const { formatCurrency: fmt, formatDate: fmtDate } = useFormat();
+const { formatCurrency: fmt, formatDate: fmtDate } = useFormat(props.quote.base_currency || props.quote.currency || undefined);
+
+const getWinProbabilityColor = (probability: number) => {
+    if (probability >= 70) {
+return 'text-green-600';
+}
+
+    if (probability >= 40) {
+return 'text-yellow-600';
+}
+
+    return 'text-red-600';
+};
+
+const getWinProbabilityBgColor = (probability: number) => {
+    if (probability >= 70) {
+return 'bg-green-500';
+}
+
+    if (probability >= 40) {
+return 'bg-yellow-500';
+}
+
+    return 'bg-red-500';
+};
+
+const approvalComments = ref('');
+
+const approveApproval = () => {
+    router.post(`/approvals/${props.quote.id}/approve`, {
+        comments: approvalComments.value,
+    }, {
+        onSuccess: () => {
+            approvalComments.value = '';
+        },
+    });
+};
+
+const rejectApproval = () => {
+    router.post(`/approvals/${props.quote.id}/reject`, {
+        comments: approvalComments.value,
+    }, {
+        onSuccess: () => {
+            approvalComments.value = '';
+        },
+    });
+};
 </script>
 
 <template>
@@ -51,6 +102,7 @@ const { formatCurrency: fmt, formatDate: fmtDate } = useFormat();
                 >
                     {{ getQuoteStatus(quote.status)?.label }}
                 </Badge>
+                <QuoteFollowUps v-if="quote.quote_follow_ups" :quote-id="quote.id" :follow-ups="quote.quote_follow_ups" />
 
                 <QuoteActions
                     :quote="quote"
@@ -59,6 +111,23 @@ const { formatCurrency: fmt, formatDate: fmtDate } = useFormat();
                     @success="() => {}"
                 />
             </div>
+
+            <div v-if="quote.win_probability && quote.win_probability.probability !== null" class="w-full">
+                <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs font-medium text-muted-foreground">Win Probability</span>
+                    <span class="text-xs font-bold" :class="getWinProbabilityColor(quote.win_probability.probability)">
+                        {{ Math.round(quote.win_probability.probability) }}%
+                    </span>
+                </div>
+                <div class="h-2 w-full rounded-full bg-gray-200 overflow-hidden">
+                    <div
+                        class="h-full rounded-full transition-all duration-500"
+                        :class="getWinProbabilityBgColor(quote.win_probability.probability)"
+                        :style="{ width: `${quote.win_probability.probability}%` }"
+                    />
+                </div>
+            </div>
+            
         </div>
 
         <div class="grid gap-6 xl:grid-cols-[1fr_340px]">
@@ -72,7 +141,7 @@ const { formatCurrency: fmt, formatDate: fmtDate } = useFormat();
                     </div>
                     <div>
                         <span class="text-muted-foreground">Total&ensp;</span>
-                        <span class="font-semibold">{{ fmt(quote.total) }}</span>
+                        <span class="font-semibold">{{ fmt(props.quote.base_total) }}</span>
                     </div>
                     <div>
                         <span class="text-muted-foreground">Valid until&ensp;</span>
@@ -86,12 +155,13 @@ const { formatCurrency: fmt, formatDate: fmtDate } = useFormat();
 
                 <div class="overflow-hidden rounded-xl border bg-white shadow-sm">
                     <QuoteRenderer
-                        v-if="quote.layout_snapshot && branding"
-                        :quote="quote"
+                        v-if="quote.layout_snapshot && settings"
+                        :data="{ ...quote, documentType: 'quote' }"
                         :layout="quote.layout_snapshot"
-                        :branding="branding"
+                        :settings="settings"
                         :preview-mode="true"
                         :edit-mode="false"
+                        :is-internal-view="true"
                     />
 
                     <template v-else>
@@ -166,7 +236,7 @@ const { formatCurrency: fmt, formatDate: fmtDate } = useFormat();
 
                                 <div class="flex justify-between text-base font-bold">
                                     <span>Total</span>
-                                    <span class="tabular-nums">{{ fmt(quote.total) }}</span>
+                                    <span class="tabular-nums">{{ fmt(props.quote.total) }}</span>
                                 </div>
                             </div>
                         </div>
@@ -175,10 +245,42 @@ const { formatCurrency: fmt, formatDate: fmtDate } = useFormat();
             </div>
 
             <div class="space-y-4">
+                <div v-if="quote.status === 'pending_approval' && quote.pending_approval" class="rounded-xl border border-yellow-200 bg-yellow-50 p-4">
+                    <h3 class="font-semibold text-yellow-800 mb-3">PENDING YOUR APPROVAL</h3>
+                    <div class="space-y-2 text-sm mb-4">
+                        <p><span class="text-muted-foreground">Requested by:</span> {{ quote.pending_approval.requested_by?.name || 'Unknown' }}</p>
+                        <p><span class="text-muted-foreground">Value:</span> {{ fmt(props.quote.base_total) }}</p>
+                        <p v-if="quote.discount_amount > 0"><span class="text-muted-foreground">Discount:</span> {{ fmt(quote.discount_amount) }} ({{ ((quote.discount_amount / quote.subtotal) * 100).toFixed(1) }}%)</p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="text-sm font-medium mb-2 block">Comments (optional)</label>
+                        <textarea
+                            v-model="approvalComments"
+                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            rows="3"
+                            placeholder="Add any comments for the requester..."
+                        />
+                    </div>
+                    <div class="flex gap-2">
+                        <Button variant="outline" @click="rejectApproval" class="flex-1">
+                            Reject
+                        </Button>
+                        <Button @click="approveApproval" class="flex-1">
+                            Approve ✓
+                        </Button>
+                    </div>
+                </div>
+
                 <QuoteStatsPanel :quote="quote" />
                 <QuoteActivityTimeline :activities="quote.activities ?? []" />
             </div>
 
         </div>
+
+        <!-- Floating Chat -->
+        <QuoteChat
+            :quote-id="String(quote.id)"
+            :messages="(quote as any).messages"
+        />
     </div>
 </template>

@@ -40,9 +40,30 @@ class UpdateWorkspaceSettingsRequest extends FormRequest
             return ['group' => [Rule::in($groups)]];
         }
 
-        return [
+        if ($group === 'brand') {
+            return [
+                'company_name' => ['required', 'string', 'max:255'],
+                'country' => ['required', 'string', 'max:2'],
+                'currency' => ['required', 'string', 'max:3'],
+                'primary_color' => ['nullable', 'string', 'max:7'],
+                'accent_color' => ['nullable', 'string', 'max:7'],
+                'address' => ['nullable', 'string'],
+                'phone' => ['nullable', 'string', 'max:50'],
+                'email' => ['nullable', 'email', 'max:255'],
+                'website' => ['nullable', 'url', 'max:255'],
+                'tax_number' => ['nullable', 'string', 'max:50'],
+                'logo_path' => ['nullable', 'file', 'image', 'max:5120'],
+                'favicon_path' => ['nullable', 'file', 'mimes:ico,png', 'max:5120'],
+                'white_label_mode' => ['nullable', 'boolean'],
+                'industry_id' => ['nullable', 'integer', 'exists:industries,id'],
+            ];
+        }
+
+        $rules = [
             'settings' => ['required', 'array'],
             ...$service->rulesForGroup($group),
         ];
+
+        return $rules;
     }
 }

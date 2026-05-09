@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import CatalogHeaderActions from '@/components/catalog/CatalogHeaderActions.vue';
 import CatalogItemForm from '@/components/catalog/CatalogItemForm.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,12 +23,14 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { useFormat } from '@/composables/useFormat';
 import CatalogDataTable from '@/pages/catalog/components/CatalogDataTable.vue';
 import ConfigurationCategoryCreateDialog from '@/pages/configuration/categories/components/CreateDialog.vue';
 import ConfigurationTaxCreateDialog from '@/pages/configuration/taxes/components/CreateDialog.vue';
 import type {
     CatalogCategoryRecord,
     CatalogItemRecord,
+    ConfigurationUnitRecord,
     Paginator,
     TaxRecord,
 } from '@/types';
@@ -45,6 +48,7 @@ const props = defineProps<{
     items: Paginator<CatalogItemRecord>;
     categories: CatalogCategoryRecord[];
     taxes: TaxRecord[];
+    units: ConfigurationUnitRecord[];
     filters: Filters;
 }>();
 
@@ -94,12 +98,16 @@ const selectedIds = ref<number[]>([]);
 const viewMode = ref<'table' | 'grid'>('table');
 const isSheetOpen = ref(false);
 const editingItem = ref<CatalogItemRecord | null>(null);
+const deleteDialogOpen = ref(false);
+const bulkActionToRun = ref<'activate' | 'deactivate' | 'delete' | 'change_category' | null>(null);
+const categoryIdForAction = ref<string | undefined>(undefined);
+
 
 const form = useForm({
     name: '',
     description: '',
     sku: '',
-    unit: 'unit',
+    unit_id: null as number | null,
     unit_price: 0,
     cost_price: 0,
     catalog_category_id: NONE_OPTION,
@@ -115,7 +123,7 @@ const openCreate = (): void => {
     editingItem.value = null;
     form.reset();
     form.clearErrors();
-    form.unit = 'unit';
+    form.unit_id = props.units.length > 0 ? props.units[0].id : null;
     form.catalog_category_id = NONE_OPTION;
     form.tax_ids = [];
     form.is_active = true;
@@ -128,7 +136,7 @@ const openEdit = (item: CatalogItemRecord): void => {
         name: item.name,
         description: item.description ?? '',
         sku: item.sku ?? '',
-        unit: item.unit,
+        unit_id: item.unit_id,
         unit_price: Number(item.unit_price ?? 0),
         cost_price: Number(item.cost_price ?? 0),
         catalog_category_id: item.category?.id ? String(item.category.id) : NONE_OPTION,
@@ -164,6 +172,14 @@ const runBulkAction = (action: 'activate' | 'deactivate' | 'delete' | 'change_ca
         return;
     }
 
+    if (action === 'delete') {
+        bulkActionToRun.value = action;
+        categoryIdForAction.value = categoryId;
+        deleteDialogOpen.value = true;
+
+        return;
+    }
+
     router.post('/catalog/bulk-action', {
         ids: selectedIds.value,
         action,
@@ -176,6 +192,46 @@ const runBulkAction = (action: 'activate' | 'deactivate' | 'delete' | 'change_ca
     });
 };
 
+const executeBulkAction = (): void => {
+    if (!bulkActionToRun.value) {
+return;
+}
+
+    router.post('/catalog/bulk-action', {
+        ids: selectedIds.value,
+        action: bulkActionToRun.value,
+        category_id: categoryIdForAction.value ? Number(categoryIdForAction.value) : null,
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            selectedIds.value = [];
+            deleteDialogOpen.value = false;
+            bulkActionToRun.value = null;
+            categoryIdForAction.value = undefined;
+        },
+    });
+};
+
+const exportSelected = (): void => {
+    if (selectedIds.value.length === 0) {
+        return;
+    }
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/catalog/export/selected';
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'ids';
+    input.value = JSON.stringify(selectedIds.value);
+
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+};
+
 const profitPerUnit = (item: CatalogItemRecord): number => Number(item.unit_price) - Number(item.cost_price);
 const marginPercent = (item: CatalogItemRecord): number => {
     const unitPrice = Number(item.unit_price);
@@ -186,6 +242,8 @@ const marginPercent = (item: CatalogItemRecord): number => {
 
     return Math.round(((unitPrice - Number(item.cost_price)) / unitPrice) * 10000) / 100;
 };
+
+const { formatCurrency } = useFormat(usePage().props.workspace_currency as string || undefined);
 </script>
 
 <template>
@@ -238,10 +296,10 @@ const marginPercent = (item: CatalogItemRecord): number => {
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
+            <Button v-if="selectedIds.length > 0" variant="outline" @click="exportSelected">Export selected</Button>
             <Button v-if="selectedIds.length > 0" variant="outline" @click="runBulkAction('activate')">Activate</Button>
             <Button v-if="selectedIds.length > 0" variant="outline" @click="runBulkAction('deactivate')">Deactivate</Button>
             <Button v-if="selectedIds.length > 0" variant="destructive" @click="runBulkAction('delete')">Delete</Button>
-
         </div>
 
         <CatalogDataTable
@@ -265,13 +323,13 @@ const marginPercent = (item: CatalogItemRecord): number => {
                 </div>
                 <div class="grid grid-cols-2 gap-2 text-sm">
                     <p class="text-muted-foreground">Unit price</p>
-                    <p class="text-right">{{ item.unit_price }}</p>
+                    <p class="text-right">{{ formatCurrency(item.unit_price) }}</p>
                     <p class="text-muted-foreground">Unit</p>
-                    <p class="text-right">{{ item.unit }}</p>
+                    <p class="text-right">{{ item.configuration_unit?.symbol || '-' }}</p>
                     <p class="text-muted-foreground">Usage count</p>
                     <p class="text-right">{{ item.usage_count }}</p>
                     <p class="text-muted-foreground">Margin</p>
-                    <p class="text-right">{{ marginPercent(item) }}% ({{ profitPerUnit(item) }})</p>
+                    <p class="text-right">{{ marginPercent(item) }}% ({{ formatCurrency(profitPerUnit(item)) }})</p>
                 </div>
                 <div class="flex justify-end gap-2">
                     <Button size="sm" variant="outline" as-child>
@@ -316,6 +374,7 @@ const marginPercent = (item: CatalogItemRecord): number => {
                         :errors="form.errors"
                         :categories="categories"
                         :taxes="taxes"
+                        :units="units"
                     />
 
                     <SheetFooter>
@@ -330,5 +389,14 @@ const marginPercent = (item: CatalogItemRecord): number => {
 
         <ConfigurationCategoryCreateDialog v-model:open="categoryDialogOpen" />
         <ConfigurationTaxCreateDialog v-model:open="taxDialogOpen" />
+
+        <ConfirmDialog
+            v-model:open="deleteDialogOpen"
+            title="Delete selected items"
+            :description="`Are you sure you want to delete ${selectedIds.length} selected item${selectedIds.length > 1 ? 's' : ''}? This action cannot be undone.`"
+            confirm-text="Delete"
+            variant="destructive"
+            @confirm="executeBulkAction"
+        />
     </div>
 </template>

@@ -59,6 +59,10 @@ class NotificationController extends Controller
 
         $redirectTo = (string) $request->input('redirect_to', route('dashboard'));
 
+        if (filter_var($redirectTo, FILTER_VALIDATE_URL)) {
+            return redirect()->away($redirectTo);
+        }
+
         if (! str_starts_with($redirectTo, '/')) {
             $redirectTo = route('dashboard');
         }

@@ -2,6 +2,8 @@
 
 namespace App\Notifications;
 
+use App\Services\WorkspaceSettings\WorkspaceSettingsService;
+
 class QuoteExpiredNotification extends QuoteNotification
 {
     /**
@@ -11,6 +13,16 @@ class QuoteExpiredNotification extends QuoteNotification
      */
     public function via(object $notifiable): array
     {
+        $workspace = $this->quote->workspace;
+        $settingsService = app(WorkspaceSettingsService::class);
+        $settings = $settingsService->groupForFrontend($workspace, 'notifications')['fields'] ?? [];
+
+        $enabled = $settings['notify_quote_expired']['value'] ?? true;
+        if (! $enabled) {
+            return [];
+        }
+
+        // Quote expired only has in_app by default (no channel setting in config)
         return ['database'];
     }
 

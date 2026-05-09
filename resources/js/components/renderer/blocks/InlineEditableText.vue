@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed, ref, watch, onUnmounted, nextTick } from 'vue';
-import { Input } from '@/components/ui/input';
-import { useEditor, EditorContent } from '@tiptap/vue-3';
 import Highlight from '@tiptap/extension-highlight'
 import Typography from '@tiptap/extension-typography'
 import StarterKit from '@tiptap/starter-kit'
+import { useEditor, EditorContent } from '@tiptap/vue-3';
+import { computed, ref, watch, onUnmounted, nextTick } from 'vue';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const props = withDefaults(
     defineProps<{
@@ -110,12 +110,14 @@ const onKeydown = (event: KeyboardEvent): void => {
     if (event.key === 'Escape') {
         event.preventDefault();
         cancel();
+
         return;
     }
 
     if (!props.multiline && event.key === 'Enter') {
         event.preventDefault();
         save();
+
         return;
     }
 

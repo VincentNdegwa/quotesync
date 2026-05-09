@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ChevronDown, Layers3 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -16,6 +17,7 @@ import type {
     BuilderClientOption,
     BuilderTemplateOption,
     QuoteBuilderState,
+    WorkspaceSettings,
 } from '@/types';
 
 const state = defineModel<QuoteBuilderState>('state', {
@@ -24,20 +26,28 @@ const state = defineModel<QuoteBuilderState>('state', {
 
 const props = withDefaults(
     defineProps<{
-        mode: 'quote' | 'template';
+        mode: 'quote' | 'template' | 'invoice';
         clients?: BuilderClientOption[];
         templates?: BuilderTemplateOption[];
         systemLocked?: boolean;
+        defaultCurrency?: string;
+        settings?: WorkspaceSettings | null;
     }>(),
     {
         clients: () => [],
         templates: () => [],
         systemLocked: false,
+        defaultCurrency: 'USD',
+        settings: null,
     },
 );
 
 const expanded = ref(false);
 const NONE_TEMPLATE = '__none__';
+
+const effectiveDefaultCurrency = computed(() => {
+    return props.settings?.workspace.currency ?? props.defaultCurrency;
+});
 
 const applyClientCurrency = (clientId: string): void => {
     state.value.client_id = clientId ? Number(clientId) : null;
@@ -46,10 +56,12 @@ const applyClientCurrency = (clientId: string): void => {
         return;
     }
 
-    const client = props.clients.find((option) => option.id === Number(clientId));
+    const client = props.clients.find((option) => option.id === Number(clientId));    
 
     if (client?.currency) {
         state.value.currency = client.currency;
+    } else {
+        state.value.currency = effectiveDefaultCurrency.value;
     }
 };
 
@@ -72,6 +84,17 @@ const selectedClientName = computed<string>(() => {
 
     return client?.company_name ?? '—';
 });
+
+const showFxRate = computed(() => {
+    return state.value.currency && state.value.currency !== effectiveDefaultCurrency.value;
+});
+
+const fxRateValue = computed({
+    get: () => state.value.fx_rate ?? undefined,
+    set: (value) => {
+        state.value.fx_rate = value === undefined || value === null ? null : Number(value);
+    },
+});
 </script>
 
 <template>
@@ -81,10 +104,10 @@ const selectedClientName = computed<string>(() => {
             class="flex w-full items-center gap-4 px-4 py-3 text-left text-sm hover:bg-muted/40"
             @click="expanded = !expanded"
         >
-            <span class="font-medium text-muted-foreground">Quote settings</span>
+            <span class="font-medium text-muted-foreground">{{ mode === 'invoice' ? 'Invoice settings' : 'Quote settings' }}</span>
             <span v-if="mode === 'quote'">Client: <strong>{{ selectedClientName }}</strong></span>
-            <span>Valid: <strong>{{ state.valid_until || '—' }}</strong></span>
-            <span>Currency: <strong>{{ state.currency || '—' }}</strong></span>
+            <span>{{ mode === 'invoice' ? 'Due: ' : 'Valid: ' }}<strong>{{ state.valid_until || '—' }}</strong></span>
+            <span v-if="mode !== 'invoice'">Currency: <strong>{{ state.currency || '—' }}</strong></span>
             <span v-if="mode === 'quote' && state.requires_deposit" class="text-primary">
                 Deposit: {{ state.deposit_amount ?? 0 }}
             </span>
@@ -121,6 +144,22 @@ const selectedClientName = computed<string>(() => {
                 </div>
             </div>
 
+            <div v-else-if="mode === 'invoice'" class="grid gap-4 lg:grid-cols-2">
+                <div v-if="state.description" class="space-y-2">
+                    <Label>Description</Label>
+                    <Input
+                        v-model="state.description"
+                        placeholder="Invoice description"
+                        :disabled="systemLocked"
+                    />
+                </div>
+
+                <div class="space-y-2">
+                    <Label>Due date</Label>
+                    <Input v-model="state.valid_until" type="date" :disabled="systemLocked" />
+                </div>
+            </div>
+
             <div v-else class="grid gap-4 lg:grid-cols-4">
                 <div class="space-y-2">
                     <Label>Client</Label>
@@ -153,38 +192,18 @@ const selectedClientName = computed<string>(() => {
 
                 <div class="space-y-2">
                     <Label>Currency</Label>
-                    <Input v-model="state.currency" maxlength="3" :disabled="systemLocked" />
+                    <CurrencyCombobox v-model="state.currency" :disabled="systemLocked" trigger-class="w-full" />
+                </div>
+
+                <div v-if="showFxRate" class="space-y-2">
+                    <Label>Exchange rate (1 {{ effectiveDefaultCurrency }} = ? {{ state.currency }})</Label>
+                    <Input v-model.number="fxRateValue" type="number" step="0.0001" min="0" :disabled="systemLocked" placeholder="Auto-fetched" />
+                    <span class="text-xs text-muted-foreground">Leave blank to auto-fetch from API</span>
                 </div>
 
                 <div class="space-y-2">
                     <Label>Valid until</Label>
                     <Input v-model="state.valid_until" type="date" :disabled="systemLocked" />
-                </div>
-
-                <div class="space-y-2 lg:col-span-2">
-                    <Label>Internal notes</Label>
-                    <Textarea v-model="state.notes" rows="2" :disabled="systemLocked" />
-                </div>
-
-                <div class="space-y-3 rounded-md border bg-muted/30 p-3 lg:col-span-2">
-                    <h4 class="flex items-center text-sm font-medium">
-                        <Layers3 class="mr-2 size-4 text-muted-foreground" />
-                        Deposit
-                    </h4>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm">Require deposit</span>
-                        <Switch v-model="state.requires_deposit" :disabled="systemLocked" />
-                    </div>
-                    <div v-if="state.requires_deposit" class="grid gap-2">
-                        <Label>Deposit amount</Label>
-                        <Input
-                            v-model.number="state.deposit_amount"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            :disabled="systemLocked"
-                        />
-                    </div>
                 </div>
             </div>
         </div>

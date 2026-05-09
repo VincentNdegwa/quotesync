@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 #[Fillable([
     'quote_id',
@@ -18,8 +19,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'unit_price',
     'discount_percent',
     'subtotal',
+    'base_unit_price',
+    'base_subtotal',
     'tax_amount',
+    'base_tax_amount',
     'total',
+    'base_total',
     'is_optional',
     'notes',
     'sort_order',
@@ -59,6 +64,26 @@ class QuoteLineItem extends Model
     }
 
     /**
+     * Get the computed tax amount as sum of all taxes (in quote currency)
+     */
+    protected function taxAmount(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->taxes->sum('tax_amount'),
+        );
+    }
+
+    /**
+     * Get the computed base tax amount as sum of all taxes (in base currency)
+     */
+    protected function baseTaxAmount(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->taxes->sum('base_tax_amount'),
+        );
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -68,7 +93,6 @@ class QuoteLineItem extends Model
             'unit_price' => 'decimal:2',
             'discount_percent' => 'decimal:2',
             'subtotal' => 'decimal:2',
-            'tax_amount' => 'decimal:2',
             'total' => 'decimal:2',
             'is_optional' => 'boolean',
         ];

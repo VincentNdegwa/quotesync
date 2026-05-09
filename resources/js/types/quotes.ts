@@ -1,9 +1,11 @@
-import type { BrandingData, TemplateLayout } from './builder';
+import type { BrandingData, QuoteData, TemplateLayout } from './builder';
+import type { QuoteWinProbabilityModel } from './models';
 
 export type TaxSnapshot = {
     tax_id: number | null;
     tax_label: string;
     tax_rate: number;
+    inclusive: boolean;
 };
 
 export type QuoteBuilderLineItem = {
@@ -13,6 +15,7 @@ export type QuoteBuilderLineItem = {
     description: string | null;
     quantity: number;
     unit: string | null;
+    unit_id: number | null;
     unit_price: number;
     discount_percent: number;
     subtotal: number;
@@ -114,11 +117,14 @@ export type QuoteListRecord = {
     title: string;
     status: string;
     total: number;
+    base_total: number | null;
     currency: string | null;
+    base_currency: string | null;
     valid_until: string | null;
     created_at: string | null;
     client: { id: number; company_name: string; email?: string | null } | null;
     assignee: { id: number; name: string } | null;
+    win_probability: QuoteWinProbabilityModel | null;
 };
 
 export type QuoteTemplateRecord = {
@@ -166,7 +172,7 @@ export type GroupedActivity = {
     user?: { name: string } | null;
     isGroup?: boolean;
     groupCount?: number;
-    groupItems?: QuoteActivity[];
+    groupItems?: QuoteActivity[] | InvoiceActivity[];
 };
 
 export type Quote = {
@@ -201,8 +207,6 @@ export type Quote = {
     terms: string | null;
 };
 
-export type { BrandingData, QuoteData, TemplateLayout } from './builder';
-
 export type EnumOption<T = string> = {
     value: T;
     label: string;
@@ -217,9 +221,182 @@ export type QuoteStatusEnum = {
     availableActions: string[];
 };
 
-export type QuoteActivityTypeEnum = EnumOption<'created' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'follow_up_sent' | 'scheduled'>;
+export type QuoteActivityTypeEnum = EnumOption<'created' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'follow_up_sent' | 'scheduled' | 'approval_requested' | 'approval_approved' | 'approval_rejected' | 'approval_granted'>;
+
+export type InvoiceActivity = {
+    id: number;
+    type: string;
+    description: string;
+    metadata: Record<string, unknown> | null;
+    created_at: string | null;
+    user: { id: number; name: string } | null;
+};
+
+export type InvoiceActivityTypeEnum = EnumOption<'created' | 'sent' | 'viewed' | 'paid' | 'overdue' | 'partial' | 'voided' | 'scheduled'>;
+
+export type InvoiceBuilderLineItemTax = {
+    tax_id: number | null;
+    tax_label: string;
+    tax_rate: number;
+    inclusive: boolean;
+};
+
+export type InvoiceBuilderLineItem = {
+    id: number | null;
+    catalog_item_id: number | null;
+    name: string;
+    description: string | null;
+    quantity: number;
+    unit: string | null;
+    unit_price: number;
+    tax_rate: number;
+    discount_percent: number;
+    subtotal: number;
+    tax_amount: number;
+    total: number;
+    notes: string | null;
+    sort_order: number;
+    taxes: InvoiceBuilderLineItemTax[];
+};
+
+export type InvoiceBuilderState = {
+    id: number | null;
+    invoice_number: string | null;
+    title: string;
+    status: string;
+    client_id: number | null;
+    quote_id: number | null;
+    currency: string;
+    base_currency: string | null;
+    fx_rate: number | null;
+    base_total: number | null;
+    issue_date: string | null;
+    due_date: string | null;
+    cover_message: string | null;
+    terms: string | null;
+    notes: string | null;
+    subtotal: number;
+    discount_amount: number;
+    tax_amount: number;
+    total: number;
+    layout_snapshot: any | null;
+    line_items: InvoiceBuilderLineItem[];
+};
+
+export type FollowUpChannelEnum = {
+    value: 'email' | 'whatsapp' | 'sms';
+    label: string;
+    color: string;
+};
+
+export type QuoteFollowUpStatusEnum = {
+    value: 'pending' | 'sent' | 'cancelled';
+    label: string;
+};
+
+export type TrackingEventTypeEnum = {
+    value: 'view' | 'section_visible' | 'scroll_depth' | 'time_spent' | 'link_click';
+    label: string;
+};
+
+export type InvoiceStatusEnum = {
+    value: 'draft' | 'sent' | 'viewed' | 'partial' | 'paid' | 'overdue' | 'void';
+    label: string;
+    badgeColor: 'default' | 'secondary' | 'destructive' | 'outline';
+    cssColor: string;
+    availableActions: string[];
+};
+
+export type InvoiceBase = {
+    id: number;
+    invoice_number: string | null;
+    title: string;
+    status: string;
+    total: string | number;
+    base_total: string | number | null;
+    currency: string | null;
+    base_currency: string;
+    due_date: string | null;
+    created_at: string | null;
+    client: { id: number; company_name: string; email?: string | null } | null;
+    assignee: { id: number; name: string } | null;
+};
+
+export type InvoiceListRecord = InvoiceBase;
+
+export type InvoiceData = InvoiceBase & {
+    workspace_id: number;
+    client_id: number | null;
+    quote_id: number | null;
+    assigned_to: number | null;
+    base_currency: string;
+    fx_rate: number | null;
+    base_subtotal: string | number | null;
+    base_discount_amount: string | number | null;
+    base_tax_amount: string | number | null;
+    cover_message: string | null;
+    notes: string | null;
+    terms: string | null;
+    subtotal: string | number;
+    discount_amount: string | number;
+    tax_amount: string | number;
+    paid_amount: string | number;
+    balance_due: string | number;
+    issue_date: string | null;
+    paid_date: string | null;
+    sent_at: string | null;
+    layout_snapshot: unknown | null;
+    created_by: number | null;
+    updated_at: string | null;
+    deleted_at: string | null;
+    workspace: { id: number; name: string; display_name: string; owner_id: number } | null;
+    assignee: { id: number; name: string; email: string } | null;
+    creator: { id: number; name: string; email: string } | null;
+    quote: { id: number; number: string | null; title: string } | null;
+    sections: Array<{
+        id: number;
+        title: string;
+        line_items: Array<{
+            id: number;
+            name: string;
+            description: string | null;
+            quantity: string | number;
+            unit_price: string | number;
+            total: string | number;
+            is_optional: boolean;
+        }>;
+    }>;
+    activities: Array<{
+        id: number;
+        type: string;
+        description: string;
+        created_at: string | null;
+        user: { id: number; name: string } | null;
+    }>;
+};
+
+
+export type WinProbabilityConfidenceEnum = {
+    value: 'none' | 'low' | 'medium' | 'high';
+    label: string;
+    badgeColor: string;
+    cssColor: string;
+};
+
+export type SignalDirectionEnum = {
+    value: 'positive' | 'negative';
+    label: string;
+    badgeColor: string;
+    cssColor: string;
+};
 
 export type GlobalEnums = {
     quoteStatus: QuoteStatusEnum[];
     quoteActivityType: QuoteActivityTypeEnum[];
+    followUpChannel: FollowUpChannelEnum[];
+    quoteFollowUpStatus: QuoteFollowUpStatusEnum[];
+    trackingEventType: TrackingEventTypeEnum[];
+    invoiceStatus: InvoiceStatusEnum[];
+    winProbabilityConfidence: WinProbabilityConfidenceEnum[];
+    signalDirection: SignalDirectionEnum[];
 };

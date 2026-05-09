@@ -6,9 +6,11 @@ use App\Http\Requests\StoreCatalogItemRequest;
 use App\Http\Requests\UpdateCatalogItemRequest;
 use App\Models\CatalogCategory;
 use App\Models\CatalogItem;
+use App\Models\ConfigurationUnit;
 use App\Models\Tax;
 use App\Models\Workspace;
 use App\Services\Catalog\CatalogItemService;
+use App\Services\FileStorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -34,28 +36,30 @@ class CatalogItemController extends Controller
             'items' => $catalogItemService->paginateForIndex($workspace, $filters)
                 ->through(fn (CatalogItem $item): array => [
                     ...$item->toArray(),
-                    'taxes' => $item->taxes->map(fn (Tax $tax): array => [
-                        'id' => $tax->id,
-                        'name' => $tax->name,
-                        'rate' => $tax->rate,
-                    ])->values()->all(),
+                    'taxes' => $item->taxes,
                     'tax_ids' => $item->taxes->pluck('id')->values()->all(),
+                    'configuration_unit' => $item->configurationUnit,
                 ]),
             'categories' => CatalogCategory::query()
                 ->where('workspace_id', $workspace->id)
                 ->orderBy('sort_order')
                 ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'is_active']),
+                ->get(),
             'taxes' => Tax::query()
                 ->where('workspace_id', $workspace->id)
                 ->where('is_active', true)
                 ->orderByDesc('is_default')
                 ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'rate', 'is_default']),
+                ->get(),
+            'units' => ConfigurationUnit::query()
+                ->where('workspace_id', $workspace->id)
+                ->where('is_active', true)
+                ->orderByRaw('LOWER(name)')
+                ->get(),
         ]);
     }
 
-    public function store(StoreCatalogItemRequest $request, CatalogItemService $catalogItemService): RedirectResponse
+    public function store(StoreCatalogItemRequest $request, CatalogItemService $catalogItemService, FileStorageService $fileStorageService): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -66,10 +70,10 @@ class CatalogItemController extends Controller
         $payload['created_by'] = $request->user()?->id;
 
         if ($request->hasFile('image')) {
-            $payload['image_path'] = $request->file('image')?->store(
-                "workspaces/{$workspace->id}/catalog",
-                'public',
-            );
+            $result = $fileStorageService->store($request->file('image'), "workspaces/{$workspace->id}/catalog");
+            if (!$result['error']) {
+                $payload['image_url'] = $result['url'];
+            }
         }
 
         $catalogItemService->create($workspace, $payload);
@@ -85,24 +89,26 @@ class CatalogItemController extends Controller
 
         abort_unless($workspace instanceof Workspace && $catalog->workspace_id === $workspace->id, 404);
 
-        $catalog->load(['category:id,name', 'taxes:id,name,rate']);
+        $catalog->load(['category:id,name', 'taxes:id,name,rate', 'configurationUnit:id,name,symbol']);
 
         return Inertia::render('catalog/Show', [
             'item' => [
                 ...$catalog->toArray(),
-                'taxes' => $catalog->taxes->map(fn (Tax $tax): array => [
-                    'id' => $tax->id,
-                    'name' => $tax->name,
-                    'rate' => $tax->rate,
-                ])->values()->all(),
+                'taxes' => $catalog->taxes,
                 'tax_ids' => $catalog->taxes->pluck('id')->values()->all(),
+                'configuration_unit' => $catalog->configurationUnit,
             ],
             'availableTaxes' => Tax::query()
                 ->where('workspace_id', $workspace->id)
                 ->where('is_active', true)
                 ->orderByDesc('is_default')
                 ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'rate']),
+                ->get(),
+            'units' => ConfigurationUnit::query()
+                ->where('workspace_id', $workspace->id)
+                ->where('is_active', true)
+                ->orderByRaw('LOWER(name)')
+                ->get(),
             'margin' => [
                 'profit_per_unit' => (float) $catalog->unit_price - (float) $catalog->cost_price,
                 'margin_percent' => (float) $catalog->unit_price > 0
@@ -112,7 +118,7 @@ class CatalogItemController extends Controller
         ]);
     }
 
-    public function update(UpdateCatalogItemRequest $request, CatalogItem $catalog, CatalogItemService $catalogItemService): RedirectResponse
+    public function update(UpdateCatalogItemRequest $request, CatalogItem $catalog, CatalogItemService $catalogItemService, FileStorageService $fileStorageService): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -121,10 +127,10 @@ class CatalogItemController extends Controller
         $payload = $request->validated();
 
         if ($request->hasFile('image')) {
-            $payload['image_path'] = $request->file('image')?->store(
-                "workspaces/{$workspace->id}/catalog",
-                'public',
-            );
+            $result = $fileStorageService->store($request->file('image'), "workspaces/{$workspace->id}/catalog");
+            if (!$result['error']) {
+                $payload['image_url'] = $result['url'];
+            }
         }
 
         $catalogItemService->update($catalog, $payload);

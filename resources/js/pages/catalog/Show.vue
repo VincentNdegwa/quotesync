@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, setLayoutProps, useForm } from '@inertiajs/vue3';
+import { Head, Link, setLayoutProps, useForm, usePage } from '@inertiajs/vue3';
 import { computed, watchEffect } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
@@ -16,11 +16,13 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import type { CatalogItemRecord } from '@/types';
+import { useFormat } from '@/composables/useFormat';
+import type { CatalogItemRecord, ConfigurationUnitRecord } from '@/types';
 
 const props = defineProps<{
     item: CatalogItemRecord;
     availableTaxes: Array<{ id: number; name: string; rate: number | string }>;
+    units: ConfigurationUnitRecord[];
     margin: {
         profit_per_unit: number;
         margin_percent: number;
@@ -38,12 +40,13 @@ watchEffect(()=>{
     })
 })
 
+const { formatCurrency } = useFormat(usePage().props.workspace_currency as string || undefined);
 
 const form = useForm({
     name: props.item.name,
     description: props.item.description ?? '',
     sku: props.item.sku ?? '',
-    unit: props.item.unit,
+    unit_id: props.item.unit_id,
     unit_price: Number(props.item.unit_price ?? 0),
     cost_price: Number(props.item.cost_price ?? 0),
     tax_ids: props.item.tax_ids ?? [],
@@ -63,6 +66,19 @@ const selectedTaxIds = computed<string[]>({
         form.tax_ids = values
             .map((value) => Number(value))
             .filter((value) => Number.isFinite(value));
+    },
+});
+
+const selectedUnitId = computed<string | null>({
+    get: () => {
+        if (form.unit_id === null || form.unit_id === undefined) {
+            return null;
+        }
+
+        return String(form.unit_id);
+    },
+    set: (value) => {
+        form.unit_id = value ? Number(value) : null;
     },
 });
 
@@ -91,11 +107,11 @@ const save = (): void => {
         <div class="grid gap-4 md:grid-cols-3">
             <div class="rounded-md border p-4">
                 <p class="text-xs text-muted-foreground">Unit price</p>
-                <p class="text-2xl font-semibold">{{ item.unit_price }}</p>
+                <p class="text-2xl font-semibold">{{ formatCurrency(item.unit_price) }}</p>
             </div>
             <div class="rounded-md border p-4">
                 <p class="text-xs text-muted-foreground">Profit per unit</p>
-                <p class="text-2xl font-semibold">{{ margin.profit_per_unit }}</p>
+                <p class="text-2xl font-semibold">{{ formatCurrency(margin.profit_per_unit) }}</p>
             </div>
             <div class="rounded-md border p-4">
                 <p class="text-xs text-muted-foreground">Margin</p>
@@ -121,8 +137,21 @@ const save = (): void => {
                     <Input id="sku" v-model="form.sku" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="unit">Unit</Label>
-                    <Input id="unit" v-model="form.unit" />
+                    <Label for="unit_id">Unit</Label>
+                    <Select v-model="selectedUnitId">
+                        <SelectTrigger id="unit_id" class="w-full">
+                            <SelectValue placeholder="Select unit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem
+                                v-for="unit in units"
+                                :key="unit.id"
+                                :value="String(unit.id)"
+                            >
+                                {{ unit.name }}{{ unit.symbol ? ` (${unit.symbol})` : '' }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div class="grid gap-2">
                     <Label for="unit_price">Unit price</Label>
@@ -169,8 +198,8 @@ const save = (): void => {
                     const target = event.target as HTMLInputElement;
                     form.image = target.files?.[0] ?? null;
                 }" />
-                <p class="text-xs text-muted-foreground" v-if="item.image_path">
-                    Existing image: {{ item.image_path }}
+                <p class="text-xs text-muted-foreground" v-if="item.image_url">
+                    Existing image: {{ item.image_url }}
                 </p>
             </div>
 

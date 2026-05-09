@@ -1,21 +1,39 @@
 <?php
 
+use App\Http\Controllers\AiQuoteController;
+use App\Http\Controllers\AiTemplateController;
+use App\Http\Controllers\AiWritingController;
+use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\CatalogCategoryController;
+use App\Http\Controllers\CatalogExportController;
 use App\Http\Controllers\CatalogImportController;
 use App\Http\Controllers\CatalogItemController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ClientExportController;
 use App\Http\Controllers\ClientImportController;
+use App\Http\Controllers\ConfigIndustryController;
+use App\Http\Controllers\Configuration\FollowUpSequenceController as ConfigFollowUpSequenceController;
 use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\ConfigurationTagController;
 use App\Http\Controllers\ConfigurationUnitController;
+use App\Http\Controllers\CustomDomainController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\InvoiceSendController;
+use App\Http\Controllers\Settings\MembersController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PortalInvitationController;
 use App\Http\Controllers\PublicQuoteController;
+use App\Http\Controllers\PublicInvoiceController;
+use App\Http\Controllers\QuoteBulkExportController;
 use App\Http\Controllers\QuoteController;
+use App\Http\Controllers\QuoteMessageController;
+use App\Http\Controllers\QuotePdfController;
 use App\Http\Controllers\QuoteSendController;
 use App\Http\Controllers\QuoteTemplateController;
-use App\Http\Controllers\Settings\MembersController;
+use App\Http\Controllers\QuoteTrackingController;
 use App\Http\Controllers\TaxController;
 use App\Http\Controllers\WorkspaceSwitchController;
 use App\Http\Middleware\EnsureWorkspaceSettingsOnboarded;
@@ -30,6 +48,22 @@ Route::get('dashboard', DashboardController::class)
     ->middleware(['auth', 'verified', EnsureWorkspaceSettingsOnboarded::class])
     ->name('dashboard');
 
+Route::get('analytics', [AnalyticsController::class, 'index'])
+    ->middleware(['auth', 'verified', EnsureWorkspaceSettingsOnboarded::class])
+    ->name('analytics');
+
+Route::get('approvals', [ApprovalController::class, 'index'])
+    ->middleware(['auth', 'verified', EnsureWorkspaceSettingsOnboarded::class])
+    ->name('approvals.index');
+
+Route::middleware(['auth', 'verified', EnsureWorkspaceSettingsOnboarded::class])->group(function () {
+    Route::post('approvals/rules', [ApprovalController::class, 'storeRule'])->name('approvals.rules.store');
+    Route::patch('approvals/rules/{rule}', [ApprovalController::class, 'updateRule'])->name('approvals.rules.update');
+    Route::post('approvals/{approval}/approve', [ApprovalController::class, 'approve'])->name('approvals.approve');
+    Route::post('approvals/{approval}/reject', [ApprovalController::class, 'reject'])->name('approvals.reject');
+    Route::delete('approvals/rules/{rule}', [ApprovalController::class, 'destroyRule'])->name('approvals.rules.destroy');
+});
+
 Route::get('invitations/{invitation}/accept', [InvitationController::class, 'accept'])
     ->middleware('signed:relative')
     ->name('invitations.accept');
@@ -40,6 +74,11 @@ Route::post('q/{quoteUuid}/accept', [PublicQuoteController::class, 'accept'])
     ->name('public-quotes.accept');
 Route::post('q/{quoteUuid}/decline', [PublicQuoteController::class, 'decline'])
     ->name('public-quotes.decline');
+Route::post('q/{quoteUuid}/tracking', [QuoteTrackingController::class, 'store'])
+    ->name('public-quotes.tracking');
+
+Route::get('i/{invoiceUuid}', [PublicInvoiceController::class, 'show'])
+    ->name('public-invoices.show');
 
 Route::middleware(['auth'])->group(function () {
     Route::post('workspaces/{workspace}/switch', WorkspaceSwitchController::class)
@@ -49,33 +88,66 @@ Route::middleware(['auth'])->group(function () {
         ->middleware(['verified', EnsureWorkspaceSettingsOnboarded::class])
         ->name('teams.index');
 
+    Route::get('clients/import/template', [ClientImportController::class, 'template'])
+        ->middleware(['verified', EnsureWorkspaceSettingsOnboarded::class])
+        ->name('clients.import.template');
+    Route::get('catalog/import/template', [CatalogImportController::class, 'template'])
+        ->middleware(['verified', EnsureWorkspaceSettingsOnboarded::class])
+        ->name('catalog.import.template');
+
     Route::middleware(['verified', EnsureWorkspaceSettingsOnboarded::class])->group(function () {
+        Route::post('ai/quote/generate', [AiQuoteController::class, 'generate'])->name('ai.quote.generate');
+        Route::post('ai/template/generate', [AiTemplateController::class, 'generate'])->name('ai.template.generate');
+        Route::post('ai/writing/improve', [AiWritingController::class, 'improve'])->name('ai.writing.improve');
         Route::post('clients/bulk-delete', [ClientController::class, 'bulkDestroy'])->name('clients.bulk-delete');
         Route::get('clients/export/csv', [ClientController::class, 'exportCsv'])->name('clients.export.csv');
+        Route::get('clients/export', [ClientExportController::class, 'export'])->name('clients.export');
+        Route::post('clients/export/selected', [ClientExportController::class, 'exportSelected'])->name('clients.export.selected');
 
         Route::get('clients/import', [ClientImportController::class, 'create'])->name('clients.import.create');
         Route::post('clients/import/preview', [ClientImportController::class, 'preview'])->name('clients.import.preview');
         Route::post('clients/import/confirm', [ClientImportController::class, 'store'])->name('clients.import.store');
         Route::resource('clients', ClientController::class)->except(['create', 'edit']);
+        Route::post('clients/{client}/invite-portal', [PortalInvitationController::class, 'send'])->name('clients.invite-portal');
 
         Route::post('catalog/bulk-action', [CatalogItemController::class, 'bulkAction'])->name('catalog.bulk-action');
 
+        Route::get('quotes/kanban', [QuoteController::class, 'kanban'])->name('quotes.kanban');
+        Route::get('invoices/kanban', [InvoiceController::class, 'kanban'])->name('invoices.kanban');
         Route::resource('quotes', QuoteController::class);
+        Route::get('quotes/{quote}/analytics', [QuoteController::class, 'analytics'])->name('quotes.analytics');
         Route::post('quotes/{quote}/send', [QuoteSendController::class, 'store'])->name('quotes.send');
+        Route::post('quotes/{quote}/convert-to-invoice', [InvoiceController::class, 'convertFromQuote'])->name('quotes.convert-to-invoice');
+        Route::post('quotes/{quote}/pdf', [QuotePdfController::class, 'generate'])->name('quotes.pdf.generate');
+        Route::get('quotes/{quote}/pdf/download', [QuotePdfController::class, 'download'])->name('quotes.pdf.download');
+        Route::post('quotes/bulk-export', [QuoteBulkExportController::class, 'export'])->name('quotes.bulk-export');
         Route::patch('quotes/{quote}/status', [QuoteController::class, 'updateStatus'])->name('quotes.status');
+
+        Route::resource('invoices', InvoiceController::class);
+        Route::patch('invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('invoices.status');
+        Route::post('invoices/{invoice}/send', [InvoiceSendController::class, 'store'])->name('invoices.send');
+        Route::post('invoices/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])->name('invoices.duplicate');
+        Route::post('invoices/{invoice}/archive', [InvoiceController::class, 'archive'])->name('invoices.archive');
         Route::post('quotes/{quote}/duplicate', [QuoteController::class, 'duplicate'])->name('quotes.duplicate');
         Route::post('quotes/{quote}/revise', [QuoteController::class, 'revise'])->name('quotes.revise');
         Route::post('quotes/{quote}/reopen', [QuoteController::class, 'reopen'])->name('quotes.reopen');
         Route::post('quotes/{quote}/archive', [QuoteController::class, 'archive'])->name('quotes.archive');
+        Route::post('quotes/{quote}/follow-ups/{quoteFollowUp}/cancel', [QuoteController::class, 'cancelFollowUp'])->name('quotes.follow-ups.cancel');
+        Route::post('quotes/{quote}/follow-ups/{quoteFollowUp}/send-now', [QuoteController::class, 'sendFollowUpNow'])->name('quotes.follow-ups.send-now');
+        Route::get('quotes/{quote}/messages', [QuoteMessageController::class, 'index'])->name('quotes.messages.index');
+        Route::post('quotes/{quote}/messages', [QuoteMessageController::class, 'store'])->name('quotes.messages.store');
         Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
         Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
         Route::resource('quote-templates', QuoteTemplateController::class);
-Route::get('quote-templates/{quote_template}/layout', [QuoteTemplateController::class, 'getLayout'])->name('quote-templates.layout');
+        Route::get('quote-templates/{quote_template}/layout', [QuoteTemplateController::class, 'getLayout'])->name('quote-templates.layout');
 
         Route::get('catalog/import', [CatalogImportController::class, 'create'])->name('catalog.import.create');
+        Route::get('catalog/import/template', [CatalogImportController::class, 'template'])->name('catalog.import.template');
         Route::post('catalog/import/preview', [CatalogImportController::class, 'preview'])->name('catalog.import.preview');
         Route::post('catalog/import/confirm', [CatalogImportController::class, 'store'])->name('catalog.import.store');
+        Route::get('catalog/export', [CatalogExportController::class, 'export'])->name('catalog.export');
+        Route::post('catalog/export/selected', [CatalogExportController::class, 'exportSelected'])->name('catalog.export.selected');
         Route::resource('catalog', CatalogItemController::class)->except(['create', 'edit']);
 
         Route::get('configuration', [ConfigurationController::class, 'index'])->name('configuration.index');
@@ -98,6 +170,15 @@ Route::get('quote-templates/{quote_template}/layout', [QuoteTemplateController::
         Route::post('configuration/units', [ConfigurationUnitController::class, 'store'])->name('configuration.units.store');
         Route::put('configuration/units/{unit}', [ConfigurationUnitController::class, 'update'])->name('configuration.units.update');
         Route::delete('configuration/units/{unit}', [ConfigurationUnitController::class, 'destroy'])->name('configuration.units.destroy');
+        Route::get('configuration/industries', [ConfigurationController::class, 'industries'])->name('configuration.industries');
+        Route::post('configuration/industries', [ConfigIndustryController::class, 'store'])->name('configuration.industries.store');
+        Route::put('configuration/industries/{industry}', [ConfigIndustryController::class, 'update'])->name('configuration.industries.update');
+        Route::delete('configuration/industries/{industry}', [ConfigIndustryController::class, 'destroy'])->name('configuration.industries.destroy');
+
+        Route::get('configuration/follow-ups', [ConfigurationController::class, 'followUps'])->name('configuration.follow-ups');
+        Route::post('configuration/follow-ups', [ConfigFollowUpSequenceController::class, 'store'])->name('configuration.follow-ups.store');
+        Route::put('configuration/follow-ups/{followUpSequence}', [ConfigFollowUpSequenceController::class, 'update'])->name('configuration.follow-ups.update');
+        Route::delete('configuration/follow-ups/{followUpSequence}', [ConfigFollowUpSequenceController::class, 'destroy'])->name('configuration.follow-ups.destroy');
 
         Route::get('configuration/templates', [QuoteTemplateController::class, 'index'])->name('configuration.templates');
 
@@ -110,6 +191,12 @@ Route::get('quote-templates/{quote_template}/layout', [QuoteTemplateController::
         Route::post('catalog-categories', [CatalogCategoryController::class, 'store'])->name('catalog-categories.store');
         Route::put('catalog-categories/{category}', [CatalogCategoryController::class, 'update'])->name('catalog-categories.update');
         Route::delete('catalog-categories/{category}', [CatalogCategoryController::class, 'destroy'])->name('catalog-categories.destroy');
+
+        Route::get('custom-domains', [CustomDomainController::class, 'index'])->name('custom-domains.index');
+        Route::post('custom-domains', [CustomDomainController::class, 'store'])->name('custom-domains.store');
+        Route::post('custom-domains/{domain}/verify', [CustomDomainController::class, 'verify'])->name('custom-domains.verify');
+        Route::post('custom-domains/{domain}/set-primary', [CustomDomainController::class, 'setPrimary'])->name('custom-domains.set-primary');
+        Route::delete('custom-domains/{domain}', [CustomDomainController::class, 'destroy'])->name('custom-domains.destroy');
     });
 });
 

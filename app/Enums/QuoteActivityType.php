@@ -11,6 +11,11 @@ enum QuoteActivityType: string
     case Declined = 'declined';
     case FollowUpSent = 'follow_up_sent';
     case Scheduled = 'scheduled';
+    case Expired = 'expired';
+    case ApprovalRequested = 'approval_requested';
+    case ApprovalApproved = 'approval_approved';
+    case ApprovalRejected = 'approval_rejected';
+    case ApprovalGranted = 'approval_granted';
 
     public function label(): string
     {
@@ -22,6 +27,11 @@ enum QuoteActivityType: string
             self::Declined => 'Declined',
             self::FollowUpSent => 'Follow-up sent',
             self::Scheduled => 'Scheduled',
+            self::Expired => 'Expired',
+            self::ApprovalRequested => 'Approval requested',
+            self::ApprovalApproved => 'Approval approved',
+            self::ApprovalRejected => 'Approval rejected',
+            self::ApprovalGranted => 'Approval granted',
         };
     }
 
@@ -35,6 +45,11 @@ enum QuoteActivityType: string
             self::Declined => 'text-destructive bg-destructive/10',
             self::FollowUpSent => 'text-destructive bg-destructive/10',
             self::Scheduled => 'text-destructive bg-destructive/10',
+            self::ApprovalRequested => 'text-amber-600 bg-amber-100',
+            self::ApprovalApproved => 'text-emerald-600 bg-emerald-100',
+            self::ApprovalRejected => 'text-destructive bg-destructive/10',
+            self::ApprovalGranted => 'text-emerald-600 bg-emerald-100',
+            self::Expired => 'text-slate-600 bg-slate-200',
         };
     }
 

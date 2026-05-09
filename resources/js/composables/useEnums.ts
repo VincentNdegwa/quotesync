@@ -1,5 +1,6 @@
 import { usePage } from '@inertiajs/vue3';
-import type { GlobalEnums, QuoteActivityTypeEnum, QuoteStatusEnum } from '@/types/quotes';
+import { Mail, MessageSquare, Phone } from 'lucide-vue-next';
+import type { FollowUpChannelEnum, GlobalEnums, InvoiceStatusEnum, QuoteActivityTypeEnum, QuoteFollowUpStatusEnum, QuoteStatusEnum, SignalDirectionEnum, TrackingEventTypeEnum, WinProbabilityConfidenceEnum } from '@/types/quotes';
 
 export function useEnums() {
     const page = usePage();
@@ -13,9 +14,56 @@ export function useEnums() {
         return enums.quoteActivityType.find((type) => type.value === value);
     };
 
+    const getFollowUpChannel = (value: string): FollowUpChannelEnum | undefined => {
+        return enums.followUpChannel.find((channel) => channel.value === value);
+    };
+
+    const getQuoteFollowUpStatus = (value: string): QuoteFollowUpStatusEnum | undefined => {
+        return enums.quoteFollowUpStatus.find((status) => status.value === value);
+    };
+
+    const getTrackingEventType = (value: string): TrackingEventTypeEnum | undefined => {
+        return enums.trackingEventType.find((type) => type.value === value);
+    };
+
+    const getInvoiceStatus = (value: string): InvoiceStatusEnum | undefined => {
+        return enums.invoiceStatus.find((status) => status.value === value);
+    };
+
+    const getInvoiceActivityType = (value: string): InvoiceActivityTypeEnum | undefined => {
+        return enums.invoiceActivityType?.find((type) => type.value === value);
+    };
+
+    const getWinProbabilityConfidence = (value: string): WinProbabilityConfidenceEnum | undefined => {
+        return enums.winProbabilityConfidence?.find((confidence) => confidence.value === value);
+    };
+
+    const getSignalDirection = (value: string): SignalDirectionEnum | undefined => {
+        return enums.signalDirection?.find((direction) => direction.value === value);
+    };
+
+    const getFollowUpChannelIcon = (channel: string) => {
+        return { email: Mail, whatsapp: MessageSquare, sms: Phone }[channel] ?? Mail;
+    };
+
+    const getFollowUpChannelColor = (channel: string): string => {
+        const channelEnum = getFollowUpChannel(channel);
+
+        return channelEnum?.color ?? 'text-muted-foreground bg-muted';
+    };
+
     return {
         enums,
         getQuoteStatus,
         getQuoteActivityType,
+        getFollowUpChannel,
+        getQuoteFollowUpStatus,
+        getTrackingEventType,
+        getInvoiceStatus,
+        getInvoiceActivityType,
+        getWinProbabilityConfidence,
+        getSignalDirection,
+        getFollowUpChannelIcon,
+        getFollowUpChannelColor,
     };
 }

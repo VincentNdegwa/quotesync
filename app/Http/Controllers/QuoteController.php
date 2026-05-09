@@ -2,22 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\QuoteFollowUpStatus;
 use App\Enums\QuoteStatus;
 use App\Http\Requests\StoreQuoteRequest;
 use App\Http\Requests\UpdateQuoteRequest;
 use App\Http\Requests\UpdateQuoteStatusRequest;
-use App\Models\CatalogItem;
+use App\Jobs\SendFollowUpJob;
 use App\Models\Client;
 use App\Models\Quote;
+use App\Models\QuoteFollowUp;
 use App\Models\QuoteTemplate;
-use App\Models\Tax;
 use App\Models\Workspace;
+use App\Services\Quotes\QuoteAnalyticsService;
+use App\Services\BuilderLookupService;
 use App\Services\Quotes\QuoteService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -47,10 +49,13 @@ class QuoteController extends Controller
                     'number' => $quote->number,
                     'title' => $quote->title,
                     'status' => $quote->status,
-                    'total' => (float) $quote->total,
-                    'currency' => $quote->currency,
+                    'total' => (float) ($quote->base_total ?? $quote->total),
+                    'base_total' => $quote->base_total ? (float) $quote->base_total : null,
+                    'currency' => $quote->base_currency ?? $quote->currency,
+                    'base_currency' => $quote->base_currency,
                     'valid_until' => $quote->valid_until?->toDateString(),
                     'created_at' => $quote->created_at?->toISOString(),
+                    'win_probability' => $quote->winProbability?->toResponseArray(),
                     'client' => $quote->client ? [
                         'id' => $quote->client->id,
                         'company_name' => $quote->client->company_name,
@@ -67,7 +72,7 @@ class QuoteController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(Request $request, QuoteService $quoteService, WorkspaceSettingsService $workspaceSettingsService): Response
+    public function create(Request $request, QuoteService $quoteService, WorkspaceSettingsService $workspaceSettingsService, BuilderLookupService $builderLookupService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -78,16 +83,13 @@ class QuoteController extends Controller
 
         if ($templateId > 0) {
             $template = QuoteTemplate::query()
+                ->where('id', $templateId)
                 ->where('workspace_id', $workspace->id)
-                ->where('is_active', true)
-                ->find($templateId);
+                ->first();
         }
 
-        /** @var Collection<int, array<string, mixed>> $quoteFields */
-        $quoteFields = collect($workspaceSettingsService->groupForFrontend($workspace, 'quotes')['fields'] ?? [])->keyBy('key');
-        $defaultCurrency = (string) ($quoteFields->get('default_currency')['value'] ?? 'USD');
-        $validityDays = max(1, (int) ($quoteFields->get('quote_validity_days')['value'] ?? 30));
-
+        $settings = $workspaceSettingsService->builderSettings($workspace);
+        $validityDays = $settings['quotes']['validity_days'] ?? 30;
         $initialState = [
             'id' => null,
             'number' => null,
@@ -95,15 +97,18 @@ class QuoteController extends Controller
             'status' => 'draft',
             'client_id' => null,
             'assigned_to' => $request->user()?->id,
-            'currency' => $defaultCurrency,
+            'currency' => $settings['workspace']['currency'],
+            'base_currency' => $settings['workspace']['currency'],
+            'fx_rate' => null,
+            'base_total' => null,
             'valid_until' => now()->addDays($validityDays)->toDateString(),
-            'cover_message' => null,
-            'terms' => null,
-            'notes' => null,
+            'cover_message' => $settings['quotes']['default_cover_message'],
+            'terms' => $settings['quotes']['default_terms'],
+            'notes' => $settings['quotes']['default_notes'],
             'template_id' => $template?->id,
             'layout' => null,
             'layout_snapshot' => null,
-            'requires_deposit' => false,
+            'requires_deposit' => $settings['quotes']['require_deposit'],
             'deposit_amount' => null,
             'subtotal' => 0,
             'discount_amount' => 0,
@@ -128,7 +133,8 @@ class QuoteController extends Controller
 
         return Inertia::render('quotes/Create', [
             'initialState' => $initialState,
-            ...$this->builderLookups($workspace, $workspaceSettingsService),
+            'settings' => $settings,
+            ...$builderLookupService->getFullLookups($workspace),
         ]);
     }
 
@@ -151,9 +157,6 @@ class QuoteController extends Controller
         return to_route('quotes.edit', $quote);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Request $request, Quote $quote, WorkspaceSettingsService $workspaceSettingsService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
@@ -169,11 +172,86 @@ class QuoteController extends Controller
             'sections.lineItems.catalogItem:id,sku',
             'sections.lineItems.taxes',
             'activities.user:id,name',
+            'quoteFollowUps.step:id,follow_up_sequence_id,channel,subject,message_template,day_offset',
+            'winProbability.signals'
         ]);
+
+        $quote = $this->transformForInternalView($quote);
 
         return Inertia::render('quotes/Show', [
             'quote' => $quote,
-            'branding' => $this->brandingPayload($workspace, $workspaceSettingsService),
+            'settings' => $workspaceSettingsService->builderSettings($workspace),
+            'quoteStatuses' => QuoteStatus::all(),
+        ]);
+    }
+
+    private function transformForInternalView(Quote $quote): array
+    {
+        $data = $quote->toArray();
+
+        $data['subtotal'] = $quote->base_subtotal;
+        $data['discount_amount'] = $quote->base_discount_amount;
+        $data['tax_amount'] = $quote->base_tax_amount;
+        $data['total'] = $quote->base_total;
+        $data['currency'] = $quote->base_currency;
+
+        if (isset($data['sections'])) {
+            foreach ($data['sections'] as &$section) {
+                if (isset($section['line_items'])) {
+                    foreach ($section['line_items'] as &$lineItem) {
+                        $lineItem['unit_price'] = $lineItem['base_unit_price'] ?? $lineItem['unit_price'];
+                        $lineItem['subtotal'] = $lineItem['base_subtotal'] ?? $lineItem['subtotal'];
+                        $lineItem['tax_amount'] = $lineItem['base_tax_amount'] ?? $lineItem['tax_amount'];
+                        $lineItem['total'] = $lineItem['base_total'] ?? $lineItem['total'];
+
+                        if (isset($lineItem['taxes'])) {
+                            foreach ($lineItem['taxes'] as &$tax) {
+                                $tax['tax_amount'] = $tax['base_tax_amount'] ?? $tax['tax_amount'];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $data;
+    }
+
+    public function analytics(Request $request, Quote $quote, QuoteAnalyticsService $analyticsService): Response
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+
+        $quote->loadMissing([
+            'client:id,company_name,email',
+            'assignee:id,name',
+            'trackingEvents',
+            'quoteFollowUps.step',
+        ]);
+
+        return Inertia::render('quotes/Analytics', [
+            'quote' => [
+                'id' => $quote->id,
+                'quote_uuid' => $quote->quote_uuid,
+                'number' => $quote->number,
+                'title' => $quote->title,
+                'status' => $quote->status instanceof QuoteStatus ? $quote->status->value : (string) $quote->status,
+                'total' => (float) $quote->total,
+                'currency' => $quote->currency,
+                'valid_until' => $quote->valid_until?->toIso8601String(),
+                'created_at' => $quote->created_at?->toIso8601String(),
+                'client' => $quote->client ? [
+                    'id' => $quote->client->id,
+                    'company_name' => $quote->client->company_name,
+                    'email' => $quote->client->email,
+                ] : null,
+                'assignee' => $quote->assignee ? [
+                    'id' => $quote->assignee->id,
+                    'name' => $quote->assignee->name,
+                ] : null,
+            ],
+            'analytics' => $analyticsService->getAnalytics($quote),
             'quoteStatuses' => QuoteStatus::all(),
         ]);
     }
@@ -181,7 +259,7 @@ class QuoteController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Request $request, Quote $quote, QuoteService $quoteService, WorkspaceSettingsService $workspaceSettingsService): Response
+    public function edit(Request $request, Quote $quote, QuoteService $quoteService, WorkspaceSettingsService $workspaceSettingsService, BuilderLookupService $builderLookupService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -189,7 +267,8 @@ class QuoteController extends Controller
 
         return Inertia::render('quotes/Edit', [
             'initialState' => $quoteService->toBuilderPayload($quote),
-            ...$this->builderLookups($workspace, $workspaceSettingsService),
+            'settings' => $workspaceSettingsService->builderSettings($workspace),
+            ...$builderLookupService->getFullLookups($workspace),
             'quoteId' => $quote->id,
         ]);
     }
@@ -228,97 +307,13 @@ class QuoteController extends Controller
         return to_route('quotes.index');
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function builderLookups(Workspace $workspace, WorkspaceSettingsService $workspaceSettingsService): array
+    public function kanban(Request $request, QuoteService $quoteService): JsonResponse
     {
-        $branding = $this->brandingPayload($workspace, $workspaceSettingsService);
+        $workspace = $request->user()?->currentWorkspace;
 
-        return [
-            'branding' => $branding,
-            'clients' => Client::query()
-                ->where('workspace_id', $workspace->id)
-                ->orderByRaw('LOWER(company_name)')
-                ->get(['id', 'company_name', 'currency'])
-                ->map(fn (Client $client): array => [
-                    'id' => $client->id,
-                    'company_name' => $client->company_name,
-                    'email' => $client->email,
-                    'currency' => $client->currency,
-                ])
-                ->values(),
-            'catalogItems' => CatalogItem::query()
-                ->where('workspace_id', $workspace->id)
-                ->where('is_active', true)
-                ->with('taxes:id,name,rate')
-                ->orderByRaw('LOWER(name)')
-                ->limit(300)
-                ->get(['id', 'name', 'description', 'sku', 'unit', 'unit_price'])
-                ->map(fn (CatalogItem $item): array => [
-                    'id' => $item->id,
-                    'name' => $item->name,
-                    'description' => $item->description,
-                    'sku' => $item->sku,
-                    'unit' => $item->unit,
-                    'unit_price' => (float) $item->unit_price,
-                    'taxes' => $item->taxes->map(fn (Tax $tax): array => [
-                        'id' => $tax->id,
-                        'name' => $tax->name,
-                        'rate' => (float) $tax->rate,
-                    ])->values()->all(),
-                ])
-                ->values(),
-            'templates' => QuoteTemplate::query()
-                ->where('workspace_id', $workspace->id)
-                ->where('is_active', true)
-                ->orderByDesc('is_system')
-                ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'description', 'is_system'])
-                ->map(fn (QuoteTemplate $template): array => [
-                    'id' => $template->id,
-                    'name' => $template->name,
-                    'description' => $template->description,
-                    'is_system' => (bool) $template->is_system,
-                ])
-                ->values(),
-            'taxes' => Tax::query()
-                ->where('workspace_id', $workspace->id)
-                ->where('is_active', true)
-                ->orderByDesc('is_default')
-                ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'rate'])
-                ->map(fn (Tax $tax): array => [
-                    'id' => $tax->id,
-                    'name' => $tax->name,
-                    'rate' => (float) $tax->rate,
-                ])
-                ->values(),
-        ];
-    }
+        abort_unless($workspace instanceof Workspace, 404);
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function brandingPayload(Workspace $workspace, WorkspaceSettingsService $workspaceSettingsService): array
-    {
-        /** @var Collection<int, array<string, mixed>> $fields */
-        $fields = collect($workspaceSettingsService->groupForFrontend($workspace, 'brand')['fields'] ?? []);
-        $brandFields = $fields->keyBy('key');
-
-        $logoPath = $brandFields->get('logo_path')['value'] ?? null;
-        $logoUrl = is_string($logoPath) && $logoPath !== '' ? Storage::url($logoPath) : null;
-
-        return [
-            'company_name' => $brandFields->get('company_name')['value'] ?? null,
-            'logo_url' => $logoUrl,
-            'primary_color' => $brandFields->get('primary_color')['value'] ?? '#4F46E5',
-            'accent_color' => $brandFields->get('accent_color')['value'] ?? '#F5A623',
-            'company_email' => $brandFields->get('company_email')['value'] ?? null,
-            'company_phone' => $brandFields->get('company_phone')['value'] ?? null,
-            'company_address' => $brandFields->get('company_address')['value'] ?? null,
-            'company_tagline' => $brandFields->get('company_tagline')['value'] ?? null,
-        ];
+        return response()->json($quoteService->allForKanban($workspace));
     }
 
     public function updateStatus(UpdateQuoteStatusRequest $request, Quote $quote, QuoteService $quoteService): RedirectResponse
@@ -343,9 +338,12 @@ class QuoteController extends Controller
             $reason = $request->string('reason')->toString();
             $quoteService->markAsLost($quote, $reason ?: null);
             Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote marked as lost.')]);
+        } else {
+            $quote->update(['status' => $newStatus->value]);
+            Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote status updated.')]);
         }
 
-        return to_route('quotes.show', $quote);
+        return back();
     }
 
     public function duplicate(Request $request, Quote $quote, QuoteService $quoteService): RedirectResponse
@@ -400,5 +398,34 @@ class QuoteController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote archived successfully.')]);
 
         return to_route('quotes.index');
+    }
+
+    public function cancelFollowUp(Request $request, Quote $quote, QuoteFollowUp $quoteFollowUp): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+        abort_unless($quoteFollowUp->quote_id === $quote->id, 404);
+        abort_unless($quoteFollowUp->status === QuoteFollowUpStatus::Pending, 403);
+
+        $quoteFollowUp->update([
+            'status' => QuoteFollowUpStatus::Cancelled->value,
+            'cancelled_at' => now(),
+        ]);
+
+        return back()->with('toast', ['type' => 'success', 'message' => __('Follow-up cancelled successfully.')]);
+    }
+
+    public function sendFollowUpNow(Request $request, Quote $quote, QuoteFollowUp $quoteFollowUp): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+        abort_unless($quoteFollowUp->quote_id === $quote->id, 404);
+        abort_unless($quoteFollowUp->status === QuoteFollowUpStatus::Pending, 403);
+
+        SendFollowUpJob::dispatch($quoteFollowUp->id);
+
+        return back()->with('toast', ['type' => 'success', 'message' => __('Follow-up will be sent shortly.')]);
     }
 }

@@ -34,6 +34,7 @@ export type WorkspaceSettingsPageProps = {
         id: number;
         name: string;
         display_name: string | null;
+        industry_id: number | null;
         settings_onboarded_at?: string | null;
     };
     groups: WorkspaceSettingsGroupSummary[];
@@ -45,12 +46,13 @@ export type WorkspaceOnboardingPageProps = {
         id: number;
         name: string;
         display_name: string | null;
+        industry_id: number | null;
     };
     currentStepIndex: number;
     business: {
         company_name: string | null;
         country: string | null;
-        logo_path: string | null;
+        logo_url: string | null;
     };
     quoteDefaults: {
         currency: string | null;

@@ -25,10 +25,8 @@ import {
     StepperTitle,
     StepperTrigger,
 } from '@/components/ui/stepper';
-import type { WorkspaceOnboardingPageProps } from '@/types';
-import {
-    translationLanguageOptions,
-} from '@/utils/location-options';
+import type { IndustryModel, WorkspaceOnboardingPageProps } from '@/types';
+import { translationLanguageOptions } from '@/utils/location-options';
 import type { LanguageOption } from '@/utils/location-options';
 
 const props = defineProps({
@@ -58,7 +56,9 @@ const props = defineProps({
         default: null,
     },
     availableLanguages: {
-        type: Array as PropType<WorkspaceOnboardingPageProps['availableLanguages']>,
+        type: Array as PropType<
+            WorkspaceOnboardingPageProps['availableLanguages']
+        >,
         required: false,
         default: () => [],
     },
@@ -71,6 +71,11 @@ const props = defineProps({
         type: Number,
         required: false,
         default: null,
+    },
+    industries: {
+        type: Array as PropType<IndustryModel[]>,
+        required: false,
+        default: () => [],
     },
     status: {
         type: String,
@@ -88,12 +93,20 @@ watch(
             stepIndex.value = Math.min(Math.max(nextStep, 1), 3);
         }
     },
+    { immediate: true },
 );
+
+watch(stepIndex, (newStepIndex) => {
+    onboardingForm.data.step_index = newStepIndex;
+});
 
 const wizardSteps = [
     { step: 1, title: 'Your business', description: 'Company and country' },
-    { step: 2, title: 'Quote defaults', description: 'Currency, language, and numbering' },
-    { step: 3, title: 'Invite team', description: 'Add your colleagues' },
+    {
+        step: 2,
+        title: 'Quote defaults',
+        description: 'Currency, language, and numbering',
+    },
 ];
 
 const languageOptions = computed<LanguageOption[]>(() => {
@@ -102,7 +115,10 @@ const languageOptions = computed<LanguageOption[]>(() => {
     }
 
     const labelMap = new Map(
-        translationLanguageOptions.map((language) => [language.code, language.label]),
+        translationLanguageOptions.map((language) => [
+            language.code,
+            language.label,
+        ]),
     );
 
     return props.availableLanguages.map((language) => ({
@@ -119,16 +135,13 @@ const onboardingForm = reactive({
         navigation: 'next',
         company_name: props.business?.company_name ?? '',
         country: props.business?.country ?? '',
-        logo_path: props.business?.logo_path ?? '',
-        currency: props.quoteDefaults?.currency ?? 'USD',
-        language: props.localization?.language ?? 'en',
+        logo_url: props.business?.logo_url ?? '',
+        industry_id: props.workspace?.industry_id ?? null,
+        currency: props.business?.currency ?? 'USD',
         quote_prefix: props.quoteDefaults?.quote_prefix ?? 'QS',
-        invites: [
-            { email: '', role_id: props.defaultRoleId ? String(props.defaultRoleId) : '' },
-            { email: '', role_id: props.defaultRoleId ? String(props.defaultRoleId) : '' },
-            { email: '', role_id: props.defaultRoleId ? String(props.defaultRoleId) : '' },
-        ]
-    }
+        invoice_prefix: props.quoteDefaults?.invoice_prefix ?? 'INV',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC',
+    },
 });
 
 watch(
@@ -136,7 +149,8 @@ watch(
     (business) => {
         onboardingForm.data.company_name = business?.company_name ?? '';
         onboardingForm.data.country = business?.country ?? '';
-        onboardingForm.data.logo_path = business?.logo_path ?? '';
+        onboardingForm.data.logo_url = business?.logo_url ?? '';
+        onboardingForm.data.currency = business?.currency ?? 'USD';
     },
     { immediate: true },
 );
@@ -144,29 +158,8 @@ watch(
 watch(
     () => props.quoteDefaults,
     (quoteDefaults) => {
-        onboardingForm.data.currency = quoteDefaults?.currency ?? 'USD';
         onboardingForm.data.quote_prefix = quoteDefaults?.quote_prefix ?? 'QS';
-    },
-    { immediate: true },
-);
-
-watch(
-    () => props.localization,
-    (localization) => {
-        onboardingForm.data.language = localization?.language ?? 'en';
-    },
-    { immediate: true },
-);
-
-watch(
-    () => props.defaultRoleId,
-    (defaultRoleId) => {
-        const roleId = defaultRoleId ? String(defaultRoleId) : '';
-
-        onboardingForm.data.invites = onboardingForm.data.invites.map((invite) => ({
-            ...invite,
-            role_id: invite.role_id || roleId,
-        }));
+        onboardingForm.data.invoice_prefix = quoteDefaults?.invoice_prefix ?? 'INV';
     },
     { immediate: true },
 );
@@ -177,33 +170,32 @@ const saveStepAndContinue = (): void => {
 };
 
 const finishSetup = (): void => {
-    onboardingForm.data.step_index = 3;
+    onboardingForm.data.step_index = 2;
     onboardingForm.data.navigation = 'finish';
 };
 
-const finishWithoutInvites = () => {
-    router.put(onboardingForm.url, {
-        ...onboardingForm.data,
-        step_index: 3,
-        navigation: 'finish',
-        invites: [],
-    });
+const goToPreviousStep = (): void => {
+    if (stepIndex.value > 1) {
+        router.get('/business-setup/onboarding', { step: stepIndex.value - 1 });
+    }
 };
 
 const handleFormSuccess = (): void => {
-    if (onboardingForm.data.navigation === 'next' && stepIndex.value < 3) {
-        stepIndex.value += 1;
-    }
+    // Backend handles step navigation via redirect
 };
 </script>
 
 <template>
     <Head title="Business Setup" />
 
-    <div class="max-w-3xl mx-auto space-y-8 py-10">
+    <div class="mx-auto max-w-3xl space-y-8 py-10">
         <header v-if="workspace" class="space-y-2">
-            <h1 class="text-3xl font-bold tracking-tight">Welcome to {{ workspace.name }}</h1>
-            <p class="text-muted-foreground">Let's get your workspace ready for action.</p>
+            <h1 class="text-3xl font-bold tracking-tight">
+                Welcome to {{ workspace.name }}
+            </h1>
+            <p class="text-muted-foreground">
+                Let's get your workspace ready for action.
+            </p>
         </header>
 
         <Stepper v-model="stepIndex" class="flex w-full items-start gap-2">
@@ -211,17 +203,22 @@ const handleFormSuccess = (): void => {
                 v-for="step in wizardSteps"
                 :key="step.step"
                 v-slot="{ state }"
-                class="relative flex w-full flex-col items-center justify-center group"
+                class="group relative flex w-full flex-col items-center justify-center"
                 :step="step.step"
             >
                 <StepperSeparator
-                    v-if="step.step !== 3"
-                    class="absolute left-[calc(50%+20px)] right-[calc(-50%+10px)] top-5 block h-0.5 bg-muted group-data-[state=completed]:bg-primary"
+                    v-if="step.step !== 2"
+                    class="absolute top-5 right-[calc(-50%+10px)] left-[calc(50%+20px)] block h-0.5 bg-muted group-data-[state=completed]:bg-primary"
                 />
                 <StepperTrigger as-child>
                     <Button
-                        :variant="state === 'completed' || state === 'active' ? 'default' : 'outline'"
-                        size="icon" class="z-10 rounded-full"
+                        :variant="
+                            state === 'completed' || state === 'active'
+                                ? 'default'
+                                : 'outline'
+                        "
+                        size="icon"
+                        class="z-10 rounded-full"
                     >
                         <Check v-if="state === 'completed'" class="size-5" />
                         <Circle v-else-if="state === 'active'" class="size-5" />
@@ -229,21 +226,33 @@ const handleFormSuccess = (): void => {
                     </Button>
                 </StepperTrigger>
                 <div class="mt-4 text-center">
-                    <StepperTitle class="text-sm font-semibold">{{ step.title }}</StepperTitle>
-                    <StepperDescription class="text-xs text-muted-foreground">{{ step.description }}</StepperDescription>
+                    <StepperTitle class="text-sm font-semibold">{{
+                        step.title
+                    }}</StepperTitle>
+                    <StepperDescription class="text-xs text-muted-foreground">{{
+                        step.description
+                    }}</StepperDescription>
                 </div>
             </StepperItem>
         </Stepper>
 
-        <Form 
-            v-bind="onboardingForm" 
+        <Form
+            v-bind="onboardingForm"
             @success="handleFormSuccess"
-            class="bg-card border rounded-xl p-8 space-y-6 shadow-sm" 
+            class="space-y-6 rounded-xl border bg-card p-8 shadow-sm"
             v-slot="{ errors, processing }"
         >
-            <input v-model="onboardingForm.data.step_index" type="hidden" name="step_index" />
-            <input v-model="onboardingForm.data.navigation" type="hidden" name="navigation" />
-            
+            <input
+                v-model="onboardingForm.data.step_index"
+                type="hidden"
+                name="step_index"
+            />
+            <input
+                v-model="onboardingForm.data.navigation"
+                type="hidden"
+                name="navigation"
+            />
+
             <div v-if="stepIndex === 1" class="space-y-4">
                 <div class="grid gap-2">
                     <Label for="company_name" required>Company Name</Label>
@@ -257,74 +266,119 @@ const handleFormSuccess = (): void => {
                 </div>
 
                 <div class="grid gap-2">
+                    <Label>Industry</Label>
+                    <Select
+                        v-model="onboardingForm.data.industry_id"
+                        name="industry_id"
+                    >
+                        <SelectTrigger class="w-full">
+                            <SelectValue placeholder="Select your industry" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem
+                                v-for="industry in industries"
+                                :key="industry.id"
+                                :value="String(industry.id)"
+                            >
+                                <div class="flex items-center gap-2">
+                                    <div
+                                        class="h-3 w-3 rounded-full"
+                                        :style="{
+                                            backgroundColor:
+                                                industry.color || '#000',
+                                        }"
+                                    />
+                                    {{ industry.name }}
+                                </div>
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <InputError :message="errors.industry_id" />
+                </div>
+
+                <div class="grid gap-2">
                     <Label required>Country</Label>
-                    <CountryCombobox v-model="onboardingForm.data.country" trigger-class="w-full" />
-                    <input type="hidden" name="country" :value="onboardingForm.data.country" />
+                    <CountryCombobox
+                        v-model="onboardingForm.data.country"
+                        trigger-class="w-full"
+                    />
+                    <input
+                        type="hidden"
+                        name="country"
+                        :value="onboardingForm.data.country"
+                    />
                     <InputError :message="errors.country" />
+                </div>
+
+                <div class="grid gap-2">
+                    <Label required>Currency</Label>
+                    <CurrencyCombobox
+                        v-model="onboardingForm.data.currency"
+                        trigger-class="w-full"
+                    />
+                    <input
+                        type="hidden"
+                        name="currency"
+                        :value="onboardingForm.data.currency"
+                    />
+                    <InputError :message="errors.currency" />
                 </div>
             </div>
 
             <div v-if="stepIndex === 2" class="space-y-4">
                 <div class="grid gap-2">
-                    <Label required>Default Currency</Label>
-                    <CurrencyCombobox v-model="onboardingForm.data.currency" trigger-class="w-full" />
-                    <input type="hidden" name="currency" :value="onboardingForm.data.currency" />
-                    <InputError :message="errors.currency" />
-                </div>
-                <div class="grid gap-2">
-                    <Label required>Interface Language</Label>
-                    <LanguageCombobox
-                        v-model="onboardingForm.data.language"
-                        :options="languageOptions"
-                        trigger-class="w-full"
-                    />
-                    <input type="hidden" name="language" :value="onboardingForm.data.language" />
-                    <InputError :message="errors.language" />
-                </div>
-                <div class="grid gap-2">
                     <Label required>Quote Prefix</Label>
-                    <Input v-model="onboardingForm.data.quote_prefix" name="quote_prefix" placeholder="QS" />
+                    <Input
+                        v-model="onboardingForm.data.quote_prefix"
+                        name="quote_prefix"
+                        placeholder="QS"
+                    />
                     <p class="text-xs text-muted-foreground italic">
-                        Sample: {{ onboardingForm.data.quote_prefix || 'QS' }}-{{ new Date().getFullYear() }}-001
+                        Sample:
+                        {{ onboardingForm.data.quote_prefix || 'QS' }}-{{
+                            new Date().getFullYear()
+                        }}-001
+                    </p>
+                </div>
+                <div class="grid gap-2">
+                    <Label required>Invoice Prefix</Label>
+                    <Input
+                        v-model="onboardingForm.data.invoice_prefix"
+                        name="invoice_prefix"
+                        placeholder="INV"
+                    />
+                    <p class="text-xs text-muted-foreground italic">
+                        Sample:
+                        {{ onboardingForm.data.invoice_prefix || 'INV' }}-{{
+                            new Date().getFullYear()
+                        }}-001
                     </p>
                 </div>
             </div>
 
-            <div v-if="stepIndex === 3" class="space-y-4">
-                <div v-for="(invite, index) in onboardingForm.data.invites" :key="index" class="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/20">
-                    <div class="grid gap-2">
-                        <Label>Email</Label>
-                        <Input
-                            v-model="invite.email"
-                            :name="`invites[${index}][email]`"
-                            type="email"
-                            placeholder="email@company.com"
-                        />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label>Role</Label>
-                        <Select v-model="invite.role_id" :name="`invites[${index}][role_id]`">
-                            <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem v-for="role in (availableRoles || [])" :key="role.id" :value="String(role.id)">
-                                    {{ role.display_name }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-            </div>
+            <div class="flex justify-between border-t pt-6">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    :disabled="stepIndex === 1"
+                    @click="goToPreviousStep"
+                    >Back</Button
+                >
 
-            <div class="flex justify-between pt-6 border-t">
-                <Button type="button" variant="ghost" :disabled="stepIndex === 1" @click="stepIndex--">Back</Button>
-                
                 <div class="flex gap-2">
-                    <Button v-if="stepIndex === 3" type="button" variant="outline" @click="finishWithoutInvites">
-                        Skip & Finish
-                    </Button>
-                    
-                    <Button v-if="stepIndex < 3" type="submit" @click="saveStepAndContinue">Next Step</Button>
-                    <Button v-else type="submit" :disabled="processing" @click="finishSetup">Finish Setup</Button>
+                    <Button
+                        v-if="stepIndex < 2"
+                        type="submit"
+                        @click="saveStepAndContinue"
+                        >Next Step</Button
+                    >
+                    <Button
+                        v-else
+                        type="submit"
+                        :disabled="processing"
+                        @click="finishSetup"
+                        >Finish Setup</Button
+                    >
                 </div>
             </div>
         </Form>

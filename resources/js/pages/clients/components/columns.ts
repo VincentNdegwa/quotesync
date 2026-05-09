@@ -1,8 +1,10 @@
+import { usePage } from '@inertiajs/vue3';
 import type { ColumnDef } from '@tanstack/vue-table';
 import { ArrowUpDown } from 'lucide-vue-next';
 import { h } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useFormat } from '@/composables/useFormat';
 import type { ClientRecord } from '@/types';
 import ClientTableRowActions from './ClientTableRowActions.vue';
 
@@ -73,12 +75,12 @@ export const getClientColumns = (options: ClientColumnOptions): ColumnDef<Client
     {
         accessorKey: 'total_value_won',
         header: ({ column }) => h('div', { class: 'text-center' }, sortableHeader('Value won', column, 'right')),
-        cell: ({ row }) => h('div', { class: 'text-center tabular-nums' }, row.original.total_value_won ?? 0),
+        cell: ({ row }) => h('div', { class: 'text-center tabular-nums' }, useFormat().formatCurrency(row.original.total_value_won ?? 0, (usePage().props.workspace_currency as string) || undefined)),
     },
     {
         accessorKey: 'created_at',
         header: ({ column }) => h('div', { class: 'text-center' }, sortableHeader('Date added', column, 'right')),
-        cell: ({ row }) => h('div', { class: 'text-center' }, new Date(row.original.created_at).toLocaleDateString()),
+        cell: ({ row }) => h('div', { class: 'text-center' }, useFormat().formatDate(row.original.created_at)),
     },
     {
         id: 'actions',

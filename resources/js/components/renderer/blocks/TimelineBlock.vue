@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { blockBaseStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
 import type { BrandingData, QuoteData, TimelineBlockConfig } from '@/types';
 
 defineProps<{
@@ -10,14 +11,8 @@ defineProps<{
 </script>
 
 <template>
-    <div
-        class="px-6 py-4"
-        :style="{
-            backgroundColor: config.backgroundColor ?? 'transparent',
-            padding: config.paddingSize === 'sm' ? '12px 16px' : config.paddingSize === 'lg' ? '28px 30px' : '20px 24px',
-        }"
-    >
-        <h4 class="text-sm font-semibold">{{ config.title }}</h4>
+    <div :style="blockBaseStyle(config)" :class="blockFontSizeClass(config.fontSize)">
+        <h4 class="text-sm font-semibold">{{ config.labelText }}</h4>
         <p class="text-sm text-muted-foreground">
             {{ config.compact ? 'Compact timeline layout enabled.' : 'Add timeline milestones in block settings.' }}
         </p>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
-import { CheckCircle2, XCircle } from 'lucide-vue-next';
-import { computed, ref, provide } from 'vue';
+import { CheckCircle2, XCircle, AlertCircle } from 'lucide-vue-next';
+import { computed, onMounted, onUnmounted, ref, provide } from 'vue';
 import { toast } from 'vue-sonner';
 import PublicQuoteController from '@/actions/App/Http/Controllers/PublicQuoteController';
 import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
@@ -11,19 +11,30 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import SignaturePad from '@/components/ui/SignaturePad.vue';
 import { Textarea } from '@/components/ui/textarea';
+import { useQuoteTracking } from '@/composables/useQuoteTracking';
 import { ensureTemplateLayout } from '@/types';
-import type { BrandingData, QuoteData, TemplateLayout } from '@/types';
+import type { WorkspaceSettings, QuoteData, TemplateLayout } from '@/types';
 
 const props = defineProps<{
     quote: QuoteData;
     quote_uuid: string;
     layout: TemplateLayout | null;
-    branding: BrandingData;
-    status: string;
-    is_expired: boolean;
+    settings: WorkspaceSettings;
+    clientState: 'open' | 'accepted' | 'closed';
+    isWorkspaceMember: boolean;
 }>();
 
 const renderedLayout = computed(() => ensureTemplateLayout(props.layout));
+
+const tracking = props.isWorkspaceMember
+    ? null
+    : useQuoteTracking({
+        quoteUuid: props.quote_uuid,
+        endpoint: `/q/${props.quote_uuid}/tracking`,
+        flushInterval: 5000,
+    });
+
+let scrollHandler: (() => void) | null = null;
 
 const showApproveModal = ref(false);
 const showDeclineModal = ref(false);
@@ -60,6 +71,31 @@ function handleDecline() {
         },
     });
 }
+
+onMounted(() => {
+    if (tracking) {
+        tracking.start();
+
+        scrollHandler = (): void => {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollPercent = docHeight > 0 ? Math.round((scrollTop / docHeight) * 100) : 0;
+            tracking.trackScrollDepth(scrollPercent);
+        };
+
+        window.addEventListener('scroll', scrollHandler, { passive: true });
+    }
+});
+
+onUnmounted(() => {
+    if (scrollHandler) {
+        window.removeEventListener('scroll', scrollHandler);
+    }
+
+    if (tracking) {
+        tracking.stop();
+    }
+});
 </script>
 
 <template>
@@ -72,24 +108,27 @@ function handleDecline() {
             <div class="flex items-center justify-between rounded-lg bg-card p-4 shadow-sm ring-1 ring-border sticky top-4 z-10">
                 <div class="flex items-center gap-3">
                     <h1 class="text-lg font-semibold">{{ quote.title }}</h1>
-                    <Badge v-if="status === 'accepted'" variant="default" class="bg-emerald-500 hover:bg-emerald-600 border-transparent text-white">
+                    <Badge v-if="clientState === 'accepted'" variant="default" class="bg-emerald-500 hover:bg-emerald-600 border-transparent text-white">
                         <CheckCircle2 class="mr-1 h-3 w-3" /> Accepted
                     </Badge>
-                    <Badge v-else-if="status === 'declined'" variant="destructive">
-                        <XCircle class="mr-1 h-3 w-3" /> Declined
-                    </Badge>
-                    <Badge v-else-if="status === 'draft'" variant="secondary">Draft</Badge>
-                    <Badge v-else-if="is_expired" variant="destructive">Expired</Badge>
                 </div>
             </div>
 
             <!-- Quote Document -->
+            <div v-if="clientState === 'closed'" class="rounded-lg bg-card p-8 text-center shadow-sm ring-1 ring-border">
+                <AlertCircle class="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h2 class="text-xl font-semibold mb-2">This quote is no longer available</h2>
+                <p class="text-muted-foreground">Please contact {{ settings.workspace.company_name }} for an updated quote.</p>
+            </div>
+
             <QuoteRenderer
-                :branding="branding"
+                v-else
+                :settings="settings"
                 :layout="renderedLayout"
-                :quote="quote"
+                :data="{ ...quote, documentType: 'quote' }"
                 :preview-mode="false"
                 :edit-mode="false"
+                :is-internal-view="false"
                 class="shadow-lg ring-1 ring-border"
             />
         </div>

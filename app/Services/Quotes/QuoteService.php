@@ -2,6 +2,7 @@
 
 namespace App\Services\Quotes;
 
+use App\Enums\QuoteFollowUpStatus;
 use App\Enums\QuoteStatus;
 use App\Models\CatalogItem;
 use App\Models\Quote;
@@ -9,6 +10,7 @@ use App\Models\QuoteActivity;
 use App\Models\QuoteTemplate;
 use App\Models\Workspace;
 use App\Models\WorkspaceSetting;
+use App\Services\Quotes\TaxCalculator;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -30,7 +32,7 @@ class QuoteService
     {
         $query = Quote::query()
             ->where('workspace_id', $workspace->id)
-            ->with(['client:id,company_name,email', 'assignee:id,name']);
+            ->with(['client:id,company_name,email', 'assignee:id,name', 'winProbability.signals']);
 
         $search = trim((string) Arr::get($filters, 'search', ''));
 
@@ -57,6 +59,40 @@ class QuoteService
         };
 
         return $query->paginate($perPage)->withQueryString();
+    }
+
+    public function allForKanban(Workspace $workspace, int $limit = 500): array
+    {
+        return Quote::query()
+            ->where('workspace_id', $workspace->id)
+            ->with(['client:id,company_name,email'])
+            ->latest('created_at')
+            ->limit($limit)
+            ->get([
+                'id', 'quote_uuid', 'number', 'title', 'status',
+                'total', 'base_total', 'currency', 'base_currency', 'valid_until', 'created_at', 'client_id',
+            ])
+            ->map(fn (Quote $quote): array => [
+                'id' => $quote->id,
+                'quote_uuid' => $quote->quote_uuid,
+                'number' => $quote->number,
+                'title' => $quote->title,
+                'status' => $quote->status->value,
+                'total' => (float) ($quote->base_total ?? $quote->total),
+                'base_total' => $quote->base_total ? (float) $quote->base_total : null,
+                'currency' => $quote->base_currency ?? $quote->currency,
+                'base_currency' => $quote->base_currency,
+                'valid_until' => $quote->valid_until?->toDateString(),
+                'created_at' => $quote->created_at?->toISOString(),
+                'client' => $quote->client ? [
+                    'id' => $quote->client->id,
+                    'company_name' => $quote->client->company_name,
+                    'email' => $quote->client->email,
+                ] : null,
+                'assignee' => null,
+            ])
+            ->values()
+            ->all();
     }
 
     /**
@@ -105,6 +141,8 @@ class QuoteService
             ]);
 
             $this->syncSections($quote, $sections);
+
+            $this->calculateQuoteTotals($quote);
 
             return $quote->refresh();
         });
@@ -188,6 +226,9 @@ class QuoteService
 
             $this->syncSections($quote, $sections);
 
+            $quote->load('sections.lineItems.taxes');
+            $this->calculateQuoteTotals($quote);
+
             return $quote->refresh();
         });
     }
@@ -200,10 +241,10 @@ class QuoteService
     public function markAsWon(Quote $quote): Quote
     {
         return DB::transaction(function () use ($quote): Quote {
-            $quote->update([
-                'status' => QuoteStatus::Won->value,
-                'accepted_at' => now(),
-            ]);
+            $quote->status = QuoteStatus::Won;
+            $quote->accepted_at = now();
+            $quote->won_at = now();
+            $quote->save();
 
             QuoteActivity::query()->create([
                 'quote_id' => $quote->id,
@@ -214,6 +255,13 @@ class QuoteService
                 'metadata' => null,
             ]);
 
+            $quote->quoteFollowUps()
+                ->where('status', QuoteFollowUpStatus::Pending->value)
+                ->update([
+                    'status' => QuoteFollowUpStatus::Cancelled->value,
+                    'cancelled_at' => now(),
+                ]);
+
             return $quote->refresh();
         });
     }
@@ -221,11 +269,11 @@ class QuoteService
     public function markAsLost(Quote $quote, ?string $reason = null): Quote
     {
         return DB::transaction(function () use ($quote, $reason): Quote {
-            $quote->update([
-                'status' => QuoteStatus::Lost->value,
-                'declined_at' => now(),
-                'decline_reason' => $reason,
-            ]);
+            $quote->status = QuoteStatus::Lost;
+            $quote->declined_at = now();
+            $quote->lost_at = now();
+            $quote->decline_reason = $reason;
+            $quote->save();
 
             QuoteActivity::query()->create([
                 'quote_id' => $quote->id,
@@ -236,72 +284,49 @@ class QuoteService
                 'metadata' => ['reason' => $reason],
             ]);
 
+            $quote->quoteFollowUps()
+                ->where('status', QuoteFollowUpStatus::Pending->value)
+                ->update([
+                    'status' => QuoteFollowUpStatus::Cancelled->value,
+                    'cancelled_at' => now(),
+                ]);
+
             return $quote->refresh();
         });
     }
 
-    public function duplicate(Quote $quote): Quote
+    private function replicateQuote(Quote $quote, string $titleSuffix, string $activityDescription): Quote
     {
-        return DB::transaction(function () use ($quote): Quote {
+        return DB::transaction(function () use ($quote, $titleSuffix, $activityDescription): Quote {
             $quote->load(['sections.lineItems.taxes', 'workspace']);
 
             $workspace = $quote->workspace;
 
-            $newQuote = Quote::query()->create([
-                'workspace_id' => $quote->workspace_id,
-                'quote_uuid' => (string) Str::uuid(),
-                'number' => $this->quoteNumberService->generate($workspace),
-                'title' => "{$quote->title} (Copy)",
-                'status' => QuoteStatus::Draft->value,
-                'client_id' => $quote->client_id,
-                'assigned_to' => $quote->assigned_to,
-                'currency' => $quote->currency,
-                'cover_message' => $quote->cover_message,
-                'notes' => $quote->notes,
-                'terms' => $quote->terms,
-                'valid_until' => now()->addDays(30)->toDateString(),
-                'template_id' => $quote->template_id,
-                'layout_snapshot' => $quote->layout_snapshot,
-                'parent_quote_id' => $quote->id,
-                'subtotal' => $quote->subtotal,
-                'discount_amount' => $quote->discount_amount,
-                'tax_amount' => $quote->tax_amount,
-                'total' => $quote->total,
-                'requires_deposit' => $quote->requires_deposit,
-                'deposit_amount' => $quote->deposit_amount,
-                'created_by' => auth()->id(),
-            ]);
+            $newQuote = $quote->replicate();
+            $newQuote->quote_uuid = (string) Str::uuid();
+            $newQuote->number = $this->quoteNumberService->generate($workspace);
+            $newQuote->title = "{$quote->title} {$titleSuffix}";
+            $newQuote->status = QuoteStatus::Draft->value;
+            $newQuote->valid_until = now()->addDays(30)->toDateString();
+            $newQuote->parent_quote_id = $quote->id;
+            $newQuote->created_by = auth()->id();
+            $newQuote->save();
 
             foreach ($quote->sections as $section) {
-                $newSection = $newQuote->sections()->create([
-                    'title' => $section->title,
-                    'sort_order' => $section->sort_order,
-                ]);
+                $newSection = $section->replicate();
+                $newSection->quote_id = $newQuote->id;
+                $newSection->save();
 
                 foreach ($section->lineItems as $lineItem) {
-                    $newLineItem = $newSection->lineItems()->create([
-                        'quote_id' => $newQuote->id,
-                        'catalog_item_id' => $lineItem->catalog_item_id,
-                        'name' => $lineItem->name,
-                        'description' => $lineItem->description,
-                        'quantity' => $lineItem->quantity,
-                        'unit' => $lineItem->unit,
-                        'unit_price' => $lineItem->unit_price,
-                        'discount_percent' => $lineItem->discount_percent,
-                        'subtotal' => $lineItem->subtotal,
-                        'tax_amount' => $lineItem->tax_amount,
-                        'total' => $lineItem->total,
-                        'is_optional' => $lineItem->is_optional,
-                        'notes' => $lineItem->notes,
-                        'sort_order' => $lineItem->sort_order,
-                    ]);
+                    $newLineItem = $lineItem->replicate();
+                    $newLineItem->quote_id = $newQuote->id;
+                    $newLineItem->quote_section_id = $newSection->id;
+                    $newLineItem->save();
 
                     foreach ($lineItem->taxes as $tax) {
-                        $newLineItem->taxes()->create([
-                            'tax_id' => $tax->tax_id,
-                            'tax_label' => $tax->tax_label,
-                            'tax_rate' => $tax->tax_rate,
-                        ]);
+                        $newTax = $tax->replicate();
+                        $newTax->quote_line_item_id = $newLineItem->id;
+                        $newTax->save();
                     }
                 }
             }
@@ -311,93 +336,24 @@ class QuoteService
                 'workspace_id' => $newQuote->workspace_id,
                 'user_id' => auth()->id(),
                 'type' => 'created',
-                'description' => "Quote duplicated from #{$quote->number}",
+                'description' => $activityDescription,
                 'metadata' => ['parent_quote_id' => $quote->id],
             ]);
 
             return $newQuote->refresh();
         });
+    }
+
+    public function duplicate(Quote $quote): Quote
+    {
+        return $this->replicateQuote($quote, '(Copy)', "Quote duplicated from #{$quote->number}");
     }
 
     public function revise(Quote $quote): Quote
     {
         abort_unless($quote->status->canBeRevised(), 403, 'This quote cannot be revised.');
 
-        return DB::transaction(function () use ($quote): Quote {
-            $quote->load(['sections.lineItems.taxes', 'workspace']);
-
-            $workspace = $quote->workspace;
-
-            $newQuote = Quote::query()->create([
-                'workspace_id' => $quote->workspace_id,
-                'quote_uuid' => (string) Str::uuid(),
-                'number' => $this->quoteNumberService->generate($workspace),
-                'title' => "{$quote->title} (Revision)",
-                'status' => QuoteStatus::Draft->value,
-                'client_id' => $quote->client_id,
-                'assigned_to' => $quote->assigned_to,
-                'currency' => $quote->currency,
-                'cover_message' => $quote->cover_message,
-                'notes' => $quote->notes,
-                'terms' => $quote->terms,
-                'valid_until' => now()->addDays(30)->toDateString(),
-                'template_id' => $quote->template_id,
-                'layout_snapshot' => $quote->layout_snapshot,
-                'parent_quote_id' => $quote->id,
-                'subtotal' => $quote->subtotal,
-                'discount_amount' => $quote->discount_amount,
-                'tax_amount' => $quote->tax_amount,
-                'total' => $quote->total,
-                'requires_deposit' => $quote->requires_deposit,
-                'deposit_amount' => $quote->deposit_amount,
-                'created_by' => auth()->id(),
-            ]);
-
-            foreach ($quote->sections as $section) {
-                $newSection = $newQuote->sections()->create([
-                    'title' => $section->title,
-                    'sort_order' => $section->sort_order,
-                ]);
-
-                foreach ($section->lineItems as $lineItem) {
-                    $newLineItem = $newSection->lineItems()->create([
-                        'quote_id' => $newQuote->id,
-                        'catalog_item_id' => $lineItem->catalog_item_id,
-                        'name' => $lineItem->name,
-                        'description' => $lineItem->description,
-                        'quantity' => $lineItem->quantity,
-                        'unit' => $lineItem->unit,
-                        'unit_price' => $lineItem->unit_price,
-                        'discount_percent' => $lineItem->discount_percent,
-                        'subtotal' => $lineItem->subtotal,
-                        'tax_amount' => $lineItem->tax_amount,
-                        'total' => $lineItem->total,
-                        'is_optional' => $lineItem->is_optional,
-                        'notes' => $lineItem->notes,
-                        'sort_order' => $lineItem->sort_order,
-                    ]);
-
-                    foreach ($lineItem->taxes as $tax) {
-                        $newLineItem->taxes()->create([
-                            'tax_id' => $tax->tax_id,
-                            'tax_label' => $tax->tax_label,
-                            'tax_rate' => $tax->tax_rate,
-                        ]);
-                    }
-                }
-            }
-
-            QuoteActivity::query()->create([
-                'quote_id' => $newQuote->id,
-                'workspace_id' => $newQuote->workspace_id,
-                'user_id' => auth()->id(),
-                'type' => 'created',
-                'description' => "Quote revised from #{$quote->number}",
-                'metadata' => ['parent_quote_id' => $quote->id],
-            ]);
-
-            return $newQuote->refresh();
-        });
+        return $this->replicateQuote($quote, '(Revision)', "Quote revised from #{$quote->number}");
     }
 
     public function reopen(Quote $quote, string $validUntil): Quote
@@ -426,9 +382,7 @@ class QuoteService
     {
         abort_unless($quote->status->canBeArchived(), 403, 'This quote cannot be archived.');
 
-        $quote->update([
-            'archived_at' => now(),
-        ]);
+        $quote->delete();
 
         QuoteActivity::query()->create([
             'quote_id' => $quote->id,
@@ -439,16 +393,13 @@ class QuoteService
         ]);
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     public function toBuilderPayload(Quote $quote): array
     {
         $quote->loadMissing([
             'sections.lineItems.taxes',
         ]);
 
-        return [
+        $payload = [
             'id' => $quote->id,
             'quote_uuid' => $quote->quote_uuid,
             'number' => $quote->number,
@@ -457,6 +408,9 @@ class QuoteService
             'client_id' => $quote->client_id,
             'assigned_to' => $quote->assigned_to,
             'currency' => $quote->currency,
+            'base_currency' => $quote->base_currency ?? $quote->currency,
+            'fx_rate' => $quote->fx_rate,
+            'base_total' => $quote->base_total,
             'valid_until' => $quote->valid_until?->toDateString(),
             'cover_message' => $quote->cover_message,
             'terms' => $quote->terms,
@@ -466,10 +420,10 @@ class QuoteService
             'layout_snapshot' => $quote->layout_snapshot,
             'requires_deposit' => (bool) $quote->requires_deposit,
             'deposit_amount' => $quote->deposit_amount,
-            'subtotal' => $quote->subtotal,
-            'discount_amount' => $quote->discount_amount,
-            'tax_amount' => $quote->tax_amount,
-            'total' => $quote->total,
+            'subtotal' => $quote->base_subtotal,
+            'discount_amount' => $quote->base_discount_amount,
+            'tax_amount' => $quote->base_tax_amount,
+            'total' => $quote->base_total,
             'layout' => $quote->layout_snapshot,
             'sections' => $quote->sections->map(function ($section): array {
                 return [
@@ -484,11 +438,11 @@ class QuoteService
                             'description' => $lineItem->description,
                             'quantity' => (float) $lineItem->quantity,
                             'unit' => $lineItem->unit,
-                            'unit_price' => (float) $lineItem->unit_price,
+                            'unit_price' => (float) $lineItem->base_unit_price,
                             'discount_percent' => (float) $lineItem->discount_percent,
-                            'subtotal' => (float) $lineItem->subtotal,
-                            'tax_amount' => (float) $lineItem->tax_amount,
-                            'total' => (float) $lineItem->total,
+                            'subtotal' => (float) $lineItem->base_subtotal,
+                            'tax_amount' => (float) $lineItem->base_tax_amount,
+                            'total' => (float) $lineItem->base_total,
                             'is_optional' => (bool) $lineItem->is_optional,
                             'notes' => $lineItem->notes,
                             'sort_order' => $lineItem->sort_order,
@@ -496,12 +450,16 @@ class QuoteService
                                 'tax_id' => $tax->tax_id,
                                 'tax_label' => $tax->tax_label,
                                 'tax_rate' => (float) $tax->tax_rate,
+                                'inclusive' => (bool) $tax->inclusive,
+                                'tax_amount' => $tax->base_tax_amount,
                             ])->values()->all(),
                         ];
                     })->values()->all(),
                 ];
             })->values()->all(),
         ];
+
+        return $payload;
     }
 
     /**
@@ -542,10 +500,12 @@ class QuoteService
                             'tax_id' => $tax->id,
                             'tax_label' => $tax->name,
                             'tax_rate' => (float) $tax->rate,
+                            'tax_inclusive' => (bool) $tax->inclusive,
                         ])->values()->all() ?? $lineItem->taxes->map(fn ($tax): array => [
                             'tax_id' => $tax->tax_id,
                             'tax_label' => $tax->tax_label,
                             'tax_rate' => (float) $tax->tax_rate,
+                            'tax_inclusive' => $tax->tax_inclusive ?? false,
                         ])->values()->all();
 
                         return [
@@ -591,6 +551,21 @@ class QuoteService
             }
 
             foreach ($lineItems as $lineItemIndex => $lineItemData) {
+                $taxes = Arr::get($lineItemData, 'taxes', []);
+
+                // Ensure we use 'inclusive' consistently from payload
+                $taxesArray = is_array($taxes) ? collect($taxes)->map(fn ($tax) => [
+                    'tax_rate' => (float) Arr::get($tax, 'tax_rate', 0),
+                    'inclusive' => (bool) (Arr::get($tax, 'inclusive') ?? Arr::get($tax, 'tax_inclusive', false)),
+                ])->values()->all() : [];
+
+                $calculatedTotals = TaxCalculator::calculateLineItemTotals(
+                    (float) Arr::get($lineItemData, 'quantity', 1),
+                    (float) Arr::get($lineItemData, 'unit_price', 0),
+                    (float) Arr::get($lineItemData, 'discount_percent', 0),
+                    $taxesArray,
+                );
+
                 $lineItem = $section->lineItems()->create([
                     'quote_id' => $quote->id,
                     'catalog_item_id' => Arr::get($lineItemData, 'catalog_item_id'),
@@ -600,28 +575,93 @@ class QuoteService
                     'unit' => Arr::get($lineItemData, 'unit'),
                     'unit_price' => (float) Arr::get($lineItemData, 'unit_price', 0),
                     'discount_percent' => (float) Arr::get($lineItemData, 'discount_percent', 0),
-                    'subtotal' => (float) Arr::get($lineItemData, 'subtotal', 0),
-                    'tax_amount' => (float) Arr::get($lineItemData, 'tax_amount', 0),
-                    'total' => (float) Arr::get($lineItemData, 'total', 0),
+                    'subtotal' => $calculatedTotals['subtotal'],
+                    'total' => $calculatedTotals['total'],
                     'is_optional' => (bool) Arr::get($lineItemData, 'is_optional', false),
                     'notes' => Arr::get($lineItemData, 'notes'),
                     'sort_order' => (int) Arr::get($lineItemData, 'sort_order', $lineItemIndex),
                 ]);
 
-                $taxes = Arr::get($lineItemData, 'taxes', []);
+                $baseUnitPrice = (float) Arr::get($lineItemData, 'unit_price', 0);
+                $baseSubtotal = $calculatedTotals['subtotal'];
+                $baseTaxAmount = $calculatedTotals['taxAmount'];
+                $baseTotal = $calculatedTotals['total'];
+
+                $fxRate = $quote->fx_rate ?? 1.0;
+
+                $lineItem->update([
+                    'base_unit_price' => $baseUnitPrice,
+                    'base_subtotal' => $baseSubtotal,
+                    'base_tax_amount' => $baseTaxAmount,
+                    'base_total' => $baseTotal,
+                    'unit_price' => $baseUnitPrice * $fxRate,
+                    'subtotal' => $baseSubtotal * $fxRate,
+                    'total' => $baseTotal * $fxRate,
+                ]);
 
                 if (! is_array($taxes)) {
                     continue;
                 }
 
-                foreach ($taxes as $taxData) {
+                foreach ($taxes as $index => $taxData) {
+                    $inclusiveValue = Arr::get($taxData, 'inclusive') ?? Arr::get($taxData, 'tax_inclusive', false);
+                    $taxBreakdown = $calculatedTotals['taxBreakdown'][$index] ?? null;
+                    $baseTaxAmount = $taxBreakdown['tax_amount'] ?? 0;
+
                     $lineItem->taxes()->create([
                         'tax_id' => Arr::get($taxData, 'tax_id'),
                         'tax_label' => (string) Arr::get($taxData, 'tax_label', 'Tax'),
                         'tax_rate' => (float) Arr::get($taxData, 'tax_rate', 0),
+                        'inclusive' => (bool) $inclusiveValue,
+                        'tax_amount' => $baseTaxAmount * ($quote->fx_rate ?? 1.0),
+                        'base_tax_amount' => $baseTaxAmount,
                     ]);
                 }
             }
         }
+    }
+
+    private function calculateQuoteTotals(Quote $quote): void
+    {
+        $baseSubtotal = 0;
+        $baseDiscountAmount = 0;
+        $baseTaxAmount = 0;
+
+        foreach ($quote->sections as $section) {
+            foreach ($section->lineItems as $lineItem) {
+                if ($lineItem->is_optional) {
+                    continue;
+                }
+
+                $baseSubtotal += $lineItem->base_subtotal;
+                $baseDiscountAmount += ($lineItem->quantity * $lineItem->base_unit_price * $lineItem->discount_percent / 100);
+                $baseTaxAmount += $lineItem->base_tax_amount;
+            }
+        }
+
+        $baseTotal = $baseSubtotal + $baseTaxAmount - $baseDiscountAmount;
+
+        $quoteSubtotal = $baseSubtotal;
+        $quoteDiscountAmount = $baseDiscountAmount;
+        $quoteTaxAmount = $baseTaxAmount;
+        $quoteTotal = $baseTotal;
+
+        if ($quote->fx_rate && $quote->base_currency && $quote->base_currency !== $quote->currency) {
+            $quoteSubtotal = $baseSubtotal * $quote->fx_rate;
+            $quoteDiscountAmount = $baseDiscountAmount * $quote->fx_rate;
+            $quoteTaxAmount = $baseTaxAmount * $quote->fx_rate;
+            $quoteTotal = $baseTotal * $quote->fx_rate;
+        }
+
+        $quote->update([
+            'subtotal' => $quoteSubtotal,
+            'discount_amount' => $quoteDiscountAmount,
+            'tax_amount' => $quoteTaxAmount,
+            'total' => $quoteTotal,
+            'base_total' => $baseTotal,
+            'base_subtotal' => $baseSubtotal,
+            'base_discount_amount' => $baseDiscountAmount,
+            'base_tax_amount' => $baseTaxAmount,
+        ]);
     }
 }

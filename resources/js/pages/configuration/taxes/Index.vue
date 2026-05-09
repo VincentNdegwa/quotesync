@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ type TaxRecord = {
     id: number;
     name: string;
     rate: number | string;
+    inclusive: boolean;
     is_default: boolean;
     is_active: boolean;
     created_at: string;
@@ -36,6 +38,8 @@ defineOptions({
 const createOpen = ref(false);
 const editOpen = ref(false);
 const editingTax = ref<TaxRecord | null>(null);
+const deleteOpen = ref(false);
+const taxToDelete = ref<TaxRecord | null>(null);
 
 const openEdit = (tax: TaxRecord): void => {
     editingTax.value = tax;
@@ -43,9 +47,20 @@ const openEdit = (tax: TaxRecord): void => {
 };
 
 const removeTax = (tax: TaxRecord): void => {
-    router.delete(`/configuration/taxes/${tax.id}`, {
-        preserveScroll: true,
-    });
+    taxToDelete.value = tax;
+    deleteOpen.value = true;
+};
+
+const executeDelete = (): void => {
+    if (taxToDelete.value) {
+        router.delete(`/configuration/taxes/${taxToDelete.value.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                deleteOpen.value = false;
+                taxToDelete.value = null;
+            },
+        });
+    }
 };
 </script>
 
@@ -68,6 +83,7 @@ const removeTax = (tax: TaxRecord): void => {
                     <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead class="text-right">Rate %</TableHead>
+                        <TableHead>Treatment</TableHead>
                         <TableHead>Default</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead class="text-right">Actions</TableHead>
@@ -77,6 +93,11 @@ const removeTax = (tax: TaxRecord): void => {
                     <TableRow v-for="tax in taxes" :key="tax.id">
                         <TableCell class="font-medium">{{ tax.name }}</TableCell>
                         <TableCell class="text-right">{{ tax.rate }}</TableCell>
+                        <TableCell>
+                            <Badge :variant="tax.inclusive ? 'secondary' : 'default'">
+                                {{ tax.inclusive ? 'Inclusive' : 'Exclusive' }}
+                            </Badge>
+                        </TableCell>
                         <TableCell>
                             <Badge :variant="tax.is_default ? 'default' : 'secondary'">
                                 {{ tax.is_default ? 'Default' : 'No' }}
@@ -98,5 +119,14 @@ const removeTax = (tax: TaxRecord): void => {
 
         <CreateDialog v-model:open="createOpen" />
         <EditDialog v-model:open="editOpen" :tax="editingTax" />
+
+        <ConfirmDialog
+            v-model:open="deleteOpen"
+            title="Delete tax"
+            description="Are you sure you want to delete this tax? This action cannot be undone."
+            confirm-text="Delete"
+            variant="destructive"
+            @confirm="executeDelete"
+        />
     </div>
 </template>

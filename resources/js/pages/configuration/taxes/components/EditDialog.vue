@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import { watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -13,12 +14,14 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 
 type TaxRecord = {
     id: number;
     name: string;
     rate: number | string;
+    inclusive: boolean;
     is_default: boolean;
     is_active: boolean;
 };
@@ -34,8 +37,16 @@ const props = defineProps<{
 const form = useForm({
     name: '',
     rate: 0,
+    inclusive: false,
     is_default: false,
     is_active: true,
+});
+
+const inclusiveValue = computed({
+    get: () => form.inclusive ? 'true' : 'false',
+    set: (value: string) => {
+        form.inclusive = value === 'true';
+    },
 });
 
 watch(
@@ -48,6 +59,7 @@ watch(
         form.defaults({
             name: tax.name,
             rate: Number(tax.rate),
+            inclusive: Boolean(tax.inclusive),
             is_default: Boolean(tax.is_default),
             is_active: Boolean(tax.is_active),
         });
@@ -90,6 +102,31 @@ const submit = (): void => {
                     <Label for="tax_edit_rate" required>Rate %</Label>
                     <Input id="tax_edit_rate" type="number" min="0" max="100" step="0.01" v-model="form.rate" />
                     <InputError :message="form.errors.rate" />
+                </div>
+
+                <div class="grid gap-2">
+                    <Label required>Price treatment</Label>
+                    <RadioGroup v-model="inclusiveValue">
+                        <div class="flex items-center space-x-3 rounded-md border p-3 cursor-pointer hover:bg-muted/50">
+                            <RadioGroupItem value="false" id="exclusive" />
+                            <div class="flex-1">
+                                <Label for="exclusive" class="font-medium cursor-pointer">Exclusive</Label>
+                                <p class="text-xs text-muted-foreground">
+                                    Tax is added on top of the item price
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3 rounded-md border p-3 cursor-pointer hover:bg-muted/50">
+                            <RadioGroupItem value="true" id="inclusive" />
+                            <div class="flex-1">
+                                <Label for="inclusive" class="font-medium cursor-pointer">Inclusive</Label>
+                                <p class="text-xs text-muted-foreground">
+                                    Tax is already included in the item price
+                                </p>
+                            </div>
+                        </div>
+                    </RadioGroup>
+                    <InputError :message="form.errors.inclusive" />
                 </div>
 
                 <div class="flex items-center justify-between rounded-md border p-3">

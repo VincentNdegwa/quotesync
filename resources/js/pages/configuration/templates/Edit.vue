@@ -1,23 +1,25 @@
 <script setup lang="ts">
 import { Head, setLayoutProps, useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { watchEffect } from 'vue';
 import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
+import quoteTemplates from '@/routes/quote-templates';
 import type {
     BuilderCatalogItem,
-    BuilderBranding,
+    BuilderConfigurationUnit,
     BuilderTaxOption,
     QuoteBuilderState,
+    WorkspaceSettings,
 } from '@/types';
-import { computed } from 'vue';
-import quoteTemplates from '@/routes/quote-templates';
-import { watchEffect } from 'vue';
 
 const props = defineProps<{
     templateId: number;
     initialState: QuoteBuilderState;
     catalogItems: BuilderCatalogItem[];
     taxes: BuilderTaxOption[];
-    branding: BuilderBranding;
+    units: BuilderConfigurationUnit[];
+    settings: WorkspaceSettings;
 }>();
 
 const breadcrumbs = computed(() => [
@@ -58,9 +60,10 @@ const save = (): void => {
         mode="template"
         :catalog-items="catalogItems"
         :taxes="taxes"
-        :branding="branding"
+        :units="units"
+        :settings="settings"
         :processing="form.processing"
-        :system-locked="Boolean(form.is_system)"
+        :system-locked="Boolean(form.data.is_system)"
         @save="save"
     />
 </template>

@@ -1,16 +1,17 @@
 <script setup lang="ts">
-import type { BrandingData, ImageBlockConfig, QuoteData } from '@/types';
+import { blockBaseStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
+import type { BrandingData, DocumentData, ImageBlockConfig } from '@/types';
 
 defineProps<{
     config: ImageBlockConfig;
-    quote: QuoteData;
+    data: DocumentData;
     branding: BrandingData;
     previewMode: boolean;
 }>();
 </script>
 
 <template>
-    <div class="px-6 py-4">
+    <div :style="blockBaseStyle(config)" :class="[blockFontSizeClass(config.fontSize), config.border.radius !== 'none' ? 'overflow-hidden' : '']">
         <div
             :class="[
                 config.alignment === 'left' ? 'mr-auto' : config.alignment === 'right' ? 'ml-auto' : 'mx-auto',
@@ -20,7 +21,6 @@ defineProps<{
             <a v-if="config.linkUrl" :href="config.linkUrl" target="_blank" rel="noreferrer noopener">
                 <div
                     class="flex h-44 items-center justify-center border border-dashed text-xs text-muted-foreground"
-                    :class="config.borderRadius === 'none' ? '' : config.borderRadius === 'sm' ? 'rounded-sm' : config.borderRadius === 'lg' ? 'rounded-lg' : config.borderRadius === 'full' ? 'rounded-full' : 'rounded-md'"
                 >
                     <img
                         v-if="config.imageUrl"
@@ -34,7 +34,6 @@ defineProps<{
             <div
                 v-else
                 class="flex h-44 items-center justify-center border border-dashed text-xs text-muted-foreground"
-                :class="config.borderRadius === 'none' ? '' : config.borderRadius === 'sm' ? 'rounded-sm' : config.borderRadius === 'lg' ? 'rounded-lg' : config.borderRadius === 'full' ? 'rounded-full' : 'rounded-md'"
             >
                 <img v-if="config.imageUrl" :src="config.imageUrl" :alt="config.altText || 'Image block'" class="max-h-full max-w-full object-contain" />
                 <span v-else>{{ previewMode ? 'Add image URL in config' : 'Image block' }}</span>

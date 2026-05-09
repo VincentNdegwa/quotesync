@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,8 @@ defineOptions({
 const createOpen = ref(false);
 const editOpen = ref(false);
 const editingTag = ref<TagRecord | null>(null);
+const deleteOpen = ref(false);
+const tagToDelete = ref<TagRecord | null>(null);
 
 const openEdit = (tag: TagRecord): void => {
     editingTag.value = tag;
@@ -41,9 +44,20 @@ const openEdit = (tag: TagRecord): void => {
 };
 
 const removeTag = (tag: TagRecord): void => {
-    router.delete(`/configuration/tags/${tag.id}`, {
-        preserveScroll: true,
-    });
+    tagToDelete.value = tag;
+    deleteOpen.value = true;
+};
+
+const executeDelete = (): void => {
+    if (tagToDelete.value) {
+        router.delete(`/configuration/tags/${tagToDelete.value.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                deleteOpen.value = false;
+                tagToDelete.value = null;
+            },
+        });
+    }
 };
 </script>
 
@@ -88,5 +102,14 @@ const removeTag = (tag: TagRecord): void => {
 
         <CreateDialog v-model:open="createOpen" />
         <EditDialog v-model:open="editOpen" :tag="editingTag" />
+
+        <ConfirmDialog
+            v-model:open="deleteOpen"
+            title="Delete tag"
+            description="Are you sure you want to delete this tag? This action cannot be undone."
+            confirm-text="Delete"
+            variant="destructive"
+            @confirm="executeDelete"
+        />
     </div>
 </template>

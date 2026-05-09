@@ -22,7 +22,7 @@ class QuoteDeclinedNotification extends QuoteNotification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return $this->getChannelsFromSettings($notifiable, 'notify_quote_declined', 'notify_quote_declined_channel');
     }
 
     /**
