@@ -82,7 +82,7 @@ export type CatalogItemRecord = {
         cost_price: number;
         is_default: boolean;
     }>;
-    priceTiers?: Array<{
+    price_tiers?: Array<{
         id: number;
         variant_id: number | null;
         min_quantity: number;

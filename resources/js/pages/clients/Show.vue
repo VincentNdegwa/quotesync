@@ -240,7 +240,7 @@ const closeContactDialog = (): void => {
             <article
                 v-for="metric in heroMetrics"
                 :key="metric.label"
-                class="rounded-md border border-border bg-card/80 p-4"
+                class="rounded-md border border-border bg-card p-4"
             >
                 <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     {{ metric.label }}
@@ -251,11 +251,11 @@ const closeContactDialog = (): void => {
 
         <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
             <div class="space-y-6">
-                <article class="rounded-md border border-border bg-card/80 p-6 space-y-6">
+                <article class="rounded-md border border-border bg-card p-6 space-y-6">
                     <div class="flex items-center justify-between gap-3">
                         <div>
-                            <p class="text-xs uppercase tracking-wide text-muted-foreground">Overview</p>
                             <h3 class="text-lg font-semibold text-foreground">Client summary</h3>
+                            <p class="text-sm text-muted-foreground">Overview</p>
                         </div>
                         <Badge v-if="tagNames.length" variant="outline">
                             {{ tagNames[0] }}
@@ -307,11 +307,11 @@ const closeContactDialog = (): void => {
                     </div>
                 </article>
 
-                <article class="rounded-md border border-border bg-card/80 p-6 space-y-5">
+                <article class="rounded-md border border-border bg-card p-6 space-y-5">
                     <div class="flex items-center justify-between gap-2">
                         <div>
-                            <p class="text-xs uppercase tracking-wide text-muted-foreground">Contacts</p>
                             <h3 class="text-lg font-semibold text-foreground">Stakeholders</h3>
+                            <p class="text-sm text-muted-foreground">Contacts</p>
                         </div>
                         <Button size="sm" @click="openContactDialog()">Add contact</Button>
                     </div>
@@ -378,11 +378,11 @@ const closeContactDialog = (): void => {
                     </div>
                 </article>
 
-                <article class="rounded-md border border-border bg-card/80 p-6 space-y-4">
+                <article class="rounded-md border border-border bg-card p-6 space-y-4">
                     <div class="flex items-center justify-between gap-2">
                         <div>
-                            <p class="text-xs uppercase tracking-wide text-muted-foreground">Quote history</p>
                             <h3 class="text-lg font-semibold text-foreground">Recent activity</h3>
+                            <p class="text-sm text-muted-foreground">Quote history</p>
                         </div>
                         <Button variant="ghost" size="sm" as-child>
                             <Link :href="`/quotes?client_id=${client.id}`">See all</Link>
@@ -426,11 +426,11 @@ const closeContactDialog = (): void => {
             </div>
 
             <div class="space-y-4">
-                <article class="rounded-md border border-border bg-card/80 p-6 space-y-4">
+                <article class="rounded-md border border-border bg-card p-6 space-y-4">
                     <div class="flex items-center justify-between gap-2">
                         <div>
-                            <p class="text-xs uppercase tracking-wide text-muted-foreground">Relationship pulse</p>
                             <h3 class="text-lg font-semibold text-foreground">Status breakdown</h3>
+                            <p class="text-sm text-muted-foreground">Relationship pulse</p>
                         </div>
                         <Button variant="ghost" size="sm" as-child>
                             <Link :href="`/quotes?client_id=${client.id}`">Refresh</Link>
