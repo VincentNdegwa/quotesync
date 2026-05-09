@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { Head, Link, router, setLayoutProps, usePage } from '@inertiajs/vue3';
+import { Head, setLayoutProps, usePage } from '@inertiajs/vue3';
 import { Edit, Image as ImageIcon, Plus, Trash2 } from 'lucide-vue-next';
 import { computed, ref, watchEffect } from 'vue';
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,8 +23,6 @@ import {
 import { useFormat } from '@/composables/useFormat';
 import type { CatalogItemRecord, ConfigurationUnitRecord } from '@/types';
 import CatalogActions from './components/CatalogActions.vue';
-import CatalogItemPriceTierDialog from './components/CatalogItemPriceTierDialog.vue';
-import CatalogItemVariantDialog from './components/CatalogItemVariantDialog.vue';
 
 const props = defineProps<{
     item: CatalogItemRecord;
@@ -56,23 +53,23 @@ const { formatCurrency, formatDate } = useFormat(
 const statCards = computed(() => [
     {
         label: 'Unit price',
-        value: formatCurrency(props.item.unit_price ?? 0),
+        value: formatCurrency(props.item.unit_price),
     },
     {
         label: 'Cost price',
-        value: formatCurrency(props.item.cost_price ?? 0),
+        value: formatCurrency(props.item.cost_price),
     },
     {
         label: 'Profit / unit',
-        value: formatCurrency(props.margin.profit_per_unit ?? 0),
+        value: formatCurrency(props.margin.profit_per_unit),
     },
     {
         label: 'Margin',
-        value: `${Number(props.margin.margin_percent ?? 0).toFixed(1)}%`,
+        value: `${Number(props.margin.margin_percent).toFixed(1)}%`,
     },
     {
         label: 'Variants',
-        value: (props.item.variants?.length ?? 0).toString(),
+        value: (props.item.variants?.length).toString(),
     },
 ]);
 

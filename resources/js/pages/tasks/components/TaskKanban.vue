@@ -91,8 +91,8 @@ const loadKanban = async (): Promise<void> => {
         });
 
         const data = (await res.json()) as KanbanResponse;
-        statuses.value = data.statuses ?? props.taskStatuses;
-        tasks.value = data.tasks ?? [];
+        statuses.value = data.statuses;
+        tasks.value = data.tasks;
     } catch {
         statuses.value = props.taskStatuses;
         tasks.value = [];

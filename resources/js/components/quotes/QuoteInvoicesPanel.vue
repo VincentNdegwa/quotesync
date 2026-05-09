@@ -44,7 +44,7 @@ const viewAllUrl = computed(() =>
 const invoiceViewUrl = (invoiceId: number): string => InvoiceController.show(invoiceId).url;
 
 const formatAmount = (total: number, currency: string | null): string => fmt(total, currency ?? undefined);
-const statusMeta = (status: string) => getInvoiceStatus(status);
+const statusMeta = (status: string): ReturnType<typeof getInvoiceStatus> => getInvoiceStatus(status);
 </script>
 
 <template>

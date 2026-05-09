@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { usePage } from '@inertiajs/vue3';
-import { CurveType, Orientation } from '@unovis/ts';
+import { CurveType } from '@unovis/ts';
 import { VisAxis, VisLine, VisXYContainer, VisGroupedBar } from '@unovis/vue';
 import {
     BarChart3,
@@ -12,6 +12,7 @@ import {
     TrendingUp,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import AnalyticsController from '@/actions/App/Http/Controllers/AnalyticsController';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -229,13 +230,6 @@ const revenueTimeline = computed(() => {
         .reverse();
 });
 
-const declineReasonsChartData = computed(() =>
-    props.win_loss_analysis.decline_reasons.map((item) => ({
-        reason: item.decline_reason,
-        count: item.count,
-    })),
-);
-const _declineReasonsChartData = declineReasonsChartData.value;
 
 const declineTimeline = computed(() =>
     props.win_loss_analysis.loss_reasons.map((item, index) => ({
@@ -246,32 +240,32 @@ const declineTimeline = computed(() =>
     })),
 );
 
-const _declineChartConfig: ChartConfig = {
-    count: {
-        label: 'Declines',
-        color: 'var(--chart-1)',
-        icon: Flame,
-    },
-};
 
-const timeToWinChartData = computed(() => props.win_loss_analysis.time_to_win);
+const timeToWinChartData = computed(() =>
+    props.win_loss_analysis.time_to_win.map((item, index) => ({
+        ...item,
+        order: index,
+        label: item.range,
+    })),
+);
 type TimeToWinData = (typeof timeToWinChartData.value)[number];
 
 const timeToWinChartConfig: ChartConfig = {
     count: {
         label: 'Quotes',
-        color: 'var(--chart-3)',
+        color: 'var(--chart-2)',
         icon: CalendarClock,
     },
 };
 
-const _timeToWinSummary = computed(() =>
-     
-    timeToWinChartData.value.map((item: any) => ({
-        id: item.range,
-        label: item.range,
-        count: item.count,
-    })),
+const timeToWinAxisValues = computed(() =>
+    timeToWinChartData.value.map((item) => item.order),
+);
+
+const timeToWinLabelByOrder = computed<Record<number, string>>(() =>
+    Object.fromEntries(
+        timeToWinChartData.value.map((item) => [item.order, item.range]),
+    ),
 );
 
 const templatePerformance = computed(() =>
@@ -322,6 +316,19 @@ const forecastCards = computed(() => [
         note: '30% of open pipeline',
     },
 ]);
+
+
+defineOptions({
+    layout: () => ({
+        breadcrumbs: [
+            {
+                title: 'Analytics',
+                href: AnalyticsController.index().url,
+            },
+        ],
+    }),
+});
+
 </script>
 
 <template>
@@ -409,8 +416,8 @@ const forecastCards = computed(() => [
             </Card>
         </section>
 
-        <section class="grid gap-4 xl:grid-cols-[1.7fr_1fr]">
-            <Card class="border border-sidebar-border/70">
+        <section class="grid gap-4 grid-cols-1 lg:grid-cols-3 ">
+            <Card class="border col-span-2 border-sidebar-border/70">
                 <CardHeader class="pb-0">
                     <CardTitle class="text-base font-semibold"
                         >Revenue (last 12 months)</CardTitle
@@ -550,7 +557,7 @@ const forecastCards = computed(() => [
             </Card>
         </section>
 
-        <section class="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
+        <section class="grid gap-4 grid-cols-1 lg:grid-cols-2">
             <Card class="border border-sidebar-border/70">
                 <CardHeader class="pb-0">
                     <CardTitle class="text-base font-semibold"
@@ -576,34 +583,23 @@ const forecastCards = computed(() => [
                     >
                         <VisXYContainer
                             :data="timeToWinChartData"
-                            :margin="{
-                                left: 32,
-                                right: 16,
-                                top: 16,
-                                bottom: 24,
-                            }"
                         >
                             <VisGroupedBar
-                                :x="(d: TimeToWinData) => d.count"
-                                :y="(d: TimeToWinData) => d.range"
+                                :x="(d: TimeToWinData) => d.order"
+                                :y="(d: TimeToWinData) => d.count"
                                 :color="timeToWinChartConfig.count.color"
-                                :orientation="Orientation.Horizontal"
-                                :rounded-corners="6"
-                                bar-padding="0.25"
-                            />
-                            <VisAxis
-                                type="y"
-                                :tick-line="false"
-                                :domain-line="false"
-                                :grid-line="false"
+                                :rounded-corners="5"
                             />
                             <VisAxis
                                 type="x"
-                                :num-ticks="4"
                                 :tick-line="false"
                                 :domain-line="false"
+                                :grid-line="false"
+                                :num-ticks="timeToWinChartData.length"
+                                :tick-values="timeToWinAxisValues"
                                 :tick-format="
-                                    (value: number) => formatNumber(value)
+                                    (value: number) =>
+                                        timeToWinLabelByOrder[value] ?? ''
                                 "
                             />
                             <ChartTooltip />
@@ -613,7 +609,7 @@ const forecastCards = computed(() => [
                                         timeToWinChartConfig,
                                         ChartTooltipContent,
                                         {
-                                            labelKey: 'range',
+                                            labelKey: 'label',
                                             indicator: 'line',
                                         },
                                     )
@@ -621,7 +617,6 @@ const forecastCards = computed(() => [
                                 :color="[timeToWinChartConfig.count.color]"
                             />
                         </VisXYContainer>
-                        <ChartLegendContent class="mt-4 justify-start" />
                     </ChartContainer>
                 </CardContent>
                 <CardFooter

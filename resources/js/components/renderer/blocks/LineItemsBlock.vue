@@ -109,7 +109,7 @@ const sections = computed<Section[]>(() => {
         line_items?: DocumentLineItem[];
     };
 
-    if (data.sections && data.sections.length > 0) {
+    if (data.sections.length > 0) {
         return data.sections;
     }
 

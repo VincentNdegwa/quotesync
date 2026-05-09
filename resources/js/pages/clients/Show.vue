@@ -7,7 +7,7 @@ import {
     usePage,
 } from '@inertiajs/vue3';
 import { Edit, Globe, Mail, MapPin, Phone, Plus, Tag, Trash2, Users } from 'lucide-vue-next';
-import { computed, ref, watchEffect } from 'vue';
+import { computed, ref } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
@@ -53,13 +53,11 @@ const breadcrumbs = computed(() => [
     { title: props.client.company_name, href: `/clients/${props.client.id}` },
 ]);
 
-watchEffect(() => {
-    setLayoutProps({
-        breadcrumbs: breadcrumbs.value,
-    });
+setLayoutProps({
+    breadcrumbs,
 });
 
-const quoteHistory = computed(() => props.stats.quote_history || []);
+const quoteHistory = computed(() => props.stats.quote_history);
 
 const contactList = computed(() => props.client.contacts ?? []);
 const tagNames = computed<string[]>(() => {
@@ -71,7 +69,7 @@ const tagNames = computed<string[]>(() => {
                 return tag;
             }
 
-            return tag?.name ?? (tag as Record<string, unknown>)?.id?.toString() ?? null;
+            return tag.name ?? (tag as Record<string, unknown>).id?.toString() ?? null;
         })
         .filter((tag): tag is string => Boolean(tag));
 });
@@ -86,29 +84,29 @@ const formattedAddress = computed(() => {
         props.client.country,
     ].filter(Boolean);
 
-    return parts.length ? parts.join(', ') : 'Not provided';
+    return parts.join(', ') || 'Not provided';
 });
 
 const heroMetrics = computed(() => [
     {
         label: 'Total quotes sent',
-        value: Number(props.stats.total_quotes_sent ?? 0),
+        value: Number(props.stats.total_quotes_sent),
     },
     {
         label: 'Win rate',
-        value: `${props.stats.win_rate ?? 0}%`,
+        value: `${props.stats.win_rate}%`,
     },
     {
         label: 'Value won',
-        value: formatCurrency(props.stats.total_value_won ?? 0),
+        value: formatCurrency(props.stats.total_value_won),
     },
     {
         label: 'Average quote value',
-        value: formatCurrency(props.stats.average_quote_value ?? 0),
+        value: formatCurrency(props.stats.average_quote_value),
     },
     {
         label: 'Avg days to acceptance',
-        value: `${props.stats.average_time_to_acceptance_days ?? 0} days`,
+        value: `${props.stats.average_time_to_acceptance_days} days`,
     },
 ]);
 
@@ -123,8 +121,10 @@ const statusDistribution = computed(() => {
 
         if (typeof raw === 'string') {
             key = raw;
-        } else if (raw && typeof raw === 'object') {
-            key = String((raw as { label?: string; value?: string }).label ?? (raw as { value?: string }).value ?? 'unknown');
+        } else if (typeof raw === 'object') {
+            const label = (raw as { label?: string; value?: string }).label;
+            const value = (raw as { value?: string }).value;
+            key = String(label ?? value ?? 'unknown');
         } else {
             key = 'unknown';
         }

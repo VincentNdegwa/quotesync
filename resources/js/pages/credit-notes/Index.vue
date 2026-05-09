@@ -5,14 +5,6 @@ import { computed, ref, watch } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import {
     Dialog,
     DialogContent,
@@ -21,9 +13,17 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import type { Paginator, CreditNoteListRecord } from '@/types';
-import CreditNotesDataTable from './components/CreditNotesDataTable.vue';
 import CreditHeaderActions from './components/CreditHeaderActions.vue';
+import CreditNotesDataTable from './components/CreditNotesDataTable.vue';
 import CreditNotesKanban from './components/CreditNotesKanban.vue';
 
 const STORAGE_KEY = 'credit-notes-view-mode';
@@ -47,7 +47,7 @@ const creditNoteStatuses = computed(
 );
 
 const viewMode = ref<'table' | 'kanban'>(
-    (localStorage.getItem(STORAGE_KEY) as 'table' | 'kanban') || 'table',
+    (localStorage.getItem(STORAGE_KEY) as 'table' | 'kanban' | null) || 'table',
 );
 
 const toggleView = (): void => {

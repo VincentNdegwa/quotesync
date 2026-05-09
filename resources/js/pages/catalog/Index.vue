@@ -2,7 +2,6 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { Ban, CheckCircle2, Download, Trash2 } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
-import CatalogActions from '@/pages/catalog/components/CatalogActions.vue';
 import CatalogHeaderActions from '@/components/catalog/CatalogHeaderActions.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
@@ -17,6 +16,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useFormat } from '@/composables/useFormat';
+import CatalogActions from '@/pages/catalog/components/CatalogActions.vue';
 import CatalogDataTable from '@/pages/catalog/components/CatalogDataTable.vue';
 import ConfigurationCategoryCreateDialog from '@/pages/configuration/categories/components/CreateDialog.vue';
 import ConfigurationTaxCreateDialog from '@/pages/configuration/taxes/components/CreateDialog.vue';

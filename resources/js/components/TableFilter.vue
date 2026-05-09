@@ -71,7 +71,7 @@ const activeCount = computed(() => {
 return v.length > 0;
 }
 
-        return v !== '' && v !== null && v !== undefined;
+        return v !== '';
     }).length;
 });
 
@@ -127,14 +127,14 @@ continue;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const getDraftValue = (key: string, type: FilterGroup['type']): string | string[] => {
+const _getDraftValue = (key: string, type: FilterGroup['type']): string | string[] => {
     if (type === 'multi') {
         const v = draft.value[key];
 
         return Array.isArray(v) ? v : v ? [v] : [];
     }
 
-    return (draft.value[key] as string) ?? '';
+    return draft.value[key] as string;
 };
 
 const isOptionActive = (key: string, value: string, type: FilterGroup['type']): boolean => {
@@ -149,7 +149,7 @@ const isOptionActive = (key: string, value: string, type: FilterGroup['type']): 
 
 const toggleOption = (key: string, value: string, type: FilterGroup['type']): void => {
     if (type === 'multi') {
-        const current = (draft.value[key] as string[]) ?? [];
+        const current = draft.value[key] as string[];
         draft.value = {
             ...draft.value,
             [key]: current.includes(value)
@@ -166,14 +166,14 @@ const toggleOption = (key: string, value: string, type: FilterGroup['type']): vo
 };
 
 const getDatePart = (key: string, part: 'from' | 'to'): string => {
-    const v = (draft.value[key] as string) ?? '';
+    const v = draft.value[key] as string;
     const parts = v.split('|');
 
     return part === 'from' ? (parts[0] ?? '') : (parts[1] ?? '');
 };
 
 const setDatePart = (key: string, part: 'from' | 'to', value: string): void => {
-    const current = (draft.value[key] as string) ?? '|';
+    const current = draft.value[key] as string;
     const parts   = current.split('|');
     const from    = parts[0] ?? '';
     const to      = parts[1] ?? '';
@@ -433,169 +433,3 @@ const onPopoverOpen = (open: boolean): void => {
         </p>
     </div>
 </template>
-
-<!-- 
-
-You are not paranoid. The horizontal filter bar is the most common pattern and also the most problematic one. Let me explain why and then give you something better.
-
----
-
-## Why Horizontal Filter Bars Fail
-
-The horizontal bar works when you have 2-3 filters. Once you add search + status + date range + assignee + currency + sort — they either overflow, wrap awkwardly, or get hidden behind a "more filters" button that nobody clicks.
-
-The other problem is visual weight. A row of dropdowns all at the same height with no hierarchy looks like a form, not a filter tool. The user has to read every label to understand what each control does.
-
----
-
-## The Better Pattern — Search First, Filters Secondary
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  🔍 Search quotes, clients...              [Filters  ▼]  2 active│
-└──────────────────────────────────────────────────────────────────┘
-                                              ↓ when clicked
-                                    ┌─────────────────────────┐
-                                    │  Status                 │
-                                    │  ○ All  ● Sent  ○ Won   │
-                                    │                         │
-                                    │  Date range             │
-                                    │  [Apr 1] → [Apr 30]     │
-                                    │                         │
-                                    │  Assigned to            │
-                                    │  [All team members ▼]   │
-                                    │                         │
-                                    │  [Clear filters]        │
-                                    └─────────────────────────┘
-```
-
-Search is always visible and prominent. Filters live in a popover. Active filters show as removable badges below the search bar.
-
-This pattern works because:
-- Search is the primary action — 80% of users search, not filter
-- Filters do not clutter the primary interface
-- Active filter badges make the current state visible and easy to clear
-- The filter count badge ("2 active") tells the user something is filtered without them having to open the popover
-
----
-
-## The Component
-
-This is a self-contained `TableFilters.vue` that you can drop into any index page:Now here is how you use it on any index page:
-
-```vue
-<script setup lang="ts">
-import { ref, computed } from 'vue';
-import { router } from '@inertiajs/vue3';
-import TableFilters from '@/components/TableFilters.vue';
-import type { FilterGroup, ActiveFilters } from '@/components/TableFilters.vue';
-
-const search  = ref('');
-const filters = ref<ActiveFilters>({
-    status:    '',
-    assigned:  '',
-    date_sent: '',
-    currency:  [],
-});
-
-// Define your filter groups once
-const filterGroups: FilterGroup[] = [
-    {
-        key:   'status',
-        label: 'Status',
-        type:  'select',
-        options: [
-            { value: 'draft',    label: 'Draft',    color: 'bg-slate-400' },
-            { value: 'sent',     label: 'Sent',     color: 'bg-blue-500'  },
-            { value: 'viewed',   label: 'Viewed',   color: 'bg-violet-500'},
-            { value: 'won',      label: 'Won',      color: 'bg-emerald-500'},
-            { value: 'lost',     label: 'Lost',     color: 'bg-rose-500'  },
-            { value: 'expired',  label: 'Expired',  color: 'bg-amber-400' },
-        ],
-    },
-    {
-        key:   'currency',
-        label: 'Currency',
-        type:  'multi',
-        options: [
-            { value: 'KES', label: 'KES' },
-            { value: 'USD', label: 'USD' },
-            { value: 'GBP', label: 'GBP' },
-            { value: 'AED', label: 'AED' },
-        ],
-    },
-    {
-        key:   'date_sent',
-        label: 'Date sent',
-        type:  'date_range',
-    },
-    {
-        key:   'assigned',
-        label: 'Assigned to',
-        type:  'select',
-        options: teamMembers.value.map(u => ({
-            value: String(u.id),
-            label: u.name,
-        })),
-    },
-];
-
-// Push filters to URL when they change
-watch([search, filters], () => {
-    router.get(route('quotes.index'), {
-        search:   search.value || undefined,
-        status:   filters.value.status || undefined,
-        currency: filters.value.currency?.length
-            ? filters.value.currency
-            : undefined,
-        date_sent: filters.value.date_sent || undefined,
-        assigned:  filters.value.assigned || undefined,
-    }, {
-        preserveState: true,
-        replace:       true,
-    });
-}, { deep: true });
-</script>
-
-<template>
-    <TableFilters
-        v-model="filters"
-        v-model:search="search"
-        :groups="filterGroups"
-        :result-count="quotes.total"
-        search-placeholder="Search by quote title, number, or client..."
-    />
-
-    <!-- Your table below -->
-</template>
-```
-
----
-
-## What Each Part Does
-
-**Search bar** — full width, icon on left, clear button appears when typing. Prominent because it is the most used interaction.
-
-**Filters button** — right-aligned, shows a count badge when filters are active, button border turns primary color to signal active state. Clicking opens the popover.
-
-**Filter popover** — opens to the right. Each group renders based on its type. `select` allows one choice. `multi` allows many. `date_range` shows two date inputs. Options render as pill buttons not dropdowns — pills are easier to scan and tap.
-
-**Apply button** — filters are drafted locally in the popover and only committed when the user clicks Apply. This prevents the table from refetching on every click while the user is still configuring.
-
-**Active badges** — appear below the search bar showing exactly what is filtered. Each badge has an `×` to remove that specific filter individually. A "Clear all" link removes everything at once.
-
-**Result count** — appears only when something is filtered or searched. Shows `4 results for "kettle"`. Disappears when no filter is active.
-
----
-
-## The Design Decisions
-
-**Popover not a sidebar drawer** — a sidebar drawer is for complex multi-step filtering like Figma or Notion. For a list view with 4-6 filters a popover is faster and less disruptive.
-
-**Pills not dropdowns inside the popover** — dropdowns inside a popover create nested interaction layers that feel heavy. Pills let the user see all options immediately and toggle them without a click-to-open interaction.
-
-**Draft pattern** — the popover has its own internal state. Changes are not applied until the user clicks Apply. This prevents the table from flickering on every option click while the user is still deciding. The Clear All inside the popover clears the draft only — not the committed filters. This matches the mental model of "I am configuring, then I apply."
-
-**Badges are the persistent state indicator** — the user can close the popover and still see what is active. Individual badge removal is the fastest way to remove a single filter without re-opening the popover.
-
--->

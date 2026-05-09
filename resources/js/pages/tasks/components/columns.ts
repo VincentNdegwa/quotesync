@@ -157,7 +157,7 @@ export const getTaskColumns = (
             cell: ({ row }): VNode => {
                 const formatted = useFormat().formatDate(row.original.due_date);
 
-                return h('span', formatted ?? '—');
+                return h('span', formatted || '—');
             },
         },
     ];

@@ -32,18 +32,6 @@ const totalCredited = computed(() => {
     );
 });
 
-const creditStatus = computed(() => {
-    if (props.balanceDue <= 0) {
-        return 'fully_credited';
-    }
-
-    if (totalCredited.value > 0) {
-        return 'partial';
-    }
-
-    return 'none';
-});
-
 </script>
 
 <template>

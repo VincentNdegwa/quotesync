@@ -2,8 +2,8 @@
 import { router } from '@inertiajs/vue3';
 import { Calendar, Lock, User } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
-import { Button } from '@/components/ui/button';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -133,11 +133,11 @@ const canDrop = (toStatus: string): boolean => {
 
     const from = dragging.value.fromStatus as StatusKey;
 
-    return (ALLOWED_TRANSITIONS[from] || []).includes(toStatus as StatusKey);
+    return ALLOWED_TRANSITIONS[from].includes(toStatus as StatusKey);
 };
 
 const validTargets = (status: StatusKey): StatusKey[] =>
-    ALLOWED_TRANSITIONS[status] || [];
+    ALLOWED_TRANSITIONS[status];
 
 const isTerminal = (status: StatusKey): boolean =>
     ALLOWED_TRANSITIONS[status].length === 0;
@@ -268,7 +268,6 @@ const onDrop = (e: DragEvent, toStatus: string): void => {
     }
 
     const creditNoteId = dragging.value.creditNote.id;
-    const fromStatus = dragging.value.fromStatus as StatusKey;
     const target = toStatus as StatusKey;
     onDragEnd();
 

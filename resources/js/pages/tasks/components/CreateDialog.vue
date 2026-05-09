@@ -93,7 +93,7 @@ const lockedEntity = computed(() => {
 });
 
 const isEntityLocked = computed(
-    () => Boolean(lockedEntity.value?.locked && lockedEntity.value?.id),
+    () => Boolean(lockedEntity.value?.locked && lockedEntity.value.id),
 );
 
 const lockedEntityLabel = computed(() => {

@@ -2,7 +2,6 @@
 import { Link } from '@inertiajs/vue3';
 import { KanbanSquare, LayoutList, MoreHorizontal, Plus } from 'lucide-vue-next';
 import { computed } from 'vue';
-import InvoiceController from '@/actions/App/Http/Controllers/InvoiceController';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,

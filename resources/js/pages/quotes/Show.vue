@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
-import type { WorkspaceSettings, QuoteData, QuoteStatusEnum } from '@/types';
+import type { WorkspaceSettings, QuoteData, QuoteStatusEnum, QuoteInvoicesPayload } from '@/types';
 import QuoteActions from './components/QuoteActions.vue';
 
 const props = defineProps<{
@@ -23,7 +23,7 @@ const props = defineProps<{
     settings: WorkspaceSettings;
     quoteStatuses: QuoteStatusEnum[];
     teamMembers: Array<{ id: number; name: string; email: string }>;
-    quoteInvoices: import('@/types').QuoteInvoicesPayload;
+    quoteInvoices: QuoteInvoicesPayload;
 }>();
 
 const breadcrumbs = computed(() => [
