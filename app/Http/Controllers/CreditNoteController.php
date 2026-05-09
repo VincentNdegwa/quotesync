@@ -10,6 +10,7 @@ use App\Models\CreditNote;
 use App\Models\Invoice;
 use App\Models\Workspace;
 use App\Services\CreditNoteService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -61,6 +62,19 @@ class CreditNoteController extends Controller
             ],
             'creditNotes' => $creditNotes,
         ]);
+    }
+
+    public function kanban(Request $request): JsonResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+        abort_unless($workspace instanceof Workspace, 404);
+
+        $creditNotes = $workspace->creditNotes()
+            ->with(['client:id,company_name,email', 'invoice:id,invoice_number'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json($creditNotes);
     }
 
     public function show(Request $request, CreditNote $creditNote): InertiaResponse

@@ -127,6 +127,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('quotes/kanban', [QuoteController::class, 'kanban'])->name('quotes.kanban');
         Route::get('invoices/kanban', [InvoiceController::class, 'kanban'])->name('invoices.kanban');
         Route::get('tasks/kanban', [TaskController::class, 'kanban'])->name('tasks.kanban');
+        Route::get('credit-notes/kanban', [CreditNoteController::class, 'kanban'])->name('credit-notes.kanban');
         Route::resource('quotes', QuoteController::class);
         Route::get('quotes/{quote}/analytics', [QuoteController::class, 'analytics'])->name('quotes.analytics');
         Route::post('quotes/{quote}/send', [QuoteSendController::class, 'store'])->name('quotes.send');

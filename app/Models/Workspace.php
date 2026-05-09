@@ -98,6 +98,16 @@ class Workspace extends LaratrustTeam
     }
 
     /**
+     * Get all credit notes for this workspace.
+     *
+     * @return HasMany<CreditNote, $this>
+     */
+    public function creditNotes(): HasMany
+    {
+        return $this->hasMany(CreditNote::class);
+    }
+
+    /**
      * @return HasMany<FollowUpSequence, $this>
      */
     public function followUpSequences(): HasMany

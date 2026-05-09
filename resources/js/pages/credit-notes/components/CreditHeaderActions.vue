@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { KanbanSquare, LayoutList, MoreHorizontal, Plus } from 'lucide-vue-next';
+import { FolderOpen, KanbanSquare, LayoutList, MoreHorizontal, Plus } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import {

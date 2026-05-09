@@ -24,6 +24,7 @@ import {
 import type { Paginator, CreditNoteListRecord } from '@/types';
 import CreditNotesDataTable from './components/CreditNotesDataTable.vue';
 import CreditHeaderActions from './components/CreditHeaderActions.vue';
+import CreditNotesKanban from './components/CreditNotesKanban.vue';
 
 const STORAGE_KEY = 'credit-notes-view-mode';
 
@@ -230,9 +231,7 @@ const executeBulkAction = (): void => {
         </div>
 
         <template v-if="viewMode === 'kanban'">
-            <div class="rounded-lg border p-10 text-center text-muted-foreground">
-                Kanban view coming soon
-            </div>
+            <CreditNotesKanban :credit-note-statuses="creditNoteStatuses" />
         </template>
 
         <template v-else>
