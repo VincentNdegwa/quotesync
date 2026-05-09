@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Enums\CreditNoteStatus;
 use App\Models\Invoice;
 use App\Services\ExchangeRateService;
 
@@ -11,27 +12,19 @@ class InvoiceObserver
         protected ExchangeRateService $exchangeRateService
     ) {}
 
+    public function saved(Invoice $invoice): void
+    {
+        // Recompute amount_credited whenever invoice changes
+        $invoice->updateQuietly([
+            'amount_credited' => $invoice->creditNotes()
+                ->whereIn('status', CreditNoteStatus::creditedStatuses())
+                ->sum('total'),
+        ]);
+    }
+
     public function saving(Invoice $invoice): void
     {
-        $workspace = $invoice->workspace;
-
-        $baseCurrency = $workspace->currency ?? 'USD';
-
-        if (empty($invoice->currency)) {
-            $invoice->currency = $baseCurrency;
-        }
-
-        $invoice->base_currency = $baseCurrency;
-
-        if ($invoice->isDirty(['total', 'currency', 'base_currency', 'fx_rate'])) {
-            if ($invoice->currency === $invoice->base_currency) {
-                $invoice->fx_rate = 1.0;
-                $invoice->base_total = $invoice->total;
-            } else {
-                $rate = $invoice->fx_rate ?? $this->exchangeRateService->getRate($invoice->base_currency, $invoice->currency);
-                $invoice->fx_rate = $rate;
-                $invoice->total = round($invoice->base_total / $rate, 2);
-            }
-        }
+        // Removed automatic currency conversion to allow manual control
+        // when creating invoices from quotes or directly
     }
 }

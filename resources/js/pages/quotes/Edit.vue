@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { Head, router, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Head, router, setLayoutProps, useForm } from '@inertiajs/vue3';
+import { computed, ref, watchEffect } from 'vue';
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
-import { Button } from '@/components/ui/button';
 import type {
     BuilderCatalogItem,
     BuilderConfigurationUnit,
@@ -27,31 +26,41 @@ const props = defineProps<{
     settings: WorkspaceSettings;
 }>();
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Quotes',
-                href: '/quotes',
-            },
-            {
-                title: 'Edit',
-                href: '/quotes',
-            },
-        ],
-    },
+const breadcrumbs = computed(() => {
+    return [
+        {
+            title: 'Quotes',
+            href: '/quotes',
+        },
+        {
+            title: props.initialState.title || 'Quote details',
+            href: QuoteController.show(props.quoteId).url,
+        },
+        {
+            title: 'Edit',
+            href: '/quotes',
+        },
+    ];
 });
 
-const form = useForm<QuoteBuilderState>(JSON.parse(JSON.stringify(props.initialState)) as QuoteBuilderState);
+watchEffect(() => {
+    setLayoutProps({
+        breadcrumbs: breadcrumbs.value,
+    });
+});
+
+const form = useForm<QuoteBuilderState>(props.initialState);
 
 const save = (updatedState?: QuoteBuilderState): void => {
     if (updatedState) {
         Object.keys(updatedState).forEach((key) => {
             if (key in form) {
-                form[key] = updatedState[key];
+                (form as any)[key] =
+                    updatedState[key as keyof QuoteBuilderState];
             }
         });
     }
+
     form.put(QuoteController.update(props.quoteId).url, {
         preserveScroll: true,
     });
@@ -59,26 +68,22 @@ const save = (updatedState?: QuoteBuilderState): void => {
 
 const showSendDialog = ref(false);
 
-const sendQuote = (): void => {
-    showSendDialog.value = true;
-};
-
 const executeSend = (): void => {
-    router.post(QuoteSendController.store(props.quoteId).url, {}, {
-        preserveScroll: true,
-        onSuccess: () => {
-            showSendDialog.value = false;
-        }
-    });
+    router.post(
+        QuoteSendController.store(props.quoteId).url,
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                showSendDialog.value = false;
+            },
+        },
+    );
 };
 </script>
 
 <template>
     <Head :title="`Edit quote #${quoteId}`" />
-
-    <div class="mb-3 flex justify-end">
-        <Button @click="sendQuote">Send to client</Button>
-    </div>
 
     <QuoteBuilder
         :model-value="form"

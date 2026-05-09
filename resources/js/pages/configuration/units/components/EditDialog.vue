@@ -73,7 +73,9 @@ const submit = (): void => {
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>Edit unit</DialogTitle>
-                <DialogDescription>Update this reusable unit.</DialogDescription>
+                <DialogDescription
+                    >Update this reusable unit.</DialogDescription
+                >
             </DialogHeader>
 
             <form class="space-y-4" @submit.prevent="submit">
@@ -89,17 +91,28 @@ const submit = (): void => {
                     <InputError :message="form.errors.symbol" />
                 </div>
 
-                <div class="flex items-center justify-between rounded-md border p-3">
+                <div
+                    class="flex items-center justify-between rounded-md border p-3"
+                >
                     <span class="text-sm">Active</span>
                     <Switch
                         :model-value="Boolean(form.is_active)"
-                        @update:model-value="(checked: boolean) => (form.is_active = checked)"
+                        @update:model-value="
+                            (checked: boolean) => (form.is_active = checked)
+                        "
                     />
                 </div>
 
                 <DialogFooter>
-                    <Button type="button" variant="outline" @click="open = false">Cancel</Button>
-                    <Button type="submit" :disabled="form.processing">Save changes</Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="open = false"
+                        >Cancel</Button
+                    >
+                    <Button type="submit" :disabled="form.processing"
+                        >Save changes</Button
+                    >
                 </DialogFooter>
             </form>
         </DialogContent>

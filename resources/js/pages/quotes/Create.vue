@@ -36,7 +36,9 @@ defineOptions({
     },
 });
 
-const form = useForm<QuoteBuilderState>(JSON.parse(JSON.stringify(props.initialState)) as QuoteBuilderState);
+const form = useForm<QuoteBuilderState>(
+    JSON.parse(JSON.stringify(props.initialState)) as QuoteBuilderState,
+);
 
 const save = (updatedState?: QuoteBuilderState): void => {
     if (updatedState) {
@@ -46,6 +48,7 @@ const save = (updatedState?: QuoteBuilderState): void => {
             }
         });
     }
+
     form.post('/quotes', {
         preserveScroll: true,
     });

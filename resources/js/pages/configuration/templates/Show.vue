@@ -35,7 +35,9 @@ defineOptions({
             />
 
             <Button as-child>
-                <Link :href="`/quote-templates/${template.id}/edit`">Edit template</Link>
+                <Link :href="`/quote-templates/${template.id}/edit`"
+                    >Edit template</Link
+                >
             </Button>
         </div>
 
@@ -52,7 +54,9 @@ defineOptions({
                 <Badge :variant="template.is_active ? 'default' : 'secondary'">
                     {{ template.is_active ? 'Active' : 'Inactive' }}
                 </Badge>
-                <Badge v-if="template.is_system" variant="outline">System</Badge>
+                <Badge v-if="template.is_system" variant="outline"
+                    >System</Badge
+                >
             </div>
             <div>
                 <p class="text-xs text-muted-foreground">Updated</p>

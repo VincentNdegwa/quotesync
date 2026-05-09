@@ -41,8 +41,9 @@ defineOptions({
     layout: AppLayout,
 });
 
-
-const form = useForm<QuoteBuilderState>(JSON.parse(JSON.stringify(props.initialState)) as QuoteBuilderState);
+const form = useForm<QuoteBuilderState>(
+    JSON.parse(JSON.stringify(props.initialState)) as QuoteBuilderState,
+);
 
 const save = (): void => {
     form.post('/quote-templates', {

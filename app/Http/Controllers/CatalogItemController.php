@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreCatalogItemRequest;
-use App\Http\Requests\UpdateCatalogItemRequest;
+use App\Http\Requests\Catalog\CatalogItemBulkActionRequest;
+use App\Http\Requests\Catalog\CatalogItemPriceTierRequest;
+use App\Http\Requests\Catalog\CatalogItemVariantRequest;
+use App\Http\Requests\Catalog\StoreCatalogItemRequest;
+use App\Http\Requests\Catalog\UpdateCatalogItemRequest;
 use App\Models\CatalogCategory;
 use App\Models\CatalogItem;
+use App\Models\CatalogItemVariant;
+use App\Models\CatalogItemPriceTier;
 use App\Models\ConfigurationUnit;
 use App\Models\Tax;
 use App\Models\Workspace;
@@ -33,13 +38,7 @@ class CatalogItemController extends Controller
 
         return Inertia::render('catalog/Index', [
             'filters' => $filters,
-            'items' => $catalogItemService->paginateForIndex($workspace, $filters)
-                ->through(fn (CatalogItem $item): array => [
-                    ...$item->toArray(),
-                    'taxes' => $item->taxes,
-                    'tax_ids' => $item->taxes->pluck('id')->values()->all(),
-                    'configuration_unit' => $item->configurationUnit,
-                ]),
+            'items' => $catalogItemService->paginateForIndex($workspace, $filters),
             'categories' => CatalogCategory::query()
                 ->where('workspace_id', $workspace->id)
                 ->orderBy('sort_order')
@@ -89,15 +88,10 @@ class CatalogItemController extends Controller
 
         abort_unless($workspace instanceof Workspace && $catalog->workspace_id === $workspace->id, 404);
 
-        $catalog->load(['category:id,name', 'taxes:id,name,rate', 'configurationUnit:id,name,symbol']);
+        $catalog->load(['category:id,name', 'taxes:id,name,rate', 'configurationUnit:id,name,symbol', 'variants', 'priceTiers']);
 
         return Inertia::render('catalog/Show', [
-            'item' => [
-                ...$catalog->toArray(),
-                'taxes' => $catalog->taxes,
-                'tax_ids' => $catalog->taxes->pluck('id')->values()->all(),
-                'configuration_unit' => $catalog->configurationUnit,
-            ],
+            'item' => $catalog,
             'availableTaxes' => Tax::query()
                 ->where('workspace_id', $workspace->id)
                 ->where('is_active', true)
@@ -153,18 +147,13 @@ class CatalogItemController extends Controller
         return back();
     }
 
-    public function bulkAction(Request $request, CatalogItemService $catalogItemService): RedirectResponse
+    public function bulkAction(CatalogItemBulkActionRequest $request, CatalogItemService $catalogItemService): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace, 404);
 
-        $validated = $request->validate([
-            'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['integer'],
-            'action' => ['required', 'string', 'in:activate,deactivate,delete,change_category'],
-            'category_id' => ['nullable', 'integer'],
-        ]);
+        $validated = $request->validated();
 
         $count = $catalogItemService->bulkAction(
             $workspace,
@@ -177,6 +166,122 @@ class CatalogItemController extends Controller
             'type' => 'success',
             'message' => trans_choice(':count record updated.|:count records updated.', $count, ['count' => $count]),
         ]);
+
+        return back();
+    }
+
+    public function storeVariant(CatalogItemVariantRequest $request, CatalogItem $catalog): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace && $catalog->workspace_id === $workspace->id, 404);
+
+        $validated = $request->validated();
+
+        CatalogItemVariant::create([
+            ...$validated,
+            'catalog_item_id' => $catalog->id,
+            'is_default' => $validated['is_default'] ?? false,
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Variant created.')]);
+
+        return back();
+    }
+
+    public function updateVariant(CatalogItemVariantRequest $request, CatalogItem $catalog, CatalogItemVariant $variant): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless(
+            $workspace instanceof Workspace
+            && $catalog->workspace_id === $workspace->id
+            && $variant->catalog_item_id === $catalog->id,
+            404
+        );
+
+        $validated = $request->validated();
+
+        $variant->update([
+            ...$validated,
+            'is_default' => $validated['is_default'] ?? false,
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Variant updated.')]);
+
+        return back();
+    }
+
+    public function destroyVariant(Request $request, CatalogItem $catalog, CatalogItemVariant $variant): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless(
+            $workspace instanceof Workspace
+            && $catalog->workspace_id === $workspace->id
+            && $variant->catalog_item_id === $catalog->id,
+            404
+        );
+
+        $variant->delete();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Variant deleted.')]);
+
+        return back();
+    }
+
+    public function storePriceTier(CatalogItemPriceTierRequest $request, CatalogItem $catalog): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace && $catalog->workspace_id === $workspace->id, 404);
+
+        $validated = $request->validated();
+
+        CatalogItemPriceTier::create([
+            ...$validated,
+            'catalog_item_id' => $catalog->id,
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Price tier created.')]);
+
+        return back();
+    }
+
+    public function updatePriceTier(CatalogItemPriceTierRequest $request, CatalogItem $catalog, CatalogItemPriceTier $priceTier): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless(
+            $workspace instanceof Workspace
+            && $catalog->workspace_id === $workspace->id
+            && $priceTier->catalog_item_id === $catalog->id,
+            404
+        );
+
+        $validated = $request->validated();
+
+        $priceTier->update($validated);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Price tier updated.')]);
+
+        return back();
+    }
+
+    public function destroyPriceTier(Request $request, CatalogItem $catalog, CatalogItemPriceTier $priceTier): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless(
+            $workspace instanceof Workspace
+            && $catalog->workspace_id === $workspace->id
+            && $priceTier->catalog_item_id === $catalog->id,
+            404
+        );
+
+        $priceTier->delete();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Price tier deleted.')]);
 
         return back();
     }

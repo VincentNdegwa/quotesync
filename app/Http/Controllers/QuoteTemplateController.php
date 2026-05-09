@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreQuoteTemplateRequest;
-use App\Http\Requests\UpdateQuoteTemplateRequest;
+use App\Http\Requests\QuoteTemplates\StoreQuoteTemplateRequest;
+use App\Http\Requests\QuoteTemplates\UpdateQuoteTemplateRequest;
 use App\Models\QuoteTemplate;
 use App\Models\Workspace;
 use App\Services\BuilderLookupService;
@@ -12,8 +12,6 @@ use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -35,18 +33,7 @@ class QuoteTemplateController extends Controller
 
         return Inertia::render('configuration/templates/Index', [
             'filters' => $filters,
-            'templates' => $quoteTemplateService->paginateForIndex($workspace, $filters)
-                ->through(fn (QuoteTemplate $template): array => [
-                    'id' => $template->id,
-                    'name' => $template->name,
-                    'description' => $template->description,
-                    'industry' => $template->industry,
-                    'is_active' => (bool) $template->is_active,
-                    'is_system' => (bool) $template->is_system,
-                    'usage_count' => $template->usage_count,
-                    'sections_count' => $template->sections_count,
-                    'updated_at' => $template->updated_at?->toISOString(),
-                ]),
+            'templates' => $quoteTemplateService->paginateForIndex($workspace, $filters),
         ]);
     }
 
@@ -80,7 +67,7 @@ class QuoteTemplateController extends Controller
                 ],
             ],
             'settings' => $settings,
-            ...$this->builderLookups($workspace, $workspaceSettingsService),
+            ...$builderLookupService->getTemplateLookups($workspace),
         ]);
     }
 
@@ -113,23 +100,14 @@ class QuoteTemplateController extends Controller
         abort_unless($workspace instanceof Workspace && $quoteTemplate->workspace_id === $workspace->id, 404);
 
         return Inertia::render('configuration/templates/Show', [
-            'template' => [
-                'id' => $quoteTemplate->id,
-                'name' => $quoteTemplate->name,
-                'description' => $quoteTemplate->description,
-                'industry' => $quoteTemplate->industry,
-                'is_active' => (bool) $quoteTemplate->is_active,
-                'is_system' => (bool) $quoteTemplate->is_system,
-                'usage_count' => $quoteTemplate->usage_count,
-                'updated_at' => $quoteTemplate->updated_at?->toISOString(),
-            ],
+            'template' => $quoteTemplate,
         ]);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Request $request, QuoteTemplate $quoteTemplate, WorkspaceSettingsService $workspaceSettingsService, BuilderLookupService $builderLookupService): Response
+    public function edit(Request $request, QuoteTemplate $quoteTemplate, WorkspaceSettingsService $workspaceSettingsService, BuilderLookupService $builderLookupService, QuoteTemplateService $quoteTemplateService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -139,7 +117,7 @@ class QuoteTemplateController extends Controller
             'templateId' => $quoteTemplate->id,
             'initialState' => $quoteTemplateService->toBuilderPayload($quoteTemplate),
             'settings' => $workspaceSettingsService->builderSettings($workspace),
-            ...$builderLookupService->getTemplateLookups($workspace, $workspaceSettingsService),
+            ...$builderLookupService->getTemplateLookups($workspace),
         ]);
     }
 
@@ -186,35 +164,7 @@ class QuoteTemplateController extends Controller
 
         $sections = $quoteTemplate->sections()
             ->with(['lineItems' => fn ($q) => $q->orderBy('sort_order'), 'lineItems.taxes'])
-            ->get()
-            ->map(fn ($section) => [
-                'id' => $section->id,
-                'title' => $section->title,
-                'sort_order' => $section->sort_order,
-                'line_items' => $section->lineItems->map(fn ($item) => [
-                    'id' => null,
-                    'catalog_item_id' => $item->catalog_item_id,
-                    'name' => $item->name,
-                    'description' => $item->description,
-                    'quantity' => (float) $item->quantity,
-                    'unit' => $item->unit,
-                    'unit_price' => (float) $item->unit_price,
-                    'discount_percent' => (float) $item->discount_percent,
-                    'is_optional' => (bool) $item->is_optional,
-                    'notes' => $item->notes,
-                    'sort_order' => $item->sort_order,
-                    'subtotal' => 0,
-                    'tax_amount' => 0,
-                    'total' => 0,
-                    'taxes' => $item->taxes->map(fn ($tax) => [
-                        'tax_id' => $tax->tax_id,
-                        'tax_label' => $tax->tax_label,
-                        'tax_rate' => (float) $tax->tax_rate,
-                    ])->values()->all(),
-                ])->values()->all(),
-            ])
-            ->values()
-            ->all();
+            ->get();
 
         return response()->json([
             'layout' => $quoteTemplate->layout,

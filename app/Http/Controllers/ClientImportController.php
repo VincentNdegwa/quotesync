@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Clients\ClientImportPreviewRequest;
+use App\Http\Requests\Clients\ClientImportStoreRequest;
 use App\Jobs\ImportClientsJob;
 use App\Models\Client;
 use App\Models\ImportHistory;
@@ -9,7 +11,6 @@ use App\Models\Workspace;
 use App\Services\Import\ClientImportValidator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -41,15 +42,13 @@ class ClientImportController extends Controller
         }, 'clients-template.csv');
     }
 
-    public function preview(Request $request): JsonResponse
+    public function preview(ClientImportPreviewRequest $request): JsonResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace, 404);
 
-        $validated = $request->validate([
-            'file' => ['required', 'file', 'mimes:csv,txt', 'max:5120'],
-        ]);
+        $validated = $request->validated();
 
         $rows = array_map('str_getcsv', file($validated['file']->getRealPath()));
         $header = collect(array_shift($rows) ?? [])->map(fn ($value) => Str::lower(trim((string) $value)))->values()->all();
@@ -95,16 +94,13 @@ class ClientImportController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(ClientImportStoreRequest $request): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace, 404);
 
-        $validated = $request->validate([
-            'import_token' => ['required', 'string'],
-            'column_mapping' => ['array'],
-        ]);
+        $validated = $request->validated();
 
         $token = $validated['import_token'];
         $columnMapping = $validated['column_mapping'] ?? [];

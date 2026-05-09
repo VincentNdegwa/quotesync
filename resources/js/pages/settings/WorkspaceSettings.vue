@@ -21,15 +21,19 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import type { IndustryModel, WorkspaceSettingsField, WorkspaceSettingsPageProps } from '@/types';
-import {
-    translationLanguageOptions,
-} from '@/utils/location-options';
+import type {
+    IndustryModel,
+    WorkspaceSettingsField,
+    WorkspaceSettingsPageProps,
+} from '@/types';
+import { translationLanguageOptions } from '@/utils/location-options';
 import type { LanguageOption } from '@/utils/location-options';
 
-const props = defineProps<WorkspaceSettingsPageProps & {
-    industries: IndustryModel[];
-}>();
+const props = defineProps<
+    WorkspaceSettingsPageProps & {
+        industries: IndustryModel[];
+    }
+>();
 
 defineOptions({
     layout: {
@@ -85,7 +89,7 @@ const buildFormValues = (
                 return values;
             }
 
-            if (field.value === null || field.value === undefined) {
+            if (field.value === null) {
                 values[field.key] = '';
 
                 return values;
@@ -146,7 +150,7 @@ const inputType = (field: WorkspaceSettingsField): string => {
 };
 
 const asString = (value: WorkspaceSettingsField['value']): string => {
-    if (value === null || value === undefined) {
+    if (value === null) {
         return '';
     }
 
@@ -173,17 +177,25 @@ const optionDisplayLabel = (option: string): string => {
 };
 
 const isLanguageField = (field: WorkspaceSettingsField): boolean => {
-    return field.type === 'select' && field.key.toLowerCase().includes('language');
+    return (
+        field.type === 'select' && field.key.toLowerCase().includes('language')
+    );
 };
 
-const languageOptionsForField = (field: WorkspaceSettingsField): LanguageOption[] => {
+const languageOptionsForField = (
+    field: WorkspaceSettingsField,
+): LanguageOption[] => {
     const labels = new Map(
-        translationLanguageOptions.map((language) => [language.code, language.label]),
+        translationLanguageOptions.map((language) => [
+            language.code,
+            language.label,
+        ]),
     );
 
-    const source = field.options && field.options.length > 0
-        ? field.options
-        : translationLanguageOptions.map((language) => language.code);
+    const source =
+        field.options && field.options.length > 0
+            ? field.options
+            : translationLanguageOptions.map((language) => language.code);
 
     return source.map((code) => ({
         code,
@@ -223,7 +235,7 @@ const updateIndustry = (): void => {
                 as-child
             >
                 <Link href="/custom-domains">
-                    <Globe class="h-4 w-4 mr-2" />
+                    <Globe class="mr-2 h-4 w-4" />
                     Custom Domains
                 </Link>
             </Button>
@@ -231,12 +243,27 @@ const updateIndustry = (): void => {
 
         <div v-if="currentGroup.group === 'brand'" class="space-y-2">
             <Label>Industry</Label>
-            <Select v-model="industryForm.industry_id" name="industry_id" @update:model-value="updateIndustry">
-                <SelectTrigger class="w-full" ><SelectValue placeholder="Select your industry" /></SelectTrigger>
+            <Select
+                v-model="industryForm.industry_id"
+                name="industry_id"
+                @update:model-value="updateIndustry"
+            >
+                <SelectTrigger class="w-full"
+                    ><SelectValue placeholder="Select your industry"
+                /></SelectTrigger>
                 <SelectContent>
-                    <SelectItem v-for="industry in industries" :key="industry.id" :value="String(industry.id)">
+                    <SelectItem
+                        v-for="industry in industries"
+                        :key="industry.id"
+                        :value="String(industry.id)"
+                    >
                         <div class="flex items-center gap-2">
-                            <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: industry.color || '#000' }" />
+                            <div
+                                class="h-3 w-3 rounded-full"
+                                :style="{
+                                    backgroundColor: industry.color || '#000',
+                                }"
+                            />
                             {{ industry.name }}
                         </div>
                     </SelectItem>
@@ -332,7 +359,11 @@ const updateIndustry = (): void => {
                     :required="field.required"
                 >
                     <SelectTrigger class="w-full" :id="`setting-${field.key}`">
-                        <SelectValue :placeholder="field.placeholder ?? 'Select an option'" />
+                        <SelectValue
+                            :placeholder="
+                                field.placeholder ?? 'Select an option'
+                            "
+                        />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem
@@ -354,19 +385,22 @@ const updateIndustry = (): void => {
                     v-model="formValues[field.key]"
                 />
 
-                <div
-                    v-else-if="field.type === 'array'"
-                    class="space-y-2"
-                >
+                <div v-else-if="field.type === 'array'" class="space-y-2">
                     <Select
                         v-model="formValues[field.key]"
                         multiple
                         :id="`setting-${field.key}`"
                         :required="field.required"
                     >
-                        <SelectTrigger class="w-full" :id="`setting-${field.key}`">
+                        <SelectTrigger
+                            class="w-full"
+                            :id="`setting-${field.key}`"
+                        >
                             <SelectValue
-                                :placeholder="field.placeholder ?? 'Select one or more options'"
+                                :placeholder="
+                                    field.placeholder ??
+                                    'Select one or more options'
+                                "
                             />
                         </SelectTrigger>
                         <SelectContent>
@@ -399,14 +433,14 @@ const updateIndustry = (): void => {
                     </p>
                 </div>
 
-                <div
-                    v-else-if="field.type === 'json'"
-                    class="space-y-2"
-                >
+                <div v-else-if="field.type === 'json'" class="space-y-2">
                     <Textarea
                         :id="`setting-${field.key}`"
                         :required="field.required"
-                        :placeholder="field.placeholder ?? 'Enter JSON values, one per line or comma-separated'"
+                        :placeholder="
+                            field.placeholder ??
+                            'Enter JSON values, one per line or comma-separated'
+                        "
                         v-model="formValues[field.key]"
                     />
 
@@ -444,7 +478,7 @@ const updateIndustry = (): void => {
                             :id="`setting-${field.key}`"
                             :name="`settings[${field.key}]`"
                             type="color"
-                            class="w-16 h-10 p-1 cursor-pointer"
+                            class="h-10 w-16 cursor-pointer p-1"
                             v-model="formValues[field.key]"
                         />
                         <Input

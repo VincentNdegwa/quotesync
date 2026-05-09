@@ -20,6 +20,8 @@ class SendQuoteEmailJob implements ShouldQueue
         public string $to,
         /** @var array<int, string> */
         public array $cc,
+        /** @var array<int, string> */
+        public array $bcc,
         public string $subjectLine,
         public string $messageBody,
         public string $companyName,
@@ -72,6 +74,10 @@ class SendQuoteEmailJob implements ShouldQueue
 
         if ($this->cc !== []) {
             $mailer->cc($this->cc);
+        }
+
+        if ($this->bcc !== []) {
+            $mailer->bcc($this->bcc);
         }
 
         $mailer->send($mail);

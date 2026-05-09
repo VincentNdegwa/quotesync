@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -26,13 +26,16 @@ const inviteForm = useForm({
     email: '',
 });
 
-watch(() => props.open, (isOpen) => {
-    if (isOpen) {
-        inviteForm.email = props.client.email || '';
-    }
-});
+watch(
+    () => props.open,
+    (isOpen) => {
+        if (isOpen) {
+            inviteForm.email = props.client.email || '';
+        }
+    },
+);
 
-const sendInvitation = () => {
+const sendInvitation = (): void => {
     inviteForm.post(`/clients/${props.client.id}/invite-portal`, {
         onSuccess: () => {
             emit('update:open', false);
@@ -63,7 +66,11 @@ const sendInvitation = () => {
                     />
                 </div>
                 <div class="flex justify-end gap-2">
-                    <Button type="button" variant="outline" @click="emit('update:open', false)">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="emit('update:open', false)"
+                    >
                         Cancel
                     </Button>
                     <Button type="submit" :disabled="inviteForm.processing">

@@ -1,6 +1,18 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { BarChart3, Building2, FileText, LayoutGrid, Receipt, ShieldCheck, SlidersHorizontal, Tags, Users } from 'lucide-vue-next';
+import {
+    BarChart3,
+    Building2,
+    CheckSquare2,
+    FileMinus,
+    FileText,
+    LayoutGrid,
+    Receipt,
+    ShieldCheck,
+    SlidersHorizontal,
+    Tags,
+    Users,
+} from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
@@ -21,7 +33,9 @@ import type { NavItem } from '@/types';
 const dashboardUrl = computed(() => dashboard().url);
 const page = usePage();
 
-const pendingApprovalsCount = computed(() => page.props.pending_approvals_count as number || 0);
+const pendingApprovalsCount = computed(
+    () => (page.props.pending_approvals_count as number) || 0,
+);
 
 const mainNavItems = computed<NavItem[]>(() => [
     {
@@ -35,6 +49,11 @@ const mainNavItems = computed<NavItem[]>(() => [
         icon: Users,
     },
     {
+        title: 'Catalog',
+        href: '/catalog',
+        icon: Tags,
+    },
+    {
         title: 'Quotes',
         href: '/quotes',
         icon: FileText,
@@ -45,9 +64,14 @@ const mainNavItems = computed<NavItem[]>(() => [
         icon: Receipt,
     },
     {
-        title: 'Catalog',
-        href: '/catalog',
-        icon: Tags,
+        title: 'Credit Notes',
+        href: '/credit-notes',
+        icon: FileMinus,
+    },
+    {
+        title: 'Tasks',
+        href: '/tasks',
+        icon: CheckSquare2,
     },
     {
         title: 'Analytics',
@@ -58,7 +82,10 @@ const mainNavItems = computed<NavItem[]>(() => [
         title: 'Approvals',
         href: '/approvals',
         icon: ShieldCheck,
-        badge: pendingApprovalsCount.value > 0 ? pendingApprovalsCount.value : undefined,
+        badge:
+            pendingApprovalsCount.value > 0
+                ? pendingApprovalsCount.value
+                : undefined,
     },
     {
         title: 'Configuration',

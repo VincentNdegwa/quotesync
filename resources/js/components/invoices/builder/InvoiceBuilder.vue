@@ -1,21 +1,14 @@
 <script setup lang="ts">
-import { computed, ref, toRaw } from 'vue';
+import { computed, ref } from 'vue';
 import { watch } from 'vue';
-import BlockConfigPanel from '@/components/builder/BlockConfigPanel.vue';
-import BlockList from '@/components/builder/BlockList.vue';
 import InvoiceRenderer from '@/components/renderer/InvoiceRenderer.vue';
-import {
-    ADDABLE_BLOCK_TYPES,
-    createBlock,
-    ensureTemplateLayout,
-} from '@/types';
+import { createBlock, ensureTemplateLayout } from '@/types';
 import type {
     Block,
     BlockType,
     BuilderCatalogItem,
     BuilderConfigurationUnit,
     BuilderTaxOption,
-    InvoiceBuilderLineItem,
     InvoiceBuilderState,
     WorkspaceSettings,
 } from '@/types';
@@ -24,7 +17,7 @@ const model = defineModel<InvoiceBuilderState>({
     required: true,
 });
 
-const props = withDefaults(
+const _props = withDefaults(
     defineProps<{
         mode: 'invoice';
         catalogItems: BuilderCatalogItem[];
@@ -46,45 +39,40 @@ const selectedBlockId = ref<string | null>(null);
 
 const layout = computed({
     get: () => {
-        return ensureTemplateLayout(model.value.layout_snapshot || model.value.layout);
+        return ensureTemplateLayout(model.value.layout_snapshot);
     },
     set: (value) => {
         model.value.layout_snapshot = value;
     },
 });
 
-const blocks = computed(() => layout.value?.blocks || []);
+const blocks = computed(() => layout.value.blocks);
 
-const selectedBlock = computed(() => {
+const _selectedBlock = computed(() => {
     return blocks.value.find((b) => b.id === selectedBlockId.value) || null;
 });
 
-const selectBlock = (id: string | null) => {
+const _selectBlock = (id: string | null): void => {
     selectedBlockId.value = id;
 };
 
-const addBlock = (type: BlockType) => {
-    if (!layout.value) return;
-
+const _addBlock = (type: BlockType): void => {
     const newBlock = createBlock(type);
     layout.value.blocks.push(newBlock);
     model.value.layout_snapshot = layout.value;
     selectedBlockId.value = newBlock.id;
 };
 
-const updateBlock = (block: Block) => {
-    if (!layout.value) return;
-
+const _updateBlock = (block: Block): void => {
     const index = layout.value.blocks.findIndex((b) => b.id === block.id);
+
     if (index !== -1) {
         layout.value.blocks[index] = block;
         model.value.layout_snapshot = layout.value;
     }
 };
 
-const deleteBlock = (id: string) => {
-    if (!layout.value) return;
-
+const _deleteBlock = (id: string): void => {
     layout.value.blocks = layout.value.blocks.filter((b) => b.id !== id);
     model.value.layout_snapshot = layout.value;
 
@@ -93,7 +81,7 @@ const deleteBlock = (id: string) => {
     }
 };
 
-const save = () => {
+const save = (): void => {
     emit('save');
 };
 
@@ -101,10 +89,18 @@ const save = () => {
 watch(
     () => model.value.line_items,
     (lineItems) => {
-        const subtotal = lineItems.reduce((sum, item) => sum + (item.subtotal || 0), 0);
-        const taxAmount = lineItems.reduce((sum, item) => sum + (item.tax_amount || 0), 0);
+        const subtotal = lineItems.reduce(
+            (sum, item) => sum + (item.subtotal || 0),
+            0,
+        );
+        const taxAmount = lineItems.reduce(
+            (sum, item) => sum + (item.tax_amount || 0),
+            0,
+        );
         const discountAmount = lineItems.reduce((sum, item) => {
-            const discount = (item.subtotal || 0) * ((item.discount_percent || 0) / 100);
+            const discount =
+                (item.subtotal || 0) * ((item.discount_percent || 0) / 100);
+
             return sum + discount;
         }, 0);
         const total = subtotal + taxAmount - discountAmount;
@@ -136,7 +132,9 @@ watch(
             <div class="space-y-4 rounded-lg border bg-card p-4">
                 <div class="grid gap-4">
                     <div>
-                        <label class="mb-1 block text-sm font-medium">Invoice Number</label>
+                        <label class="mb-1 block text-sm font-medium"
+                            >Invoice Number</label
+                        >
                         <input
                             v-model="model.invoice_number"
                             type="text"
@@ -145,7 +143,9 @@ watch(
                     </div>
 
                     <div>
-                        <label class="mb-1 block text-sm font-medium">Title</label>
+                        <label class="mb-1 block text-sm font-medium"
+                            >Title</label
+                        >
                         <input
                             v-model="model.title"
                             type="text"
@@ -155,7 +155,9 @@ watch(
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="mb-1 block text-sm font-medium">Issue Date</label>
+                            <label class="mb-1 block text-sm font-medium"
+                                >Issue Date</label
+                            >
                             <input
                                 v-model="model.issue_date"
                                 type="date"
@@ -164,7 +166,9 @@ watch(
                         </div>
 
                         <div>
-                            <label class="mb-1 block text-sm font-medium">Due Date</label>
+                            <label class="mb-1 block text-sm font-medium"
+                                >Due Date</label
+                            >
                             <input
                                 v-model="model.due_date"
                                 type="date"
@@ -174,7 +178,9 @@ watch(
                     </div>
 
                     <div>
-                        <label class="mb-1 block text-sm font-medium">Cover Message</label>
+                        <label class="mb-1 block text-sm font-medium"
+                            >Cover Message</label
+                        >
                         <textarea
                             v-model="model.cover_message"
                             rows="3"
@@ -183,7 +189,9 @@ watch(
                     </div>
 
                     <div>
-                        <label class="mb-1 block text-sm font-medium">Terms</label>
+                        <label class="mb-1 block text-sm font-medium"
+                            >Terms</label
+                        >
                         <textarea
                             v-model="model.terms"
                             rows="3"
@@ -192,7 +200,9 @@ watch(
                     </div>
 
                     <div>
-                        <label class="mb-1 block text-sm font-medium">Notes</label>
+                        <label class="mb-1 block text-sm font-medium"
+                            >Notes</label
+                        >
                         <textarea
                             v-model="model.notes"
                             rows="2"
@@ -204,7 +214,7 @@ watch(
 
             <div class="space-y-4 rounded-lg border bg-card p-4">
                 <h3 class="text-base font-semibold">Line Items</h3>
-                
+
                 <div class="space-y-3">
                     <div
                         v-for="(item, index) in model.line_items"
@@ -213,7 +223,9 @@ watch(
                     >
                         <div class="grid gap-3">
                             <div>
-                                <label class="mb-1 block text-xs font-medium">Name</label>
+                                <label class="mb-1 block text-xs font-medium"
+                                    >Name</label
+                                >
                                 <input
                                     v-model="item.name"
                                     type="text"
@@ -222,7 +234,9 @@ watch(
                             </div>
 
                             <div>
-                                <label class="mb-1 block text-xs font-medium">Description</label>
+                                <label class="mb-1 block text-xs font-medium"
+                                    >Description</label
+                                >
                                 <textarea
                                     v-model="item.description"
                                     rows="2"
@@ -232,7 +246,10 @@ watch(
 
                             <div class="grid grid-cols-3 gap-3">
                                 <div>
-                                    <label class="mb-1 block text-xs font-medium">Quantity</label>
+                                    <label
+                                        class="mb-1 block text-xs font-medium"
+                                        >Quantity</label
+                                    >
                                     <input
                                         v-model.number="item.quantity"
                                         type="number"
@@ -242,7 +259,10 @@ watch(
                                 </div>
 
                                 <div>
-                                    <label class="mb-1 block text-xs font-medium">Unit Price</label>
+                                    <label
+                                        class="mb-1 block text-xs font-medium"
+                                        >Unit Price</label
+                                    >
                                     <input
                                         v-model.number="item.unit_price"
                                         type="number"
@@ -252,7 +272,10 @@ watch(
                                 </div>
 
                                 <div>
-                                    <label class="mb-1 block text-xs font-medium">Discount %</label>
+                                    <label
+                                        class="mb-1 block text-xs font-medium"
+                                        >Discount %</label
+                                    >
                                     <input
                                         v-model.number="item.discount_percent"
                                         type="number"
@@ -264,7 +287,10 @@ watch(
 
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label class="mb-1 block text-xs font-medium">Tax Rate %</label>
+                                    <label
+                                        class="mb-1 block text-xs font-medium"
+                                        >Tax Rate %</label
+                                    >
                                     <input
                                         v-model.number="item.tax_rate"
                                         type="number"
@@ -274,7 +300,10 @@ watch(
                                 </div>
 
                                 <div>
-                                    <label class="mb-1 block text-xs font-medium">Total</label>
+                                    <label
+                                        class="mb-1 block text-xs font-medium"
+                                        >Total</label
+                                    >
                                     <input
                                         :value="item.total"
                                         type="number"
@@ -286,7 +315,9 @@ watch(
                             </div>
 
                             <div>
-                                <label class="mb-1 block text-xs font-medium">Notes</label>
+                                <label class="mb-1 block text-xs font-medium"
+                                    >Notes</label
+                                >
                                 <input
                                     v-model="item.notes"
                                     type="text"
@@ -320,16 +351,17 @@ watch(
 
         <div class="space-y-4">
             <h2 class="text-lg font-semibold">Preview</h2>
-
+            <!-- eslint-disable @typescript-eslint/no-explicit-any -->
             <InvoiceRenderer
-                v-if="layout_snapshot && settings"
-                :data="{ ...model, documentType: 'invoice' }"
-                :layout="layout_snapshot"
+                v-if="layout && settings"
+                :data="{ ...model, documentType: 'invoice' as const }"
+                :layout="layout"
                 :settings="settings"
                 :preview-mode="true"
                 :edit-mode="false"
                 :is-internal-view="true"
             />
+            <!-- eslint-enable @typescript-eslint/no-explicit-any -->
         </div>
     </div>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronDown, Layers3 } from 'lucide-vue-next';
+import { ChevronDown } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import type {
     BuilderClientOption,
     BuilderTemplateOption,
@@ -56,7 +55,9 @@ const applyClientCurrency = (clientId: string): void => {
         return;
     }
 
-    const client = props.clients.find((option) => option.id === Number(clientId));    
+    const client = props.clients.find(
+        (option) => option.id === Number(clientId),
+    );
 
     if (client?.currency) {
         state.value.currency = client.currency;
@@ -73,26 +74,70 @@ const selectedClientId = computed<string>({
 });
 
 const selectedTemplateId = computed<string>({
-    get: () => (state.value.template_id ? String(state.value.template_id) : NONE_TEMPLATE),
+    get: () =>
+        state.value.template_id
+            ? String(state.value.template_id)
+            : NONE_TEMPLATE,
     set: (value: string) => {
-        state.value.template_id = value === NONE_TEMPLATE ? null : Number(value);
+        state.value.template_id =
+            value === NONE_TEMPLATE ? null : Number(value);
     },
 });
 
 const selectedClientName = computed<string>(() => {
-    const client = props.clients.find((option) => option.id === state.value.client_id);
+    const client = props.clients.find(
+        (option) => option.id === state.value.client_id,
+    );
 
     return client?.company_name ?? '—';
 });
 
 const showFxRate = computed(() => {
-    return state.value.currency && state.value.currency !== effectiveDefaultCurrency.value;
+    return (
+        state.value.currency &&
+        state.value.currency !== effectiveDefaultCurrency.value
+    );
 });
 
 const fxRateValue = computed({
     get: () => state.value.fx_rate ?? undefined,
     set: (value) => {
-        state.value.fx_rate = value === undefined || value === null ? null : Number(value);
+        state.value.fx_rate = value ? Number(value) : null;
+    },
+});
+
+const descriptionValue = computed({
+    get: () => state.value.description ?? '',
+    set: (value) => {
+        state.value.description = value || null;
+    },
+});
+
+const industryValue = computed({
+    get: () => state.value.industry ?? '',
+    set: (value) => {
+        state.value.industry = value || null;
+    },
+});
+
+const validUntilValue = computed<string | number | undefined>({
+    get: () => state.value.valid_until ?? '',
+    set: (value) => {
+        state.value.valid_until = value ? String(value) : null;
+    },
+});
+
+const depositAmountValue = computed<string | number | undefined>({
+    get: () => state.value.deposit_amount ?? undefined,
+    set: (value) => {
+        state.value.deposit_amount = value ? Number(value) : null;
+    },
+});
+
+const depositPercentValue = computed<string | number | undefined>({
+    get: () => state.value.deposit_percent ?? undefined,
+    set: (value) => {
+        state.value.deposit_percent = value ? Number(value) : null;
     },
 });
 </script>
@@ -104,14 +149,29 @@ const fxRateValue = computed({
             class="flex w-full items-center gap-4 px-4 py-3 text-left text-sm hover:bg-muted/40"
             @click="expanded = !expanded"
         >
-            <span class="font-medium text-muted-foreground">{{ mode === 'invoice' ? 'Invoice settings' : 'Quote settings' }}</span>
-            <span v-if="mode === 'quote'">Client: <strong>{{ selectedClientName }}</strong></span>
-            <span>{{ mode === 'invoice' ? 'Due: ' : 'Valid: ' }}<strong>{{ state.valid_until || '—' }}</strong></span>
-            <span v-if="mode !== 'invoice'">Currency: <strong>{{ state.currency || '—' }}</strong></span>
-            <span v-if="mode === 'quote' && state.requires_deposit" class="text-primary">
+            <span class="font-medium text-muted-foreground">{{
+                mode === 'invoice' ? 'Invoice settings' : 'Quote settings'
+            }}</span>
+            <span v-if="mode === 'quote'"
+                >Client: <strong>{{ selectedClientName }}</strong></span
+            >
+            <span
+                >{{ mode === 'invoice' ? 'Due: ' : 'Valid: '
+                }}<strong>{{ state.valid_until || '—' }}</strong></span
+            >
+            <span v-if="mode !== 'invoice'"
+                >Currency: <strong>{{ state.currency || '—' }}</strong></span
+            >
+            <span
+                v-if="mode === 'quote' && state.requires_deposit"
+                class="text-primary"
+            >
                 Deposit: {{ state.deposit_amount ?? 0 }}
             </span>
-            <ChevronDown class="ml-auto size-4 transition-transform" :class="expanded ? 'rotate-180' : ''" />
+            <ChevronDown
+                class="ml-auto size-4 transition-transform"
+                :class="expanded ? 'rotate-180' : ''"
+            />
         </button>
 
         <div v-if="expanded" class="border-t p-4">
@@ -119,7 +179,7 @@ const fxRateValue = computed({
                 <div class="space-y-2 lg:col-span-2">
                     <Label>Description</Label>
                     <Input
-                        v-model="state.description"
+                        v-model="descriptionValue"
                         placeholder="Template description"
                         :disabled="systemLocked"
                     />
@@ -128,23 +188,30 @@ const fxRateValue = computed({
                 <div class="space-y-2">
                     <Label>Industry</Label>
                     <Input
-                        v-model="state.industry"
+                        v-model="industryValue"
                         placeholder="Construction, IT, Services..."
                         :disabled="systemLocked"
                     />
                 </div>
 
-                <div class="flex items-center justify-between rounded-md border px-3 py-2 lg:col-span-3">
+                <div
+                    class="flex items-center justify-between rounded-md border px-3 py-2 lg:col-span-3"
+                >
                     <span class="text-sm">Active template</span>
                     <Switch
                         :model-value="Boolean(state.is_active)"
                         :disabled="systemLocked"
-                        @update:model-value="(checked: boolean) => (state.is_active = checked)"
+                        @update:model-value="
+                            (checked: boolean) => (state.is_active = checked)
+                        "
                     />
                 </div>
             </div>
 
-            <div v-else-if="mode === 'invoice'" class="grid gap-4 lg:grid-cols-2">
+            <div
+                v-else-if="mode === 'invoice'"
+                class="grid gap-4 lg:grid-cols-2"
+            >
                 <div v-if="state.description" class="space-y-2">
                     <Label>Description</Label>
                     <Input
@@ -156,7 +223,11 @@ const fxRateValue = computed({
 
                 <div class="space-y-2">
                     <Label>Due date</Label>
-                    <Input v-model="state.valid_until" type="date" :disabled="systemLocked" />
+                    <Input
+                        v-model="validUntilValue"
+                        type="date"
+                        :disabled="systemLocked"
+                    />
                 </div>
             </div>
 
@@ -168,7 +239,11 @@ const fxRateValue = computed({
                             <SelectValue placeholder="Select client" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem v-for="client in clients" :key="client.id" :value="String(client.id)">
+                            <SelectItem
+                                v-for="client in clients"
+                                :key="client.id"
+                                :value="String(client.id)"
+                            >
                                 {{ client.company_name }}
                             </SelectItem>
                         </SelectContent>
@@ -177,13 +252,20 @@ const fxRateValue = computed({
 
                 <div class="space-y-2">
                     <Label>Source template</Label>
-                    <Select v-model="selectedTemplateId" :disabled="systemLocked">
+                    <Select
+                        v-model="selectedTemplateId"
+                        :disabled="systemLocked"
+                    >
                         <SelectTrigger class="w-full">
                             <SelectValue placeholder="None" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem :value="NONE_TEMPLATE">None</SelectItem>
-                            <SelectItem v-for="template in templates" :key="template.id" :value="String(template.id)">
+                            <SelectItem
+                                v-for="template in templates"
+                                :key="template.id"
+                                :value="String(template.id)"
+                            >
                                 {{ template.name }}
                             </SelectItem>
                         </SelectContent>
@@ -192,18 +274,76 @@ const fxRateValue = computed({
 
                 <div class="space-y-2">
                     <Label>Currency</Label>
-                    <CurrencyCombobox v-model="state.currency" :disabled="systemLocked" trigger-class="w-full" />
+                    <CurrencyCombobox
+                        v-model="state.currency"
+                        :disabled="systemLocked"
+                        trigger-class="w-full"
+                    />
                 </div>
 
                 <div v-if="showFxRate" class="space-y-2">
-                    <Label>Exchange rate (1 {{ effectiveDefaultCurrency }} = ? {{ state.currency }})</Label>
-                    <Input v-model.number="fxRateValue" type="number" step="0.0001" min="0" :disabled="systemLocked" placeholder="Auto-fetched" />
-                    <span class="text-xs text-muted-foreground">Leave blank to auto-fetch from API</span>
+                    <Label
+                        >Exchange rate (1 {{ effectiveDefaultCurrency }} = ?
+                        {{ state.currency }})</Label
+                    >
+                    <Input
+                        v-model.number="fxRateValue"
+                        type="number"
+                        step="0.0001"
+                        min="0"
+                        :disabled="systemLocked"
+                        placeholder="Auto-fetched"
+                    />
+                    <span class="text-xs text-muted-foreground"
+                        >Leave blank to auto-fetch from API</span
+                    >
                 </div>
 
                 <div class="space-y-2">
                     <Label>Valid until</Label>
-                    <Input v-model="state.valid_until" type="date" :disabled="systemLocked" />
+                    <Input
+                        v-model="validUntilValue"
+                        type="date"
+                        :disabled="systemLocked"
+                    />
+                </div>
+
+                <div class="space-y-2">
+                    <Label>Deposit amount</Label>
+                    <Input
+                        v-model.number="depositAmountValue"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        :disabled="systemLocked"
+                        placeholder="0.00"
+                    />
+                </div>
+
+                <div class="space-y-2">
+                    <Label>Deposit percent (%)</Label>
+                    <Input
+                        v-model.number="depositPercentValue"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        :disabled="systemLocked"
+                        placeholder="0.00"
+                    />
+                </div>
+
+                <div
+                    class="flex items-center justify-between rounded-md border px-3 py-2"
+                >
+                    <span class="text-sm">Lock quote</span>
+                    <Switch
+                        :model-value="Boolean(state.is_locked)"
+                        :disabled="systemLocked"
+                        @update:model-value="
+                            (checked: boolean) => (state.is_locked = checked)
+                        "
+                    />
                 </div>
             </div>
         </div>

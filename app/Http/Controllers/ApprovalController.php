@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Approvals\ApproveQuoteRequest;
+use App\Http\Requests\Approvals\RejectQuoteRequest;
+use App\Http\Requests\Approvals\StoreApprovalRuleRequest;
+use App\Http\Requests\Approvals\UpdateApprovalRuleRequest;
 use App\Models\ApprovalRule;
 use App\Models\QuoteApproval;
 use App\Models\Workspace;
 use App\Services\ApprovalService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -33,23 +36,21 @@ class ApprovalController extends Controller
         return Inertia::render('approvals/Index', $data);
     }
 
-    public function approve(Request $request, QuoteApproval $approval): RedirectResponse
+    public function approve(ApproveQuoteRequest $request, QuoteApproval $approval): RedirectResponse
     {
         $this->authorize('approve', $approval);
 
-        $request->validate([
-            'comment' => 'nullable|string|max:1000',
-            'send' => 'nullable|boolean',
-        ]);
+        $validated = $request->validated();
+        $sendToClient = (bool) ($validated['send'] ?? false);
 
         $this->approvalService->approveQuote(
             $approval->quote,
             $request->user()->id,
-            $request->input('comment'),
-            $request->boolean('send', false)
+            $validated['comment'] ?? null,
+            $sendToClient
         );
 
-        $message = $request->boolean('send', false)
+        $message = $sendToClient
             ? 'Quote approved and sent successfully.'
             : 'Quote approved successfully.';
 
@@ -58,18 +59,16 @@ class ApprovalController extends Controller
         return back();
     }
 
-    public function reject(Request $request, QuoteApproval $approval): RedirectResponse
+    public function reject(RejectQuoteRequest $request, QuoteApproval $approval): RedirectResponse
     {
         $this->authorize('approve', $approval);
 
-        $request->validate([
-            'comment' => 'required|string|max:1000',
-        ]);
+        $validated = $request->validated();
 
         $this->approvalService->rejectQuote(
             $approval->quote,
             $request->user()->id,
-            $request->input('comment')
+            $validated['comment']
         );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Quote rejected.']);
@@ -77,26 +76,23 @@ class ApprovalController extends Controller
         return back();
     }
 
-    public function storeRule(Request $request): RedirectResponse
+    public function storeRule(StoreApprovalRuleRequest $request): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
         abort_unless($workspace instanceof Workspace, 403);
 
         $this->authorize('create', ApprovalRule::class);
 
-        $request->validate([
-            'trigger_type' => 'required|in:value_above,value_below,client,all_quotes',
-            'threshold_value' => ['nullable', 'numeric', 'min:0', Rule::requiredIf(fn () => in_array($request->input('trigger_type'), ['value_above', 'value_below']))],
-            'client_id' => ['nullable', Rule::requiredIf(fn () => $request->input('trigger_type') === 'client'), 'exists:clients,id'],
-            'approver_id' => 'required|exists:users,id',
-        ]);
+        $validated = $request->validated();
 
         ApprovalRule::create([
             'workspace_id' => $workspace->id,
-            'trigger_type' => $request->trigger_type,
-            'threshold_value' => $request->filled('threshold_value') ? (float) $request->input('threshold_value') : null,
-            'client_id' => $request->input('client_id') ?: null,
-            'approver_id' => $request->approver_id,
+            'trigger_type' => $validated['trigger_type'],
+            'threshold_value' => array_key_exists('threshold_value', $validated) && $validated['threshold_value'] !== null
+                ? (float) $validated['threshold_value']
+                : null,
+            'client_id' => $validated['client_id'] ?? null,
+            'approver_id' => $validated['approver_id'],
             'is_active' => true,
         ]);
 
@@ -105,13 +101,11 @@ class ApprovalController extends Controller
         return back();
     }
 
-    public function updateRule(Request $request, ApprovalRule $rule): RedirectResponse
+    public function updateRule(UpdateApprovalRuleRequest $request, ApprovalRule $rule): RedirectResponse
     {
         $this->authorize('update', $rule);
 
-        $validated = $request->validate([
-            'is_active' => ['required', 'boolean'],
-        ]);
+        $validated = $request->validated();
 
         $rule->update(['is_active' => (bool) $validated['is_active']]);
 

@@ -40,6 +40,7 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard', [
             'stats' => $this->stats(),
             'revenue_trend' => $this->revenueTrend(),
+            'win_rate_trend' => $this->winRateTrend(),
             'quote_activity' => $this->quoteActivity(),
             'needs_attention' => $this->needsAttention(),
             'recent_activity' => $this->recentActivity(),
@@ -116,6 +117,38 @@ class DashboardController extends Controller
             ])
             ->count();
 
+        // Average deal size (this month)
+        $averageDealSizeThisMonth = $wonThisMonthCount > 0
+            ? round($wonThisMonth / $wonThisMonthCount, 2)
+            : 0.0;
+
+        $averageDealSizeLastMonth = $wonLastMonthCount > 0
+            ? round($wonLastMonth / $wonLastMonthCount, 2)
+            : 0.0;
+
+        // Average time to close (this month)
+        $averageTimeToCloseThisMonth = $this->baseQuery()
+            ->whereIn('status', $this->wonStatuses)
+            ->whereBetween('won_at', $thisMonth)
+            ->whereNotNull('sent_at')
+            ->whereNotNull('won_at')
+            ->get()
+            ->avg(fn (Quote $quote) => $quote->sent_at && $quote->won_at
+                ? $quote->won_at->diffInDays($quote->sent_at)
+                : 0
+            );
+
+        $averageTimeToCloseLastMonth = $this->baseQuery()
+            ->whereIn('status', $this->wonStatuses)
+            ->whereBetween('won_at', [$lastMonthStart, $lastMonthEnd])
+            ->whereNotNull('sent_at')
+            ->whereNotNull('won_at')
+            ->get()
+            ->avg(fn (Quote $quote) => $quote->sent_at && $quote->won_at
+                ? $quote->won_at->diffInDays($quote->sent_at)
+                : 0
+            );
+
         return [
             'pipeline_value' => $pipelineValueThisMonth,
             'pipeline_trend' => $this->percentageTrend($pipelineValueThisMonth, $pipelineValueLastMonth),
@@ -128,6 +161,13 @@ class DashboardController extends Controller
                 'trend' => $this->percentageTrend($winRateThisMonth, $winRateLastMonth),
             ],
             'quotes_expiring' => $quotesExpiring,
+            'average_deal_size' => $averageDealSizeThisMonth,
+            'average_deal_size_trend' => $this->percentageTrend($averageDealSizeThisMonth, $averageDealSizeLastMonth),
+            'average_time_to_close' => round($averageTimeToCloseThisMonth ?: 0, 1),
+            'average_time_to_close_trend' => $this->percentageTrend(
+                $averageTimeToCloseThisMonth ?: 0,
+                $averageTimeToCloseLastMonth ?: 0
+            ),
         ];
     }
 
@@ -152,6 +192,36 @@ class DashboardController extends Controller
                     'month' => $date->format('M'),
                     'won' => $wonRevenue,
                     'pipeline' => $pipelineValue,
+                ];
+            })
+            ->values();
+    }
+
+    private function winRateTrend(): Collection
+    {
+        return collect(range(0, 5))
+            ->map(function (int $offset): array {
+                $date = now()->subMonths(5 - $offset);
+                $start = $date->copy()->startOfMonth();
+                $end = $date->copy()->endOfMonth();
+
+                $sentCount = (int) $this->baseQuery()
+                    ->whereNotNull('sent_at')
+                    ->whereBetween('sent_at', [$start, $end])
+                    ->count();
+
+                $wonCount = (int) $this->baseQuery()
+                    ->whereIn('status', $this->wonStatuses)
+                    ->whereBetween('sent_at', [$start, $end])
+                    ->count();
+
+                $winRate = $sentCount > 0
+                    ? round(($wonCount / $sentCount) * 100, 1)
+                    : 0.0;
+
+                return [
+                    'month' => $date->format('M'),
+                    'win_rate' => $winRate,
                 ];
             })
             ->values();
@@ -302,7 +372,10 @@ class DashboardController extends Controller
 
     private function teamPerformance(Request $request): ?Collection
     {
-        if ($this->workspace->owner_id !== $request->user()?->id) {
+        $userId = $request->user()?->id;
+        $isOwner = $this->workspace->owner_id === $userId;
+
+        if (!$isOwner && !$userId) {
             return null;
         }
 
@@ -312,9 +385,16 @@ class DashboardController extends Controller
 
         $sentStatuses = QuoteStatus::sentStatuses();
 
-        $rows = $this->baseQuery()
+        $query = $this->baseQuery()
             ->whereNotNull('created_by')
-            ->whereBetween('sent_at', [$start, $end])
+            ->whereBetween('sent_at', [$start, $end]);
+
+        // If not owner, only show current user's stats
+        if (!$isOwner) {
+            $query->where('created_by', $userId);
+        }
+
+        $rows = $query
             ->selectRaw(
                 implode(', ', [
                     'created_by',

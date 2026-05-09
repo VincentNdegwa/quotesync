@@ -40,19 +40,28 @@ const title = computed(() =>
 
 <template>
     <Sheet :open="open" @update:open="(value) => emit('update:open', value)">
-        <SheetContent side="right" class="sm:max-w-xl overflow-y-auto">
+        <SheetContent side="right" class="overflow-y-auto sm:max-w-xl">
             <form class="space-y-6" @submit.prevent="emit('submit')">
                 <SheetHeader>
                     <SheetTitle>{{ title }}</SheetTitle>
                     <SheetDescription>
-                        Capture client details used for quote creation and reporting.
+                        Capture client details used for quote creation and
+                        reporting.
                     </SheetDescription>
                 </SheetHeader>
 
-                <ClientForm v-model:form="form" :errors="errors" :available-tags="availableTags" />
+                <ClientForm
+                    v-model:form="form"
+                    :errors="errors"
+                    :available-tags="availableTags"
+                />
 
                 <SheetFooter>
-                    <Button type="button" variant="outline" @click="emit('update:open', false)">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="emit('update:open', false)"
+                    >
                         Cancel
                     </Button>
                     <Button type="submit" :disabled="processing">

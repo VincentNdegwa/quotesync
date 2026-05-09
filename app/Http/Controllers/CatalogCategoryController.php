@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreCatalogCategoryRequest;
-use App\Http\Requests\UpdateCatalogCategoryRequest;
+use App\Http\Requests\Catalog\StoreCatalogCategoryRequest;
+use App\Http\Requests\Catalog\UpdateCatalogCategoryRequest;
 use App\Models\CatalogCategory;
 use App\Models\Workspace;
 use Illuminate\Http\JsonResponse;

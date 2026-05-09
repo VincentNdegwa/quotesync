@@ -73,6 +73,38 @@ class QuoteSendController extends Controller
             return back();
         }
 
+        // Handle CC/BCC recipients
+        $ccRecipients = $request->input('cc_recipients', []);
+        $bccRecipients = $request->input('bcc_recipients', []);
+        $scheduledAt = $request->input('scheduled_at');
+
+        // Update quote with CC/BCC recipients
+        $quote->cc_recipients = is_array($ccRecipients) ? $ccRecipients : [];
+        $quote->bcc_recipients = is_array($bccRecipients) ? $bccRecipients : [];
+
+        // Handle scheduled send
+        if ($scheduledAt) {
+            $quote->scheduled_at = $scheduledAt;
+            $quote->save();
+
+            \App\Models\QuoteActivity::query()->create([
+                'quote_id' => $quote->id,
+                'workspace_id' => $quote->workspace_id,
+                'user_id' => $request->user()?->id,
+                'type' => 'scheduled',
+                'description' => 'Quote scheduled to be sent at ' . $scheduledAt,
+                'metadata' => ['scheduled_at' => $scheduledAt],
+            ]);
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('Quote scheduled to be sent at :date.', ['date' => $scheduledAt]),
+            ]);
+
+            return back();
+        }
+
+        // Send immediately
         $sendAt = now();
 
         $this->quoteSendingService->sendQuote(
@@ -82,12 +114,26 @@ class QuoteSendController extends Controller
             attachPdf: $request->boolean('attach_pdf', false),
             ipAddress: $request->ip(),
             userAgent: $request->userAgent(),
+            ccRecipients: $quote->cc_recipients,
+            bccRecipients: $quote->bcc_recipients,
         );
 
         $quote->forceFill([
             'status' => QuoteStatus::Sent->value,
             'sent_at' => $sendAt,
         ])->save();
+
+        \App\Models\QuoteActivity::query()->create([
+            'quote_id' => $quote->id,
+            'workspace_id' => $quote->workspace_id,
+            'user_id' => $request->user()?->id,
+            'type' => 'sent',
+            'description' => 'Quote sent to client',
+            'metadata' => [
+                'cc_recipients' => $quote->cc_recipients,
+                'bcc_recipients' => $quote->bcc_recipients,
+            ],
+        ]);
 
         Inertia::flash('toast', [
             'type' => 'success',

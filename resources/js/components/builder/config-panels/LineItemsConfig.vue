@@ -57,21 +57,21 @@ const isColumnStyle = computed(() =>
 );
 
 const showUnitPrice = computed({
-    get: () => config.value.showUnitPrice ?? true,
+    get: () => config.value.showUnitPrice,
     set: (value: boolean) => {
         config.value.showUnitPrice = value;
     },
 });
 
 const showTax = computed({
-    get: () => config.value.showTax ?? true,
+    get: () => config.value.showTax,
     set: (value: boolean) => {
         config.value.showTax = value;
     },
 });
 
 const showCostPrice = computed({
-    get: () => config.value.showCostPrice ?? false,
+    get: () => config.value.showCostPrice,
     set: (value: boolean) => {
         config.value.showCostPrice = value;
     },

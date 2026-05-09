@@ -5,8 +5,8 @@ import {
     getSortedRowModel,
     useVueTable,
 } from '@tanstack/vue-table';
-import type { SortingState } from '@tanstack/vue-table';
-import { computed, ref } from 'vue';
+import type { RowSelectionState, SortingState } from '@tanstack/vue-table';
+import { computed, ref, watch } from 'vue';
 import {
     Table,
     TableBody,
@@ -27,14 +27,18 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     delete: [invoiceId: number];
+    'update:selectedIds': [ids: number[]];
 }>();
 
 const sorting = ref<SortingState>([]);
+const rowSelection = ref<RowSelectionState>({});
 
-const columns = computed(() => getInvoiceColumns({
-    onDelete: (invoiceId) => emit('delete', invoiceId),
-    invoiceStatuses: props.invoiceStatuses,
-}));
+const columns = computed(() =>
+    getInvoiceColumns({
+        onDelete: (invoiceId) => emit('delete', invoiceId),
+        invoiceStatuses: props.invoiceStatuses,
+    }),
+);
 
 const table = useVueTable({
     get data() {
@@ -47,19 +51,38 @@ const table = useVueTable({
         get sorting() {
             return sorting.value;
         },
+        get rowSelection() {
+            return rowSelection.value;
+        },
     },
     getRowId: (row) => String(row.id),
     onSortingChange: (updater) => valueUpdater(updater, sorting),
+    onRowSelectionChange: (updater) => valueUpdater(updater, rowSelection),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    enableRowSelection: true,
 });
+
+watch(
+    () => [rowSelection.value, props.data],
+    () => {
+        const ids = table
+            .getSelectedRowModel()
+            .rows.map((row) => row.original.id);
+        emit('update:selectedIds', ids);
+    },
+    { deep: true, immediate: true },
+);
 </script>
 
 <template>
     <div :class="invoicesDataTableTheme.container">
         <Table>
             <TableHeader>
-                <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
+                <TableRow
+                    v-for="headerGroup in table.getHeaderGroups()"
+                    :key="headerGroup.id"
+                >
                     <TableHead
                         v-for="header in headerGroup.headers"
                         :key="header.id"
@@ -79,13 +102,22 @@ const table = useVueTable({
                         v-for="row in table.getRowModel().rows"
                         :key="row.id"
                     >
-                        <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                            <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                        <TableCell
+                            v-for="cell in row.getVisibleCells()"
+                            :key="cell.id"
+                        >
+                            <FlexRender
+                                :render="cell.column.columnDef.cell"
+                                :props="cell.getContext()"
+                            />
                         </TableCell>
                     </TableRow>
                 </template>
                 <TableRow v-else>
-                    <TableCell :colspan="columns.length" :class="invoicesDataTableTheme.emptyCell">
+                    <TableCell
+                        :colspan="columns.length"
+                        :class="invoicesDataTableTheme.emptyCell"
+                    >
                         No invoices found.
                     </TableCell>
                 </TableRow>

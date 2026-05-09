@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import Highlight from '@tiptap/extension-highlight'
-import Typography from '@tiptap/extension-typography'
-import StarterKit from '@tiptap/starter-kit'
+import Highlight from '@tiptap/extension-highlight';
+import Typography from '@tiptap/extension-typography';
+import StarterKit from '@tiptap/starter-kit';
 import { useEditor, EditorContent } from '@tiptap/vue-3';
 import { computed, ref, watch, onUnmounted, nextTick } from 'vue';
 import { Button } from '@/components/ui/button';
@@ -35,7 +35,9 @@ const isEditing = ref(false);
 const draft = ref('');
 const inputElRef = ref<HTMLInputElement | null>(null);
 
-const hasValue = computed(() => String(props.modelValue ?? '').trim().length > 0);
+const hasValue = computed(
+    () => String(props.modelValue ?? '').trim().length > 0,
+);
 
 watch(
     () => props.modelValue,
@@ -121,7 +123,11 @@ const onKeydown = (event: KeyboardEvent): void => {
         return;
     }
 
-    if (props.multiline && event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+    if (
+        props.multiline &&
+        event.key === 'Enter' &&
+        (event.ctrlKey || event.metaKey)
+    ) {
         event.preventDefault();
         save();
     }
@@ -136,12 +142,16 @@ onUnmounted(() => {
     <template v-if="editMode">
         <div v-if="!isEditing" class="cursor-pointer" @click="startEditing">
             <div v-if="hasValue" :class="displayClass" v-html="modelValue" />
-            <p v-else class="italic text-muted-foreground" :class="displayClass">
+            <p
+                v-else
+                class="text-muted-foreground italic"
+                :class="displayClass"
+            >
                 {{ emptyText || placeholder || 'Click to edit' }}
             </p>
         </div>
 
-        <div v-else class="border rounded-sm border-primary p-2">
+        <div v-else class="rounded-sm border border-primary p-2">
             <EditorContent
                 v-if="multiline"
                 :editor="editor"
@@ -159,18 +169,8 @@ onUnmounted(() => {
             />
 
             <div class="mt-2 flex justify-end gap-2">
-                <Button
-                    variant="secondary"
-                    @click="cancel"
-                >
-                    Cancel
-                </Button>
-                <Button
-                    variant="default"
-                    @click="save"
-                >
-                    Save
-                </Button>
+                <Button variant="secondary" @click="cancel"> Cancel </Button>
+                <Button variant="default" @click="save"> Save </Button>
             </div>
         </div>
     </template>

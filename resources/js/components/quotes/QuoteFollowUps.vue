@@ -41,19 +41,19 @@ const sendNowDialogOpen = ref(false);
 const selectedFollowUpId = ref<number | null>(null);
 const processing = ref(false);
 
-const pendingFollowUps = computed(() => 
-    props.followUps.filter(f => f.status === 'pending')
+const pendingFollowUps = computed(() =>
+    props.followUps.filter((f) => f.status === 'pending'),
 );
 
-const sentFollowUps = computed(() => 
-    props.followUps.filter(f => f.status === 'sent')
+const sentFollowUps = computed(() =>
+    props.followUps.filter((f) => f.status === 'sent'),
 );
 
-const cancelledFollowUps = computed(() => 
-    props.followUps.filter(f => f.status === 'cancelled')
+const cancelledFollowUps = computed(() =>
+    props.followUps.filter((f) => f.status === 'cancelled'),
 );
 
-const getStatusBadge = (status: string) => {
+const getStatusBadge = (status: string): { variant: string; label: string } => {
     switch (status) {
         case 'pending':
             return { variant: 'secondary' as const, label: 'Scheduled' };
@@ -66,46 +66,54 @@ const getStatusBadge = (status: string) => {
     }
 };
 
-const handleCancel = (id: number) => {
+const handleCancel = (id: number): void => {
     selectedFollowUpId.value = id;
     cancelDialogOpen.value = true;
 };
 
-const handleSendNow = (id: number) => {
+const handleSendNow = (id: number): void => {
     selectedFollowUpId.value = id;
     sendNowDialogOpen.value = true;
 };
 
-const confirmCancel = () => {
+const confirmCancel = (): void => {
     if (!selectedFollowUpId.value) {
-return;
-}
+        return;
+    }
 
     processing.value = true;
-    router.post(`/quotes/${props.quoteId}/follow-ups/${selectedFollowUpId.value}/cancel`, {}, {
-        preserveScroll: true,
-        onFinish: () => {
-            processing.value = false;
-            cancelDialogOpen.value = false;
-            selectedFollowUpId.value = null;
+    router.post(
+        `/quotes/${props.quoteId}/follow-ups/${selectedFollowUpId.value}/cancel`,
+        {},
+        {
+            preserveScroll: true,
+            onFinish: () => {
+                processing.value = false;
+                cancelDialogOpen.value = false;
+                selectedFollowUpId.value = null;
+            },
         },
-    });
+    );
 };
 
-const confirmSendNow = () => {
+const confirmSendNow = (): void => {
     if (!selectedFollowUpId.value) {
-return;
-}
+        return;
+    }
 
     processing.value = true;
-    router.post(`/quotes/${props.quoteId}/follow-ups/${selectedFollowUpId.value}/send-now`, {}, {
-        preserveScroll: true,
-        onFinish: () => {
-            processing.value = false;
-            sendNowDialogOpen.value = false;
-            selectedFollowUpId.value = null;
+    router.post(
+        `/quotes/${props.quoteId}/follow-ups/${selectedFollowUpId.value}/send-now`,
+        {},
+        {
+            preserveScroll: true,
+            onFinish: () => {
+                processing.value = false;
+                sendNowDialogOpen.value = false;
+                selectedFollowUpId.value = null;
+            },
         },
-    });
+    );
 };
 </script>
 
@@ -113,7 +121,7 @@ return;
     <Drawer direction="right">
         <DrawerTrigger as-child>
             <Button variant="outline" size="sm">
-                <List class="h-4 w-4 mr-2" />
+                <List class="mr-2 h-4 w-4" />
                 Follow-ups ({{ followUps.length }})
             </Button>
         </DrawerTrigger>
@@ -127,38 +135,61 @@ return;
                     Automated follow-ups scheduled for this quote
                 </DrawerDescription>
             </DrawerHeader>
-            
+
             <div class="flex-1 overflow-y-auto px-4 pb-4">
-                <div v-if="followUps.length === 0" class="text-sm text-muted-foreground py-4">
+                <div
+                    v-if="followUps.length === 0"
+                    class="py-4 text-sm text-muted-foreground"
+                >
                     No follow-ups scheduled for this quote.
                 </div>
-                
+
                 <div v-else class="space-y-3">
                     <!-- Pending Follow-ups -->
                     <div v-if="pendingFollowUps.length > 0" class="space-y-2">
-                        <div v-for="followUp in pendingFollowUps" :key="followUp.id" 
-                            class="flex items-start justify-between gap-3 rounded-lg border p-3 bg-muted/30">
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <Badge v-bind="getStatusBadge(followUp.status)">
-                                        {{ getStatusBadge(followUp.status).label }}
+                        <div
+                            v-for="followUp in pendingFollowUps"
+                            :key="followUp.id"
+                            class="flex items-start justify-between gap-3 rounded-lg border bg-muted/30 p-3"
+                        >
+                            <div class="min-w-0 flex-1">
+                                <div class="mb-1 flex items-center gap-2">
+                                    <Badge
+                                        v-bind="getStatusBadge(followUp.status)"
+                                    >
+                                        {{
+                                            getStatusBadge(followUp.status)
+                                                .label
+                                        }}
                                     </Badge>
                                     <span class="text-xs text-muted-foreground">
                                         Day {{ followUp.step.day_offset }}
                                     </span>
                                 </div>
-                                <p class="text-sm font-medium truncate">{{ followUp.step.subject }}</p>
-                                <div class="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                                <p class="truncate text-sm font-medium">
+                                    {{ followUp.step.subject }}
+                                </p>
+                                <div
+                                    class="mt-1 flex items-center gap-1 text-xs text-muted-foreground"
+                                >
                                     <Clock class="h-3 w-3" />
                                     {{ fmtDate(followUp.scheduled_at) }}
                                 </div>
                             </div>
                             <div class="flex items-center gap-2">
-                                <Button size="sm" variant="outline" @click="handleSendNow(followUp.id)">
-                                    <Send class="h-3 w-3 mr-1" />
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    @click="handleSendNow(followUp.id)"
+                                >
+                                    <Send class="mr-1 h-3 w-3" />
                                     Send Now
                                 </Button>
-                                <Button size="sm" variant="ghost" @click="handleCancel(followUp.id)">
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    @click="handleCancel(followUp.id)"
+                                >
                                     <X class="h-3 w-3" />
                                 </Button>
                             </div>
@@ -167,19 +198,31 @@ return;
 
                     <!-- Sent Follow-ups -->
                     <div v-if="sentFollowUps.length > 0" class="space-y-2">
-                        <div v-for="followUp in sentFollowUps" :key="followUp.id" 
-                            class="flex items-start justify-between gap-3 rounded-lg border p-3 opacity-60">
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <Badge v-bind="getStatusBadge(followUp.status)">
-                                        {{ getStatusBadge(followUp.status).label }}
+                        <div
+                            v-for="followUp in sentFollowUps"
+                            :key="followUp.id"
+                            class="flex items-start justify-between gap-3 rounded-lg border p-3 opacity-60"
+                        >
+                            <div class="min-w-0 flex-1">
+                                <div class="mb-1 flex items-center gap-2">
+                                    <Badge
+                                        v-bind="getStatusBadge(followUp.status)"
+                                    >
+                                        {{
+                                            getStatusBadge(followUp.status)
+                                                .label
+                                        }}
                                     </Badge>
                                     <span class="text-xs text-muted-foreground">
                                         Day {{ followUp.step.day_offset }}
                                     </span>
                                 </div>
-                                <p class="text-sm font-medium truncate">{{ followUp.step.subject }}</p>
-                                <div class="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                                <p class="truncate text-sm font-medium">
+                                    {{ followUp.step.subject }}
+                                </p>
+                                <div
+                                    class="mt-1 flex items-center gap-1 text-xs text-muted-foreground"
+                                >
                                     <Clock class="h-3 w-3" />
                                     Sent {{ fmtDate(followUp.sent_at) }}
                                 </div>
@@ -189,21 +232,34 @@ return;
 
                     <!-- Cancelled Follow-ups -->
                     <div v-if="cancelledFollowUps.length > 0" class="space-y-2">
-                        <div v-for="followUp in cancelledFollowUps" :key="followUp.id" 
-                            class="flex items-start justify-between gap-3 rounded-lg border p-3 opacity-40">
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <Badge v-bind="getStatusBadge(followUp.status)">
-                                        {{ getStatusBadge(followUp.status).label }}
+                        <div
+                            v-for="followUp in cancelledFollowUps"
+                            :key="followUp.id"
+                            class="flex items-start justify-between gap-3 rounded-lg border p-3 opacity-40"
+                        >
+                            <div class="min-w-0 flex-1">
+                                <div class="mb-1 flex items-center gap-2">
+                                    <Badge
+                                        v-bind="getStatusBadge(followUp.status)"
+                                    >
+                                        {{
+                                            getStatusBadge(followUp.status)
+                                                .label
+                                        }}
                                     </Badge>
                                     <span class="text-xs text-muted-foreground">
                                         Day {{ followUp.step.day_offset }}
                                     </span>
                                 </div>
-                                <p class="text-sm font-medium truncate">{{ followUp.step.subject }}</p>
-                                <div class="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                                <p class="truncate text-sm font-medium">
+                                    {{ followUp.step.subject }}
+                                </p>
+                                <div
+                                    class="mt-1 flex items-center gap-1 text-xs text-muted-foreground"
+                                >
                                     <Clock class="h-3 w-3" />
-                                    Cancelled {{ fmtDate(followUp.cancelled_at) }}
+                                    Cancelled
+                                    {{ fmtDate(followUp.cancelled_at) }}
                                 </div>
                             </div>
                         </div>

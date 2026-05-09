@@ -41,13 +41,7 @@ class WorkspaceOnboardingController extends Controller
                     ->orWhere('workspace_id', $workspace->id);
             })
             ->orderByRaw('LOWER(name)')
-            ->get(['id', 'name', 'display_name'])
-            ->map(fn (Role $role): array => [
-                'id' => $role->id,
-                'name' => $role->name,
-                'display_name' => $role->display_name,
-            ])
-            ->values();
+            ->get(['id', 'name', 'display_name']);
 
         $memberRole = $availableRoles->firstWhere('name', 'member');
         $fallbackRole = $availableRoles->first();
@@ -77,14 +71,7 @@ class WorkspaceOnboardingController extends Controller
             'industries' => Industry::query()
                 ->where('is_active', true)
                 ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'icon', 'color'])
-                ->map(fn (Industry $industry): array => [
-                    'id' => $industry->id,
-                    'name' => $industry->name,
-                    'icon' => $industry->icon,
-                    'color' => $industry->color,
-                ])
-                ->values(),
+                ->get(['id', 'name', 'icon', 'color']),
         ]);
     }
 

@@ -23,20 +23,39 @@ import { catalogDataTableTheme } from './theme';
 const props = defineProps<{
     data: CatalogItemRecord[];
     marginPercent: (item: CatalogItemRecord) => number;
+    categories?: {
+        id: number;
+        name: string;
+    }[];
+    taxes?: {
+        id: number;
+        name: string;
+        rate: number | string;
+    }[];
+    units?: {
+        id: number;
+        name: string;
+        symbol: string;
+    }[];
 }>();
 
 const emit = defineEmits<{
-    edit: [item: CatalogItemRecord];
     'update:selectedIds': [ids: number[]];
+    success: [];
 }>();
 
 const sorting = ref<SortingState>([]);
 const rowSelection = ref<RowSelectionState>({});
 
-const columns = computed(() => getCatalogColumns({
-    marginPercent: props.marginPercent,
-    onEdit: (item) => emit('edit', item),
-}));
+const columns = computed(() =>
+    getCatalogColumns({
+        marginPercent: props.marginPercent,
+        categories: props.categories,
+        taxes: props.taxes,
+        units: props.units,
+        onSuccess: () => emit('success'),
+    }),
+);
 
 const table = useVueTable({
     get data() {
@@ -64,7 +83,9 @@ const table = useVueTable({
 watch(
     () => [rowSelection.value, props.data],
     () => {
-        const selectedIds = table.getSelectedRowModel().rows.map((row) => row.original.id);
+        const selectedIds = table
+            .getSelectedRowModel()
+            .rows.map((row) => row.original.id);
         emit('update:selectedIds', selectedIds);
     },
     { deep: true, immediate: true },
@@ -75,7 +96,10 @@ watch(
     <div :class="catalogDataTableTheme.container">
         <Table>
             <TableHeader>
-                <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
+                <TableRow
+                    v-for="headerGroup in table.getHeaderGroups()"
+                    :key="headerGroup.id"
+                >
                     <TableHead
                         v-for="header in headerGroup.headers"
                         :key="header.id"
@@ -94,15 +118,26 @@ watch(
                     <TableRow
                         v-for="row in table.getRowModel().rows"
                         :key="row.id"
-                        :data-state="row.getIsSelected() ? 'selected' : undefined"
+                        :data-state="
+                            row.getIsSelected() ? 'selected' : undefined
+                        "
                     >
-                        <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                            <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                        <TableCell
+                            v-for="cell in row.getVisibleCells()"
+                            :key="cell.id"
+                        >
+                            <FlexRender
+                                :render="cell.column.columnDef.cell"
+                                :props="cell.getContext()"
+                            />
                         </TableCell>
                     </TableRow>
                 </template>
                 <TableRow v-else>
-                    <TableCell :colspan="columns.length" :class="catalogDataTableTheme.emptyCell">
+                    <TableCell
+                        :colspan="columns.length"
+                        :class="catalogDataTableTheme.emptyCell"
+                    >
                         No results found.
                     </TableCell>
                 </TableRow>

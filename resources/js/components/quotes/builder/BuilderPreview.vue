@@ -37,9 +37,24 @@ const brandingData = computed<BrandingData>(() => {
     <div class="space-y-4 rounded-lg border p-4">
         <h3 class="text-sm font-semibold">Live preview</h3>
 
-        <div class="preview-container overflow-hidden rounded-lg border bg-white" style="height: 600px">
-            <div style="width: 222%; transform: scale(0.45); transform-origin: top left">
-                <QuoteRenderer :data="{ ...state, documentType: 'quote' }" :layout="currentLayout" :branding="brandingData" :preview-mode="true" :is-internal-view="true" />
+        <div
+            class="preview-container overflow-hidden rounded-lg border bg-white"
+            style="height: 600px"
+        >
+            <div
+                style="
+                    width: 222%;
+                    transform: scale(0.45);
+                    transform-origin: top left;
+                "
+            >
+                <QuoteRenderer
+                    :data="{ ...state, documentType: 'quote' }"
+                    :layout="currentLayout"
+                    :branding="brandingData"
+                    :preview-mode="true"
+                    :is-internal-view="true"
+                />
             </div>
         </div>
     </div>

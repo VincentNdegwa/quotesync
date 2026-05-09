@@ -2,8 +2,10 @@ import { usePage } from '@inertiajs/vue3';
 import type { ColumnDef } from '@tanstack/vue-table';
 import { ArrowUpDown } from 'lucide-vue-next';
 import { h } from 'vue';
+import type { VNode } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
 import type { InvoiceListRecord, InvoiceStatusEnum } from '@/types';
@@ -16,38 +18,73 @@ type InvoiceColumnOptions = {
 
 const sortableHeader = (
     label: string,
-    column: { getIsSorted: () => false | 'asc' | 'desc'; toggleSorting: (desc?: boolean) => void },
-    align: 'left' | 'right' = 'left',
-) => h(
-    Button,
-    {
-        variant: 'ghost',
-        class: align === 'right'
-            ? 'h-8 w-full justify-center px-0 text-right'
-            : 'h-8 justify-center px-0 text-left',
-        onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+    column: {
+        getIsSorted: () => false | 'asc' | 'desc';
+        toggleSorting: (desc?: boolean) => void;
     },
-    () => [
-        label,
-        h(ArrowUpDown, { class: 'ml-2 h-4 w-4' }),
-    ],
-);
+    align: 'left' | 'right' = 'left',
+): VNode =>
+    h(
+        Button,
+        {
+            variant: 'ghost',
+            class:
+                align === 'right'
+                    ? 'h-8 w-full justify-center px-0 text-right'
+                    : 'h-8 justify-center px-0 text-left',
+            onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+        },
+        () => [label, h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+    );
 
-
-export const getInvoiceColumns = (options: InvoiceColumnOptions): ColumnDef<InvoiceListRecord>[] => {
-    const { getInvoiceStatus } = useEnums();
+export const getInvoiceColumns = (
+    options: InvoiceColumnOptions,
+): ColumnDef<InvoiceListRecord>[] => {
+    const { getInvoiceStatus } = useEnums() as {
+        getInvoiceStatus: (status: string) => InvoiceStatusEnum | undefined;
+    };
     const page = usePage();
-    const defaultCurrency = (page.props.workspace_currency as string) || undefined;
+    const defaultCurrency =
+        (page.props.workspace_currency as string) || undefined;
 
-    const formatCurrency = (val: number | string, currency?: string | null) => {
-        return useFormat(currency || defaultCurrency).formatCurrency(val, currency || defaultCurrency);
+    const formatCurrency = (
+        val: number | string,
+        currency?: string | null,
+    ): string => {
+        return useFormat(currency || defaultCurrency).formatCurrency(
+            val,
+            currency || defaultCurrency,
+        );
     };
 
-    const formatDate = (val: string | null) => {
+    const formatDate = (val: string | null): string => {
         return useFormat().formatDate(val);
     };
 
     const columns: ColumnDef<InvoiceListRecord>[] = [
+        {
+            id: 'select',
+            enableSorting: false,
+            enableHiding: false,
+            header: ({ table }) =>
+                h(Checkbox, {
+                    modelValue:
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected()
+                            ? 'indeterminate'
+                            : false),
+                    'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
+                        table.toggleAllPageRowsSelected(!!value),
+                    ariaLabel: 'Select all',
+                }),
+            cell: ({ row }) =>
+                h(Checkbox, {
+                    modelValue: row.getIsSelected(),
+                    'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
+                        row.toggleSelected(!!value),
+                    ariaLabel: 'Select row',
+                }),
+        },
         {
             accessorKey: 'invoice_number',
             header: ({ column }) => sortableHeader('Invoice #', column),
@@ -56,7 +93,8 @@ export const getInvoiceColumns = (options: InvoiceColumnOptions): ColumnDef<Invo
         {
             accessorKey: 'title',
             header: ({ column }) => sortableHeader('Title', column),
-            cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.title),
+            cell: ({ row }) =>
+                h('span', { class: 'font-medium' }, row.original.title),
         },
         {
             accessorKey: 'client',
@@ -66,19 +104,34 @@ export const getInvoiceColumns = (options: InvoiceColumnOptions): ColumnDef<Invo
         {
             accessorKey: 'status',
             header: 'Status',
-            cell: ({ row }) => {
+            cell: ({ row }): VNode => {
                 const status = getInvoiceStatus(row.original.status);
 
-                return h(Badge, {
-                    variant: status?.badgeColor ?? 'outline',
-                    class: ['px-3 py-1 text-xs font-semibold', status?.cssColor],
-                }, () => status?.label ?? row.original.status);
+                return h(
+                    Badge,
+                    {
+                        variant: status?.badgeColor ?? 'outline',
+                        class: [
+                            'px-3 py-1 text-xs font-semibold',
+                            status?.cssColor,
+                        ],
+                    },
+                    () => status?.label ?? row.original.status,
+                );
             },
         },
         {
             accessorKey: 'total',
             header: ({ column }) => sortableHeader('Total', column, 'right'),
-            cell: ({ row }) => h('span', { class: 'text-right' }, formatCurrency(row.original.total, row.original.currency)),
+            cell: ({ row }) =>
+                h(
+                    'span',
+                    { class: 'text-right' },
+                    formatCurrency(
+                        row.original.total,
+                        row.original.base_currency,
+                    ),
+                ),
         },
         {
             accessorKey: 'due_date',
@@ -88,12 +141,13 @@ export const getInvoiceColumns = (options: InvoiceColumnOptions): ColumnDef<Invo
         {
             id: 'actions',
             header: '',
-            cell: ({ row }) => h(InvoiceTableRowActions, {
-                invoiceId: row.original.id,
-                invoice: row.original,
-                invoiceStatuses: options.invoiceStatuses,
-                onDelete: () => options.onDelete(row.original.id),
-            }),
+            cell: ({ row }) =>
+                h(InvoiceTableRowActions, {
+                    invoiceId: row.original.id,
+                    invoice: row.original,
+                    invoiceStatuses: options.invoiceStatuses,
+                    onDelete: () => options.onDelete(row.original.id),
+                }),
         },
     ];
 

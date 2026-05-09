@@ -40,6 +40,8 @@ class PublicQuoteController extends Controller
 
         abort_unless($resolvedQuote instanceof Quote, 404);
 
+        $quoteId = $resolvedQuote->active_version_id ?? $resolvedQuote->id;
+
         $quote = Quote::query()
             ->with([
                 'client',
@@ -50,7 +52,7 @@ class PublicQuoteController extends Controller
                 'sections.lineItems.catalogItem',
                 'sections.lineItems.taxes',
             ])
-            ->whereKey($resolvedQuote->id)
+            ->whereKey($quoteId)
             ->firstOrFail();
 
         $quote->loadMissing(['client:id,company_name,contact_name,email', 'workspace:id,name,display_name']);

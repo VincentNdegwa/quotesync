@@ -28,15 +28,15 @@ const props = defineProps<{
 const { getQuoteActivityType } = useEnums();
 const { formatDateTime: fmtDateTime } = useFormat();
 
-const iconForType = (type: string) => {
+const iconForType = (type: string): unknown => {
     const map: Record<string, unknown> = {
-        created:        Pencil,
-        sent:           Send,
-        viewed:         Eye,
-        accepted:       CheckCircle2,
-        declined:       XCircle,
+        created: Pencil,
+        sent: Send,
+        viewed: Eye,
+        accepted: CheckCircle2,
+        declined: XCircle,
         follow_up_sent: Clock,
-        scheduled:      CalendarClock,
+        scheduled: CalendarClock,
         approval_requested: Shield,
         approval_approved: ShieldCheck,
         approval_rejected: XCircle,
@@ -47,11 +47,12 @@ const iconForType = (type: string) => {
 };
 
 const colorForType = (type: string): string => {
-    return getQuoteActivityType(type)?.color ?? 'text-muted-foreground bg-muted';
+    return (
+        getQuoteActivityType(type)?.color ?? 'text-muted-foreground bg-muted'
+    );
 };
 
-const isMinorEvent = (type: string): boolean =>
-    type === 'viewed';
+const isMinorEvent = (type: string): boolean => type === 'viewed';
 
 const expandedGroups = ref<Set<string>>(new Set());
 
@@ -119,7 +120,9 @@ const grouped = computed((): GroupedActivity[] => {
             <div class="flex items-center justify-between">
                 <CardTitle class="text-base">Activity</CardTitle>
                 <span class="text-xs text-muted-foreground">
-                    {{ activities.length }} event{{ activities.length !== 1 ? 's' : '' }}
+                    {{ activities.length }} event{{
+                        activities.length !== 1 ? 's' : ''
+                    }}
                 </span>
             </div>
         </CardHeader>
@@ -137,7 +140,6 @@ const grouped = computed((): GroupedActivity[] => {
                 class="relative space-y-1 pl-0 before:absolute before:inset-y-2 before:left-3 before:w-px before:bg-border/50"
             >
                 <template v-for="item in grouped" :key="item.id">
-
                     <template v-if="item.isGroup">
                         <div class="relative flex items-start gap-3 py-1.5">
                             <div
@@ -146,19 +148,29 @@ const grouped = computed((): GroupedActivity[] => {
                                     colorForType(item.type),
                                 ]"
                             >
-                                <component :is="iconForType(item.type)" class="h-3.5 w-3.5" />
+                                <component
+                                    :is="iconForType(item.type)"
+                                    class="h-3.5 w-3.5"
+                                />
                             </div>
 
-                            <div class="flex flex-1 items-start justify-between gap-2 pt-1">
+                            <div
+                                class="flex flex-1 items-start justify-between gap-2 pt-1"
+                            >
                                 <div class="min-w-0">
-                                    <p class="text-sm font-medium text-foreground leading-tight">
+                                    <p
+                                        class="text-sm leading-tight font-medium text-foreground"
+                                    >
                                         Quote opened
                                         <span class="font-bold text-secondary">
                                             {{ item.groupCount }}×
                                         </span>
                                     </p>
-                                    <p class="mt-0.5 text-[11px] text-muted-foreground">
-                                        Most recent {{ fmtDateTime(item.created_at) }}
+                                    <p
+                                        class="mt-0.5 text-[11px] text-muted-foreground"
+                                    >
+                                        Most recent
+                                        {{ fmtDateTime(item.created_at) }}
                                     </p>
                                 </div>
 
@@ -170,10 +182,18 @@ const grouped = computed((): GroupedActivity[] => {
                                     @click="toggleGroup(item.id)"
                                 >
                                     <component
-                                        :is="expandedGroups.has(item.id) ? ChevronUp : ChevronDown"
+                                        :is="
+                                            expandedGroups.has(item.id)
+                                                ? ChevronUp
+                                                : ChevronDown
+                                        "
                                         class="h-3 w-3"
                                     />
-                                    {{ expandedGroups.has(item.id) ? 'Less' : 'All' }}
+                                    {{
+                                        expandedGroups.has(item.id)
+                                            ? 'Less'
+                                            : 'All'
+                                    }}
                                 </Button>
                             </div>
                         </div>
@@ -186,44 +206,56 @@ const grouped = computed((): GroupedActivity[] => {
                                 v-for="(viewEvt, vi) in item.groupItems"
                                 :key="`expanded-${viewEvt.id}`"
                                 class="flex items-center justify-between py-1 text-xs"
-                                :class="vi !== (item.groupItems?.length ?? 0) - 1 ? 'border-b border-border/30' : ''"
+                                :class="
+                                    vi !== (item.groupItems?.length ?? 0) - 1
+                                        ? 'border-b border-border/30'
+                                        : ''
+                                "
                             >
                                 <span class="text-muted-foreground">
-                                    View #{{ (item.groupItems?.length ?? 0) - vi }}
+                                    View #{{
+                                        (item.groupItems?.length ?? 0) - vi
+                                    }}
                                 </span>
-                                <span class="tabular-nums text-muted-foreground">
+                                <span
+                                    class="text-muted-foreground tabular-nums"
+                                >
                                     {{ fmtDateTime(viewEvt.created_at) }}
                                 </span>
                             </div>
                         </div>
                     </template>
 
-                    <div
-                        v-else
-                        class="relative flex items-start gap-3 py-1.5"
-                    >
+                    <div v-else class="relative flex items-start gap-3 py-1.5">
                         <div
                             :class="[
                                 'relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ring-2 ring-background',
                                 colorForType(item.type),
                             ]"
                         >
-                            <component :is="iconForType(item.type)" class="h-3.5 w-3.5" />
+                            <component
+                                :is="iconForType(item.type)"
+                                class="h-3.5 w-3.5"
+                            />
                         </div>
 
-                        <div class="flex-1 pt-1 min-w-0">
-                            <p class="text-sm font-medium text-foreground leading-tight">
+                        <div class="min-w-0 flex-1 pt-1">
+                            <p
+                                class="text-sm leading-tight font-medium text-foreground"
+                            >
                                 {{ item.description }}
                             </p>
                             <p class="mt-0.5 text-[11px] text-muted-foreground">
                                 {{ fmtDateTime(item.created_at) }}
-                                <span v-if="item.user" class="text-foreground/60">
+                                <span
+                                    v-if="item.user"
+                                    class="text-foreground/60"
+                                >
                                     · {{ item.user.name }}
                                 </span>
                             </p>
                         </div>
                     </div>
-
                 </template>
             </div>
         </CardContent>

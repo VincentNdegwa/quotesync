@@ -99,8 +99,27 @@ enum InvoiceStatus: string
         };
     }
 
+    /**
+     * @return bool
+     */
     public function canBeEdited(): bool
     {
         return $this === self::Draft;
+    }
+
+    /**
+     * @return bool
+     */
+    public function canBeDeleted(): bool
+    {
+        return $this === self::Draft;
+    }
+
+    /**
+     * @return bool
+     */
+    public function canBeArchived(): bool
+    {
+        return $this === self::Paid;
     }
 }

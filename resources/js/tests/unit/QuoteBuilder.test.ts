@@ -1,12 +1,18 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ref } from 'vue';
 import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
-import type { QuoteBuilderState, BuilderCatalogItem, BuilderTaxOption, BuilderConfigurationUnit, WorkspaceSettings } from '@/types';
+import type {
+    QuoteBuilderState,
+    BuilderCatalogItem,
+    BuilderTaxOption,
+    BuilderConfigurationUnit,
+    WorkspaceSettings,
+} from '@/types';
 
 // Mock Inertia page props
 vi.mock('@inertiajs/vue3', () => ({
-    usePage: () => ({
+    usePage: (): { props: Record<string, unknown> } => ({
         props: {
             localization: {
                 date_format: 'MMM d, yyyy',
@@ -61,9 +67,39 @@ describe('QuoteBuilder', () => {
                     title: 'Section 1',
                     sort_order: 0,
                     line_items: [
-                        { id: 1, name: 'Item 1', quantity: 1, unit_price: 100, discount_percent: 0, description: '', unit: 'ea', taxes: [], optional: false },
-                        { id: 2, name: 'Item 2', quantity: 1, unit_price: 200, discount_percent: 0, description: '', unit: 'ea', taxes: [], optional: false },
-                        { id: 3, name: 'Item 3', quantity: 1, unit_price: 300, discount_percent: 0, description: '', unit: 'ea', taxes: [], optional: false },
+                        {
+                            id: 1,
+                            name: 'Item 1',
+                            quantity: 1,
+                            unit_price: 100,
+                            discount_percent: 0,
+                            description: '',
+                            unit: 'ea',
+                            taxes: [],
+                            optional: false,
+                        },
+                        {
+                            id: 2,
+                            name: 'Item 2',
+                            quantity: 1,
+                            unit_price: 200,
+                            discount_percent: 0,
+                            description: '',
+                            unit: 'ea',
+                            taxes: [],
+                            optional: false,
+                        },
+                        {
+                            id: 3,
+                            name: 'Item 3',
+                            quantity: 1,
+                            unit_price: 300,
+                            discount_percent: 0,
+                            description: '',
+                            unit: 'ea',
+                            taxes: [],
+                            optional: false,
+                        },
                     ],
                 },
             ],
@@ -104,7 +140,7 @@ describe('QuoteBuilder', () => {
 
     it('does not cause recursive updates when removing line item', async () => {
         const modelValue = ref<QuoteBuilderState>({ ...mockState });
-        
+
         const wrapper = mount(QuoteBuilder, {
             props: {
                 modelValue: modelValue.value,
@@ -117,17 +153,20 @@ describe('QuoteBuilder', () => {
         });
 
         // Wait for component to stabilize
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Emit remove-line-item event
-        await wrapper.vm.$emit('remove-line-item', { sectionIndex: 0, lineItemIndex: 1 });
+        await wrapper.vm.$emit('remove-line-item', {
+            sectionIndex: 0,
+            lineItemIndex: 1,
+        });
 
         // Wait for updates
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Check that the component is still mounted and hasn't crashed
         expect(wrapper.exists()).toBe(true);
-        
+
         await wrapper.unmount();
     });
 
@@ -146,17 +185,20 @@ describe('QuoteBuilder', () => {
         });
 
         // Wait for component to stabilize
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Emit remove-line-item event
-        await wrapper.vm.$emit('remove-line-item', { sectionIndex: 0, lineItemIndex: 1 });
+        await wrapper.vm.$emit('remove-line-item', {
+            sectionIndex: 0,
+            lineItemIndex: 1,
+        });
 
         // Wait for updates
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Check that the component is still mounted
         expect(wrapper.exists()).toBe(true);
-        
+
         await wrapper.unmount();
     });
 });

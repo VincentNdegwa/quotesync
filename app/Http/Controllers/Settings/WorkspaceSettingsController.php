@@ -10,7 +10,6 @@ use App\Services\FileStorageService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -56,14 +55,7 @@ class WorkspaceSettingsController extends Controller
             'industries' => Industry::query()
                 ->where('is_active', true)
                 ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'icon', 'color'])
-                ->map(fn (Industry $industry): array => [
-                    'id' => $industry->id,
-                    'name' => $industry->name,
-                    'icon' => $industry->icon,
-                    'color' => $industry->color,
-                ])
-                ->values(),
+                ->get(['id', 'name', 'icon', 'color']),
         ];
 
         if ($defaultGroup === 'brand') {

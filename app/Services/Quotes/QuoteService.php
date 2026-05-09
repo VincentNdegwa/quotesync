@@ -8,6 +8,7 @@ use App\Models\CatalogItem;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
 use App\Models\QuoteTemplate;
+use App\Models\User;
 use App\Models\Workspace;
 use App\Models\WorkspaceSetting;
 use App\Services\Quotes\TaxCalculator;
@@ -32,6 +33,7 @@ class QuoteService
     {
         $query = Quote::query()
             ->where('workspace_id', $workspace->id)
+            ->parents()
             ->with(['client:id,company_name,email', 'assignee:id,name', 'winProbability.signals']);
 
         $search = trim((string) Arr::get($filters, 'search', ''));
@@ -219,6 +221,8 @@ class QuoteService
                 }
             }
 
+            $quote->load('sections.lineItems.taxes');
+
             $quote->fill([
                 ...$payload,
                 'layout_snapshot' => is_array($layoutSnapshot) ? $layoutSnapshot : null,
@@ -246,6 +250,26 @@ class QuoteService
             $quote->won_at = now();
             $quote->save();
 
+            // Propagate acceptance to parent quote if this is a version
+            if ($quote->parent_quote_id !== null) {
+                $parent = $quote->parent;
+                if ($parent) {
+                    $parent->status = QuoteStatus::Won;
+                    $parent->accepted_at = now();
+                    $parent->won_at = now();
+                    $parent->save();
+
+                    QuoteActivity::query()->create([
+                        'quote_id' => $parent->id,
+                        'workspace_id' => $parent->workspace_id,
+                        'user_id' => auth()->id(),
+                        'type' => 'accepted',
+                        'description' => "Quote accepted (version {$quote->version})",
+                        'metadata' => ['version_id' => $quote->id, 'version' => $quote->version],
+                    ]);
+                }
+            }
+
             QuoteActivity::query()->create([
                 'quote_id' => $quote->id,
                 'workspace_id' => $quote->workspace_id,
@@ -261,6 +285,10 @@ class QuoteService
                     'status' => QuoteFollowUpStatus::Cancelled->value,
                     'cancelled_at' => now(),
                 ]);
+
+            if ($quote->client) {
+                $quote->client->calculateHealthScore();
+            }
 
             return $quote->refresh();
         });
@@ -291,13 +319,17 @@ class QuoteService
                     'cancelled_at' => now(),
                 ]);
 
+            if ($quote->client) {
+                $quote->client->calculateHealthScore();
+            }
+
             return $quote->refresh();
         });
     }
 
-    private function replicateQuote(Quote $quote, string $titleSuffix, string $activityDescription): Quote
+    private function replicateQuote(Quote $quote, string $titleSuffix, string $activityDescription, bool $isRevision = false): Quote
     {
-        return DB::transaction(function () use ($quote, $titleSuffix, $activityDescription): Quote {
+        return DB::transaction(function () use ($quote, $titleSuffix, $activityDescription, $isRevision): Quote {
             $quote->load(['sections.lineItems.taxes', 'workspace']);
 
             $workspace = $quote->workspace;
@@ -308,9 +340,19 @@ class QuoteService
             $newQuote->title = "{$quote->title} {$titleSuffix}";
             $newQuote->status = QuoteStatus::Draft->value;
             $newQuote->valid_until = now()->addDays(30)->toDateString();
-            $newQuote->parent_quote_id = $quote->id;
             $newQuote->created_by = auth()->id();
+
+            if ($isRevision) {
+                $newQuote->parent_quote_id = $quote->id;
+                $newQuote->version = ($quote->versions()->max('version') ?? $quote->version) + 1;
+            }
+
             $newQuote->save();
+
+            // Update parent's active_version_id only if this is a revision of a parent quote
+            if ($isRevision && $quote->parent_quote_id === null) {
+                $quote->update(['active_version_id' => $newQuote->id]);
+            }
 
             foreach ($quote->sections as $section) {
                 $newSection = $section->replicate();
@@ -337,7 +379,7 @@ class QuoteService
                 'user_id' => auth()->id(),
                 'type' => 'created',
                 'description' => $activityDescription,
-                'metadata' => ['parent_quote_id' => $quote->id],
+                'metadata' => $isRevision ? ['parent_quote_id' => $quote->id, 'version' => $newQuote->version] : null,
             ]);
 
             return $newQuote->refresh();
@@ -346,14 +388,34 @@ class QuoteService
 
     public function duplicate(Quote $quote): Quote
     {
-        return $this->replicateQuote($quote, '(Copy)', "Quote duplicated from #{$quote->number}");
+        return $this->replicateQuote($quote, '(Copy)', "Quote duplicated from #{$quote->number}", false);
     }
 
     public function revise(Quote $quote): Quote
     {
         abort_unless($quote->status->canBeRevised(), 403, 'This quote cannot be revised.');
 
-        return $this->replicateQuote($quote, '(Revision)', "Quote revised from #{$quote->number}");
+        return $this->replicateQuote($quote, '(Revision)', "Quote revised from #{$quote->number}", true);
+    }
+
+    public function restoreVersion(Quote $parentQuote, Quote $version): Quote
+    {
+        abort_unless($version->parent_quote_id === $parentQuote->id, 403, 'Invalid version.');
+
+        return DB::transaction(function () use ($parentQuote, $version): Quote {
+            $parentQuote->update(['active_version_id' => $version->id]);
+
+            QuoteActivity::query()->create([
+                'quote_id' => $parentQuote->id,
+                'workspace_id' => $parentQuote->workspace_id,
+                'user_id' => auth()->id(),
+                'type' => 'restored',
+                'description' => "Quote restored to version {$version->version}",
+                'metadata' => ['version_id' => $version->id, 'version' => $version->version],
+            ]);
+
+            return $version->refresh();
+        });
     }
 
     public function reopen(Quote $quote, string $validUntil): Quote
@@ -393,6 +455,79 @@ class QuoteService
         ]);
     }
 
+    /**
+     * @param  array<int, int>  $ids
+     * @return array{processed:int,skipped:int,missing:int,skipped_details:array<int, array{id:int,status:string,reason:string}>}
+     */
+    public function bulkAction(Workspace $workspace, array $ids, string $action): array
+    {
+        $quotes = Quote::query()
+            ->where('workspace_id', $workspace->id)
+            ->parents()
+            ->whereIn('id', $ids)
+            ->get(['id', 'workspace_id', 'status']);
+
+        $eligibleIds = [];
+        $skipped = [];
+
+        foreach ($quotes as $quote) {
+            $status = $quote->status instanceof QuoteStatus ? $quote->status : QuoteStatus::from($quote->status);
+
+            $canProceed = match ($action) {
+                'delete' => $status->canBeDeleted(),
+                'archive' => $status->canBeArchived(),
+                default => false,
+            };
+
+            if ($canProceed) {
+                $eligibleIds[] = $quote->id;
+            } else {
+                $skipped[] = [
+                    'id' => $quote->id,
+                    'status' => $status->value,
+                    'reason' => "Action '{$action}' not permitted for status {$status->value}.",
+                ];
+            }
+        }
+
+        if ($eligibleIds !== []) {
+            Quote::query()
+                ->where('workspace_id', $workspace->id)
+                ->whereIn('id', $eligibleIds)
+                ->delete();
+
+            if ($action === 'archive') {
+                $now = now();
+                $userId = auth()->id();
+
+                $activities = array_map(
+                    fn (int $quoteId): array => [
+                        'quote_id' => $quoteId,
+                        'workspace_id' => $workspace->id,
+                        'user_id' => $userId,
+                        'type' => 'created',
+                        'description' => 'Quote archived',
+                        'metadata' => null,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ],
+                    $eligibleIds,
+                );
+
+                QuoteActivity::query()->insert($activities);
+            }
+        }
+
+        $missingCount = max(0, count($ids) - $quotes->count());
+
+        return [
+            'processed' => count($eligibleIds),
+            'skipped' => count($skipped),
+            'missing' => $missingCount,
+            'skipped_details' => $skipped,
+        ];
+    }
+
     public function toBuilderPayload(Quote $quote): array
     {
         $quote->loadMissing([
@@ -420,6 +555,8 @@ class QuoteService
             'layout_snapshot' => $quote->layout_snapshot,
             'requires_deposit' => (bool) $quote->requires_deposit,
             'deposit_amount' => $quote->deposit_amount,
+            'deposit_percent' => $quote->deposit_percent,
+            'is_locked' => (bool) $quote->is_locked,
             'subtotal' => $quote->base_subtotal,
             'discount_amount' => $quote->base_discount_amount,
             'tax_amount' => $quote->base_tax_amount,
@@ -434,11 +571,13 @@ class QuoteService
                         return [
                             'id' => $lineItem->id,
                             'catalog_item_id' => $lineItem->catalog_item_id,
+                            'catalog_item_variant_id' => $lineItem->catalog_item_variant_id,
                             'name' => $lineItem->name,
                             'description' => $lineItem->description,
                             'quantity' => (float) $lineItem->quantity,
                             'unit' => $lineItem->unit,
                             'unit_price' => (float) $lineItem->base_unit_price,
+                            'cost_price' => $lineItem->cost_price,
                             'discount_percent' => (float) $lineItem->discount_percent,
                             'subtotal' => (float) $lineItem->base_subtotal,
                             'tax_amount' => (float) $lineItem->base_tax_amount,
@@ -569,11 +708,13 @@ class QuoteService
                 $lineItem = $section->lineItems()->create([
                     'quote_id' => $quote->id,
                     'catalog_item_id' => Arr::get($lineItemData, 'catalog_item_id'),
+                    'catalog_item_variant_id' => Arr::get($lineItemData, 'catalog_item_variant_id'),
                     'name' => (string) Arr::get($lineItemData, 'name', 'Line item'),
                     'description' => Arr::get($lineItemData, 'description'),
                     'quantity' => (float) Arr::get($lineItemData, 'quantity', 1),
                     'unit' => Arr::get($lineItemData, 'unit'),
                     'unit_price' => (float) Arr::get($lineItemData, 'unit_price', 0),
+                    'cost_price' => Arr::get($lineItemData, 'cost_price'),
                     'discount_percent' => (float) Arr::get($lineItemData, 'discount_percent', 0),
                     'subtotal' => $calculatedTotals['subtotal'],
                     'total' => $calculatedTotals['total'],
@@ -663,5 +804,35 @@ class QuoteService
             'base_discount_amount' => $baseDiscountAmount,
             'base_tax_amount' => $baseTaxAmount,
         ]);
+    }
+
+    public function handover(Quote $quote, int $newAssigneeId): Quote
+    {
+        abort_if($quote->workspace_id !== auth()->user()?->current_workspace_id, 403);
+
+        $newAssignee = User::query()
+            ->where('id', $newAssigneeId)
+            ->whereHas('workspaces', fn ($q) => $q->where('workspace_id', $quote->workspace_id))
+            ->firstOrFail();
+
+        $oldAssigneeId = $quote->assigned_to;
+
+        $quote->update([
+            'assigned_to' => $newAssigneeId,
+        ]);
+
+        QuoteActivity::query()->create([
+            'quote_id' => $quote->id,
+            'workspace_id' => $quote->workspace_id,
+            'user_id' => auth()->id(),
+            'type' => 'updated',
+            'description' => 'Quote ownership transferred',
+            'metadata' => [
+                'from_user_id' => $oldAssigneeId,
+                'to_user_id' => $newAssigneeId,
+            ],
+        ]);
+
+        return $quote->refresh();
     }
 }

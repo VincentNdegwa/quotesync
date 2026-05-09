@@ -6,6 +6,7 @@ use App\Models\CatalogCategory;
 use App\Models\ConfigIndustry;
 use App\Models\ConfigurationTag;
 use App\Models\ConfigurationUnit;
+use App\Models\TaskStatus;
 use App\Models\Tax;
 use App\Models\Workspace;
 use App\Services\Quotes\QuotePlaceholderService;
@@ -92,21 +93,21 @@ class ConfigurationController extends Controller
                 ->with(['steps' => fn ($query) => $query->orderBy('sort_order')])
                 ->orderByDesc('is_default')
                 ->orderBy('name')
-                ->get()
-                ->map(fn ($sequence): array => [
-                    'id' => $sequence->id,
-                    'name' => $sequence->name,
-                    'is_default' => $sequence->is_default,
-                    'steps' => $sequence->steps->map(fn ($step): array => [
-                        'id' => $step->id,
-                        'day_offset' => $step->day_offset,
-                        'channel' => $step->channel->value,
-                        'subject' => $step->subject,
-                        'message_template' => $step->message_template,
-                        'sort_order' => $step->sort_order,
-                    ])->all(),
-                ])->all(),
+                ->get(),
             'placeholders' => QuotePlaceholderService::getPlaceholderDescriptions(),
+        ]);
+    }
+
+    public function taskStatuses(Request $request): Response
+    {
+        $workspace = $this->workspaceFromRequest($request);
+
+        return Inertia::render('configuration/task-status/Index', [
+            'taskStatuses' => TaskStatus::query()
+                ->where('workspace_id', $workspace->id)
+                ->orderBy('sort_order')
+                ->orderByRaw('LOWER(name)')
+                ->get(['id', 'name', 'slug', 'color', 'sort_order', 'is_default', 'is_system', 'created_at']),
         ]);
     }
 

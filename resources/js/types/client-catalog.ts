@@ -15,6 +15,14 @@ export type ClientRecord = {
     tax_number: string | null;
     tags: string[] | null;
     tag_ids?: number[];
+    contacts?: Array<{
+        id: number;
+        name: string;
+        email: string | null;
+        phone: string | null;
+        position: string | null;
+        is_primary: boolean;
+    }>;
     created_at: string;
     quotes_sent_count?: number;
     total_value_won?: number;
@@ -66,6 +74,23 @@ export type CatalogItemRecord = {
     configuration_unit?: { id: number; name: string; symbol: string } | null;
     taxes?: Array<{ id: number; name: string; rate: number | string }>;
     tax_ids?: number[];
+    variants?: Array<{
+        id: number;
+        name: string;
+        sku: string | null;
+        unit_price: number;
+        cost_price: number;
+        is_default: boolean;
+    }>;
+    price_tiers?: Array<{
+        id: number;
+        variant_id: number | null;
+        min_quantity: number;
+        max_quantity: number | null;
+        pricing_type: string;
+        unit_price: number;
+        discount_percent: number;
+    }>;
     created_at: string;
 };
 

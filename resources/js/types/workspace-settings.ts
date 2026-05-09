@@ -73,4 +73,4 @@ export type WorkspaceOnboardingPageProps = {
 export type CurrencyOption = {
     code: string;
     label: string;
-}
+};

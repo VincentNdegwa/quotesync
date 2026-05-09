@@ -1,4 +1,4 @@
-import type { BrandingData, QuoteData, TemplateLayout } from './builder';
+import type { BrandingData, TemplateLayout } from './builder';
 import type { QuoteWinProbabilityModel } from './models';
 
 export type TaxSnapshot = {
@@ -6,6 +6,22 @@ export type TaxSnapshot = {
     tax_label: string;
     tax_rate: number;
     inclusive: boolean;
+};
+
+export type QuoteInvoiceSummary = {
+    id: number;
+    number: string | null;
+    title: string | null;
+    status: string;
+    total: number;
+    currency: string | null;
+    due_date: string | null;
+    created_at: string | null;
+};
+
+export type QuoteInvoicesPayload = {
+    total: number;
+    items: QuoteInvoiceSummary[];
 };
 
 export type QuoteBuilderLineItem = {
@@ -17,7 +33,9 @@ export type QuoteBuilderLineItem = {
     unit: string | null;
     unit_id: number | null;
     unit_price: number;
+    cost_price: number | null;
     discount_percent: number;
+    price_tier_applied: boolean;
     subtotal: number;
     tax_amount: number;
     total: number;
@@ -44,12 +62,19 @@ export type QuoteBuilderState = {
     assigned_to: number | null;
     currency: string | null;
     valid_until: string | null;
+    scheduled_at: string | null;
+    delivered_at: string | null;
+    bounced_at: string | null;
     cover_message: string | null;
     terms: string | null;
     notes: string | null;
     template_id: number | null;
     requires_deposit: boolean;
     deposit_amount: number | null;
+    deposit_percent: number | null;
+    is_locked: boolean;
+    cc_recipients: string[] | null;
+    bcc_recipients: string[] | null;
     subtotal: number;
     discount_amount: number;
     tax_amount: number;
@@ -214,14 +239,34 @@ export type EnumOption<T = string> = {
 };
 
 export type QuoteStatusEnum = {
-    value: 'draft' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'won' | 'lost' | 'expired';
+    value:
+        | 'draft'
+        | 'sent'
+        | 'viewed'
+        | 'accepted'
+        | 'declined'
+        | 'won'
+        | 'lost'
+        | 'expired';
     label: string;
     badgeColor: 'default' | 'secondary' | 'destructive' | 'outline';
     cssColor: string;
     availableActions: string[];
 };
 
-export type QuoteActivityTypeEnum = EnumOption<'created' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'follow_up_sent' | 'scheduled' | 'approval_requested' | 'approval_approved' | 'approval_rejected' | 'approval_granted'>;
+export type QuoteActivityTypeEnum = EnumOption<
+    | 'created'
+    | 'sent'
+    | 'viewed'
+    | 'accepted'
+    | 'declined'
+    | 'follow_up_sent'
+    | 'scheduled'
+    | 'approval_requested'
+    | 'approval_approved'
+    | 'approval_rejected'
+    | 'approval_granted'
+>;
 
 export type InvoiceActivity = {
     id: number;
@@ -232,7 +277,16 @@ export type InvoiceActivity = {
     user: { id: number; name: string } | null;
 };
 
-export type InvoiceActivityTypeEnum = EnumOption<'created' | 'sent' | 'viewed' | 'paid' | 'overdue' | 'partial' | 'voided' | 'scheduled'>;
+export type InvoiceActivityTypeEnum = EnumOption<
+    | 'created'
+    | 'sent'
+    | 'viewed'
+    | 'paid'
+    | 'overdue'
+    | 'partial'
+    | 'voided'
+    | 'scheduled'
+>;
 
 export type InvoiceBuilderLineItemTax = {
     tax_id: number | null;
@@ -279,7 +333,7 @@ export type InvoiceBuilderState = {
     discount_amount: number;
     tax_amount: number;
     total: number;
-    layout_snapshot: any | null;
+    layout_snapshot: unknown | null;
     line_items: InvoiceBuilderLineItem[];
 };
 
@@ -295,12 +349,24 @@ export type QuoteFollowUpStatusEnum = {
 };
 
 export type TrackingEventTypeEnum = {
-    value: 'view' | 'section_visible' | 'scroll_depth' | 'time_spent' | 'link_click';
+    value:
+        | 'view'
+        | 'section_visible'
+        | 'scroll_depth'
+        | 'time_spent'
+        | 'link_click';
     label: string;
 };
 
 export type InvoiceStatusEnum = {
-    value: 'draft' | 'sent' | 'viewed' | 'partial' | 'paid' | 'overdue' | 'void';
+    value:
+        | 'draft'
+        | 'sent'
+        | 'viewed'
+        | 'partial'
+        | 'paid'
+        | 'overdue'
+        | 'void';
     label: string;
     badgeColor: 'default' | 'secondary' | 'destructive' | 'outline';
     cssColor: string;
@@ -327,6 +393,7 @@ export type InvoiceListRecord = InvoiceBase;
 export type InvoiceData = InvoiceBase & {
     workspace_id: number;
     client_id: number | null;
+    invoice_uuid: string;
     quote_id: number | null;
     assigned_to: number | null;
     base_currency: string;
@@ -349,7 +416,12 @@ export type InvoiceData = InvoiceBase & {
     created_by: number | null;
     updated_at: string | null;
     deleted_at: string | null;
-    workspace: { id: number; name: string; display_name: string; owner_id: number } | null;
+    workspace: {
+        id: number;
+        name: string;
+        display_name: string;
+        owner_id: number;
+    } | null;
     assignee: { id: number; name: string; email: string } | null;
     creator: { id: number; name: string; email: string } | null;
     quote: { id: number; number: string | null; title: string } | null;
@@ -375,7 +447,6 @@ export type InvoiceData = InvoiceBase & {
     }>;
 };
 
-
 export type WinProbabilityConfidenceEnum = {
     value: 'none' | 'low' | 'medium' | 'high';
     label: string;
@@ -390,6 +461,14 @@ export type SignalDirectionEnum = {
     cssColor: string;
 };
 
+export type CreditNoteStatusEnum = {
+    value: 'draft' | 'issued' | 'applied' | 'voided';
+    label: string;
+    badgeColor: 'default' | 'secondary' | 'destructive' | 'outline';
+    cssColor: string;
+    availableActions: string[];
+};
+
 export type GlobalEnums = {
     quoteStatus: QuoteStatusEnum[];
     quoteActivityType: QuoteActivityTypeEnum[];
@@ -399,4 +478,5 @@ export type GlobalEnums = {
     invoiceStatus: InvoiceStatusEnum[];
     winProbabilityConfidence: WinProbabilityConfidenceEnum[];
     signalDirection: SignalDirectionEnum[];
+    creditNoteStatus: CreditNoteStatusEnum[];
 };

@@ -204,7 +204,6 @@ class AnalyticsController extends Controller
                 'range' => $range,
                 'count' => $count,
             ])
-            ->filter(fn (array $bucket): bool => $bucket['count'] > 0)
             ->values();
 
         $lossReasons = $declineReasons->map(fn (array $reason): array => [

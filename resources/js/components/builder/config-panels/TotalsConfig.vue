@@ -141,7 +141,9 @@ const updateToggle = (
         </div>
 
         <div class="border-b px-4 py-3">
-            <p class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+            <p
+                class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+            >
                 Layout
             </p>
             <p class="mb-1.5 text-xs text-muted-foreground">Alignment</p>
@@ -151,7 +153,11 @@ const updateToggle = (
                     :key="option.value"
                     type="button"
                     class="rounded border p-1.5 text-center text-xs font-medium transition-colors"
-                    :class="config.alignment === option.value ? 'border-primary bg-primary/10 text-primary' : 'hover:border-muted-foreground/50'"
+                    :class="
+                        config.alignment === option.value
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'hover:border-muted-foreground/50'
+                    "
                     @click="config.alignment = option.value"
                 >
                     {{ option.label }}
@@ -160,20 +166,30 @@ const updateToggle = (
         </div>
 
         <div class="px-4 py-3">
-            <p class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+            <p
+                class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+            >
                 Appearance
             </p>
-            <p class="mb-1.5 text-xs text-muted-foreground">Total row background</p>
+            <p class="mb-1.5 text-xs text-muted-foreground">
+                Total row background
+            </p>
             <div class="flex items-center gap-2">
                 <div
                     class="h-8 w-8 shrink-0 cursor-pointer overflow-hidden rounded border"
-                    :style="{ backgroundColor: config.totalRowBackground ?? '#dbeafe' }"
+                    :style="{
+                        backgroundColor: config.totalRowBackground ?? '#dbeafe',
+                    }"
                 >
                     <input
                         :value="config.totalRowBackground ?? '#dbeafe'"
                         type="color"
                         class="h-10 w-10 -translate-x-1 -translate-y-1 cursor-pointer opacity-0"
-                        @input="updateTotalRowBackground(($event.target as HTMLInputElement).value)"
+                        @input="
+                            updateTotalRowBackground(
+                                ($event.target as HTMLInputElement).value,
+                            )
+                        "
                     />
                 </div>
                 <Input
@@ -182,7 +198,13 @@ const updateToggle = (
                     placeholder="Auto"
                     @update:model-value="updateTotalRowBackground"
                 />
-                <Button type="button" variant="ghost" size="sm" class="h-8 px-2 text-xs" @click="config.totalRowBackground = null">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    class="h-8 px-2 text-xs"
+                    @click="config.totalRowBackground = null"
+                >
                     ✕
                 </Button>
             </div>

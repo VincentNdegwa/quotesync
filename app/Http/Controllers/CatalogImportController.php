@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Catalog\CatalogImportPreviewRequest;
+use App\Http\Requests\Catalog\CatalogImportStoreRequest;
 use App\Jobs\ImportCatalogItemsJob;
 use App\Models\CatalogItem;
 use App\Models\ConfigurationUnit;
@@ -10,7 +12,6 @@ use App\Models\Workspace;
 use App\Services\Import\CatalogImportValidator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -53,15 +54,13 @@ class CatalogImportController extends Controller
         }, 'catalog-template.csv');
     }
 
-    public function preview(Request $request): JsonResponse
+    public function preview(CatalogImportPreviewRequest $request): JsonResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace, 404);
 
-        $validated = $request->validate([
-            'file' => ['required', 'file', 'mimes:csv,txt', 'max:5120'],
-        ]);
+        $validated = $request->validated();
 
         $defaultUnit = ConfigurationUnit::query()
             ->where('workspace_id', $workspace->id)
@@ -109,30 +108,13 @@ class CatalogImportController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(CatalogImportStoreRequest $request): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace, 404);
 
-        $validator = validator($request->all(), [
-            'import_token' => ['required', 'string'],
-            'column_mapping' => ['array'],
-            'unit_mapping_mode' => ['required', 'in:all,individual'],
-            'unit_for_all' => ['nullable', 'string', 'required_if:unit_mapping_mode,all'],
-            'unit_mapping' => ['nullable', 'array', 'required_if:unit_mapping_mode,individual'],
-        ], [
-            'unit_for_all.required_if' => 'Please select a unit when applying to all items.',
-            'unit_mapping.required_if' => 'Please select units for each item when using individual mapping.',
-        ]);
-
-        if ($validator->fails()) {
-            Inertia::flash('toast', ['type' => 'error', 'message' => $validator->errors()->first()]);
-
-            return back()->withErrors($validator->errors());
-        }
-
-        $validated = $validator->validated();
+        $validated = $request->validated();
         $token = $validated['import_token'];
         $columnMapping = $validated['column_mapping'] ?? [];
         $unitMappingMode = $validated['unit_mapping_mode'];

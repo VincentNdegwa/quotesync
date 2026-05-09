@@ -3,20 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Ai\Agents\WritingAssistantAgent;
-use Illuminate\Http\Request;
+use App\Http\Requests\Ai\ImproveAiWritingRequest;
 
 class AiWritingController extends Controller
 {
-    public function improve(Request $request)
+    public function improve(ImproveAiWritingRequest $request)
     {
-        $request->validate([
-            'content' => 'required|string',
-            'action' => 'required|in:clearer,formal,friendly,shorter,rewrite',
-            'locale' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
-        $agent = new WritingAssistantAgent($request->action, $request->locale);
+        $agent = new WritingAssistantAgent($validated['action'], $validated['locale'] ?? null);
 
-        return $agent->stream($request->content);
+        return $agent->stream($validated['content']);
     }
 }

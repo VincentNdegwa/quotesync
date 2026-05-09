@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
-import { blockContentStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
-import type { CoverMessageBlockConfig, DocumentData, WorkspaceSettings } from '@/types';
+import {
+    blockContentStyle,
+    blockFontSizeClass,
+} from '@/composables/useBlockStyles';
+import type {
+    CoverMessageBlockConfig,
+    DocumentData,
+    WorkspaceSettings,
+} from '@/types';
 
 const props = defineProps<{
     config: CoverMessageBlockConfig;
@@ -20,17 +27,30 @@ const emit = defineEmits<{
 const effectiveContextText = computed(() => {
     const data = props.data as QuoteData | InvoiceData;
 
-    return data.cover_message ?? props.config.contextText ?? props.settings.quotes.default_cover_message;
+    return (
+        data.cover_message ??
+        props.config.contextText ??
+        props.settings.quotes.default_cover_message
+    );
 });
 
 const fontSizeClass = computed(() => {
     const size = props.config.fontSize ?? 'md';
-    const sizeMap: Record<string, string> = { sm: 'text-sm leading-6', md: 'text-base leading-7', lg: 'text-lg leading-8' };
+    const sizeMap: Record<string, string> = {
+        sm: 'text-sm leading-6',
+        md: 'text-base leading-7',
+        lg: 'text-lg leading-8',
+    };
 
     return sizeMap[size];
 });
 
-const showBlock = computed(() => !!effectiveContextText.value?.trim() || props.previewMode || props.editMode);
+const showBlock = computed(
+    () =>
+        !!effectiveContextText.value?.trim() ||
+        props.previewMode ||
+        props.editMode,
+);
 </script>
 
 <template>

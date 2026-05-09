@@ -7,16 +7,12 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import TiptapEditor from '@/components/ui/tiptap-editor/TiptapEditor.vue';
-import type { WorkspaceSettingsField, WorkspaceSettingsPageProps } from '@/types';
+import type {
+    WorkspaceSettingsField,
+    WorkspaceSettingsPageProps,
+} from '@/types';
 
 const props = defineProps<WorkspaceSettingsPageProps>();
 
@@ -31,7 +27,9 @@ defineOptions({
     },
 });
 
-const updateAction = computed(() => `/business-setup/${props.currentGroup.group}`);
+const updateAction = computed(
+    () => `/business-setup/${props.currentGroup.group}`,
+);
 
 const buildFormValues = (
     fields: WorkspaceSettingsField[],
@@ -39,13 +37,17 @@ const buildFormValues = (
     return fields.reduce(
         (values, field) => {
             if (field.type === 'array') {
-                values[field.key] = Array.isArray(field.value) ? field.value : [];
+                values[field.key] = Array.isArray(field.value)
+                    ? field.value
+                    : [];
 
                 return values;
             }
 
             if (field.type === 'json') {
-                values[field.key] = Array.isArray(field.value) ? field.value.join('\n') : '';
+                values[field.key] = Array.isArray(field.value)
+                    ? field.value.join('\n')
+                    : '';
 
                 return values;
             }
@@ -62,19 +64,21 @@ const buildFormValues = (
                 return values;
             }
 
-            if (field.value === null || field.value === undefined) {
+            if (field.value === null) {
                 values[field.key] = '';
 
                 return values;
             }
 
-           if (field.type === 'text' || field.type === 'string') {
+            if (field.type === 'text' || field.type === 'string') {
                 values[field.key] = field.value;
 
                 return values;
             }
 
-            values[field.key] = Array.isArray(field.value) ? field.value.join(',') : field.value;
+            values[field.key] = Array.isArray(field.value)
+                ? field.value.join(',')
+                : field.value;
 
             return values;
         },
@@ -82,7 +86,9 @@ const buildFormValues = (
     );
 };
 
-const formValues = reactive<Record<string, any>>(buildFormValues(props.currentGroup.fields));
+const formValues = reactive<Record<string, any>>(
+    buildFormValues(props.currentGroup.fields),
+);
 
 watch(
     () => props.currentGroup.fields,
@@ -94,52 +100,59 @@ watch(
     { immediate: true, deep: true },
 );
 
-const inputType = (field: WorkspaceSettingsField): string => {
+const _inputType = (field: WorkspaceSettingsField): string => {
     if (field.type === 'email') {
-return 'email';
-}
+        return 'email';
+    }
 
     if (field.type === 'url') {
-return 'url';
-}
+        return 'url';
+    }
 
     if (field.type === 'color') {
-return 'color';
-}
+        return 'color';
+    }
 
     if (field.encrypted) {
-return 'password';
-}
+        return 'password';
+    }
 
     return 'text';
 };
 
-const optionDisplayLabel = (option: string): string => {
+const _optionDisplayLabel = (option: string): string => {
     if (option === 'in_app') {
-return 'In-app notifications';
-}
+        return 'In-app notifications';
+    }
 
     if (option === 'mail') {
-return 'Email';
-}
+        return 'Email';
+    }
 
-    return option.split('_').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+    return option
+        .split('_')
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
 };
 
-const isColorField = (field: WorkspaceSettingsField): boolean => {
+const _isColorField = (field: WorkspaceSettingsField): boolean => {
     return field.key.toLowerCase().includes('color');
 };
 
-const isQuotesField = (key: string): boolean => {
+const _isQuotesField = (key: string): boolean => {
     return key.startsWith('quote_');
 };
 
-const isInvoicesField = (key: string): boolean => {
+const _isInvoicesField = (key: string): boolean => {
     return key.startsWith('invoice_');
 };
 
-const quotesFields = computed(() => props.currentGroup.fields.filter(f => isQuotesField(f.key)));
-const invoicesFields = computed(() => props.currentGroup.fields.filter(f => isInvoicesField(f.key)));
+const _quotesFields = computed(() =>
+    props.currentGroup.fields.filter((f) => _isQuotesField(f.key)),
+);
+const _invoicesFields = computed(() =>
+    props.currentGroup.fields.filter((f) => _isInvoicesField(f.key)),
+);
 </script>
 
 <template>
@@ -161,14 +174,16 @@ const invoicesFields = computed(() => props.currentGroup.fields.filter(f => isIn
         >
             <!-- Quotes Section -->
             <div class="space-y-4">
-                <h3 class="text-lg font-semibold flex items-center gap-2">
+                <h3 class="flex items-center gap-2 text-lg font-semibold">
                     <FileText class="h-5 w-5" />
                     Quotes
                 </h3>
-                
+
                 <!-- Numbering -->
                 <div class="space-y-4">
-                    <h4 class="text-sm font-medium text-muted-foreground">Numbering</h4>
+                    <h4 class="text-sm font-medium text-muted-foreground">
+                        Numbering
+                    </h4>
                     <div class="grid gap-4 md:grid-cols-3">
                         <div class="space-y-2">
                             <Label for="quote_prefix">Quote Prefix</Label>
@@ -178,32 +193,56 @@ const invoicesFields = computed(() => props.currentGroup.fields.filter(f => isIn
                                 type="text"
                                 v-model="formValues.quote_prefix"
                             />
-                            <InputError :message="errors['settings.quote_prefix']" />
+                            <InputError
+                                :message="errors['settings.quote_prefix']"
+                            />
                         </div>
                         <div class="space-y-2">
-                            <Label for="quote_number_sequence">Starting Sequence</Label>
+                            <Label for="quote_number_sequence"
+                                >Starting Sequence</Label
+                            >
                             <Input
                                 id="quote_number_sequence"
                                 name="settings[quote_number_sequence]"
                                 type="number"
                                 v-model="formValues.quote_number_sequence"
                             />
-                            <InputError :message="errors['settings.quote_number_sequence']" />
+                            <InputError
+                                :message="
+                                    errors['settings.quote_number_sequence']
+                                "
+                            />
                         </div>
-                        <div class="space-y-2 flex items-center">
+                        <div class="flex items-center space-y-2">
                             <div class="flex-1">
-                                <Label for="quote_number_reset_yearly">Reset Yearly</Label>
-                                <p class="text-xs text-muted-foreground">Reset sequence at start of year</p>
+                                <Label for="quote_number_reset_yearly"
+                                    >Reset Yearly</Label
+                                >
+                                <p class="text-xs text-muted-foreground">
+                                    Reset sequence at start of year
+                                </p>
                             </div>
                             <Switch
                                 id="quote_number_reset_yearly"
-                                :model-value="Boolean(formValues.quote_number_reset_yearly)"
-                                @update:model-value="(checked: boolean) => (formValues.quote_number_reset_yearly = checked)"
+                                :model-value="
+                                    Boolean(
+                                        formValues.quote_number_reset_yearly,
+                                    )
+                                "
+                                @update:model-value="
+                                    (checked: boolean) =>
+                                        (formValues.quote_number_reset_yearly =
+                                            checked)
+                                "
                             />
                             <input
                                 name="settings[quote_number_reset_yearly]"
                                 type="hidden"
-                                :value="formValues.quote_number_reset_yearly ? '1' : '0'"
+                                :value="
+                                    formValues.quote_number_reset_yearly
+                                        ? '1'
+                                        : '0'
+                                "
                             />
                         </div>
                     </div>
@@ -211,30 +250,42 @@ const invoicesFields = computed(() => props.currentGroup.fields.filter(f => isIn
 
                 <!-- Validity -->
                 <div class="space-y-4">
-                    <h4 class="text-sm font-medium text-muted-foreground">Validity</h4>
+                    <h4 class="text-sm font-medium text-muted-foreground">
+                        Validity
+                    </h4>
                     <div class="grid gap-4 md:grid-cols-2">
                         <div class="space-y-2">
-                            <Label for="quote_validity_days">Validity Period (Days)</Label>
+                            <Label for="quote_validity_days"
+                                >Validity Period (Days)</Label
+                            >
                             <Input
                                 id="quote_validity_days"
                                 name="settings[quote_validity_days]"
                                 type="number"
                                 v-model="formValues.quote_validity_days"
                             />
-                            <InputError :message="errors['settings.quote_validity_days']" />
+                            <InputError
+                                :message="
+                                    errors['settings.quote_validity_days']
+                                "
+                            />
                         </div>
                     </div>
                 </div>
 
                 <!-- Defaults -->
                 <div class="space-y-4">
-                    <h4 class="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <h4
+                        class="flex items-center gap-2 text-sm font-medium text-muted-foreground"
+                    >
                         <FileCheck class="h-4 w-4" />
                         Defaults
                     </h4>
                     <div class="grid gap-4 md:grid-cols-2">
                         <div class="space-y-2 md:col-span-2">
-                            <Label for="default_cover_message">Default Cover Message</Label>
+                            <Label for="default_cover_message"
+                                >Default Cover Message</Label
+                            >
                             <TiptapEditor
                                 id="default_cover_message"
                                 v-model="formValues.default_cover_message"
@@ -245,7 +296,11 @@ const invoicesFields = computed(() => props.currentGroup.fields.filter(f => isIn
                                 type="hidden"
                                 :value="formValues.default_cover_message"
                             />
-                            <InputError :message="errors['settings.default_cover_message']" />
+                            <InputError
+                                :message="
+                                    errors['settings.default_cover_message']
+                                "
+                            />
                         </div>
                         <div class="space-y-2 md:col-span-2">
                             <Label for="default_terms">Default Terms</Label>
@@ -259,10 +314,14 @@ const invoicesFields = computed(() => props.currentGroup.fields.filter(f => isIn
                                 type="hidden"
                                 :value="formValues.default_terms"
                             />
-                            <InputError :message="errors['settings.default_terms']" />
+                            <InputError
+                                :message="errors['settings.default_terms']"
+                            />
                         </div>
                         <div class="space-y-2 md:col-span-2">
-                            <Label for="default_payment_terms">Default Payment Terms</Label>
+                            <Label for="default_payment_terms"
+                                >Default Payment Terms</Label
+                            >
                             <TiptapEditor
                                 id="default_payment_terms"
                                 v-model="formValues.default_payment_terms"
@@ -273,7 +332,11 @@ const invoicesFields = computed(() => props.currentGroup.fields.filter(f => isIn
                                 type="hidden"
                                 :value="formValues.default_payment_terms"
                             />
-                            <InputError :message="errors['settings.default_payment_terms']" />
+                            <InputError
+                                :message="
+                                    errors['settings.default_payment_terms']
+                                "
+                            />
                         </div>
                         <div class="space-y-2 md:col-span-2">
                             <Label for="default_notes">Default Notes</Label>
@@ -287,56 +350,89 @@ const invoicesFields = computed(() => props.currentGroup.fields.filter(f => isIn
                                 type="hidden"
                                 :value="formValues.default_notes"
                             />
-                            <InputError :message="errors['settings.default_notes']" />
+                            <InputError
+                                :message="errors['settings.default_notes']"
+                            />
                         </div>
                     </div>
                 </div>
 
                 <!-- Advanced -->
                 <div class="space-y-4">
-                    <h4 class="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <h4
+                        class="flex items-center gap-2 text-sm font-medium text-muted-foreground"
+                    >
                         <Settings class="h-4 w-4" />
                         Advanced
                     </h4>
                     <div class="grid gap-4 md:grid-cols-2">
-                        <div class="space-y-2 flex items-center">
+                        <div class="flex items-center space-y-2">
                             <div class="flex-1">
-                                <Label for="allow_client_negotiation">Allow Client Negotiation</Label>
+                                <Label for="allow_client_negotiation"
+                                    >Allow Client Negotiation</Label
+                                >
                             </div>
                             <Switch
                                 id="allow_client_negotiation"
-                                :model-value="Boolean(formValues.allow_client_negotiation)"
-                                @update:model-value="(checked: boolean) => (formValues.allow_client_negotiation = checked)"
+                                :model-value="
+                                    Boolean(formValues.allow_client_negotiation)
+                                "
+                                @update:model-value="
+                                    (checked: boolean) =>
+                                        (formValues.allow_client_negotiation =
+                                            checked)
+                                "
                             />
                             <input
                                 name="settings[allow_client_negotiation]"
                                 type="hidden"
-                                :value="formValues.allow_client_negotiation ? '1' : '0'"
+                                :value="
+                                    formValues.allow_client_negotiation
+                                        ? '1'
+                                        : '0'
+                                "
                             />
                         </div>
-                        <div class="space-y-2 flex items-center">
+                        <div class="flex items-center space-y-2">
                             <div class="flex-1">
-                                <Label for="allow_optional_items">Allow Optional Items</Label>
+                                <Label for="allow_optional_items"
+                                    >Allow Optional Items</Label
+                                >
                             </div>
                             <Switch
                                 id="allow_optional_items"
-                                :model-value="Boolean(formValues.allow_optional_items)"
-                                @update:model-value="(checked: boolean) => (formValues.allow_optional_items = checked)"
+                                :model-value="
+                                    Boolean(formValues.allow_optional_items)
+                                "
+                                @update:model-value="
+                                    (checked: boolean) =>
+                                        (formValues.allow_optional_items =
+                                            checked)
+                                "
                             />
                             <input
                                 name="settings[allow_optional_items]"
                                 type="hidden"
-                                :value="formValues.allow_optional_items ? '1' : '0'"
+                                :value="
+                                    formValues.allow_optional_items ? '1' : '0'
+                                "
                             />
                         </div>
-                        <div class="space-y-2 flex items-center">
+                        <div class="flex items-center space-y-2">
                             <div class="flex-1">
-                                <Label for="require_deposit">Require Deposit</Label>
+                                <Label for="require_deposit"
+                                    >Require Deposit</Label
+                                >
                             </div>
                             <Switch
                                 id="require_deposit"
-                                :model-value="Boolean(formValues.require_deposit)"
-                                @update:model-value="(checked: boolean) => (formValues.require_deposit = checked)"
+                                :model-value="
+                                    Boolean(formValues.require_deposit)
+                                "
+                                @update:model-value="
+                                    (checked: boolean) =>
+                                        (formValues.require_deposit = checked)
+                                "
                             />
                             <input
                                 name="settings[require_deposit]"
@@ -345,14 +441,20 @@ const invoicesFields = computed(() => props.currentGroup.fields.filter(f => isIn
                             />
                         </div>
                         <div class="space-y-2">
-                            <Label for="default_deposit_percent">Default Deposit %</Label>
+                            <Label for="default_deposit_percent"
+                                >Default Deposit %</Label
+                            >
                             <Input
                                 id="default_deposit_percent"
                                 name="settings[default_deposit_percent]"
                                 type="number"
                                 v-model="formValues.default_deposit_percent"
                             />
-                            <InputError :message="errors['settings.default_deposit_percent']" />
+                            <InputError
+                                :message="
+                                    errors['settings.default_deposit_percent']
+                                "
+                            />
                         </div>
                     </div>
                 </div>
@@ -360,14 +462,16 @@ const invoicesFields = computed(() => props.currentGroup.fields.filter(f => isIn
 
             <!-- Invoices Section -->
             <div class="space-y-4">
-                <h3 class="text-lg font-semibold flex items-center gap-2">
+                <h3 class="flex items-center gap-2 text-lg font-semibold">
                     <FileText class="h-5 w-5" />
                     Invoices
                 </h3>
-                
+
                 <!-- Numbering -->
                 <div class="space-y-4">
-                    <h4 class="text-sm font-medium text-muted-foreground">Numbering</h4>
+                    <h4 class="text-sm font-medium text-muted-foreground">
+                        Numbering
+                    </h4>
                     <div class="grid gap-4 md:grid-cols-3">
                         <div class="space-y-2">
                             <Label for="invoice_prefix">Invoice Prefix</Label>
@@ -377,32 +481,56 @@ const invoicesFields = computed(() => props.currentGroup.fields.filter(f => isIn
                                 type="text"
                                 v-model="formValues.invoice_prefix"
                             />
-                            <InputError :message="errors['settings.invoice_prefix']" />
+                            <InputError
+                                :message="errors['settings.invoice_prefix']"
+                            />
                         </div>
                         <div class="space-y-2">
-                            <Label for="invoice_number_sequence">Starting Sequence</Label>
+                            <Label for="invoice_number_sequence"
+                                >Starting Sequence</Label
+                            >
                             <Input
                                 id="invoice_number_sequence"
                                 name="settings[invoice_number_sequence]"
                                 type="number"
                                 v-model="formValues.invoice_number_sequence"
                             />
-                            <InputError :message="errors['settings.invoice_number_sequence']" />
+                            <InputError
+                                :message="
+                                    errors['settings.invoice_number_sequence']
+                                "
+                            />
                         </div>
-                        <div class="space-y-2 flex items-center">
+                        <div class="flex items-center space-y-2">
                             <div class="flex-1">
-                                <Label for="invoice_number_reset_yearly">Reset Yearly</Label>
-                                <p class="text-xs text-muted-foreground">Reset sequence at start of year</p>
+                                <Label for="invoice_number_reset_yearly"
+                                    >Reset Yearly</Label
+                                >
+                                <p class="text-xs text-muted-foreground">
+                                    Reset sequence at start of year
+                                </p>
                             </div>
                             <Switch
                                 id="invoice_number_reset_yearly"
-                                :model-value="Boolean(formValues.invoice_number_reset_yearly)"
-                                @update:model-value="(checked: boolean) => (formValues.invoice_number_reset_yearly = checked)"
+                                :model-value="
+                                    Boolean(
+                                        formValues.invoice_number_reset_yearly,
+                                    )
+                                "
+                                @update:model-value="
+                                    (checked: boolean) =>
+                                        (formValues.invoice_number_reset_yearly =
+                                            checked)
+                                "
                             />
                             <input
                                 name="settings[invoice_number_reset_yearly]"
                                 type="hidden"
-                                :value="formValues.invoice_number_reset_yearly ? '1' : '0'"
+                                :value="
+                                    formValues.invoice_number_reset_yearly
+                                        ? '1'
+                                        : '0'
+                                "
                             />
                         </div>
                     </div>
@@ -410,13 +538,17 @@ const invoicesFields = computed(() => props.currentGroup.fields.filter(f => isIn
 
                 <!-- Defaults -->
                 <div class="space-y-4">
-                    <h4 class="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <h4
+                        class="flex items-center gap-2 text-sm font-medium text-muted-foreground"
+                    >
                         <FileCheck class="h-4 w-4" />
                         Defaults
                     </h4>
                     <div class="grid gap-4 md:grid-cols-2">
                         <div class="space-y-2 md:col-span-2">
-                            <Label for="default_invoice_terms">Default Invoice Terms</Label>
+                            <Label for="default_invoice_terms"
+                                >Default Invoice Terms</Label
+                            >
                             <TiptapEditor
                                 id="default_invoice_terms"
                                 v-model="formValues.default_invoice_terms"
@@ -427,10 +559,16 @@ const invoicesFields = computed(() => props.currentGroup.fields.filter(f => isIn
                                 type="hidden"
                                 :value="formValues.default_invoice_terms"
                             />
-                            <InputError :message="errors['settings.default_invoice_terms']" />
+                            <InputError
+                                :message="
+                                    errors['settings.default_invoice_terms']
+                                "
+                            />
                         </div>
                         <div class="space-y-2 md:col-span-2">
-                            <Label for="invoice_payment_terms">Default Payment Terms</Label>
+                            <Label for="invoice_payment_terms"
+                                >Default Payment Terms</Label
+                            >
                             <TiptapEditor
                                 id="invoice_payment_terms"
                                 v-model="formValues.invoice_payment_terms"
@@ -441,14 +579,20 @@ const invoicesFields = computed(() => props.currentGroup.fields.filter(f => isIn
                                 type="hidden"
                                 :value="formValues.invoice_payment_terms"
                             />
-                            <InputError :message="errors['settings.invoice_payment_terms']" />
+                            <InputError
+                                :message="
+                                    errors['settings.invoice_payment_terms']
+                                "
+                            />
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="flex justify-end">
-                <Button type="submit" :disabled="processing">Save settings</Button>
+                <Button type="submit" :disabled="processing"
+                    >Save settings</Button
+                >
             </div>
         </Form>
     </div>

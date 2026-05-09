@@ -267,7 +267,6 @@ const rightNavItems: NavItem[] = [
                             <UserMenuContent :user="auth.user" />
                         </DropdownMenuContent>
                     </DropdownMenu>
-
                 </div>
             </div>
         </div>

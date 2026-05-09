@@ -20,5 +20,10 @@ const heightMap: Record<SpacerBlockConfig['height'], string> = {
 </script>
 
 <template>
-    <div :style="{ ...blockBaseStyle(props.config), height: heightMap[props.config.height] }" />
+    <div
+        :style="{
+            ...blockBaseStyle(props.config),
+            height: heightMap[props.config.height],
+        }"
+    />
 </template>

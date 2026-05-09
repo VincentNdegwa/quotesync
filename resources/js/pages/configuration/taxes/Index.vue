@@ -91,26 +91,50 @@ const executeDelete = (): void => {
                 </TableHeader>
                 <TableBody>
                     <TableRow v-for="tax in taxes" :key="tax.id">
-                        <TableCell class="font-medium">{{ tax.name }}</TableCell>
+                        <TableCell class="font-medium">{{
+                            tax.name
+                        }}</TableCell>
                         <TableCell class="text-right">{{ tax.rate }}</TableCell>
                         <TableCell>
-                            <Badge :variant="tax.inclusive ? 'secondary' : 'default'">
+                            <Badge
+                                :variant="
+                                    tax.inclusive ? 'secondary' : 'default'
+                                "
+                            >
                                 {{ tax.inclusive ? 'Inclusive' : 'Exclusive' }}
                             </Badge>
                         </TableCell>
                         <TableCell>
-                            <Badge :variant="tax.is_default ? 'default' : 'secondary'">
+                            <Badge
+                                :variant="
+                                    tax.is_default ? 'default' : 'secondary'
+                                "
+                            >
                                 {{ tax.is_default ? 'Default' : 'No' }}
                             </Badge>
                         </TableCell>
                         <TableCell>
-                            <Badge :variant="tax.is_active ? 'default' : 'secondary'">
+                            <Badge
+                                :variant="
+                                    tax.is_active ? 'default' : 'secondary'
+                                "
+                            >
                                 {{ tax.is_active ? 'Active' : 'Inactive' }}
                             </Badge>
                         </TableCell>
-                        <TableCell class="text-right space-x-2">
-                            <Button size="sm" variant="outline" @click="openEdit(tax)">Edit</Button>
-                            <Button size="sm" variant="destructive" @click="removeTax(tax)">Delete</Button>
+                        <TableCell class="space-x-2 text-right">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                @click="openEdit(tax)"
+                                >Edit</Button
+                            >
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                @click="removeTax(tax)"
+                                >Delete</Button
+                            >
                         </TableCell>
                     </TableRow>
                 </TableBody>

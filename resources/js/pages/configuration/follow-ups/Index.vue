@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { ChevronRight, Clock, Mail, MessageCircle, Phone, Plus, Trash2, Zap } from 'lucide-vue-next';
+import {
+    ChevronRight,
+    Clock,
+    Mail,
+    MessageCircle,
+    Phone,
+    Plus,
+    Trash2,
+    Zap,
+} from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
@@ -32,7 +41,6 @@ import ConfigurationLayout from '@/layouts/configuration/Layout.vue';
 
 type Channel = 'email' | 'whatsapp' | 'sms';
 
-
 type Step = {
     id?: number;
     day_offset: number;
@@ -49,7 +57,7 @@ type Sequence = {
     steps: Step[];
 };
 
-const props = defineProps<{
+const _props = defineProps<{
     sequences: Sequence[];
     placeholders: Record<string, string>;
 }>();
@@ -62,7 +70,9 @@ const drawerOpen = ref(false);
 const editingSequence = ref<Sequence | null>(null);
 const activeStepIndex = ref<number | null>(null);
 const subjectInputRef = ref<InstanceType<typeof Input> | null>(null);
-const tiptapEditorRef = ref<{ insertText: (text: string) => void } | null>(null);
+const tiptapEditorRef = ref<{ insertText: (text: string) => void } | null>(
+    null,
+);
 const deleteOpen = ref(false);
 const sequenceToDelete = ref<Sequence | null>(null);
 
@@ -116,18 +126,24 @@ const removeSequence = (sequence: Sequence): void => {
 
 const executeDelete = (): void => {
     if (sequenceToDelete.value) {
-        router.delete(`/configuration/follow-ups/${sequenceToDelete.value.id}`, {
-            preserveScroll: true,
-            onSuccess: () => {
-                deleteOpen.value = false;
-                sequenceToDelete.value = null;
+        router.delete(
+            `/configuration/follow-ups/${sequenceToDelete.value.id}`,
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    deleteOpen.value = false;
+                    sequenceToDelete.value = null;
+                },
             },
-        });
+        );
     }
 };
 
 const addStep = (): void => {
-    const lastDay = form.steps.length > 0 ? form.steps[form.steps.length - 1].day_offset : 0;
+    const lastDay =
+        form.steps.length > 0
+            ? form.steps[form.steps.length - 1].day_offset
+            : 0;
     const newStep = emptyStep(form.steps.length);
     newStep.day_offset = lastDay + 3;
     form.steps.push(newStep);
@@ -137,15 +153,18 @@ const addStep = (): void => {
 const removeStep = (index: number): void => {
     form.steps.splice(index, 1);
 
-    if (activeStepIndex.value !== null && activeStepIndex.value >= form.steps.length) {
+    if (
+        activeStepIndex.value !== null &&
+        activeStepIndex.value >= form.steps.length
+    ) {
         activeStepIndex.value = form.steps.length - 1;
     }
 };
 
 const insertPlaceholder = (key: string): void => {
     if (activeStepIndex.value === null) {
-return;
-}
+        return;
+    }
 
     const token = `{${key}}`;
 
@@ -156,18 +175,18 @@ return;
         const start = inputEl.selectionStart ?? 0;
         const end = inputEl.selectionEnd ?? 0;
         const currentValue = form.steps[activeStepIndex.value].subject;
-        form.steps[activeStepIndex.value].subject = currentValue.slice(0, start) + token + currentValue.slice(end);
+        form.steps[activeStepIndex.value].subject =
+            currentValue.slice(0, start) + token + currentValue.slice(end);
         setTimeout(() => {
-            inputEl.setSelectionRange(start + token.length, start + token.length);
+            inputEl.setSelectionRange(
+                start + token.length,
+                start + token.length,
+            );
             inputEl.focus();
         }, 0);
-    }
-    // Otherwise insert into Tiptap editor at cursor position
-    else if (tiptapEditorRef.value) {
+    } else if (tiptapEditorRef.value) {
         tiptapEditorRef.value.insertText(token);
-    }
-    // Fallback: append to message template
-    else {
+    } else {
         form.steps[activeStepIndex.value].message_template += token;
     }
 };
@@ -189,12 +208,21 @@ const submit = (): void => {
 };
 
 const channelLabel = (value: string): string =>
-    enums.followUpChannel?.find((c: { value: string }) => c.value === value)?.label ?? value;
+    enums.followUpChannel?.find((c: { value: string }) => c.value === value)
+        ?.label ?? value;
 
 const placeholderGroups = computed(() => ({
     quote: {
         label: 'Quote',
-        keys: ['quote_number', 'quote_title', 'quote_link', 'total', 'currency', 'valid_until', 'issue_date'],
+        keys: [
+            'quote_number',
+            'quote_title',
+            'quote_link',
+            'total',
+            'currency',
+            'valid_until',
+            'issue_date',
+        ],
     },
     client: {
         label: 'Client',
@@ -274,10 +302,14 @@ const placeholderGroups = computed(() => ({
                             <div class="flex flex-col items-center gap-1">
                                 <div
                                     class="flex h-8 w-8 items-center justify-center rounded-full border-2 bg-background"
-                                    :class="getFollowUpChannelColor(step.channel)"
+                                    :class="
+                                        getFollowUpChannelColor(step.channel)
+                                    "
                                 >
                                     <component
-                                        :is="getFollowUpChannelIcon(step.channel)"
+                                        :is="
+                                            getFollowUpChannelIcon(step.channel)
+                                        "
                                         class="h-3.5 w-3.5"
                                     />
                                 </div>
@@ -312,7 +344,10 @@ const placeholderGroups = computed(() => ({
         </div>
     </div>
 
-    <Sheet :open="drawerOpen" @update:open="(value: boolean) => drawerOpen = value">
+    <Sheet
+        :open="drawerOpen"
+        @update:open="(value: boolean) => (drawerOpen = value)"
+    >
         <SheetContent side="right" custom-width="900px" class="overflow-y-auto">
             <SheetHeader>
                 <SheetTitle>
@@ -331,7 +366,7 @@ const placeholderGroups = computed(() => ({
                 </SheetDescription>
             </SheetHeader>
 
-            <div class="flex min-h-0 flex-1 custom-scrollbar overflow-hidden">
+            <div class="custom-scrollbar flex min-h-0 flex-1 overflow-hidden">
                 <div class="w-[200px] shrink-0 overflow-y-auto border-r py-4">
                     <p
                         class="mb-2 px-4 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
@@ -340,7 +375,9 @@ const placeholderGroups = computed(() => ({
                     </p>
 
                     <div class="relative px-4">
-                        <div class="absolute top-4 bottom-4 left-[36px] w-px bg-border" />
+                        <div
+                            class="absolute top-4 bottom-4 left-[36px] w-px bg-border"
+                        />
 
                         <div class="space-y-1">
                             <button
@@ -364,7 +401,9 @@ const placeholderGroups = computed(() => ({
                                     "
                                 >
                                     <component
-                                        :is="getFollowUpChannelIcon(step.channel)"
+                                        :is="
+                                            getFollowUpChannelIcon(step.channel)
+                                        "
                                         class="h-3 w-3"
                                         :class="
                                             activeStepIndex === index
@@ -395,7 +434,7 @@ const placeholderGroups = computed(() => ({
                                 >
                                     <Plus class="h-3 w-3" />
                                 </div>
-                                <span class="text-xs">Add step</span>
+                                <span class="text-xs">Add Step</span>
                             </button>
                         </div>
                     </div>
@@ -594,7 +633,9 @@ const placeholderGroups = computed(() => ({
                             </Label>
                             <TiptapEditor
                                 ref="tiptapEditorRef"
-                                v-model="form.steps[activeStepIndex].message_template"
+                                v-model="
+                                    form.steps[activeStepIndex].message_template
+                                "
                                 placeholder="Write your follow-up message here. Use placeholders below to personalise it."
                             />
                             <InputError

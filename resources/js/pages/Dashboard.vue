@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { usePage } from '@inertiajs/vue3';
-import { CurveType, Orientation } from '@unovis/ts';
+import { CurveType } from '@unovis/ts';
 import {
     VisArea,
     VisAxis,
@@ -20,8 +20,8 @@ import {
     TrendingDown,
     TrendingUp,
 } from 'lucide-vue-next';
-import { computed  } from 'vue';
-import type {Component} from 'vue';
+import { computed } from 'vue';
+import type { Component } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -56,11 +56,19 @@ const props = defineProps<{
             sent_count: number;
             trend: number;
         };
+        average_deal_size: number;
+        average_deal_size_trend: number | null;
+        average_time_to_close: number;
+        average_time_to_close_trend: number | null;
     };
     revenue_trend: Array<{
         month: string;
         won: number;
         pipeline: number;
+    }>;
+    win_rate_trend: Array<{
+        month: string;
+        win_rate: number;
     }>;
     quote_activity: Array<{
         order: number;
@@ -114,10 +122,13 @@ const props = defineProps<{
     generated_at: string;
 }>();
 
-const { formatCurrency, formatNumber, formatRelativeTime } = useFormat(usePage().props.workspace_currency as string || undefined);
+const { formatCurrency, formatNumber, formatRelativeTime } = useFormat(
+    (usePage().props.workspace_currency as string) || undefined,
+);
 
 const formatPercent = (value: number): string => `${formatNumber(value, 0)}%`;
-const formatTrendValue = (value: number): string => formatNumber(value, Math.abs(value) < 10 ? 1 : 0);
+const formatTrendValue = (value: number): string =>
+    formatNumber(value, Math.abs(value) < 10 ? 1 : 0);
 
 type StatCard = {
     key: string;
@@ -134,7 +145,7 @@ const statCards = computed<StatCard[]>(() => [
         key: 'win_rate',
         title: 'Win Rate',
         value: formatPercent(props.stats.win.rate),
-        trend: props.stats.win.trend ?? 0,
+        trend: props.stats.win.trend || 0,
         trendText: 'vs last month',
         valueText: `${props.stats.win.win_count} / ${props.stats.win.sent_count} quotes`,
     },
@@ -142,7 +153,7 @@ const statCards = computed<StatCard[]>(() => [
         key: 'revenue_captured',
         title: 'Revenue Captured',
         value: formatCurrency(props.stats.won_this_month),
-        trend: props.stats.won_trend ?? 0,
+        trend: props.stats.won_trend || 0,
         trendText: 'vs last month',
         note: 'of total sent value',
     },
@@ -150,7 +161,21 @@ const statCards = computed<StatCard[]>(() => [
         key: 'pipeline',
         title: 'Pipeline Value',
         value: formatCurrency(props.stats.pipeline_value),
-        trend: props.stats.pipeline_trend ?? 0,
+        trend: props.stats.pipeline_trend || 0,
+        trendText: 'vs last month',
+    },
+    {
+        key: 'average_deal_size',
+        title: 'Average Deal Size',
+        value: formatCurrency(props.stats.average_deal_size),
+        trend: props.stats.average_deal_size_trend || 0,
+        trendText: 'vs last month',
+    },
+    {
+        key: 'average_time_to_close',
+        title: 'Avg Time to Close',
+        value: `${formatNumber(props.stats.average_time_to_close)} days`,
+        trend: props.stats.average_time_to_close_trend || 0,
         trendText: 'vs last month',
     },
     {
@@ -204,6 +229,37 @@ const revenueSvgDefs = `
   </linearGradient>
 `;
 
+const winRateChartData = computed(() =>
+    props.win_rate_trend.map((entry, index) => ({
+        ...entry,
+        order: index,
+    })),
+);
+type WinRateData = (typeof winRateChartData.value)[number];
+const winRateTickValues = computed(() =>
+    winRateChartData.value.map((point) => point.order),
+);
+
+const formatWinRateTick = (value: number): string => {
+    const match = winRateChartData.value.find((point) => point.order === value);
+
+    return match?.month ?? '';
+};
+
+const winRateChartConfig: ChartConfig = {
+    win_rate: {
+        label: 'Win Rate',
+        color: 'var(--chart-3)',
+    },
+};
+
+const winRateSvgDefs = `
+  <linearGradient id="fillWinRate" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="5%" stop-color="var(--color-win_rate)" stop-opacity="0.8" />
+    <stop offset="95%" stop-color="var(--color-win_rate)" stop-opacity="0.1" />
+  </linearGradient>
+`;
+
 type QuoteActivityDatum = {
     order: number;
     status: string;
@@ -212,7 +268,7 @@ type QuoteActivityDatum = {
 };
 
 const quoteActivityData = computed<QuoteActivityDatum[]>(
-    () => props.quote_activity ?? [],
+    () => props.quote_activity,
 );
 
 const quoteActivityChartConfig: ChartConfig = {
@@ -307,8 +363,7 @@ defineOptions({
             >
         </div>
 
-
-        <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <Card
                 v-for="stat in statCards"
                 :key="stat.key"
@@ -325,28 +380,32 @@ defineOptions({
                             >{{ stat.value }}</CardTitle
                         >
                         <div
-                        v-if="stat.trend !== null"
-                        class="flex items-center gap-1 text-xs"
+                            v-if="stat.trend !== null"
+                            class="flex items-center gap-1 text-xs"
                         >
-                        <span
-                        :class="
+                            <span
+                                :class="
                                     stat.trend >= 0
-                                    ? 'text-emerald-600'
-                                    : 'text-rose-600'
-                                    "
+                                        ? 'text-emerald-600'
+                                        : 'text-rose-600'
+                                "
                                 class="flex items-center gap-1 font-semibold"
-                                >
+                            >
                                 <span>{{ stat.trend >= 0 ? '↑' : '↓' }}</span>
                                 <span>{{ formatTrendValue(stat.trend) }}%</span>
-                              </span>
+                            </span>
                         </div>
                     </div>
                 </CardHeader>
                 <CardFooter
                     v-if="stat.trend !== null || stat.note || stat.valueText"
-                    class="pt-0 flex flex-col items-start"
+                    class="flex flex-col items-start pt-0"
                 >
-                    <span v-if="stat.valueText" class="text-xs text-muted-foreground">{{ stat.valueText }}</span>
+                    <span
+                        v-if="stat.valueText"
+                        class="text-xs text-muted-foreground"
+                        >{{ stat.valueText }}</span
+                    >
 
                     <div
                         class="flex items-center gap-2 text-sm text-muted-foreground"
@@ -445,7 +504,10 @@ defineOptions({
                                         { labelKey: 'month' },
                                     )
                                 "
-                                :color="[revenueChartConfig.pipeline.color, revenueChartConfig.won.color]"
+                                :color="[
+                                    revenueChartConfig.pipeline.color,
+                                    revenueChartConfig.won.color,
+                                ]"
                             />
                         </VisXYContainer>
                         <ChartLegendContent class="mt-4 justify-start" />
@@ -459,6 +521,92 @@ defineOptions({
                 </CardFooter>
             </Card>
 
+            <Card class="h-full border border-sidebar-border/70">
+                <CardHeader class="pb-0">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <CardTitle class="text-base font-semibold"
+                                >Win Rate Trend</CardTitle
+                            >
+                            <CardDescription
+                                >Win rate over last 6 months</CardDescription
+                            >
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent class="h-[320px]">
+                    <ChartContainer
+                        :config="winRateChartConfig"
+                        cursor
+                        class="h-full"
+                    >
+                        <VisXYContainer
+                            :data="winRateChartData"
+                            :svg-defs="winRateSvgDefs"
+                            :margin="{
+                                left: 28,
+                                right: 12,
+                                top: 12,
+                                bottom: 32,
+                            }"
+                        >
+                            <VisArea
+                                :x="(d: WinRateData) => d.order"
+                                :y="(d: WinRateData) => d.win_rate"
+                                :color="'url(#fillWinRate)'"
+                                :opacity="0.4"
+                                :curve-type="CurveType.MonotoneX"
+                            />
+                            <VisLine
+                                :x="(d: WinRateData) => d.order"
+                                :y="(d: WinRateData) => d.win_rate"
+                                :color="winRateChartConfig.win_rate.color"
+                                :curve-type="CurveType.MonotoneX"
+                                :line-width="1"
+                            />
+                            <VisAxis
+                                type="x"
+                                :x="(d: WinRateData) => d.order"
+                                :tick-values="winRateTickValues"
+                                :tick-format="formatWinRateTick"
+                                :tick-line="false"
+                                :domain-line="false"
+                                :grid-line="false"
+                                :num-ticks="6"
+                            />
+                            <VisAxis
+                                type="y"
+                                :num-ticks="4"
+                                :tick-line="false"
+                                :domain-line="false"
+                                :tick-format="
+                                    (d: number) => formatNumber(d) + '%'
+                                "
+                            />
+                            <ChartTooltip />
+                            <ChartCrosshair
+                                :template="
+                                    componentToString(
+                                        winRateChartConfig,
+                                        ChartTooltipContent,
+                                        { labelKey: 'month' },
+                                    )
+                                "
+                                :color="[winRateChartConfig.win_rate.color]"
+                            />
+                        </VisXYContainer>
+                    </ChartContainer>
+                </CardContent>
+                <CardFooter
+                    class="justify-between text-xs text-muted-foreground"
+                >
+                    <span>Win rate percentage</span>
+                    <span>Last six months</span>
+                </CardFooter>
+            </Card>
+        </section>
+
+        <section class="grid grid-cols-2 gap-4">
             <Card class="h-full border border-sidebar-border/70">
                 <CardHeader class="pb-0">
                     <div class="flex items-start justify-between gap-3">

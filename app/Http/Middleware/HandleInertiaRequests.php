@@ -2,12 +2,16 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\CreditNoteStatus;
 use App\Enums\FollowUpChannel;
 use App\Enums\InvoiceActivityType;
+use App\Enums\InvoiceReminderType;
 use App\Enums\InvoiceStatus;
 use App\Enums\QuoteActivityType;
 use App\Enums\QuoteFollowUpStatus;
 use App\Enums\QuoteStatus;
+use App\Enums\RecurringInvoiceFrequency;
+use App\Enums\RecurringInvoiceStatus;
 use App\Enums\SignalDirection;
 use App\Enums\TrackingEventType;
 use App\Enums\WinProbabilityConfidence;
@@ -259,6 +263,10 @@ class HandleInertiaRequests extends Middleware
             'invoiceActivityType' => InvoiceActivityType::all(),
             'winProbabilityConfidence' => WinProbabilityConfidence::all(),
             'signalDirection' => SignalDirection::all(),
+            'creditNoteStatus' => CreditNoteStatus::all(),
+            'recurringInvoiceFrequency' => RecurringInvoiceFrequency::all(),
+            'recurringInvoiceStatus' => RecurringInvoiceStatus::all(),
+            'invoiceReminderType' => InvoiceReminderType::all(),
         ];
     }
 

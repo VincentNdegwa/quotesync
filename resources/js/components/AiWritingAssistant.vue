@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { Loader2, Sparkles, X, Check } from 'lucide-vue-next';
+import { Sparkles, X, Check } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 
 const props = defineProps<{
     content: string;
@@ -23,14 +27,16 @@ const actions = [
     { id: 'rewrite', label: 'Rewrite from scratch' },
 ];
 
-const improveText = async (action: string) => {
+const improveText = async (action: string): Promise<void> => {
     selectedAction.value = action;
     isStreaming.value = true;
     improvedText.value = '';
 
-    eventSource.value = new EventSource(`/ai/writing/improve?content=${encodeURIComponent(props.content)}&action=${action}`);
+    eventSource.value = new EventSource(
+        `/ai/writing/improve?content=${encodeURIComponent(props.content)}&action=${action}`,
+    );
 
-    eventSource.value.onmessage = (event) => {
+    eventSource.value.onmessage = (event: MessageEvent): void => {
         if (event.data === '[DONE]') {
             isStreaming.value = false;
             eventSource.value?.close();
@@ -42,22 +48,22 @@ const improveText = async (action: string) => {
         improvedText.value += data.chunk;
     };
 
-    eventSource.value.onerror = () => {
+    eventSource.value.onerror = (): void => {
         isStreaming.value = false;
         eventSource.value?.close();
     };
 };
 
-const accept = () => {
+const accept = (): void => {
     props.onUpdate(improvedText.value);
     close();
 };
 
-const reject = () => {
+const reject = (): void => {
     close();
 };
 
-const close = () => {
+const close = (): void => {
     isOpen.value = false;
     isStreaming.value = false;
     selectedAction.value = null;
@@ -70,13 +76,13 @@ const close = () => {
     <Popover v-model:open="isOpen">
         <PopoverTrigger as-child>
             <Button variant="ghost" size="sm" @click="isOpen = true">
-                <Sparkles class="h-4 w-4 mr-1" />
+                <Sparkles class="mr-1 h-4 w-4" />
                 AI
             </Button>
         </PopoverTrigger>
         <PopoverContent class="w-96 p-0" align="start">
             <div v-if="!selectedAction" class="p-4">
-                <p class="text-sm font-medium mb-3">Improve with AI</p>
+                <p class="mb-3 text-sm font-medium">Improve with AI</p>
                 <div class="space-y-1">
                     <Button
                         v-for="action in actions"
@@ -92,31 +98,44 @@ const close = () => {
 
             <div v-else class="p-0">
                 <div class="grid grid-cols-2 divide-x">
-                    <div class="p-4 bg-gray-50">
-                        <p class="text-xs font-medium text-gray-500 mb-2">ORIGINAL</p>
-                        <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ content }}</p>
+                    <div class="bg-gray-50 p-4">
+                        <p class="mb-2 text-xs font-medium text-gray-500">
+                            ORIGINAL
+                        </p>
+                        <p class="text-sm whitespace-pre-wrap text-gray-700">
+                            {{ content }}
+                        </p>
                     </div>
                     <div class="p-4">
-                        <p class="text-xs font-medium text-gray-500 mb-2">SUGGESTED</p>
+                        <p class="mb-2 text-xs font-medium text-gray-500">
+                            SUGGESTED
+                        </p>
                         <div v-if="isStreaming" class="text-sm">
-                            {{ improvedText }}<span class="animate-pulse">▌</span>
+                            {{ improvedText
+                            }}<span class="animate-pulse">▌</span>
                         </div>
-                        <p v-else class="text-sm whitespace-pre-wrap">{{ improvedText }}</p>
+                        <p v-else class="text-sm whitespace-pre-wrap">
+                            {{ improvedText }}
+                        </p>
                     </div>
                 </div>
 
                 <div class="flex border-t">
-                    <Button variant="ghost" class="flex-1 rounded-none" @click="reject">
-                        <X class="h-4 w-4 mr-1" />
+                    <Button
+                        variant="ghost"
+                        class="flex-1 rounded-none"
+                        @click="reject"
+                    >
+                        <X class="mr-1 h-4 w-4" />
                         Reject
                     </Button>
-                    <Button 
-                        variant="default" 
-                        class="flex-1 rounded-none" 
+                    <Button
+                        variant="default"
+                        class="flex-1 rounded-none"
                         @click="accept"
                         :disabled="isStreaming"
                     >
-                        <Check class="h-4 w-4 mr-1" />
+                        <Check class="mr-1 h-4 w-4" />
                         Accept
                     </Button>
                 </div>

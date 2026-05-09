@@ -9,7 +9,11 @@ defineProps<{
     previewMode: boolean;
 }>();
 
-const borderWidthMap: Record<string, string> = { thin: '1px', medium: '2px', thick: '3px' };
+const borderWidthMap: Record<string, string> = {
+    thin: '1px',
+    medium: '2px',
+    thick: '3px',
+};
 </script>
 
 <template>

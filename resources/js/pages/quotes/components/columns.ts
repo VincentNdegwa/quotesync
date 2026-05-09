@@ -2,8 +2,10 @@ import { usePage } from '@inertiajs/vue3';
 import type { ColumnDef } from '@tanstack/vue-table';
 import { ArrowUpDown } from 'lucide-vue-next';
 import { h } from 'vue';
+import type { VNode } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
 import type { QuoteListRecord, QuoteStatusEnum } from '@/types';
@@ -20,28 +22,56 @@ type QuoteColumnOptions = {
 
 const sortableHeader = (
     label: string,
-    column: { getIsSorted: () => false | 'asc' | 'desc'; toggleSorting: (desc?: boolean) => void },
-    align: 'left' | 'right' = 'left',
-) => h(
-    Button,
-    {
-        variant: 'ghost',
-        class: align === 'right'
-            ? 'h-8 w-full justify-center px-0 text-right'
-            : 'h-8 justify-center px-0 text-left',
-        onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+    column: {
+        getIsSorted: () => false | 'asc' | 'desc';
+        toggleSorting: (desc?: boolean) => void;
     },
-    () => [
-        label,
-        h(ArrowUpDown, { class: 'ml-2 h-4 w-4' }),
-    ],
-);
+    align: 'left' | 'right' = 'left',
+): VNode =>
+    h(
+        Button,
+        {
+            variant: 'ghost',
+            class:
+                align === 'right'
+                    ? 'h-8 w-full justify-center px-0 text-right'
+                    : 'h-8 justify-center px-0 text-left',
+            onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+        },
+        () => [label, h(ArrowUpDown, { class: 'ml-2 h-4 w-4' })],
+    );
 
-
-export const getQuoteColumns = (options: QuoteColumnOptions): ColumnDef<QuoteListRecord>[] => {
-    const { getQuoteStatus } = useEnums();
+export const getQuoteColumns = (
+    options: QuoteColumnOptions,
+): ColumnDef<QuoteListRecord>[] => {
+    const { getQuoteStatus } = useEnums() as {
+        getQuoteStatus: (status: string) => QuoteStatusEnum | undefined;
+    };
 
     const columns: ColumnDef<QuoteListRecord>[] = [
+        {
+            id: 'select',
+            enableSorting: false,
+            enableHiding: false,
+            header: ({ table }) =>
+                h(Checkbox, {
+                    modelValue:
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected()
+                            ? 'indeterminate'
+                            : false),
+                    'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
+                        table.toggleAllPageRowsSelected(!!value),
+                    ariaLabel: 'Select all',
+                }),
+            cell: ({ row }) =>
+                h(Checkbox, {
+                    modelValue: row.getIsSelected(),
+                    'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
+                        row.toggleSelected(!!value),
+                    ariaLabel: 'Select row',
+                }),
+        },
         {
             accessorKey: 'number',
             header: ({ column }) => sortableHeader('Number', column),
@@ -50,7 +80,8 @@ export const getQuoteColumns = (options: QuoteColumnOptions): ColumnDef<QuoteLis
         {
             accessorKey: 'title',
             header: ({ column }) => sortableHeader('Title', column),
-            cell: ({ row }) => h('span', { class: 'font-medium' }, row.original.title),
+            cell: ({ row }) =>
+                h('span', { class: 'font-medium' }, row.original.title),
         },
     ];
 
@@ -68,29 +99,55 @@ export const getQuoteColumns = (options: QuoteColumnOptions): ColumnDef<QuoteLis
             header: 'Status',
             cell: ({ row }) => {
                 // Use client_status if available (for portal users), otherwise use status
-                const statusValue = (row.original as any).client_status || row.original.status;
+                const statusValue =
+                    (row.original as any).client_status || row.original.status;
                 const status = getQuoteStatus(statusValue);
 
-                return h(Badge, {
-                    variant: status?.badgeColor ?? 'outline',
-                    class: ['px-3 py-1 text-xs font-semibold', status?.cssColor],
-                }, () => status?.label ?? statusValue);
+                return h(
+                    Badge,
+                    {
+                        variant: status?.badgeColor ?? 'outline',
+                        class: [
+                            'px-3 py-1 text-xs font-semibold',
+                            status?.cssColor,
+                        ],
+                    },
+                    () => status?.label ?? statusValue,
+                );
             },
         },
         {
             accessorKey: 'base_total',
-            header: ({ column }) => h('div', { class: 'text-center' }, sortableHeader('Total', column, 'right')),
+            header: ({ column }) =>
+                h(
+                    'div',
+                    { class: 'text-center' },
+                    sortableHeader('Total', column, 'right'),
+                ),
             cell: ({ row }) => {
-                const total = typeof row.original.base_total === 'string' ? parseFloat(row.original.base_total) : row.original.base_total;
+                const total =
+                    typeof row.original.base_total === 'string'
+                        ? parseFloat(row.original.base_total)
+                        : row.original.base_total;
 
-                return h('div', { class: 'text-center tabular-nums' }, useFormat().formatCurrency(total ?? 0, row.original.base_currency || (usePage().props.workspace_currency as string) || undefined));
+                return h(
+                    'div',
+                    { class: 'text-center tabular-nums' },
+                    useFormat().formatCurrency(
+                        total ?? 0,
+                        row.original.base_currency ||
+                            (usePage().props.workspace_currency as string) ||
+                            undefined,
+                    ),
+                );
             },
         },
         {
             accessorKey: 'valid_until',
             header: 'Valid until',
-            cell: ({ row }) => useFormat().formatDate(row.original.valid_until) || '—',
-        }
+            cell: ({ row }) =>
+                useFormat().formatDate(row.original.valid_until) || '—',
+        },
     );
 
     // Only show win probability for non-client users
@@ -101,32 +158,52 @@ export const getQuoteColumns = (options: QuoteColumnOptions): ColumnDef<QuoteLis
             cell: ({ row }) => {
                 const winProb = row.original.win_probability;
 
-                if (!winProb || winProb.probability === null || winProb.probability === undefined) {
-return '—';
-}
+                if (!winProb || winProb.probability == null) {
+                    return '—';
+                }
 
                 const probability = winProb.probability;
 
-                const getColor = (p: number) => {
+                const getColor = (p: number): string => {
                     if (p >= 70) {
-return 'text-green-600';
-}
+                        return 'text-green-600';
+                    }
 
                     if (p >= 40) {
-return 'text-yellow-600';
-}
+                        return 'text-yellow-600';
+                    }
 
                     return 'text-red-600';
                 };
 
                 return h('div', { class: 'flex items-end gap-2' }, [
-                    h('div', { class: 'flex-1 h-2 rounded-full bg-gray-200 overflow-hidden' }, [
-                        h('div', { 
-                            class: 'h-full rounded-full',
-                            style: { width: `${probability}%`, backgroundColor: probability >= 70 ? '#22c55e' : probability >= 40 ? '#eab308' : '#ef4444' }
-                        })
-                    ]),
-                    h('span', { class: `text-xs font-bold tabular-nums ${getColor(probability)}` }, `${Math.round(probability)}%`)
+                    h(
+                        'div',
+                        {
+                            class: 'flex-1 h-2 rounded-full bg-gray-200 overflow-hidden',
+                        },
+                        [
+                            h('div', {
+                                class: 'h-full rounded-full',
+                                style: {
+                                    width: `${probability}%`,
+                                    backgroundColor:
+                                        probability >= 70
+                                            ? '#22c55e'
+                                            : probability >= 40
+                                              ? '#eab308'
+                                              : '#ef4444',
+                                },
+                            }),
+                        ],
+                    ),
+                    h(
+                        'span',
+                        {
+                            class: `text-xs font-bold tabular-nums ${getColor(probability)}`,
+                        },
+                        `${Math.round(probability)}%`,
+                    ),
                 ]);
             },
         });
@@ -136,15 +213,24 @@ return 'text-yellow-600';
         id: 'actions',
         enableSorting: false,
         header: () => h('div', { class: 'w-full text-right' }, 'Actions'),
-        cell: ({ row }) => h('div', { class: 'text-right' }, h(QuoteTableRowActions, {
-            quote: row.original,
-            quoteStatuses: options.quoteStatuses,
-            onSend: (quoteId: number) => options.onSend(quoteId),
-            onDelete: (quoteId: number) => options.onDelete(quoteId),
-            onApprove: options.onApprove ? (quoteId: number) => options.onApprove!(quoteId) : undefined,
-            onReject: options.onReject ? (quoteId: number) => options.onReject!(quoteId) : undefined,
-            isClient: options.isClient ?? false,
-        })),
+        cell: ({ row }) =>
+            h(
+                'div',
+                { class: 'text-right' },
+                h(QuoteTableRowActions, {
+                    quote: row.original,
+                    quoteStatuses: options.quoteStatuses,
+                    onSend: (quoteId: number) => options.onSend(quoteId),
+                    onDelete: (quoteId: number) => options.onDelete(quoteId),
+                    onApprove: options.onApprove
+                        ? (quoteId: number): void => options.onApprove!(quoteId)
+                        : undefined,
+                    onReject: options.onReject
+                        ? (quoteId: number): void => options.onReject!(quoteId)
+                        : undefined,
+                    isClient: options.isClient ?? false,
+                }),
+            ),
     });
 
     return columns;

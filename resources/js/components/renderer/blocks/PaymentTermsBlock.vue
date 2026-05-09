@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
-import { blockContentStyle, blockFontSizeClass } from '@/composables/useBlockStyles';
-import type { DocumentData, PaymentTermsBlockConfig, WorkspaceSettings } from '@/types';
+import {
+    blockContentStyle,
+    blockFontSizeClass,
+} from '@/composables/useBlockStyles';
+import type {
+    DocumentData,
+    PaymentTermsBlockConfig,
+    WorkspaceSettings,
+} from '@/types';
 
 const props = defineProps<{
     config: PaymentTermsBlockConfig;
@@ -13,16 +20,26 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-    (e: 'update-payment-terms', payload: { labelText: string; contextText: string | null }): void;
+    (
+        e: 'update-payment-terms',
+        payload: { labelText: string; contextText: string | null },
+    ): void;
 }>();
 
 const effectiveContextText = computed(() => {
     const data = props.data as QuoteData | InvoiceData;
 
-    return data.terms ?? props.config.contextText ?? props.settings.quotes.default_payment_terms;
+    return (
+        data.terms ??
+        props.config.contextText ??
+        props.settings.quotes.default_payment_terms
+    );
 });
 
-const methodLabelMap: Record<PaymentTermsBlockConfig['paymentMethods'][number], string> = {
+const methodLabelMap: Record<
+    PaymentTermsBlockConfig['paymentMethods'][number],
+    string
+> = {
     bank_transfer: 'Bank transfer',
     card: 'Card',
     mobile_money: 'Mobile money',
@@ -30,9 +47,15 @@ const methodLabelMap: Record<PaymentTermsBlockConfig['paymentMethods'][number], 
     cheque: 'Cheque',
 };
 
-const hasEditableContent = computed(() => !!effectiveContextText.value || !!props.editMode || !!props.previewMode);
+const hasEditableContent = computed(
+    () =>
+        !!effectiveContextText.value || !!props.editMode || !!props.previewMode,
+);
 
-const emitUpdate = (labelText: string | null, contextText: string | null): void => {
+const emitUpdate = (
+    labelText: string | null,
+    contextText: string | null,
+): void => {
     emit('update-payment-terms', {
         labelText: (labelText ?? '').trim() || 'Payment Terms',
         contextText,
@@ -51,7 +74,14 @@ const updateContextText = (value: string | null): void => {
 <template>
     <div
         v-if="hasEditableContent"
-        :class="[config.style === 'card' ? 'rounded-md border' : config.style === 'highlighted' ? 'rounded-md bg-muted/40' : '', blockFontSizeClass(config.fontSize)]"
+        :class="[
+            config.style === 'card'
+                ? 'rounded-md border'
+                : config.style === 'highlighted'
+                  ? 'rounded-md bg-muted/40'
+                  : '',
+            blockFontSizeClass(config.fontSize),
+        ]"
         :style="blockContentStyle(config)"
     >
         <InlineEditableText
@@ -63,7 +93,10 @@ const updateContextText = (value: string | null): void => {
             display-class="mb-2 font-semibold text-base"
             @update:model-value="updateLabel"
         />
-        <div v-if="config.showPaymentMethods && config.paymentMethods.length > 0" class="mt-2 flex flex-wrap gap-1.5">
+        <div
+            v-if="config.showPaymentMethods && config.paymentMethods.length > 0"
+            class="mt-2 flex flex-wrap gap-1.5"
+        >
             <span
                 v-for="method in config.paymentMethods"
                 :key="method"
@@ -78,7 +111,11 @@ const updateContextText = (value: string | null): void => {
             :edit-mode="editMode"
             :rows="6"
             placeholder="Add payment instructions"
-            :empty-text="previewMode ? 'Add payment instructions in block settings.' : 'Click to add payment instructions.'"
+            :empty-text="
+                previewMode
+                    ? 'Add payment instructions in block settings.'
+                    : 'Click to add payment instructions.'
+            "
             display-class="whitespace-pre-wrap text-sm text-gray-700"
             @update:model-value="updateContextText"
         />

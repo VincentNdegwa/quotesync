@@ -12,12 +12,15 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
     'quote_id',
     'quote_section_id',
     'catalog_item_id',
+    'catalog_item_variant_id',
     'name',
     'description',
     'quantity',
     'unit',
     'unit_price',
+    'cost_price',
     'discount_percent',
+    'price_tier_applied',
     'subtotal',
     'base_unit_price',
     'base_subtotal',
@@ -56,6 +59,14 @@ class QuoteLineItem extends Model
     }
 
     /**
+     * @return BelongsTo<CatalogItemVariant, $this>
+     */
+    public function catalogItemVariant(): BelongsTo
+    {
+        return $this->belongsTo(CatalogItemVariant::class);
+    }
+
+    /**
      * @return HasMany<QuoteLineItemTax, $this>
      */
     public function taxes(): HasMany
@@ -91,6 +102,7 @@ class QuoteLineItem extends Model
         return [
             'quantity' => 'decimal:2',
             'unit_price' => 'decimal:2',
+            'cost_price' => 'decimal:2',
             'discount_percent' => 'decimal:2',
             'subtotal' => 'decimal:2',
             'total' => 'decimal:2',

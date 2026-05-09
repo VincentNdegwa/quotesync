@@ -31,7 +31,10 @@ class PublicInvoiceController extends Controller
         return Inertia::render('public/InvoiceView', [
             'invoice' => $invoice,
             'invoice_uuid' => $invoice->invoice_uuid,
+            'layout' => $invoice->layout_snapshot,
             'settings' => $workspaceSettingsService->builderSettings($invoice->workspace),
+            'clientState' => $invoice->status === 'paid' ? 'paid' : ($invoice->status === 'void' ? 'closed' : 'open'),
+            'isWorkspaceMember' => $request->user()?->currentWorkspace?->id === $invoice->workspace_id,
         ]);
     }
 }

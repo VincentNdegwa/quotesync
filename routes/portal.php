@@ -24,5 +24,9 @@ Route::middleware('portal.auth')->group(function () {
         Route::get('/quotes/{uuid}', [PortalDashboardController::class, 'show'])->name('quotes.show');
         Route::post('/quotes/{uuid}/approve', [PortalDashboardController::class, 'approve'])->name('quotes.approve');
         Route::post('/quotes/{uuid}/reject', [PortalDashboardController::class, 'reject'])->name('quotes.reject');
+        Route::get('/invoices', [PortalDashboardController::class, 'invoices'])->name('invoices.index');
+        Route::get('/invoices/{uuid}', [PortalDashboardController::class, 'showInvoice'])->name('invoices.show');
+        Route::get('/credit-notes', [PortalDashboardController::class, 'creditNotes'])->name('credit-notes.index');
+        Route::get('/credit-notes/{uuid}', [PortalDashboardController::class, 'showCreditNote'])->name('credit-notes.show');
     });
 });

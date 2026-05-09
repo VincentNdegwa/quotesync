@@ -11,14 +11,19 @@ describe('useTaxCalculation', () => {
             { tax_rate: 10, inclusive: false },
         ];
 
-        const result = calculateLineItemTotals(quantity, unitPrice, discountPercent, taxes);
+        const result = calculateLineItemTotals(
+            quantity,
+            unitPrice,
+            discountPercent,
+            taxes,
+        );
 
         // Stated Price = 200
         // Inclusive Tax (10%) = 200 * 10 / 110 = 18.1818...
         // Exclusive Tax (10%) = 200 * 10 / 100 = 20
         // Total Tax = 18.18 + 20 = 38.18
         // Total = Stated Price + Exclusive Tax = 200 + 20 = 220
-        
+
         expect(result.total).toBe(220);
         expect(result.taxAmount).toBeCloseTo(38.18, 2);
         expect(result.subtotal).toBeCloseTo(181.82, 2);

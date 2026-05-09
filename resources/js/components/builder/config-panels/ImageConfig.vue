@@ -163,7 +163,6 @@ const captionAlignmentOptions = [
                 </div>
             </div>
 
-
             <div
                 class="border-t px-4 py-3"
                 :class="!config.showCaption ? 'opacity-60' : ''"

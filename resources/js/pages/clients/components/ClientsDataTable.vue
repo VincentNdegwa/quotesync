@@ -32,9 +32,11 @@ const emit = defineEmits<{
 const sorting = ref<SortingState>([]);
 const rowSelection = ref<RowSelectionState>({});
 
-const columns = computed(() => getClientColumns({
-    onEdit: (client) => emit('edit', client),
-}));
+const columns = computed(() =>
+    getClientColumns({
+        onEdit: (client) => emit('edit', client),
+    }),
+);
 
 const table = useVueTable({
     get data() {
@@ -62,7 +64,9 @@ const table = useVueTable({
 watch(
     () => [rowSelection.value, props.data],
     () => {
-        const selectedIds = table.getSelectedRowModel().rows.map((row) => row.original.id);
+        const selectedIds = table
+            .getSelectedRowModel()
+            .rows.map((row) => row.original.id);
         emit('update:selectedIds', selectedIds);
     },
     { deep: true, immediate: true },
@@ -73,7 +77,10 @@ watch(
     <div :class="clientsDataTableTheme.container">
         <Table>
             <TableHeader>
-                <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
+                <TableRow
+                    v-for="headerGroup in table.getHeaderGroups()"
+                    :key="headerGroup.id"
+                >
                     <TableHead
                         v-for="header in headerGroup.headers"
                         :key="header.id"
@@ -92,15 +99,26 @@ watch(
                     <TableRow
                         v-for="row in table.getRowModel().rows"
                         :key="row.id"
-                        :data-state="row.getIsSelected() ? 'selected' : undefined"
+                        :data-state="
+                            row.getIsSelected() ? 'selected' : undefined
+                        "
                     >
-                        <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                            <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                        <TableCell
+                            v-for="cell in row.getVisibleCells()"
+                            :key="cell.id"
+                        >
+                            <FlexRender
+                                :render="cell.column.columnDef.cell"
+                                :props="cell.getContext()"
+                            />
                         </TableCell>
                     </TableRow>
                 </template>
                 <TableRow v-else>
-                    <TableCell :colspan="columns.length" :class="clientsDataTableTheme.emptyCell">
+                    <TableCell
+                        :colspan="columns.length"
+                        :class="clientsDataTableTheme.emptyCell"
+                    >
                         No results found.
                     </TableCell>
                 </TableRow>

@@ -87,16 +87,32 @@ const executeDelete = (): void => {
                 </TableHeader>
                 <TableBody>
                     <TableRow v-for="unit in units" :key="unit.id">
-                        <TableCell class="font-medium">{{ unit.name }}</TableCell>
+                        <TableCell class="font-medium">{{
+                            unit.name
+                        }}</TableCell>
                         <TableCell>{{ unit.symbol || '—' }}</TableCell>
                         <TableCell>
-                            <Badge :variant="unit.is_active ? 'default' : 'secondary'">
+                            <Badge
+                                :variant="
+                                    unit.is_active ? 'default' : 'secondary'
+                                "
+                            >
                                 {{ unit.is_active ? 'Active' : 'Inactive' }}
                             </Badge>
                         </TableCell>
-                        <TableCell class="text-right space-x-2">
-                            <Button size="sm" variant="outline" @click="openEdit(unit)">Edit</Button>
-                            <Button size="sm" variant="destructive" @click="removeUnit(unit)">Delete</Button>
+                        <TableCell class="space-x-2 text-right">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                @click="openEdit(unit)"
+                                >Edit</Button
+                            >
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                @click="removeUnit(unit)"
+                                >Delete</Button
+                            >
                         </TableCell>
                     </TableRow>
                 </TableBody>

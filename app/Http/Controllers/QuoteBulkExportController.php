@@ -37,14 +37,14 @@ class QuoteBulkExportController extends Controller
         foreach ($quotes as $quote) {
             Gate::authorize('view', $quote);
 
-            if (! $quote->pdf_path) {
+            if (! $quote->pdf_url) {
                 $pdfPath = $pdfService->generate($quote);
-                $quote->pdf_path = $pdfPath;
+                $quote->pdf_url = $pdfPath;
                 $quote->save();
             }
 
             $pdfPaths[] = [
-                'path' => $quote->pdf_path,
+                'path' => $quote->pdf_url,
                 'name' => "quote-{$quote->number}.pdf",
             ];
         }

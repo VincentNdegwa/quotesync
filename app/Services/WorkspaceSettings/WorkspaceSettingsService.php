@@ -349,7 +349,7 @@ class WorkspaceSettingsService
         if (isset($definition['subsections'])) {
             $subsections = $definition['subsections'];
             foreach ($subsections as $subsectionKey => $subsection) {
-                if (!$this->isGroupComplete($workspace, $subsectionKey)) {
+                if (!$this->isSubsectionComplete($workspace, $subsectionKey, $subsection)) {
                     return false;
                 }
             }
@@ -396,6 +396,46 @@ class WorkspaceSettingsService
         foreach ($requiredKeys as $key) {
             /** @var array<string, mixed> $field */
             $field = $fields[$key];
+            /** @var array<string, mixed>|null $stored */
+            $stored = $settings->get($key);
+
+            if ($stored === null) {
+                return false;
+            }
+
+            $value = $this->decodeValue($stored['value'], $stored['cast'], (bool) $stored['encrypted']);
+
+            if (is_bool($value)) {
+                continue;
+            }
+
+            if ($value === null || (is_string($value) && trim($value) === '')) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function isSubsectionComplete(Workspace $workspace, string $subsectionKey, array $subsection): bool
+    {
+        $fields = $subsection['fields'] ?? [];
+
+        $requiredKeys = collect($fields)
+            ->filter(fn (array $field): bool => (bool) ($field['required'] ?? false))
+            ->keys();
+
+        if ($requiredKeys->isEmpty()) {
+            return true;
+        }
+
+        // Use cached settings
+        $allSettings = collect($this->getWorkspaceSettings($workspace));
+        $settings = $allSettings->filter(fn ($setting) => $setting['group'] === $subsectionKey)
+            ->whereIn('key', $requiredKeys->all())
+            ->keyBy('key');
+
+        foreach ($requiredKeys as $key) {
             /** @var array<string, mixed>|null $stored */
             $stored = $settings->get($key);
 

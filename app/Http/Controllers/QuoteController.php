@@ -4,14 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Enums\QuoteFollowUpStatus;
 use App\Enums\QuoteStatus;
-use App\Http\Requests\StoreQuoteRequest;
-use App\Http\Requests\UpdateQuoteRequest;
-use App\Http\Requests\UpdateQuoteStatusRequest;
+use App\Http\Requests\Quotes\QuoteBulkActionRequest;
+use App\Http\Requests\Quotes\StoreQuoteRequest;
+use App\Http\Requests\Quotes\UpdateQuoteRequest;
+use App\Http\Requests\Quotes\UpdateQuoteStatusRequest;
 use App\Jobs\SendFollowUpJob;
-use App\Models\Client;
+use App\Models\Invoice;
+use App\Enums\InvoiceStatus;
 use App\Models\Quote;
 use App\Models\QuoteFollowUp;
 use App\Models\QuoteTemplate;
+use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Quotes\QuoteAnalyticsService;
 use App\Services\BuilderLookupService;
@@ -28,7 +31,7 @@ class QuoteController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request, QuoteService $quoteService, WorkspaceSettingsService $workspaceSettingsService): Response
+    public function index(Request $request, QuoteService $quoteService, WorkspaceSettingsService $workspaceSettingsService): Response | JsonResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -40,32 +43,15 @@ class QuoteController extends Controller
             'sort' => $request->string('sort')->toString() ?: 'newest',
         ];
 
+        $quotes = $quoteService->paginateForIndex($workspace, $filters);
+
+        if ($request->wantsJson()) {
+            return response()->json($quotes);
+        }
+
         return Inertia::render('quotes/Index', [
             'filters' => $filters,
-            'quotes' => $quoteService->paginateForIndex($workspace, $filters)
-                ->through(fn (Quote $quote): array => [
-                    'id' => $quote->id,
-                    'quote_uuid' => $quote->quote_uuid,
-                    'number' => $quote->number,
-                    'title' => $quote->title,
-                    'status' => $quote->status,
-                    'total' => (float) ($quote->base_total ?? $quote->total),
-                    'base_total' => $quote->base_total ? (float) $quote->base_total : null,
-                    'currency' => $quote->base_currency ?? $quote->currency,
-                    'base_currency' => $quote->base_currency,
-                    'valid_until' => $quote->valid_until?->toDateString(),
-                    'created_at' => $quote->created_at?->toISOString(),
-                    'win_probability' => $quote->winProbability?->toResponseArray(),
-                    'client' => $quote->client ? [
-                        'id' => $quote->client->id,
-                        'company_name' => $quote->client->company_name,
-                        'email' => $quote->client->email,
-                    ] : null,
-                    'assignee' => $quote->assignee ? [
-                        'id' => $quote->assignee->id,
-                        'name' => $quote->assignee->name,
-                    ] : null,
-                ]),
+            'quotes' => $quotes,
         ]);
     }
 
@@ -163,58 +149,80 @@ class QuoteController extends Controller
 
         abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
 
-        $quote->loadMissing([
-            'client:id,company_name,address',
-            'workspace:id,name,display_name',
-            'template:id,name,layout',
-            'creator:id,name,email',
-            'assignee:id,name,email',
-            'sections.lineItems.catalogItem:id,sku',
+        $quote->load([
+            'client',
+            'assignee:id,name',
+            'workspace',
             'sections.lineItems.taxes',
-            'activities.user:id,name',
-            'quoteFollowUps.step:id,follow_up_sequence_id,channel,subject,message_template,day_offset',
-            'winProbability.signals'
+            'activities.user',
+            'comments.user:id,name',
+            'versions:id,version,number,created_at',
+            'tasks.assignedTo:id,name',
+            'tasks.assignedBy:id,name',
+            'tasks.status',
         ]);
 
-        $quote = $this->transformForInternalView($quote);
+        $taskStatuses = \App\Models\TaskStatus::where('workspace_id', $workspace->id)
+            ->orderBy('sort_order')
+            ->get(['id', 'name', 'slug', 'color', 'sort_order']);
+
+        $quote->setRelation('task_statuses', $taskStatuses);
+
+        $quote->setRelation('versions', $quote->versions()->withoutGlobalScopes()->get(['id', 'version', 'number', 'created_at']));
+
+        $quote->loadMissing([
+            'template:id,name,layout',
+            'creator:id,name,email',
+            'quoteFollowUps.step:id,follow_up_sequence_id,channel,subject,message_template,day_offset',
+            'winProbability.signals',
+        ]);
+
+        $quote = $this->transformQuote($quote);
+
+        $invoicesQuery = $quote->invoices()->withoutGlobalScopes()->orderByDesc('created_at');
+
+        $recentInvoices = (clone $invoicesQuery)
+            ->take(3)
+            ->get(['id', 'invoice_number', 'title', 'status', 'total', 'base_total', 'currency', 'base_currency', 'due_date', 'created_at']);
+
+        $quoteInvoices = [
+            'total' => (clone $invoicesQuery)->count(),
+            'items' => $recentInvoices->map(fn (Invoice $invoice): array => [
+                'id' => $invoice->id,
+                'number' => $invoice->invoice_number,
+                'title' => $invoice->title,
+                'status' => $invoice->status instanceof InvoiceStatus ? $invoice->status->value : $invoice->status,
+                'total' => (float) ($invoice->base_total ?? $invoice->total ?? 0),
+                'currency' => $invoice->base_currency ?? $invoice->currency,
+                'due_date' => $invoice->due_date?->toDateString(),
+                'created_at' => $invoice->created_at?->toISOString(),
+            ])->values()->all(),
+        ];
+
+        $teamMembers = User::whereHas('workspaces', function ($query) use ($workspace) {
+            $query->where('workspace_id', $workspace->id);
+        })->select('id', 'name', 'email')->get();
 
         return Inertia::render('quotes/Show', [
             'quote' => $quote,
+            'quoteInvoices' => $quoteInvoices,
             'settings' => $workspaceSettingsService->builderSettings($workspace),
             'quoteStatuses' => QuoteStatus::all(),
+            'teamMembers' => $teamMembers,
         ]);
     }
 
-    private function transformForInternalView(Quote $quote): array
+    public function availableUsers(Request $request, Quote $quote): JsonResponse
     {
-        $data = $quote->toArray();
+        $workspace = $request->user()?->currentWorkspace;
 
-        $data['subtotal'] = $quote->base_subtotal;
-        $data['discount_amount'] = $quote->base_discount_amount;
-        $data['tax_amount'] = $quote->base_tax_amount;
-        $data['total'] = $quote->base_total;
-        $data['currency'] = $quote->base_currency;
+        abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
 
-        if (isset($data['sections'])) {
-            foreach ($data['sections'] as &$section) {
-                if (isset($section['line_items'])) {
-                    foreach ($section['line_items'] as &$lineItem) {
-                        $lineItem['unit_price'] = $lineItem['base_unit_price'] ?? $lineItem['unit_price'];
-                        $lineItem['subtotal'] = $lineItem['base_subtotal'] ?? $lineItem['subtotal'];
-                        $lineItem['tax_amount'] = $lineItem['base_tax_amount'] ?? $lineItem['tax_amount'];
-                        $lineItem['total'] = $lineItem['base_total'] ?? $lineItem['total'];
+        $users = User::whereHas('workspaces', function ($query) use ($workspace) {
+            $query->where('workspace_id', $workspace->id);
+        })->select('id', 'name', 'email')->get();
 
-                        if (isset($lineItem['taxes'])) {
-                            foreach ($lineItem['taxes'] as &$tax) {
-                                $tax['tax_amount'] = $tax['base_tax_amount'] ?? $tax['tax_amount'];
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return $data;
+        return response()->json($users);
     }
 
     public function analytics(Request $request, Quote $quote, QuoteAnalyticsService $analyticsService): Response
@@ -231,26 +239,7 @@ class QuoteController extends Controller
         ]);
 
         return Inertia::render('quotes/Analytics', [
-            'quote' => [
-                'id' => $quote->id,
-                'quote_uuid' => $quote->quote_uuid,
-                'number' => $quote->number,
-                'title' => $quote->title,
-                'status' => $quote->status instanceof QuoteStatus ? $quote->status->value : (string) $quote->status,
-                'total' => (float) $quote->total,
-                'currency' => $quote->currency,
-                'valid_until' => $quote->valid_until?->toIso8601String(),
-                'created_at' => $quote->created_at?->toIso8601String(),
-                'client' => $quote->client ? [
-                    'id' => $quote->client->id,
-                    'company_name' => $quote->client->company_name,
-                    'email' => $quote->client->email,
-                ] : null,
-                'assignee' => $quote->assignee ? [
-                    'id' => $quote->assignee->id,
-                    'name' => $quote->assignee->name,
-                ] : null,
-            ],
+            'quote' => $quote,
             'analytics' => $analyticsService->getAnalytics($quote),
             'quoteStatuses' => QuoteStatus::all(),
         ]);
@@ -305,6 +294,47 @@ class QuoteController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote deleted.')]);
 
         return to_route('quotes.index');
+    }
+
+    public function bulkAction(QuoteBulkActionRequest $request, QuoteService $quoteService): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace, 404);
+
+        $validated = $request->validated();
+
+        $result = $quoteService->bulkAction(
+            $workspace,
+            $validated['ids'],
+            $validated['action'],
+        );
+
+        $processed = $result['processed'];
+        $skipped = $result['skipped'];
+        $missing = $result['missing'];
+
+        $message = __('No quotes were updated.');
+        $type = $processed > 0 ? 'success' : 'warning';
+
+        if ($processed > 0) {
+            $message = trans_choice(':count quote processed.|:count quotes processed.', $processed, ['count' => $processed]);
+
+            if ($skipped > 0) {
+                $message .= ' ' . trans_choice(':count quote skipped due to status restrictions.|:count quotes skipped due to status restrictions.', $skipped, ['count' => $skipped]);
+            }
+        } elseif ($skipped > 0) {
+            $message = trans_choice('All selected quotes were skipped (:count affected).|All selected quotes were skipped (:count affected).', $skipped, ['count' => $skipped]);
+        } elseif ($missing > 0) {
+            $message = __('None of the selected quotes were found.');
+        }
+
+        Inertia::flash('toast', [
+            'type' => $type,
+            'message' => $message,
+        ]);
+
+        return back();
     }
 
     public function kanban(Request $request, QuoteService $quoteService): JsonResponse
@@ -372,6 +402,20 @@ class QuoteController extends Controller
         return to_route('quotes.edit', $newQuote);
     }
 
+    public function restoreVersion(Request $request, Quote $quote, Quote $version, QuoteService $quoteService): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+        abort_unless($version->parent_quote_id === $quote->id, 403, 'Invalid version.');
+
+        $quoteService->restoreVersion($quote, $version);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote restored to version :version.', ['version' => $version->version])]);
+
+        return to_route('quotes.show', $quote);
+    }
+
     public function reopen(Request $request, Quote $quote, QuoteService $quoteService): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
@@ -427,5 +471,46 @@ class QuoteController extends Controller
         SendFollowUpJob::dispatch($quoteFollowUp->id);
 
         return back()->with('toast', ['type' => 'success', 'message' => __('Follow-up will be sent shortly.')]);
+    }
+
+    public function handover(Request $request, Quote $quote, QuoteService $quoteService): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
+
+        $validated = $request->validate([
+            'assigned_to' => 'required|integer|exists:users,id',
+        ]);
+
+        $quoteService->handover($quote, $validated['assigned_to']);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote ownership transferred successfully.')]);
+
+        return back();
+    }
+
+    private function transformQuote(Quote $quote): Quote
+    {
+        $quote->subtotal = $quote->base_subtotal;
+        $quote->discount_amount = $quote->base_discount_amount;
+        $quote->tax_amount = $quote->base_tax_amount;
+        $quote->total = $quote->base_total;
+        $quote->currency = $quote->base_currency;
+
+        foreach ($quote->sections as $section) {
+            foreach ($section->lineItems as $lineItem) {
+                $lineItem->unit_price = $lineItem->base_unit_price ?? $lineItem->unit_price;
+                $lineItem->subtotal = $lineItem->base_subtotal ?? $lineItem->subtotal;
+                $lineItem->tax_amount = $lineItem->base_tax_amount ?? $lineItem->tax_amount;
+                $lineItem->total = $lineItem->base_total ?? $lineItem->total;
+
+                foreach ($lineItem->taxes as $tax) {
+                    $tax->tax_amount = $tax->base_tax_amount ?? $tax->tax_amount;
+                }
+            }
+        }
+
+        return $quote;
     }
 }

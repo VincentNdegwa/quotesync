@@ -30,7 +30,8 @@ defineOptions({
     },
 });
 
-const roleDisplay = (role: WorkspaceRoleOption): string => role.display_name ?? role.name;
+const roleDisplay = (role: WorkspaceRoleOption): string =>
+    role.display_name ?? role.name;
 
 const inviteAction = '/teams/invitations';
 
@@ -69,7 +70,8 @@ const executeCancel = (): void => {
             <CardHeader>
                 <CardTitle>Invite member</CardTitle>
                 <CardDescription>
-                    Send an email invitation and assign a role for this workspace.
+                    Send an email invitation and assign a role for this
+                    workspace.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -100,7 +102,9 @@ const executeCancel = (): void => {
                             class="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                             required
                         >
-                            <option value="" disabled selected>Select a role</option>
+                            <option value="" disabled selected>
+                                Select a role
+                            </option>
                             <option
                                 v-for="role in availableRoles"
                                 :key="role.id"
@@ -129,7 +133,10 @@ const executeCancel = (): void => {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div v-if="members.length === 0" class="text-sm text-muted-foreground">
+                <div
+                    v-if="members.length === 0"
+                    class="text-sm text-muted-foreground"
+                >
                     No members found.
                 </div>
                 <div v-else class="space-y-3">
@@ -141,7 +148,9 @@ const executeCancel = (): void => {
                         <div class="flex items-start justify-between gap-3">
                             <div>
                                 <p class="font-medium">{{ member.name }}</p>
-                                <p class="text-sm text-muted-foreground">{{ member.email }}</p>
+                                <p class="text-sm text-muted-foreground">
+                                    {{ member.email }}
+                                </p>
                             </div>
                             <div class="flex flex-wrap justify-end gap-1">
                                 <Badge
@@ -180,9 +189,12 @@ const executeCancel = (): void => {
                     >
                         <div class="flex items-start justify-between gap-3">
                             <div>
-                                <p class="font-medium">{{ invitation.email }}</p>
+                                <p class="font-medium">
+                                    {{ invitation.email }}
+                                </p>
                                 <p class="text-sm text-muted-foreground">
-                                    Invited by {{ invitation.invited_by ?? 'Unknown' }}
+                                    Invited by
+                                    {{ invitation.invited_by ?? 'Unknown' }}
                                 </p>
                             </div>
                             <div class="flex items-center gap-2">

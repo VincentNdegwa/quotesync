@@ -3,22 +3,65 @@ import { EditorContent, useEditor } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
 import Highlight from '@tiptap/extension-highlight';
 import Typography from '@tiptap/extension-typography';
-import { ref, watch } from 'vue';
+import Mention from '@tiptap/extension-mention';
+import { ref, watch, computed } from 'vue';
 
 interface Props {
     modelValue: string;
     placeholder?: string;
     editable?: boolean;
+    showToolbar?: boolean;
+    class?: string;
+    maxHeight?: string;
+    mentions?: Array<{ id: string; label: string }>;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     placeholder: 'Type something...',
     editable: true,
+    showToolbar: true,
+    class: '',
+    maxHeight: '300px',
+    mentions: () => [],
 });
 
 const emit = defineEmits<{
     'update:modelValue': [value: string];
 }>();
+
+const editor = useEditor({
+    content: props.modelValue,
+    extensions: [
+        StarterKit.configure({
+            heading: false,
+        }),
+        Highlight,
+        Typography,
+        Mention.configure({
+            suggestion: {
+                items: ({ query }: { query: string }) => {
+                    return props.mentions
+                        .filter(item => item.label.toLowerCase().includes(query.toLowerCase()))
+                        .slice(0, 5);
+                },
+            },
+        }),
+    ],
+    editorProps: {
+        attributes: {
+            class: `prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none px-3 py-2 ${props.class}`,
+            style: `min-height: 60px; max-height: ${props.maxHeight}; overflow-y: auto;`,
+        },
+    },
+    editable: props.editable,
+    onUpdate: ({ editor }) => {
+        emit('update:modelValue', editor.getHTML());
+    },
+});
+
+const isEmpty = computed(() => {
+    return !editor.value || editor.value.isEmpty;
+});
 
 defineExpose({
     insertText: (text: string) => {
@@ -26,24 +69,8 @@ defineExpose({
             editor.value.chain().focus().insertContent(text).run();
         }
     },
-});
-
-const editor = useEditor({
-    content: props.modelValue,
-    extensions: [
-        StarterKit,
-        Highlight,
-        Typography,
-    ],
-    editorProps: {
-        attributes: {
-            class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none min-h-[150px] px-3 py-2',
-        },
-    },
-    editable: props.editable,
-    onUpdate: ({ editor }) => {
-        emit('update:modelValue', editor.getHTML());
-    },
+    isEmpty,
+    editor,
 });
 
 watch(() => props.modelValue, (newValue) => {
@@ -60,8 +87,8 @@ watch(() => props.editable, (newValue) => {
 </script>
 
 <template>
-    <div class="rounded-md border border-input bg-background">
-        <div v-if="editor && editable" class="flex flex-wrap gap-1 border-b p-2">
+    <div :class="['rounded-md border border-input bg-background', props.class]">
+        <div v-if="editor && editable && showToolbar" class="flex flex-wrap gap-1 border-b p-2">
             <button
                 type="button"
                 @click="editor.chain().focus().toggleBold().run()"
@@ -171,6 +198,14 @@ watch(() => props.editable, (newValue) => {
                 </svg>
             </button>
         </div>
-        <EditorContent :editor="editor" />
+        <div class="relative">
+            <EditorContent :editor="editor" />
+            <div
+                v-if="isEmpty && props.placeholder"
+                class="absolute top-0 left-0 pointer-events-none px-3 py-2 text-muted-foreground"
+            >
+                {{ props.placeholder }}
+            </div>
+        </div>
     </div>
 </template>

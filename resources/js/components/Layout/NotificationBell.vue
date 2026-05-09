@@ -25,14 +25,20 @@ import type { NotificationSharedData, NotificationSummary } from '@/types';
 const page = usePage();
 
 const sharedNotifications = computed<NotificationSharedData>(() => {
-    return (page.props.notifications as NotificationSharedData | undefined) ?? {
-        unread_count: 0,
-        items: [],
-    };
+    return (
+        (page.props.notifications as NotificationSharedData | null) ?? {
+            unread_count: 0,
+            items: [],
+        }
+    );
 });
 
-const unreadCount = computed<number>(() => sharedNotifications.value.unread_count ?? 0);
-const items = computed<NotificationSummary[]>(() => sharedNotifications.value.items ?? []);
+const unreadCount = computed<number>(
+    () => sharedNotifications.value.unread_count,
+);
+const items = computed<NotificationSummary[]>(
+    () => sharedNotifications.value.items,
+);
 
 const iconMap = {
     bell: Bell,
@@ -44,7 +50,8 @@ const iconMap = {
     warning: AlertTriangle,
 } as const;
 
-const iconFor = (item: NotificationSummary) => {
+const iconFor = (item: NotificationSummary): typeof Bell => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     return iconMap[item.icon as keyof typeof iconMap] ?? Bell;
 };
 
@@ -57,18 +64,27 @@ const markAllRead = (): void => {
 };
 
 const openNotification = (item: NotificationSummary): void => {
-    router.post(read(item.id).url, { redirect_to: item.url || '/dashboard' }, { preserveScroll: true });
+    router.post(
+        read(item.id).url,
+        { redirect_to: item.url || '/dashboard' },
+        { preserveScroll: true },
+    );
 };
 </script>
 
 <template>
     <DropdownMenu>
         <DropdownMenuTrigger as-child>
-            <Button variant="ghost" size="icon" class="relative h-9 w-9" aria-label="Notifications">
+            <Button
+                variant="ghost"
+                size="icon"
+                class="relative h-9 w-9"
+                aria-label="Notifications"
+            >
                 <Bell class="h-4 w-4" />
                 <Badge
                     v-if="unreadCount > 0"
-                    class="absolute -right-1 -top-1 h-5 min-w-5 justify-center px-1 text-[10px]"
+                    class="absolute -top-1 -right-1 h-5 min-w-5 justify-center px-1 text-[10px]"
                 >
                     {{ unreadCount > 99 ? '99+' : unreadCount }}
                 </Badge>
@@ -93,7 +109,10 @@ const openNotification = (item: NotificationSummary): void => {
 
             <DropdownMenuSeparator />
 
-            <div v-if="items.length === 0" class="px-3 py-8 text-center text-sm text-muted-foreground">
+            <div
+                v-if="items.length === 0"
+                class="px-3 py-8 text-center text-sm text-muted-foreground"
+            >
                 You're all caught up.
             </div>
 
@@ -108,14 +127,20 @@ const openNotification = (item: NotificationSummary): void => {
                 >
                     <span
                         class="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border"
-                        :class="item.is_read ? 'border-border bg-background text-muted-foreground' : 'border-primary/20 bg-primary/10 text-primary'"
+                        :class="
+                            item.is_read
+                                ? 'border-border bg-background text-muted-foreground'
+                                : 'border-primary/20 bg-primary/10 text-primary'
+                        "
                     >
                         <component :is="iconFor(item)" class="h-4 w-4" />
                     </span>
 
                     <div class="min-w-0 flex-1">
                         <div class="flex items-start justify-between gap-3">
-                            <p class="text-sm font-medium leading-5 text-foreground">
+                            <p
+                                class="text-sm leading-5 font-medium text-foreground"
+                            >
                                 {{ item.title }}
                             </p>
                             <span
@@ -124,7 +149,10 @@ const openNotification = (item: NotificationSummary): void => {
                             />
                         </div>
 
-                        <p v-if="item.message" class="mt-1 text-xs leading-5 text-muted-foreground">
+                        <p
+                            v-if="item.message"
+                            class="mt-1 text-xs leading-5 text-muted-foreground"
+                        >
                             {{ item.message }}
                         </p>
 

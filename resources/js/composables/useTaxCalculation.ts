@@ -13,8 +13,6 @@ export const calculateLineItemTotals = (
     taxAmount: number;
     total: number;
 } => {
-
-    
     const qty = Math.max(quantity, 0);
     const price = Math.max(unitPrice, 0);
     const discount = Math.min(Math.max(discountPercent, 0), 100);

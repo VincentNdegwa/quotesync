@@ -15,7 +15,9 @@ type TrackingOptions = {
 
 const BATCH_MAX = 20;
 
-export function useQuoteTracking(options: TrackingOptions) {
+export function useQuoteTracking(
+    options: TrackingOptions,
+): Record<string, unknown> {
     const queue: TrackingEvent[] = [];
     const flushInterval = options.flushInterval ?? 5000;
     let timer: ReturnType<typeof setInterval> | null = null;
@@ -31,14 +33,15 @@ export function useQuoteTracking(options: TrackingOptions) {
 
     const flush = (): void => {
         if (queue.length === 0) {
-return;
-}
+            return;
+        }
 
         const batch = queue.splice(0, queue.length);
 
         const payload = JSON.stringify({ events: batch });
 
         if (navigator.sendBeacon) {
+            // eslint-disable-line @typescript-eslint/no-unnecessary-condition
             const formData = new FormData();
             formData.append('events', JSON.stringify(batch));
             navigator.sendBeacon(options.endpoint, formData);
@@ -93,7 +96,10 @@ return;
 
         trackTimeSpent();
         flush();
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        document.removeEventListener(
+            'visibilitychange',
+            handleVisibilityChange,
+        );
     };
 
     const handleVisibilityChange = (): void => {

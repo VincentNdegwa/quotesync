@@ -51,13 +51,16 @@ const removeCategory = (category: CategoryRecord): void => {
 
 const executeDelete = (): void => {
     if (categoryToDelete.value) {
-        router.delete(`/configuration/categories/${categoryToDelete.value.id}`, {
-            preserveScroll: true,
-            onSuccess: () => {
-                deleteOpen.value = false;
-                categoryToDelete.value = null;
+        router.delete(
+            `/configuration/categories/${categoryToDelete.value.id}`,
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    deleteOpen.value = false;
+                    categoryToDelete.value = null;
+                },
             },
-        });
+        );
     }
 };
 </script>
@@ -87,16 +90,34 @@ const executeDelete = (): void => {
                 </TableHeader>
                 <TableBody>
                     <TableRow v-for="category in categories" :key="category.id">
-                        <TableCell class="font-medium">{{ category.name }}</TableCell>
-                        <TableCell class="text-right">{{ category.sort_order }}</TableCell>
+                        <TableCell class="font-medium">{{
+                            category.name
+                        }}</TableCell>
+                        <TableCell class="text-right">{{
+                            category.sort_order
+                        }}</TableCell>
                         <TableCell>
-                            <Badge :variant="category.is_active ? 'default' : 'secondary'">
+                            <Badge
+                                :variant="
+                                    category.is_active ? 'default' : 'secondary'
+                                "
+                            >
                                 {{ category.is_active ? 'Active' : 'Inactive' }}
                             </Badge>
                         </TableCell>
-                        <TableCell class="text-right space-x-2">
-                            <Button size="sm" variant="outline" @click="openEdit(category)">Edit</Button>
-                            <Button size="sm" variant="destructive" @click="removeCategory(category)">Delete</Button>
+                        <TableCell class="space-x-2 text-right">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                @click="openEdit(category)"
+                                >Edit</Button
+                            >
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                @click="removeCategory(category)"
+                                >Delete</Button
+                            >
                         </TableCell>
                     </TableRow>
                 </TableBody>
