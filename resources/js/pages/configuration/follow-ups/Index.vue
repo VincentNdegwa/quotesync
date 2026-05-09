@@ -434,7 +434,7 @@ const placeholderGroups = computed(() => ({
                                 >
                                     <Plus class="h-3 w-3" />
                                 </div>
-                                <span class="text-xs">Add step</span>
+                                <span class="text-xs">Add Step</span>
                             </button>
                         </div>
                     </div>

@@ -45,15 +45,15 @@ const viewIcon = computed(() =>
     <div class="flex flex-wrap items-center gap-2">
         <Button class="hidden sm:inline-flex" @click="emit('open-create-item')">
             <Plus class="mr-2 h-4 w-4" />
-            Add item
+            Add Item
         </Button>
 
         <Button
             class="sm:hidden"
             size="icon"
             @click="emit('open-create-item')"
-            title="Add item"
-            aria-label="Add item"
+            title="Add Item"
+            aria-label="Add Item"
         >
             <Plus class="h-4 w-4" />
         </Button>

@@ -30,15 +30,15 @@ const emit = defineEmits<{
             @click="emit('open-create-client')"
         >
             <Plus class="mr-2 h-4 w-4" />
-            Add client
+            Add Client
         </Button>
 
         <Button
             class="sm:hidden"
             size="icon"
             @click="emit('open-create-client')"
-            title="Add client"
-            aria-label="Add client"
+            title="Add Client"
+            aria-label="Add Client"
         >
             <Plus class="h-4 w-4" />
         </Button>

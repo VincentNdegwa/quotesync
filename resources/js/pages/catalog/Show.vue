@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router, setLayoutProps, usePage } from '@inertiajs/vue3';
-import { Edit, Plus, Trash2 } from 'lucide-vue-next';
+import { Edit, Image as ImageIcon, Plus, Trash2 } from 'lucide-vue-next';
 import { computed, ref, watchEffect } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
@@ -202,9 +202,10 @@ const catalogActionsRef = ref<{
                         </div>
                         <div
                             v-else
-                            class="flex h-48 w-48 items-center justify-center rounded-md border border-dashed border-border text-sm text-muted-foreground"
+                            class="flex h-48 w-48 flex-col items-center justify-center gap-2 rounded-md border border-dashed border-border text-muted-foreground"
                         >
-                            No image
+                            <ImageIcon class="h-12 w-12" />
+                            <span class="text-sm">No image</span>
                         </div>
 
                         <div class="space-y-4">

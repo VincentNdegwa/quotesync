@@ -246,7 +246,7 @@ defineExpose({
     <template v-if="variant === 'add'">
         <Button @click="openCreate()">
             <Plus class="mr-2 h-4 w-4" />
-            Add catalog item
+            Add Catalog Item
         </Button>
     </template>
 
@@ -254,11 +254,11 @@ defineExpose({
     <template v-if="variant === 'buttons' && item">
         <Button @click="openVariantDialog()">
             <Plus class="mr-2 h-4 w-4" />
-            Add variant
+            Add Variant
         </Button>
         <Button @click="openPriceTierDialog()">
             <Plus class="mr-2 h-4 w-4" />
-            Add price tier
+            Add Price Tier
         </Button>
         <DropdownMenu>
             <DropdownMenuTrigger as-child>
@@ -267,25 +267,6 @@ defineExpose({
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" class="w-48">
-                <DropdownMenuItem :as-child="true">
-                    <Link
-                        :href="`/catalog/${item.id}`"
-                        class="flex w-full items-center gap-2"
-                    >
-                        <Eye class="h-4 w-4" />
-                        <span>View</span>
-                    </Link>
-                </DropdownMenuItem>
-
-                <DropdownMenuItem
-                    class="flex items-center gap-2"
-                    @select="openEdit(item)"
-                >
-                    <Pencil class="h-4 w-4" />
-                    <span>Edit</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
 
                 <DropdownMenuItem :as-child="true">
                     <Link href="/catalog" class="flex w-full items-center gap-2">

@@ -234,7 +234,7 @@ const executeDeleteRule = (): void => {
             <div class="flex justify-end">
                 <Button class="gap-2" @click="ruleDialogOpen = true">
                     <Plus class="h-4 w-4" />
-                    Add rule
+                    Add Rule
                 </Button>
             </div>
         </div>

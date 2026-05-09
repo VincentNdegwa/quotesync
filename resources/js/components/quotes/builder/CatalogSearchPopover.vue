@@ -75,7 +75,7 @@ const handleSelect = (catalogItem: BuilderCatalogItem): void => {
                     size="sm"
                     class="h-8 gap-2"
                 >
-                    <slot name="label">Add item</slot>
+                    <slot name="label">Add Item</slot>
                     <ChevronsUpDownIcon class="h-4 w-4 opacity-50" />
                 </Button>
             </slot>

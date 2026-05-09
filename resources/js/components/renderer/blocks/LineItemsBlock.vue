@@ -501,7 +501,7 @@ const stripeClass = (index: number): string => {
                                                     "
                                                     class="mt-0.5 text-xs text-muted-foreground/70"
                                                 >
-                                                    Add description
+                                                    Add Description
                                                 </p>
                                                 <p
                                                     v-if="
@@ -808,7 +808,7 @@ const stripeClass = (index: number): string => {
                                 class="h-7 text-xs"
                             >
                                 <Plus class="mr-1 h-3 w-3" />
-                                Add item
+                                Add Item
                             </Button>
                         </template>
                     </CatalogSearchPopover>
@@ -826,7 +826,7 @@ const stripeClass = (index: number): string => {
                     "
                 >
                     <Plus class="mr-1 h-3 w-3" />
-                    Add item
+                    Add Item
                 </Button>
             </div>
         </div>
@@ -839,7 +839,7 @@ const stripeClass = (index: number): string => {
                 @click="emit('add-section')"
             >
                 <Plus class="mr-1 h-3 w-3" />
-                Add section
+                Add Section
             </Button>
         </div>
     </div>

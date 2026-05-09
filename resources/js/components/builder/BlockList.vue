@@ -90,7 +90,7 @@ const onDrop = (index: number): void => {
             <p
                 class="mb-2 text-xs tracking-wide text-muted-foreground uppercase"
             >
-                Add block
+                Add Block
             </p>
             <div class="grid grid-cols-1 gap-2">
                 <Button

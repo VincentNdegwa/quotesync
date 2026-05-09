@@ -1,6 +1,6 @@
 import { usePage } from '@inertiajs/vue3';
 import type { ColumnDef } from '@tanstack/vue-table';
-import { ArrowUpDown } from 'lucide-vue-next';
+import { ArrowUpDown, Image as ImageIcon } from 'lucide-vue-next';
 import { h } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -74,6 +74,27 @@ export const getCatalogColumns = (
                     row.toggleSelected(!!value),
                 ariaLabel: 'Select row',
             }),
+    },
+    {
+        id: 'image',
+        enableSorting: false,
+        header: '',
+        cell: ({ row }) =>
+            h('div', { class: 'flex items-center justify-center' }, [
+                row.original.image_url
+                    ? h('img', {
+                          src: row.original.image_url,
+                          alt: row.original.name,
+                          class: 'h-10 w-10 rounded-md object-cover',
+                      })
+                    : h(
+                          'div',
+                          {
+                              class: 'flex h-10 w-10 items-center justify-center rounded-md bg-muted',
+                          },
+                          [h(ImageIcon, { class: 'h-5 w-5 text-muted-foreground' })],
+                      ),
+            ]),
     },
     {
         accessorKey: 'name',
