@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceActivity;
 use App\Models\InvoiceLineItemTax;
 use App\Models\Quote;
+use App\Models\Workspace;
 use App\Services\ExchangeRateService;
 use App\Services\Invoices\InvoiceNumberingService;
 use App\Services\Quotes\TaxCalculator as QuotesTaxCalculator;
@@ -385,5 +386,79 @@ class InvoiceService
             'base_tax_amount' => $baseTaxAmount,
             'base_total' => $baseTotal,
         ]);
+    }
+
+    /**
+     * @param  array<int, int>  $ids
+     * @return array{processed:int,skipped:int,missing:int,skipped_details:array<int, array{id:int,status:string,reason:string}>}
+     */
+    public function bulkAction(Workspace $workspace, array $ids, string $action): array
+    {
+        $invoices = Invoice::query()
+            ->where('workspace_id', $workspace->id)
+            ->whereIn('id', $ids)
+            ->get(['id', 'workspace_id', 'status']);
+
+        $eligibleIds = [];
+        $skipped = [];
+
+        foreach ($invoices as $invoice) {
+            $status = $invoice->status instanceof \App\Enums\InvoiceStatus
+                ? $invoice->status
+                : \App\Enums\InvoiceStatus::from($invoice->status);
+
+            $canProceed = match ($action) {
+                'delete' => $status->canBeDeleted(),
+                'archive' => $status->canBeArchived(),
+                default => false,
+            };
+
+            if ($canProceed) {
+                $eligibleIds[] = $invoice->id;
+            } else {
+                $skipped[] = [
+                    'id' => $invoice->id,
+                    'status' => $status->value,
+                    'reason' => "Action '{$action}' not permitted for status {$status->value}.",
+                ];
+            }
+        }
+
+        if ($eligibleIds !== []) {
+            Invoice::query()
+                ->where('workspace_id', $workspace->id)
+                ->whereIn('id', $eligibleIds)
+                ->delete();
+
+            if ($action === 'archive') {
+                $now = now();
+                $userId = auth()->id();
+
+                $activities = array_map(
+                    fn (int $invoiceId): array => [
+                        'invoice_id' => $invoiceId,
+                        'workspace_id' => $workspace->id,
+                        'user_id' => $userId,
+                        'type' => \App\Enums\InvoiceActivityType::Voided->value,
+                        'description' => 'Invoice archived',
+                        'metadata' => null,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ],
+                    $eligibleIds,
+                );
+
+                InvoiceActivity::query()->insert($activities);
+            }
+        }
+
+        $missingCount = max(0, count($ids) - $invoices->count());
+
+        return [
+            'processed' => count($eligibleIds),
+            'skipped' => count($skipped),
+            'missing' => $missingCount,
+            'skipped_details' => $skipped,
+        ];
     }
 }

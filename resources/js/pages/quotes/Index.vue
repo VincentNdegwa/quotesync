@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import { Archive, Download, Trash2 } from 'lucide-vue-next';
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -97,6 +99,10 @@ const hasQuotes = computed(() => props.quotes.data.length > 0);
 
 const showDeleteDialog = ref(false);
 const quoteToDelete = ref<number | null>(null);
+const selectedIds = ref<number[]>([]);
+const bulkActionDialogOpen = ref(false);
+const bulkActionType = ref<'delete' | 'archive' | null>(null);
+const bulkActionLoading = ref(false);
 
 const removeQuote = (quoteId: number): void => {
     quoteToDelete.value = quoteId;
@@ -138,6 +144,113 @@ const executeSend = (): void => {
         );
     }
 };
+
+const hasSelection = computed(() => selectedIds.value.length > 0);
+
+const exportSelected = (): void => {
+    if (selectedIds.value.length === 0) {
+        return;
+    }
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/quotes/bulk-export';
+    form.style.display = 'none';
+
+    const csrfToken = document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute('content');
+
+    if (csrfToken) {
+        const tokenInput = document.createElement('input');
+        tokenInput.type = 'hidden';
+        tokenInput.name = '_token';
+        tokenInput.value = csrfToken;
+        form.appendChild(tokenInput);
+    }
+
+    selectedIds.value.forEach((id) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'quote_ids[]';
+        input.value = String(id);
+        form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+};
+
+const openBulkActionDialog = (action: 'delete' | 'archive'): void => {
+    if (selectedIds.value.length === 0) {
+        return;
+    }
+
+    bulkActionType.value = action;
+    bulkActionDialogOpen.value = true;
+};
+
+const executeBulkAction = (): void => {
+    if (!bulkActionType.value || selectedIds.value.length === 0) {
+        bulkActionDialogOpen.value = false;
+        return;
+    }
+
+    bulkActionLoading.value = true;
+
+    router.post(
+        QuoteController.bulkAction().url,
+        {
+            ids: selectedIds.value,
+            action: bulkActionType.value,
+        },
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                selectedIds.value = [];
+                bulkActionDialogOpen.value = false;
+                bulkActionType.value = null;
+            },
+            onFinish: () => {
+                bulkActionLoading.value = false;
+            },
+        },
+    );
+};
+
+const bulkActionDialogTitle = computed(() =>
+    bulkActionType.value === 'delete'
+        ? 'Delete selected quotes'
+        : 'Archive selected quotes',
+);
+
+const bulkActionDialogDescription = computed(() => {
+    const count = selectedIds.value.length;
+
+    if (bulkActionType.value === 'delete') {
+        return `Are you sure you want to delete ${count} selected quote${
+            count === 1 ? '' : 's'
+        }? This action cannot be undone and only draft quotes will be removed.`;
+    }
+
+    return `Are you sure you want to archive ${count} selected quote${
+        count === 1 ? '' : 's'
+    }? Only won or lost quotes are eligible for archiving.`;
+});
+
+const bulkActionDialogConfirmText = computed(() =>
+    bulkActionType.value === 'delete' ? 'Delete' : 'Archive',
+);
+
+watch(
+    () => viewMode.value,
+    (mode) => {
+        if (mode !== 'table') {
+            selectedIds.value = [];
+        }
+    },
+);
 </script>
 
 <template>
@@ -203,6 +316,38 @@ const executeSend = (): void => {
         </template>
 
         <template v-else>
+            <div
+                v-if="hasSelection"
+                class="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/40 p-3"
+            >
+                <span class="text-sm text-muted-foreground">
+                    {{ selectedIds.length }} selected
+                </span>
+
+                <Button variant="outline" size="sm" @click="exportSelected">
+                    <Download class="mr-2 h-4 w-4" />
+                    Export selected
+                </Button>
+
+                <Button
+                    variant="outline"
+                    size="sm"
+                    @click="openBulkActionDialog('archive')"
+                >
+                    <Archive class="mr-2 h-4 w-4" />
+                    Archive selected
+                </Button>
+
+                <Button
+                    variant="destructive"
+                    size="sm"
+                    @click="openBulkActionDialog('delete')"
+                >
+                    <Trash2 class="mr-2 h-4 w-4" />
+                    Delete selected
+                </Button>
+            </div>
+
             <QuotesDataTable
                 v-if="hasQuotes"
                 :data="quotes.data"
@@ -210,6 +355,7 @@ const executeSend = (): void => {
                 :is-client="false"
                 @send="sendQuote"
                 @delete="removeQuote"
+                @update:selected-ids="selectedIds = $event"
             />
 
             <div
@@ -269,6 +415,16 @@ const executeSend = (): void => {
             confirm-text="Delete"
             variant="destructive"
             @confirm="executeDelete"
+        />
+
+        <ConfirmDialog
+            v-model:open="bulkActionDialogOpen"
+            :title="bulkActionDialogTitle"
+            :description="bulkActionDialogDescription"
+            :confirm-text="bulkActionDialogConfirmText"
+            :variant="bulkActionType === 'delete' ? 'destructive' : 'default'"
+            :loading="bulkActionLoading"
+            @confirm="executeBulkAction"
         />
 
         <ConfirmDialog

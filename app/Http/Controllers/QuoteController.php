@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\QuoteFollowUpStatus;
 use App\Enums\QuoteStatus;
+use App\Http\Requests\Quotes\QuoteBulkActionRequest;
 use App\Http\Requests\Quotes\StoreQuoteRequest;
 use App\Http\Requests\Quotes\UpdateQuoteRequest;
 use App\Http\Requests\Quotes\UpdateQuoteStatusRequest;
@@ -293,6 +294,47 @@ class QuoteController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Quote deleted.')]);
 
         return to_route('quotes.index');
+    }
+
+    public function bulkAction(QuoteBulkActionRequest $request, QuoteService $quoteService): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace, 404);
+
+        $validated = $request->validated();
+
+        $result = $quoteService->bulkAction(
+            $workspace,
+            $validated['ids'],
+            $validated['action'],
+        );
+
+        $processed = $result['processed'];
+        $skipped = $result['skipped'];
+        $missing = $result['missing'];
+
+        $message = __('No quotes were updated.');
+        $type = $processed > 0 ? 'success' : 'warning';
+
+        if ($processed > 0) {
+            $message = trans_choice(':count quote processed.|:count quotes processed.', $processed, ['count' => $processed]);
+
+            if ($skipped > 0) {
+                $message .= ' ' . trans_choice(':count quote skipped due to status restrictions.|:count quotes skipped due to status restrictions.', $skipped, ['count' => $skipped]);
+            }
+        } elseif ($skipped > 0) {
+            $message = trans_choice('All selected quotes were skipped (:count affected).|All selected quotes were skipped (:count affected).', $skipped, ['count' => $skipped]);
+        } elseif ($missing > 0) {
+            $message = __('None of the selected quotes were found.');
+        }
+
+        Inertia::flash('toast', [
+            'type' => $type,
+            'message' => $message,
+        ]);
+
+        return back();
     }
 
     public function kanban(Request $request, QuoteService $quoteService): JsonResponse

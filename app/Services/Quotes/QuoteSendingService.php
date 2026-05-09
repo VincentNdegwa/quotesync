@@ -9,7 +9,6 @@ use App\Models\Workspace;
 use App\Notifications\QuoteSentInternalNotification;
 use App\Services\Pdf\QuotePdfService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Notification;
 
 class QuoteSendingService
@@ -72,13 +71,13 @@ class QuoteSendingService
         $pdfPath = null;
 
         if ($attachPdf) {
-            if (! $quote->pdf_path) {
+            if (! $quote->pdf_url) {
                 $pdfService = app(QuotePdfService::class);
                 $pdfPath = $pdfService->generate($quote);
-                $quote->pdf_path = $pdfPath;
+                $quote->pdf_url = $pdfPath;
                 $quote->save();
             } else {
-                $pdfPath = $quote->pdf_path;
+                $pdfPath = $quote->pdf_url;
             }
         }
 

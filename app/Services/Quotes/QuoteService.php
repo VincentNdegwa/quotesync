@@ -455,6 +455,79 @@ class QuoteService
         ]);
     }
 
+    /**
+     * @param  array<int, int>  $ids
+     * @return array{processed:int,skipped:int,missing:int,skipped_details:array<int, array{id:int,status:string,reason:string}>}
+     */
+    public function bulkAction(Workspace $workspace, array $ids, string $action): array
+    {
+        $quotes = Quote::query()
+            ->where('workspace_id', $workspace->id)
+            ->parents()
+            ->whereIn('id', $ids)
+            ->get(['id', 'workspace_id', 'status']);
+
+        $eligibleIds = [];
+        $skipped = [];
+
+        foreach ($quotes as $quote) {
+            $status = $quote->status instanceof QuoteStatus ? $quote->status : QuoteStatus::from($quote->status);
+
+            $canProceed = match ($action) {
+                'delete' => $status->canBeDeleted(),
+                'archive' => $status->canBeArchived(),
+                default => false,
+            };
+
+            if ($canProceed) {
+                $eligibleIds[] = $quote->id;
+            } else {
+                $skipped[] = [
+                    'id' => $quote->id,
+                    'status' => $status->value,
+                    'reason' => "Action '{$action}' not permitted for status {$status->value}.",
+                ];
+            }
+        }
+
+        if ($eligibleIds !== []) {
+            Quote::query()
+                ->where('workspace_id', $workspace->id)
+                ->whereIn('id', $eligibleIds)
+                ->delete();
+
+            if ($action === 'archive') {
+                $now = now();
+                $userId = auth()->id();
+
+                $activities = array_map(
+                    fn (int $quoteId): array => [
+                        'quote_id' => $quoteId,
+                        'workspace_id' => $workspace->id,
+                        'user_id' => $userId,
+                        'type' => 'created',
+                        'description' => 'Quote archived',
+                        'metadata' => null,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ],
+                    $eligibleIds,
+                );
+
+                QuoteActivity::query()->insert($activities);
+            }
+        }
+
+        $missingCount = max(0, count($ids) - $quotes->count());
+
+        return [
+            'processed' => count($eligibleIds),
+            'skipped' => count($skipped),
+            'missing' => $missingCount,
+            'skipped_details' => $skipped,
+        ];
+    }
+
     public function toBuilderPayload(Quote $quote): array
     {
         $quote->loadMissing([
@@ -737,7 +810,7 @@ class QuoteService
     {
         abort_if($quote->workspace_id !== auth()->user()?->current_workspace_id, 403);
 
-        $newAssignee = \App\Models\User::query()
+        $newAssignee = User::query()
             ->where('id', $newAssigneeId)
             ->whereHas('workspaces', fn ($q) => $q->where('workspace_id', $quote->workspace_id))
             ->firstOrFail();

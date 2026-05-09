@@ -2,8 +2,10 @@ import { usePage } from '@inertiajs/vue3';
 import type { ColumnDef } from '@tanstack/vue-table';
 import { ArrowUpDown } from 'lucide-vue-next';
 import { h } from 'vue';
+import type { VNode } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
 import type { InvoiceListRecord, InvoiceStatusEnum } from '@/types';
@@ -38,7 +40,9 @@ const sortableHeader = (
 export const getInvoiceColumns = (
     options: InvoiceColumnOptions,
 ): ColumnDef<InvoiceListRecord>[] => {
-    const { getInvoiceStatus } = useEnums();
+    const { getInvoiceStatus } = useEnums() as {
+        getInvoiceStatus: (status: string) => InvoiceStatusEnum | undefined;
+    };
     const page = usePage();
     const defaultCurrency =
         (page.props.workspace_currency as string) || undefined;
@@ -58,6 +62,30 @@ export const getInvoiceColumns = (
     };
 
     const columns: ColumnDef<InvoiceListRecord>[] = [
+        {
+            id: 'select',
+            enableSorting: false,
+            enableHiding: false,
+            header: ({ table }) =>
+                h(Checkbox, {
+                    modelValue:
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected()
+                            ? 'indeterminate'
+                            : false),
+                    'onUpdate:modelValue': (
+                        value: boolean | 'indeterminate',
+                    ) => table.toggleAllPageRowsSelected(!!value),
+                    ariaLabel: 'Select all',
+                }),
+            cell: ({ row }) =>
+                h(Checkbox, {
+                    modelValue: row.getIsSelected(),
+                    'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
+                        row.toggleSelected(!!value),
+                    ariaLabel: 'Select row',
+                }),
+        },
         {
             accessorKey: 'invoice_number',
             header: ({ column }) => sortableHeader('Invoice #', column),

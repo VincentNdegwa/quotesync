@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import {
-    FolderOpen,
-    KanbanSquare,
-    LayoutList,
-    MoreHorizontal,
-    Plus,
-} from 'lucide-vue-next';
+import { KanbanSquare, LayoutList, MoreHorizontal, Plus } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +11,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import InvoiceController from '@/actions/App/Http/Controllers/InvoiceController';
 
 const props = defineProps<{
     viewMode?: 'table' | 'kanban';

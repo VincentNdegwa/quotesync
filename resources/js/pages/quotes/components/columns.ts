@@ -2,8 +2,10 @@ import { usePage } from '@inertiajs/vue3';
 import type { ColumnDef } from '@tanstack/vue-table';
 import { ArrowUpDown } from 'lucide-vue-next';
 import { h } from 'vue';
+import type { VNode } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
 import type { QuoteListRecord, QuoteStatusEnum } from '@/types';
@@ -42,9 +44,35 @@ const sortableHeader = (
 export const getQuoteColumns = (
     options: QuoteColumnOptions,
 ): ColumnDef<QuoteListRecord>[] => {
-    const { getQuoteStatus } = useEnums();
+    const { getQuoteStatus } = useEnums() as {
+        getQuoteStatus: (status: string) => QuoteStatusEnum | undefined;
+    };
 
     const columns: ColumnDef<QuoteListRecord>[] = [
+        {
+            id: 'select',
+            enableSorting: false,
+            enableHiding: false,
+            header: ({ table }) =>
+                h(Checkbox, {
+                    modelValue:
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected()
+                            ? 'indeterminate'
+                            : false),
+                    'onUpdate:modelValue': (
+                        value: boolean | 'indeterminate',
+                    ) => table.toggleAllPageRowsSelected(!!value),
+                    ariaLabel: 'Select all',
+                }),
+            cell: ({ row }) =>
+                h(Checkbox, {
+                    modelValue: row.getIsSelected(),
+                    'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
+                        row.toggleSelected(!!value),
+                    ariaLabel: 'Select row',
+                }),
+        },
         {
             accessorKey: 'number',
             header: ({ column }) => sortableHeader('Number', column),

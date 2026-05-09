@@ -22,6 +22,7 @@ use App\Http\Controllers\ConfigurationUnitController;
 use App\Http\Controllers\CustomDomainController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\InvoiceBulkExportController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoicePdfController;
 use App\Http\Controllers\InvoiceReminderSequenceController;
@@ -133,12 +134,15 @@ Route::middleware(['auth'])->group(function () {
         Route::post('quotes/{quote}/pdf', [QuotePdfController::class, 'generate'])->name('quotes.pdf.generate');
         Route::get('quotes/{quote}/pdf/download', [QuotePdfController::class, 'download'])->name('quotes.pdf.download');
         Route::post('quotes/bulk-export', [QuoteBulkExportController::class, 'export'])->name('quotes.bulk-export');
+        Route::post('quotes/bulk-action', [QuoteController::class, 'bulkAction'])->name('quotes.bulk-action');
         Route::patch('quotes/{quote}/status', [QuoteController::class, 'updateStatus'])->name('quotes.status');
 
         Route::resource('invoices', InvoiceController::class);
         Route::post('invoices/{invoice}/record-payment', [InvoiceController::class, 'recordPayment'])->name('invoices.record-payment');
         Route::post('invoices/payments/{payment}/refund', [InvoiceController::class, 'refundPayment'])->name('invoices.payments.refund');
         Route::patch('invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('invoices.status');
+        Route::post('invoices/bulk-export', [InvoiceBulkExportController::class, 'export'])->name('invoices.bulk-export');
+        Route::post('invoices/bulk-action', [InvoiceController::class, 'bulkAction'])->name('invoices.bulk-action');
         Route::post('invoices/{invoice}/send', [InvoiceSendController::class, 'store'])->name('invoices.send');
         Route::post('invoices/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])->name('invoices.duplicate');
         Route::post('invoices/{invoice}/archive', [InvoiceController::class, 'archive'])->name('invoices.archive');

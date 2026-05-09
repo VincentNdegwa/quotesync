@@ -5,8 +5,8 @@ import {
     getSortedRowModel,
     useVueTable,
 } from '@tanstack/vue-table';
-import type { SortingState } from '@tanstack/vue-table';
-import { computed, ref } from 'vue';
+import type { RowSelectionState, SortingState } from '@tanstack/vue-table';
+import { computed, ref, watch } from 'vue';
 import {
     Table,
     TableBody,
@@ -27,9 +27,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     delete: [invoiceId: number];
+    'update:selectedIds': [ids: number[]];
 }>();
 
 const sorting = ref<SortingState>([]);
+const rowSelection = ref<RowSelectionState>({});
 
 const columns = computed(() =>
     getInvoiceColumns({
@@ -49,12 +51,26 @@ const table = useVueTable({
         get sorting() {
             return sorting.value;
         },
+        get rowSelection() {
+            return rowSelection.value;
+        },
     },
     getRowId: (row) => String(row.id),
     onSortingChange: (updater) => valueUpdater(updater, sorting),
+    onRowSelectionChange: (updater) => valueUpdater(updater, rowSelection),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    enableRowSelection: true,
 });
+
+watch(
+    () => [rowSelection.value, props.data],
+    () => {
+        const ids = table.getSelectedRowModel().rows.map((row) => row.original.id);
+        emit('update:selectedIds', ids);
+    },
+    { deep: true, immediate: true },
+);
 </script>
 
 <template>

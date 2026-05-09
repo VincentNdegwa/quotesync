@@ -6,6 +6,7 @@ use App\Enums\CreditNoteStatus;
 use App\Enums\InvoiceActivityType;
 use App\Enums\InvoiceStatus;
 use App\Enums\QuoteStatus;
+use App\Http\Requests\Invoices\InvoiceBulkActionRequest;
 use App\Http\Requests\Invoices\StoreInvoiceRequest;
 use App\Http\Requests\Invoices\UpdateInvoiceRequest;
 use App\Models\Invoice;
@@ -169,6 +170,47 @@ class InvoiceController extends Controller
             Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to update invoice: ' . $e->getMessage())]);
             return back()->withInput();
         }
+    }
+
+    public function bulkAction(InvoiceBulkActionRequest $request, InvoiceService $invoiceService): RedirectResponse
+    {
+        $workspace = $request->user()?->currentWorkspace;
+
+        abort_unless($workspace instanceof Workspace, 404);
+
+        $validated = $request->validated();
+
+        $result = $invoiceService->bulkAction(
+            $workspace,
+            $validated['ids'],
+            $validated['action'],
+        );
+
+        $processed = $result['processed'];
+        $skipped = $result['skipped'];
+        $missing = $result['missing'];
+
+        $message = __('No invoices were updated.');
+        $type = $processed > 0 ? 'success' : 'warning';
+
+        if ($processed > 0) {
+            $message = trans_choice(':count invoice processed.|:count invoices processed.', $processed, ['count' => $processed]);
+
+            if ($skipped > 0) {
+                $message .= ' ' . trans_choice(':count invoice skipped due to status restrictions.|:count invoices skipped due to status restrictions.', $skipped, ['count' => $skipped]);
+            }
+        } elseif ($skipped > 0) {
+            $message = trans_choice('All selected invoices were skipped (:count affected).|All selected invoices were skipped (:count affected).', $skipped, ['count' => $skipped]);
+        } elseif ($missing > 0) {
+            $message = __('None of the selected invoices were found.');
+        }
+
+        Inertia::flash('toast', [
+            'type' => $type,
+            'message' => $message,
+        ]);
+
+        return back();
     }
 
     public function updateStatus(Request $request, Invoice $invoice): RedirectResponse

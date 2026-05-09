@@ -2,54 +2,54 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Quote;
-use App\Services\Pdf\QuotePdfService;
+use App\Models\Invoice;
+use App\Services\Pdf\InvoicePdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use ZipArchive;
 
-class QuoteBulkExportController extends Controller
+class InvoiceBulkExportController extends Controller
 {
     public function export(Request $request)
     {
-        $quoteIds = $request->input('quote_ids', []);
+        $invoiceIds = $request->input('invoice_ids', []);
 
-        if (empty($quoteIds)) {
-            return response()->json(['error' => 'No quotes selected'], 400);
+        if ($invoiceIds === [] || ! is_array($invoiceIds)) {
+            return response()->json(['error' => 'No invoices selected'], 400);
         }
 
         $workspace = $request->user()?->currentWorkspace;
 
-        $quotes = Quote::query()
-            ->whereIn('id', $quoteIds)
+        $invoices = Invoice::query()
+            ->whereIn('id', $invoiceIds)
             ->where('workspace_id', $workspace?->id)
             ->get();
 
-        if ($quotes->isEmpty()) {
-            return response()->json(['error' => 'No valid quotes found'], 404);
+        if ($invoices->isEmpty()) {
+            return response()->json(['error' => 'No valid invoices found'], 404);
         }
 
+        $pdfService = app(InvoicePdfService::class);
         $pdfPaths = [];
-        $pdfService = app(QuotePdfService::class);
 
-        foreach ($quotes as $quote) {
-            Gate::authorize('view', $quote);
+        foreach ($invoices as $invoice) {
+            Gate::authorize('view', $invoice);
 
-            if (! $quote->pdf_url) {
-                $pdfPath = $pdfService->generate($quote);
-                $quote->pdf_url = $pdfPath;
-                $quote->save();
+            if (! $invoice->pdf_url) {
+                $pdfPath = $pdfService->generate($invoice);
+                $invoice->pdf_url = $pdfPath;
+                $invoice->save();
             }
 
             $pdfPaths[] = [
-                'path' => $quote->pdf_url,
-                'name' => "quote-{$quote->number}.pdf",
+                'path' => $invoice->pdf_url,
+                'name' => 'invoice-'.$invoice->invoice_number.'.pdf',
             ];
         }
 
-        $zipFileName = 'quotes-export-'.now()->format('Y-m-d-His').'.zip';
+        $zipFileName = 'invoices-export-'.now()->format('Y-m-d-His').'.zip';
         $zipPath = storage_path('app/temp/'.$zipFileName);
 
         if (! is_dir(storage_path('app/temp'))) {
