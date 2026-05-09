@@ -4,6 +4,7 @@ import {
     BarChart3,
     Building2,
     CheckSquare2,
+    FileMinus,
     FileText,
     LayoutGrid,
     Receipt,
@@ -61,6 +62,11 @@ const mainNavItems = computed<NavItem[]>(() => [
         title: 'Invoices',
         href: '/invoices',
         icon: Receipt,
+    },
+    {
+        title: 'Credit Notes',
+        href: '/credit-notes',
+        icon: FileMinus,
     },
     {
         title: 'Tasks',
