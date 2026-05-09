@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router, setLayoutProps, usePage } from '@inertiajs/vue3';
+import { Edit, Plus, Trash2 } from 'lucide-vue-next';
 import { computed, ref, watchEffect } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
@@ -20,7 +21,6 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Edit, Plus, Trash2 } from 'lucide-vue-next';
 import { useFormat } from '@/composables/useFormat';
 import type { CatalogItemRecord, ConfigurationUnitRecord } from '@/types';
 import CatalogActions from './components/CatalogActions.vue';

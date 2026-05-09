@@ -23,11 +23,25 @@ import { catalogDataTableTheme } from './theme';
 const props = defineProps<{
     data: CatalogItemRecord[];
     marginPercent: (item: CatalogItemRecord) => number;
+    categories?: {
+        id: number;
+        name: string;
+    }[];
+    taxes?: {
+        id: number;
+        name: string;
+        rate: number | string;
+    }[];
+    units?: {
+        id: number;
+        name: string;
+        symbol: string;
+    }[];
 }>();
 
 const emit = defineEmits<{
-    edit: [item: CatalogItemRecord];
     'update:selectedIds': [ids: number[]];
+    success: [];
 }>();
 
 const sorting = ref<SortingState>([]);
@@ -36,7 +50,10 @@ const rowSelection = ref<RowSelectionState>({});
 const columns = computed(() =>
     getCatalogColumns({
         marginPercent: props.marginPercent,
-        onEdit: (item) => emit('edit', item),
+        categories: props.categories,
+        taxes: props.taxes,
+        units: props.units,
+        onSuccess: () => emit('success'),
     }),
 );
 

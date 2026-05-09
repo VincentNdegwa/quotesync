@@ -11,7 +11,21 @@ import DataTableRowActions from './DataTableRowActions.vue';
 
 type CatalogColumnOptions = {
     marginPercent: (item: CatalogItemRecord) => number;
-    onEdit: (item: CatalogItemRecord) => void;
+    categories?: {
+        id: number;
+        name: string;
+    }[];
+    taxes?: {
+        id: number;
+        name: string;
+        rate: number | string;
+    }[];
+    units?: {
+        id: number;
+        name: string;
+        symbol: string;
+    }[];
+    onSuccess?: () => void;
 };
 
 const sortableHeader = (
@@ -148,7 +162,10 @@ export const getCatalogColumns = (
                 { class: 'text-right' },
                 h(DataTableRowActions, {
                     item: row.original,
-                    onEdit: (item: CatalogItemRecord) => options.onEdit(item),
+                    categories: options.categories,
+                    taxes: options.taxes,
+                    units: options.units,
+                    onSuccess: options.onSuccess,
                 }),
             ),
     },

@@ -2,8 +2,8 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { Ban, CheckCircle2, Download, Trash2 } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
+import CatalogActions from '@/pages/catalog/components/CatalogActions.vue';
 import CatalogHeaderActions from '@/components/catalog/CatalogHeaderActions.vue';
-import CatalogItemForm from '@/components/catalog/CatalogItemForm.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
@@ -16,14 +16,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetFooter,
-    SheetHeader,
-    SheetTitle,
-} from '@/components/ui/sheet';
 import { useFormat } from '@/composables/useFormat';
 import CatalogDataTable from '@/pages/catalog/components/CatalogDataTable.vue';
 import ConfigurationCategoryCreateDialog from '@/pages/configuration/categories/components/CreateDialog.vue';
@@ -43,7 +35,6 @@ type Filters = {
 };
 
 const ALL_OPTION = '__all__';
-const NONE_OPTION = '__none__';
 
 const props = defineProps<{
     items: Paginator<CatalogItemRecord>;
@@ -109,84 +100,14 @@ watch(
 const selectedIds = ref<number[]>([]);
 
 const viewMode = ref<'table' | 'grid'>('table');
-const isSheetOpen = ref(false);
-const editingItem = ref<CatalogItemRecord | null>(null);
 const deleteDialogOpen = ref(false);
 const bulkActionToRun = ref<
     'activate' | 'deactivate' | 'delete' | 'change_category' | null
 >(null);
 const categoryIdForAction = ref<string | undefined>(undefined);
 
-const form = useForm({
-    name: '',
-    description: '',
-    sku: '',
-    unit_id: null as number | null,
-    unit_price: 0,
-    cost_price: 0,
-    catalog_category_id: NONE_OPTION,
-    tax_ids: [] as number[],
-    is_active: true,
-    image: null as File | null,
-});
-
 const categoryDialogOpen = ref(false);
 const taxDialogOpen = ref(false);
-
-const openCreate = (): void => {
-    editingItem.value = null;
-    form.reset();
-    form.clearErrors();
-    form.unit_id = props.units.length > 0 ? props.units[0].id : null;
-    form.catalog_category_id = NONE_OPTION;
-    form.tax_ids = [];
-    form.is_active = true;
-    isSheetOpen.value = true;
-};
-
-const openEdit = (item: CatalogItemRecord): void => {
-    editingItem.value = item;
-    form.defaults({
-        name: item.name,
-        description: item.description ?? '',
-        sku: item.sku ?? '',
-        unit_id: item.unit_id,
-        unit_price: Number(item.unit_price || 0),
-        cost_price: Number(item.cost_price || 0),
-        catalog_category_id: item.category?.id
-            ? String(item.category.id)
-            : NONE_OPTION,
-        tax_ids: (item.taxes ?? []).map((tax) => tax.id),
-        is_active: Boolean(item.is_active),
-        image: null,
-    });
-    form.reset();
-    form.clearErrors();
-    isSheetOpen.value = true;
-};
-
-const submitItem = (): void => {
-    form.transform((data) => ({
-        ...data,
-        catalog_category_id:
-            data.catalog_category_id === NONE_OPTION
-                ? null
-                : data.catalog_category_id,
-        tax_ids: data.tax_ids,
-    })).submit(
-        editingItem.value ? 'put' : 'post',
-        editingItem.value ? `/catalog/${editingItem.value.id}` : '/catalog',
-        {
-            preserveScroll: true,
-            forceFormData: true,
-            onSuccess: () => {
-                isSheetOpen.value = false;
-                form.reset();
-                form.clearErrors();
-            },
-        },
-    );
-};
 
 const runBulkAction = (
     action: 'activate' | 'deactivate' | 'delete' | 'change_category',
@@ -299,15 +220,23 @@ const { formatCurrency } = useFormat(
                 description="Products and services used for building quotes."
             />
 
-            <CatalogHeaderActions
-                :view-mode="viewMode"
-                @toggle-view="
-                    viewMode = viewMode === 'table' ? 'grid' : 'table'
-                "
-                @open-create-item="openCreate"
-                @open-create-category="categoryDialogOpen = true"
-                @open-create-tax="taxDialogOpen = true"
-            />
+            <div class="flex flex-wrap items-center gap-2">
+                <CatalogActions
+                    variant="add"
+                    :categories="categories"
+                    :taxes="taxes"
+                    :units="units"
+                    @success="router.reload()"
+                />
+                <CatalogHeaderActions
+                    :view-mode="viewMode"
+                    @toggle-view="
+                        viewMode = viewMode === 'table' ? 'grid' : 'table'
+                    "
+                    @open-create-category="categoryDialogOpen = true"
+                    @open-create-tax="taxDialogOpen = true"
+                />
+            </div>
         </div>
 
         <div class="rounded-lg border p-3">
@@ -388,8 +317,11 @@ const { formatCurrency } = useFormat(
             v-if="viewMode === 'table'"
             :data="items.data"
             :margin-percent="marginPercent"
-            @edit="openEdit"
+            :categories="categories"
+            :taxes="taxes"
+            :units="units"
             @update:selected-ids="selectedIds = $event"
+            @success="router.reload()"
         />
 
         <div v-else class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -431,9 +363,14 @@ const { formatCurrency } = useFormat(
                     <Button size="sm" variant="outline" as-child>
                         <Link :href="`/catalog/${item.id}`">View</Link>
                     </Button>
-                    <Button size="sm" variant="ghost" @click="openEdit(item)"
-                        >Edit</Button
-                    >
+                    <CatalogActions
+                        :item="item"
+                        variant="dropdown"
+                        :categories="categories"
+                        :taxes="taxes"
+                        :units="units"
+                        @success="router.reload()"
+                    />
                 </div>
             </div>
         </div>
@@ -478,47 +415,6 @@ const { formatCurrency } = useFormat(
                 </span>
             </template>
         </div>
-
-        <Sheet
-            :open="isSheetOpen"
-            @update:open="(value) => (isSheetOpen = value)"
-        >
-            <SheetContent side="right" class="overflow-y-auto sm:max-w-xl">
-                <form class="space-y-6" @submit.prevent="submitItem">
-                    <SheetHeader>
-                        <SheetTitle>{{
-                            editingItem
-                                ? `Edit ${editingItem.name}`
-                                : 'Add catalog item'
-                        }}</SheetTitle>
-                        <SheetDescription>
-                            Manage reusable product and service records for
-                            quote line items.
-                        </SheetDescription>
-                    </SheetHeader>
-
-                    <CatalogItemForm
-                        v-model:form="form"
-                        :errors="form.errors"
-                        :categories="categories"
-                        :taxes="taxes"
-                        :units="units"
-                    />
-
-                    <SheetFooter>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            @click="isSheetOpen = false"
-                            >Cancel</Button
-                        >
-                        <Button type="submit" :disabled="form.processing">
-                            {{ editingItem ? 'Save changes' : 'Create item' }}
-                        </Button>
-                    </SheetFooter>
-                </form>
-            </SheetContent>
-        </Sheet>
 
         <ConfigurationCategoryCreateDialog v-model:open="categoryDialogOpen" />
         <ConfigurationTaxCreateDialog v-model:open="taxDialogOpen" />

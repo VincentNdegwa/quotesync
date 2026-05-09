@@ -6,12 +6,18 @@ import {
     setLayoutProps,
     usePage,
 } from '@inertiajs/vue3';
-import { Globe, Mail, MapPin, Phone, Tag, Users } from 'lucide-vue-next';
+import { Edit, Globe, Mail, MapPin, Phone, Plus, Tag, Trash2, Users } from 'lucide-vue-next';
 import { computed, ref, watchEffect } from 'vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useFormat } from '@/composables/useFormat';
 import type { ClientRecord, ClientStats } from '@/types';
 import ClientActions from './components/ClientActions.vue';
@@ -313,7 +319,10 @@ const closeContactDialog = (): void => {
                             <h3 class="text-lg font-semibold text-foreground">Stakeholders</h3>
                             <p class="text-sm text-muted-foreground">Contacts</p>
                         </div>
-                        <Button size="sm" @click="openContactDialog()">Add contact</Button>
+                        <Button size="sm" @click="openContactDialog()">
+                            <Plus class="mr-2 h-4 w-4" />
+                            Add Contact
+                        </Button>
                     </div>
 
                     <div class="space-y-4">
@@ -351,21 +360,40 @@ const closeContactDialog = (): void => {
                                 </div>
 
                                 <div class="flex flex-wrap gap-2">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        @click="openContactDialog(contact)"
-                                    >
-                                        Edit
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        class="text-destructive"
-                                        @click="deleteContact(contact.id)"
-                                    >
-                                        Delete
-                                    </Button>
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger as-child>
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    class="h-8 w-8"
+                                                    @click="openContactDialog(contact)"
+                                                >
+                                                    <Edit class="h-4 w-4" />
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Edit contact</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger as-child>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    class="h-8 w-8 text-destructive"
+                                                    @click="deleteContact(contact.id)"
+                                                >
+                                                    <Trash2 class="h-4 w-4" />
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Delete contact</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
                                 </div>
                             </div>
                         </template>

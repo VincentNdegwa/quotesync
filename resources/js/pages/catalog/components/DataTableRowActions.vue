@@ -1,13 +1,21 @@
 <script setup lang="ts">
-import type { CatalogItemRecord } from '@/types';
+import type {
+    CatalogCategoryRecord,
+    CatalogItemRecord,
+    ConfigurationUnitRecord,
+    TaxRecord,
+} from '@/types';
 import CatalogActions from './CatalogActions.vue';
 
 defineProps<{
     item: CatalogItemRecord;
+    categories?: CatalogCategoryRecord[];
+    taxes?: TaxRecord[];
+    units?: ConfigurationUnitRecord[];
 }>();
 
 const emit = defineEmits<{
-    edit: [item: CatalogItemRecord];
+    success: [];
 }>();
 </script>
 
@@ -16,7 +24,10 @@ const emit = defineEmits<{
         <CatalogActions
             :item="item"
             variant="dropdown"
-            @edit="emit('edit', item)"
+            :categories="categories"
+            :taxes="taxes"
+            :units="units"
+            @success="emit('success')"
         />
     </div>
 </template>

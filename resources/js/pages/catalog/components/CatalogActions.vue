@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3';
+import { Link, router, useForm } from '@inertiajs/vue3';
 import { Eye, MoreHorizontal, Pencil, Plus } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import CatalogItemForm from '@/components/catalog/CatalogItemForm.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -10,14 +12,31 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetFooter,
+    SheetHeader,
+    SheetTitle,
+} from '@/components/ui/sheet';
+import type {
+    CatalogCategoryRecord,
+    CatalogItemRecord,
+    ConfigurationUnitRecord,
+    TaxRecord,
+} from '@/types';
 import CatalogItemPriceTierDialog from './CatalogItemPriceTierDialog.vue';
 import CatalogItemVariantDialog from './CatalogItemVariantDialog.vue';
-import type { CatalogItemRecord } from '@/types';
+
+const NONE_OPTION = '__none__';
 
 const props = defineProps<{
-    item: CatalogItemRecord;
-    variant?: 'dropdown' | 'buttons';
+    item?: CatalogItemRecord | null;
+    variant?: 'dropdown' | 'buttons' | 'add';
+    categories?: CatalogCategoryRecord[];
+    taxes?: TaxRecord[];
+    units?: ConfigurationUnitRecord[];
 }>();
 
 const emit = defineEmits<{
@@ -51,6 +70,79 @@ const variantToDelete = ref<number | null>(null);
 
 const deletePriceTierDialogOpen = ref(false);
 const priceTierToDelete = ref<number | null>(null);
+
+// Sheet state for edit/create
+const isSheetOpen = ref(false);
+const editingItem = ref<CatalogItemRecord | null>(null);
+
+const form = useForm({
+    name: '',
+    description: '',
+    sku: '',
+    unit_id: null as number | null,
+    unit_price: 0,
+    cost_price: 0,
+    catalog_category_id: NONE_OPTION,
+    tax_ids: [] as number[],
+    is_active: true,
+    image: null as File | null,
+});
+
+const openCreate = (): void => {
+    editingItem.value = null;
+    form.reset();
+    form.clearErrors();
+    form.unit_id = props.units && props.units.length > 0 ? props.units[0].id : null;
+    form.catalog_category_id = NONE_OPTION;
+    form.tax_ids = [];
+    form.is_active = true;
+    isSheetOpen.value = true;
+};
+
+const openEdit = (item: CatalogItemRecord): void => {
+    editingItem.value = item;
+    form.defaults({
+        name: item.name,
+        description: item.description ?? '',
+        sku: item.sku ?? '',
+        unit_id: item.unit_id,
+        unit_price: Number(item.unit_price || 0),
+        cost_price: Number(item.cost_price || 0),
+        catalog_category_id: item.category?.id
+            ? String(item.category.id)
+            : NONE_OPTION,
+        tax_ids: (item.taxes ?? []).map((tax) => tax.id),
+        is_active: Boolean(item.is_active),
+        image: null,
+    });
+    form.reset();
+    form.clearErrors();
+    isSheetOpen.value = true;
+};
+
+const submitItem = (): void => {
+    form.transform((data) => ({
+        ...data,
+        catalog_category_id:
+            data.catalog_category_id === NONE_OPTION
+                ? null
+                : data.catalog_category_id,
+        tax_ids: data.tax_ids,
+    })).submit(
+        editingItem.value ? 'put' : 'post',
+        editingItem.value ? `/catalog/${editingItem.value.id}` : '/catalog',
+        {
+            preserveScroll: true,
+            forceFormData: true,
+            onSuccess: () => {
+                isSheetOpen.value = false;
+                form.reset();
+                form.clearErrors();
+                emit('success');
+            },
+        },
+    );
+};
 
 const openVariantDialog = (
     variant: {
@@ -144,12 +236,22 @@ defineExpose({
     openPriceTierDialog,
     deleteVariant,
     deletePriceTier,
+    openCreate,
+    openEdit,
 });
 </script>
 
 <template>
+    <!-- Add variant for Index page -->
+    <template v-if="variant === 'add'">
+        <Button @click="openCreate()">
+            <Plus class="mr-2 h-4 w-4" />
+            Add catalog item
+        </Button>
+    </template>
+
     <!-- Buttons variant with primary actions and dropdown for secondary -->
-    <template v-if="variant === 'buttons'">
+    <template v-if="variant === 'buttons' && item">
         <Button @click="openVariantDialog()">
             <Plus class="mr-2 h-4 w-4" />
             Add variant
@@ -175,14 +277,12 @@ defineExpose({
                     </Link>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem :as-child="true">
-                    <Link
-                        :href="`/catalog/${item.id}/edit`"
-                        class="flex w-full items-center gap-2"
-                    >
-                        <Pencil class="h-4 w-4" />
-                        <span>Edit</span>
-                    </Link>
+                <DropdownMenuItem
+                    class="flex items-center gap-2"
+                    @select="openEdit(item)"
+                >
+                    <Pencil class="h-4 w-4" />
+                    <span>Edit</span>
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator />
@@ -197,7 +297,7 @@ defineExpose({
     </template>
 
     <!-- Dropdown variant for table rows -->
-    <template v-if="variant === 'dropdown' || !variant">
+    <template v-if="(variant === 'dropdown' || !variant) && item">
         <DropdownMenu>
             <DropdownMenuTrigger as-child>
                 <Button
@@ -224,7 +324,7 @@ defineExpose({
 
                 <DropdownMenuItem
                     class="flex items-center gap-2"
-                    @select="emit('edit', item)"
+                    @select="openEdit(item)"
                 >
                     <Pencil class="h-4 w-4" />
                     <span>Edit</span>
@@ -234,12 +334,14 @@ defineExpose({
     </template>
 
     <CatalogItemVariantDialog
+        v-if="item"
         v-model:open="variantDialogOpen"
         :catalog-item-id="item.id"
         :variant="editingVariant"
         @success="handleVariantSuccess"
     />
     <CatalogItemPriceTierDialog
+        v-if="item"
         v-model:open="priceTierDialogOpen"
         :catalog-item-id="item.id"
         :price-tier="editingPriceTier"
@@ -261,4 +363,46 @@ defineExpose({
         variant="destructive"
         @confirm="confirmDeletePriceTier"
     />
+
+    <Sheet
+        v-if="variant === 'add' || variant === 'dropdown' || !variant"
+        :open="isSheetOpen"
+        @update:open="(value) => (isSheetOpen = value)"
+    >
+        <SheetContent side="right" class="overflow-y-auto sm:max-w-xl">
+            <form class="space-y-6" @submit.prevent="submitItem">
+                <SheetHeader>
+                    <SheetTitle>{{
+                        editingItem
+                            ? `Edit ${editingItem.name}`
+                            : 'Add catalog item'
+                    }}</SheetTitle>
+                    <SheetDescription>
+                        Manage reusable product and service records for
+                        quote line items.
+                    </SheetDescription>
+                </SheetHeader>
+
+                <CatalogItemForm
+                    v-model:form="form"
+                    :errors="form.errors"
+                    :categories="categories || []"
+                    :taxes="taxes || []"
+                    :units="units || []"
+                />
+
+                <SheetFooter>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="isSheetOpen = false"
+                        >Cancel</Button
+                    >
+                    <Button type="submit" :disabled="form.processing">
+                        {{ editingItem ? 'Save changes' : 'Create item' }}
+                    </Button>
+                </SheetFooter>
+            </form>
+        </SheetContent>
+    </Sheet>
 </template>
