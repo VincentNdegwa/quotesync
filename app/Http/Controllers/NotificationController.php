@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Notifications\DatabaseNotification;
 use Inertia\Inertia;
 
 class NotificationController extends Controller
@@ -21,19 +20,7 @@ class NotificationController extends Controller
             'items' => $user->notifications()
                 ->latest()
                 ->limit(10)
-                ->get()
-                ->map(fn (DatabaseNotification $notification): array => [
-                    'id' => $notification->id,
-                    'kind' => (string) ($notification->data['kind'] ?? 'system'),
-                    'icon' => (string) ($notification->data['icon'] ?? 'bell'),
-                    'title' => (string) ($notification->data['title'] ?? __('Notification')),
-                    'message' => (string) ($notification->data['message'] ?? ''),
-                    'url' => (string) ($notification->data['url'] ?? route('dashboard')),
-                    'is_read' => $notification->read_at !== null,
-                    'created_at' => $notification->created_at?->toIso8601String(),
-                    'time_ago' => $notification->created_at?->diffForHumans(),
-                ])
-                ->values(),
+                ->get(),
         ]);
     }
 
@@ -58,6 +45,10 @@ class NotificationController extends Controller
         }
 
         $redirectTo = (string) $request->input('redirect_to', route('dashboard'));
+
+        if (filter_var($redirectTo, FILTER_VALIDATE_URL)) {
+            return redirect()->away($redirectTo);
+        }
 
         if (! str_starts_with($redirectTo, '/')) {
             $redirectTo = route('dashboard');

@@ -10,7 +10,6 @@ withDefaults(
         canRegister: true,
     },
 );
-
 </script>
 
 <template>

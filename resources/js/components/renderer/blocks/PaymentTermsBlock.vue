@@ -1,21 +1,45 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
-import type { BrandingData, PaymentTermsBlockConfig, QuoteData } from '@/types';
+import {
+    blockContentStyle,
+    blockFontSizeClass,
+} from '@/composables/useBlockStyles';
+import type {
+    DocumentData,
+    PaymentTermsBlockConfig,
+    WorkspaceSettings,
+} from '@/types';
 
 const props = defineProps<{
     config: PaymentTermsBlockConfig;
-    quote: QuoteData;
-    branding: BrandingData;
+    data: DocumentData;
+    settings: WorkspaceSettings;
     previewMode: boolean;
     editMode?: boolean;
 }>();
 
 const emit = defineEmits<{
-    (e: 'update-payment-terms', payload: { label: string; customText: string | null }): void;
+    (
+        e: 'update-payment-terms',
+        payload: { labelText: string; contextText: string | null },
+    ): void;
 }>();
 
-const methodLabelMap: Record<PaymentTermsBlockConfig['paymentMethods'][number], string> = {
+const effectiveContextText = computed(() => {
+    const data = props.data as QuoteData | InvoiceData;
+
+    return (
+        data.terms ??
+        props.config.contextText ??
+        props.settings.quotes.default_payment_terms
+    );
+});
+
+const methodLabelMap: Record<
+    PaymentTermsBlockConfig['paymentMethods'][number],
+    string
+> = {
     bank_transfer: 'Bank transfer',
     card: 'Card',
     mobile_money: 'Mobile money',
@@ -23,41 +47,56 @@ const methodLabelMap: Record<PaymentTermsBlockConfig['paymentMethods'][number], 
     cheque: 'Cheque',
 };
 
-const hasEditableContent = computed(() => !!props.config.customText || !!props.editMode || !!props.previewMode);
+const hasEditableContent = computed(
+    () =>
+        !!effectiveContextText.value || !!props.editMode || !!props.previewMode,
+);
 
-const emitUpdate = (label: string | null, customText: string | null): void => {
+const emitUpdate = (
+    labelText: string | null,
+    contextText: string | null,
+): void => {
     emit('update-payment-terms', {
-        label: (label ?? '').trim() || 'Payment Terms',
-        customText,
+        labelText: (labelText ?? '').trim() || 'Payment Terms',
+        contextText,
     });
 };
 
 const updateLabel = (value: string | null): void => {
-    emitUpdate(value, props.config.customText);
+    emitUpdate(value, effectiveContextText.value);
 };
 
-const updateCustomText = (value: string | null): void => {
-    emitUpdate(props.config.label, value);
+const updateContextText = (value: string | null): void => {
+    emitUpdate(props.config.labelText, value);
 };
 </script>
 
 <template>
     <div
         v-if="hasEditableContent"
-        class="px-6 py-4"
-        :class="config.style === 'card' ? 'rounded-md border' : config.style === 'highlighted' ? 'rounded-md bg-muted/40' : ''"
-        :style="{ backgroundColor: config.backgroundColor ?? undefined }"
+        :class="[
+            config.style === 'card'
+                ? 'rounded-md border'
+                : config.style === 'highlighted'
+                  ? 'rounded-md bg-muted/40'
+                  : '',
+            blockFontSizeClass(config.fontSize),
+        ]"
+        :style="blockContentStyle(config)"
     >
         <InlineEditableText
-            :model-value="config.label"
+            :model-value="config.labelText"
             :edit-mode="editMode"
             :multiline="false"
             placeholder="Payment terms"
             empty-text="Payment terms"
-            display-class="text-sm font-semibold"
+            display-class="mb-2 font-semibold text-base"
             @update:model-value="updateLabel"
         />
-        <div v-if="config.showPaymentMethods && config.paymentMethods.length > 0" class="mt-2 flex flex-wrap gap-1.5">
+        <div
+            v-if="config.showPaymentMethods && config.paymentMethods.length > 0"
+            class="mt-2 flex flex-wrap gap-1.5"
+        >
             <span
                 v-for="method in config.paymentMethods"
                 :key="method"
@@ -68,14 +107,17 @@ const updateCustomText = (value: string | null): void => {
         </div>
 
         <InlineEditableText
-            :model-value="config.customText"
+            :model-value="effectiveContextText"
             :edit-mode="editMode"
             :rows="6"
             placeholder="Add payment instructions"
-            :empty-text="previewMode ? 'Add payment instructions in block settings.' : 'Click to add payment instructions.'"
+            :empty-text="
+                previewMode
+                    ? 'Add payment instructions in block settings.'
+                    : 'Click to add payment instructions.'
+            "
             display-class="whitespace-pre-wrap text-sm text-gray-700"
-            wrapper-class="mt-2"
-            @update:model-value="updateCustomText"
+            @update:model-value="updateContextText"
         />
     </div>
 </template>

@@ -20,12 +20,15 @@ class SendQuoteEmailJob implements ShouldQueue
         public string $to,
         /** @var array<int, string> */
         public array $cc,
+        /** @var array<int, string> */
+        public array $bcc,
         public string $subjectLine,
         public string $messageBody,
         public string $companyName,
         public ?string $logoUrl,
         public string $viewUrl,
         public ?string $unsubscribeUrl,
+        public ?string $pdfPath = null,
     ) {}
 
     /**
@@ -64,12 +67,17 @@ class SendQuoteEmailJob implements ShouldQueue
             lineItems: $lineItems,
             viewUrl: $this->viewUrl,
             unsubscribeUrl: $this->unsubscribeUrl,
+            pdfPath: $this->pdfPath,
         );
 
         $mailer = Mail::to($this->to);
 
         if ($this->cc !== []) {
             $mailer->cc($this->cc);
+        }
+
+        if ($this->bcc !== []) {
+            $mailer->bcc($this->bcc);
         }
 
         $mailer->send($mail);

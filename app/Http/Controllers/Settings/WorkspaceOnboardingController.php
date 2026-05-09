@@ -5,19 +5,18 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\CompleteWorkspaceOnboardingRequest;
 use App\Http\Requests\Settings\UpdateWorkspaceSettingsRequest;
+use App\Models\Industry;
 use App\Models\Role;
 use App\Models\Workspace;
-use App\Services\Invitations\InvitationService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
-use Inertia\Response;
+use Inertia\Response as InertiaResponse;
 
 class WorkspaceOnboardingController extends Controller
 {
-    public function show(Request $request, WorkspaceSettingsService $settingsService): Response|RedirectResponse
+    public function show(Request $request, WorkspaceSettingsService $settingsService): InertiaResponse|RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -30,12 +29,11 @@ class WorkspaceOnboardingController extends Controller
         }
 
         $brand = $settingsService->groupForFrontend($workspace, 'brand');
-        $localization = $settingsService->groupForFrontend($workspace, 'localization');
         $quotes = $settingsService->groupForFrontend($workspace, 'quotes');
+        $invoices = $settingsService->groupForFrontend($workspace, 'invoices');
 
-        $brandFields = collect($brand['fields'])->keyBy('key');
-        $localizationFields = collect($localization['fields'])->keyBy('key');
         $quoteFields = collect($quotes['fields'])->keyBy('key');
+        $invoiceFields = collect($invoices['fields'])->keyBy('key');
 
         $availableRoles = Role::query()
             ->where(function ($query) use ($workspace) {
@@ -43,123 +41,90 @@ class WorkspaceOnboardingController extends Controller
                     ->orWhere('workspace_id', $workspace->id);
             })
             ->orderByRaw('LOWER(name)')
-            ->get(['id', 'name', 'display_name'])
-            ->map(fn (Role $role): array => [
-                'id' => $role->id,
-                'name' => $role->name,
-                'display_name' => $role->display_name,
-            ])
-            ->values();
+            ->get(['id', 'name', 'display_name']);
 
         $memberRole = $availableRoles->firstWhere('name', 'member');
         $fallbackRole = $availableRoles->first();
         $defaultRoleId = $memberRole['id'] ?? $fallbackRole['id'] ?? null;
-        $currentStepIndex = max(1, min((int) $request->integer('step', 1), 3));
+        $currentStepIndex = max(1, min((int) $request->integer('step', 1), 2));
 
         return Inertia::render('onboarding/Index', [
             'workspace' => [
                 'id' => $workspace->id,
                 'name' => $workspace->name,
                 'display_name' => $workspace->display_name,
+                'industry_id' => $workspace->industry_id,
             ],
             'currentStepIndex' => $currentStepIndex,
             'business' => [
-                'company_name' => $brandFields->get('company_name')['value'] ?? null,
-                'country' => $localizationFields->get('country')['value'] ?? null,
-                'logo_path' => $brandFields->get('logo_path')['value'] ?? null,
+                'company_name' => $workspace->name,
+                'country' => $workspace->country,
+                'logo_path' => $workspace->logo_path,
+                'currency' => $workspace->currency,
             ],
             'quoteDefaults' => [
-                'currency' => $quoteFields->get('default_currency')['value'] ?? null,
                 'quote_prefix' => $quoteFields->get('quote_prefix')['value'] ?? null,
+                'invoice_prefix' => $quoteFields->get('invoice_prefix')['value'] ?? null,
             ],
-            'localization' => [
-                'language' => $localizationFields->get('language')['value'] ?? 'en',
-            ],
-            'availableLanguages' => array_values((array) config('workspace-settings.groups.localization.fields.language.options', ['en'])),
             'availableRoles' => $availableRoles,
             'defaultRoleId' => $defaultRoleId,
+            'industries' => Industry::query()
+                ->where('is_active', true)
+                ->orderByRaw('LOWER(name)')
+                ->get(['id', 'name', 'icon', 'color']),
         ]);
     }
 
     public function complete(
         CompleteWorkspaceOnboardingRequest $request,
         WorkspaceSettingsService $settingsService,
-        InvitationService $invitationService,
     ): RedirectResponse {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace, 404);
 
         $validated = $request->validated();
-        $stepIndex = max(1, min((int) ($validated['step_index'] ?? 1), 3));
+        $stepIndex = max(1, min((int) ($validated['step_index'] ?? 1), 2));
         $navigation = (string) ($validated['navigation'] ?? 'next');
 
         if ($stepIndex === 1) {
-            $settingsService->updateGroup(
-                $workspace,
-                'brand',
-                [
-                    'company_name' => $validated['company_name'],
-                    'logo_path' => $validated['logo_path'] ?? null,
-                ],
-                markOnboardingComplete: false,
-            );
-
-            $settingsService->updateGroup(
-                $workspace,
-                'localization',
-                [
-                    'country' => $validated['country'],
-                ],
-                markOnboardingComplete: false,
-            );
+            $workspace->update([
+                'industry_id' => $validated['industry_id'] ?? null,
+                'name' => $validated['company_name'] ?? $workspace->name,
+                'logo_path' => $validated['logo_path'] ?? null,
+                'country' => $validated['country'] ?? null,
+                'currency' => $validated['currency'] ?? 'USD',
+            ]);
         }
 
         if ($stepIndex === 2) {
             $settingsService->updateGroup(
                 $workspace,
-                'localization',
+                'quotes',
                 [
-                    'currency' => $validated['currency'],
-                    'language' => $validated['language'],
+                    'quote_prefix' => $validated['quote_prefix'],
                 ],
                 markOnboardingComplete: false,
             );
 
             $settingsService->updateGroup(
                 $workspace,
-                'quotes',
+                'invoices',
                 [
-                    'quote_prefix' => $validated['quote_prefix'],
-                    'default_currency' => $validated['currency'],
+                    'invoice_prefix' => $validated['invoice_prefix'] ?? 'INV',
                 ],
                 markOnboardingComplete: false,
             );
-        }
 
-        if ($stepIndex === 3) {
-            $invites = collect($validated['invites'] ?? [])
-                ->filter(fn (array $invite): bool => trim((string) ($invite['email'] ?? '')) !== '')
-                ->map(fn (array $invite): array => [
-                    'email' => strtolower(trim((string) $invite['email'])),
-                    'role_id' => (int) ($invite['role_id'] ?? 0),
-                ])
-                ->unique('email')
-                ->values();
-
-            foreach ($invites as $index => $invite) {
-                try {
-                    $invitationService->create(
-                        $workspace,
-                        $request->user(),
-                        $invite['email'],
-                        $invite['role_id'],
-                    );
-                } catch (ValidationException $exception) {
-                    throw ValidationException::withMessages([
-                        "invites.{$index}.email" => $exception->errors()['email'][0] ?? __('Unable to create invitation.'),
-                    ]);
-                }
+            if (isset($validated['timezone'])) {
+                $settingsService->updateGroup(
+                    $workspace,
+                    'localization',
+                    [
+                        'timezone' => $validated['timezone'],
+                    ],
+                    markOnboardingComplete: false,
+                );
             }
 
             if ($settingsService->isOnboardingComplete($workspace)) {
@@ -175,7 +140,7 @@ class WorkspaceOnboardingController extends Controller
             return to_route('business-setup.onboarding', ['step' => 1]);
         }
 
-        $nextStep = min($stepIndex + 1, 3);
+        $nextStep = min($stepIndex + 1, 2);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Step saved.')]);
 

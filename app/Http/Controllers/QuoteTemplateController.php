@@ -2,18 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreQuoteTemplateRequest;
-use App\Http\Requests\UpdateQuoteTemplateRequest;
-use App\Models\CatalogItem;
+use App\Http\Requests\QuoteTemplates\StoreQuoteTemplateRequest;
+use App\Http\Requests\QuoteTemplates\UpdateQuoteTemplateRequest;
 use App\Models\QuoteTemplate;
-use App\Models\Tax;
 use App\Models\Workspace;
+use App\Services\BuilderLookupService;
 use App\Services\Quotes\QuoteTemplateService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -35,50 +33,26 @@ class QuoteTemplateController extends Controller
 
         return Inertia::render('configuration/templates/Index', [
             'filters' => $filters,
-            'templates' => $quoteTemplateService->paginateForIndex($workspace, $filters)
-                ->through(fn (QuoteTemplate $template): array => [
-                    'id' => $template->id,
-                    'name' => $template->name,
-                    'description' => $template->description,
-                    'industry' => $template->industry,
-                    'is_active' => (bool) $template->is_active,
-                    'is_system' => (bool) $template->is_system,
-                    'usage_count' => $template->usage_count,
-                    'sections_count' => $template->sections_count,
-                    'updated_at' => $template->updated_at?->toISOString(),
-                ]),
+            'templates' => $quoteTemplateService->paginateForIndex($workspace, $filters),
         ]);
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create(Request $request, WorkspaceSettingsService $workspaceSettingsService): Response
+    public function create(Request $request, WorkspaceSettingsService $workspaceSettingsService, BuilderLookupService $builderLookupService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace, 404);
 
+        $settings = $workspaceSettingsService->builderSettings($workspace);
+
         return Inertia::render('configuration/templates/Create', [
             'initialState' => [
                 'id' => null,
-                'number' => null,
-                'title' => '',
-                'status' => 'draft',
-                'client_id' => null,
-                'assigned_to' => null,
-                'currency' => null,
-                'valid_until' => null,
-                'description' => null,
-                'industry' => null,
-                'cover_message' => null,
-                'terms' => null,
-                'notes' => null,
-                'template_id' => null,
-                'requires_deposit' => false,
-                'deposit_amount' => null,
-                'subtotal' => 0,
-                'discount_amount' => 0,
+                'description' => '',
+                'industry' => '',
                 'tax_amount' => 0,
                 'total' => 0,
                 'is_active' => true,
@@ -92,7 +66,8 @@ class QuoteTemplateController extends Controller
                     ],
                 ],
             ],
-            ...$this->builderLookups($workspace, $workspaceSettingsService),
+            'settings' => $settings,
+            ...$builderLookupService->getTemplateLookups($workspace),
         ]);
     }
 
@@ -125,28 +100,15 @@ class QuoteTemplateController extends Controller
         abort_unless($workspace instanceof Workspace && $quoteTemplate->workspace_id === $workspace->id, 404);
 
         return Inertia::render('configuration/templates/Show', [
-            'template' => [
-                'id' => $quoteTemplate->id,
-                'name' => $quoteTemplate->name,
-                'description' => $quoteTemplate->description,
-                'industry' => $quoteTemplate->industry,
-                'is_active' => (bool) $quoteTemplate->is_active,
-                'is_system' => (bool) $quoteTemplate->is_system,
-                'usage_count' => $quoteTemplate->usage_count,
-                'updated_at' => $quoteTemplate->updated_at?->toISOString(),
-            ],
+            'template' => $quoteTemplate,
         ]);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(
-        Request $request,
-        QuoteTemplate $quoteTemplate,
-        QuoteTemplateService $quoteTemplateService,
-        WorkspaceSettingsService $workspaceSettingsService,
-    ): Response {
+    public function edit(Request $request, QuoteTemplate $quoteTemplate, WorkspaceSettingsService $workspaceSettingsService, BuilderLookupService $builderLookupService, QuoteTemplateService $quoteTemplateService): Response
+    {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace && $quoteTemplate->workspace_id === $workspace->id, 404);
@@ -154,7 +116,8 @@ class QuoteTemplateController extends Controller
         return Inertia::render('configuration/templates/Edit', [
             'templateId' => $quoteTemplate->id,
             'initialState' => $quoteTemplateService->toBuilderPayload($quoteTemplate),
-            ...$this->builderLookups($workspace, $workspaceSettingsService),
+            'settings' => $workspaceSettingsService->builderSettings($workspace),
+            ...$builderLookupService->getTemplateLookups($workspace),
         ]);
     }
 
@@ -191,71 +154,21 @@ class QuoteTemplateController extends Controller
     }
 
     /**
-     * @return array<string, mixed>
+     * Get template layout.
      */
-    private function builderLookups(Workspace $workspace, WorkspaceSettingsService $workspaceSettingsService): array
+    public function getLayout(Request $request, QuoteTemplate $quoteTemplate): JsonResponse
     {
-        $branding = $this->brandingPayload($workspace, $workspaceSettingsService);
+        $workspace = $request->user()?->currentWorkspace;
 
-        return [
-            'branding' => $branding,
-            'catalogItems' => CatalogItem::query()
-                ->where('workspace_id', $workspace->id)
-                ->where('is_active', true)
-                ->with('taxes:id,name,rate')
-                ->orderByRaw('LOWER(name)')
-                ->limit(300)
-                ->get(['id', 'name', 'description', 'sku', 'unit', 'unit_price'])
-                ->map(fn (CatalogItem $item): array => [
-                    'id' => $item->id,
-                    'name' => $item->name,
-                    'description' => $item->description,
-                    'sku' => $item->sku,
-                    'unit' => $item->unit,
-                    'unit_price' => (float) $item->unit_price,
-                    'taxes' => $item->taxes->map(fn (Tax $tax): array => [
-                        'id' => $tax->id,
-                        'name' => $tax->name,
-                        'rate' => (float) $tax->rate,
-                    ])->values()->all(),
-                ])
-                ->values(),
-            'taxes' => Tax::query()
-                ->where('workspace_id', $workspace->id)
-                ->where('is_active', true)
-                ->orderByDesc('is_default')
-                ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'rate'])
-                ->map(fn (Tax $tax): array => [
-                    'id' => $tax->id,
-                    'name' => $tax->name,
-                    'rate' => (float) $tax->rate,
-                ])
-                ->values(),
-        ];
-    }
+        abort_unless($workspace instanceof Workspace && $quoteTemplate->workspace_id === $workspace->id, 404);
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function brandingPayload(Workspace $workspace, WorkspaceSettingsService $workspaceSettingsService): array
-    {
-        /** @var Collection<int, array<string, mixed>> $fields */
-        $fields = collect($workspaceSettingsService->groupForFrontend($workspace, 'brand')['fields'] ?? []);
-        $brandFields = $fields->keyBy('key');
+        $sections = $quoteTemplate->sections()
+            ->with(['lineItems' => fn ($q) => $q->orderBy('sort_order'), 'lineItems.taxes'])
+            ->get();
 
-        $logoPath = $brandFields->get('logo_path')['value'] ?? null;
-        $logoUrl = is_string($logoPath) && $logoPath !== '' ? Storage::url($logoPath) : null;
-
-        return [
-            'company_name' => $brandFields->get('company_name')['value'] ?? null,
-            'logo_url' => $logoUrl,
-            'primary_color' => $brandFields->get('primary_color')['value'] ?? '#4F46E5',
-            'accent_color' => $brandFields->get('accent_color')['value'] ?? '#F5A623',
-            'company_email' => $brandFields->get('company_email')['value'] ?? null,
-            'company_phone' => $brandFields->get('company_phone')['value'] ?? null,
-            'company_address' => $brandFields->get('company_address')['value'] ?? null,
-            'company_tagline' => $brandFields->get('company_tagline')['value'] ?? null,
-        ];
+        return response()->json([
+            'layout' => $quoteTemplate->layout,
+            'sections' => $sections,
+        ]);
     }
 }

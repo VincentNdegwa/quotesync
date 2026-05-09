@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { Archive, Download, Trash2 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
+import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
+import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
-import SendModal from '@/components/quotes/SendModal.vue';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -13,16 +15,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+import QuoteHeaderActions from '@/pages/quotes/components/QuoteHeaderActions.vue';
+import QuoteKanban from '@/pages/quotes/components/QuoteKanban.vue';
+import QuotesDataTable from '@/pages/quotes/components/QuotesDataTable.vue';
 import type { Paginator, QuoteListRecord } from '@/types';
-import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
+
+const STORAGE_KEY = 'quotes-view-mode';
 
 type Filters = {
     search: string;
@@ -33,12 +31,21 @@ type Filters = {
 const props = defineProps<{
     filters: Filters;
     quotes: Paginator<QuoteListRecord>;
-    sendDefaults: {
-        company_name: string;
-        subject_template: string;
-        body_template: string;
-    };
 }>();
+
+const page = usePage();
+const quoteStatuses = computed(
+    () => (page.props.enums as any)?.quoteStatus || [],
+);
+
+const viewMode = ref<'table' | 'kanban'>(
+    (localStorage.getItem(STORAGE_KEY) as 'table' | 'kanban') || 'table', // eslint-disable-line @typescript-eslint/no-unnecessary-condition
+);
+
+const toggleView = (): void => {
+    viewMode.value = viewMode.value === 'table' ? 'kanban' : 'table';
+    localStorage.setItem(STORAGE_KEY, viewMode.value);
+};
 
 defineOptions({
     layout: {
@@ -54,7 +61,7 @@ defineOptions({
 const ALL = '__all__';
 
 const query = ref({
-    search: props.filters.search ?? '',
+    search: props.filters.search || '',
     status: props.filters.status || ALL,
     sort: props.filters.sort || 'newest',
 });
@@ -73,7 +80,8 @@ watch(
                 '/quotes',
                 {
                     search: query.value.search,
-                    status: query.value.status === ALL ? '' : query.value.status,
+                    status:
+                        query.value.status === ALL ? '' : query.value.status,
                     sort: query.value.sort,
                 },
                 {
@@ -87,61 +95,191 @@ watch(
     { deep: true },
 );
 
-const statusVariant = (status: string): 'outline' | 'secondary' | 'destructive' | 'default' => {
-    if (status === 'won') {
-        return 'default';
-    }
-
-    if (status === 'lost' || status === 'expired') {
-        return 'destructive';
-    }
-
-    if (status === 'sent' || status === 'viewed') {
-        return 'secondary';
-    }
-
-    return 'outline';
-};
-
 const hasQuotes = computed(() => props.quotes.data.length > 0);
-const sendOpen = ref(false);
-const selectedForSend = ref<QuoteListRecord | null>(null);
+
+const showDeleteDialog = ref(false);
+const quoteToDelete = ref<number | null>(null);
+const selectedIds = ref<number[]>([]);
+const bulkActionDialogOpen = ref(false);
+const bulkActionType = ref<'delete' | 'archive' | null>(null);
+const bulkActionLoading = ref(false);
 
 const removeQuote = (quoteId: number): void => {
-    router.delete(`/quotes/${quoteId}`, {
-        preserveScroll: true,
-    });
+    quoteToDelete.value = quoteId;
+    showDeleteDialog.value = true;
 };
 
-const openSend = (quote: QuoteListRecord): void => {
-    selectedForSend.value = quote;
-    sendOpen.value = true;
+const executeDelete = (): void => {
+    if (quoteToDelete.value) {
+        router.delete(QuoteController.destroy(quoteToDelete.value).url, {
+            preserveScroll: true,
+            onSuccess: () => {
+                showDeleteDialog.value = false;
+                quoteToDelete.value = null;
+            },
+        });
+    }
 };
+
+const showSendDialog = ref(false);
+const quoteToSend = ref<number | null>(null);
+
+const sendQuote = (quoteId: number): void => {
+    quoteToSend.value = quoteId;
+    showSendDialog.value = true;
+};
+
+const executeSend = (): void => {
+    if (quoteToSend.value) {
+        router.post(
+            QuoteSendController.store(quoteToSend.value).url,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    showSendDialog.value = false;
+                    quoteToSend.value = null;
+                },
+            },
+        );
+    }
+};
+
+const hasSelection = computed(() => selectedIds.value.length > 0);
+
+const exportSelected = (): void => {
+    if (selectedIds.value.length === 0) {
+        return;
+    }
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/quotes/bulk-export';
+    form.style.display = 'none';
+
+    const csrfToken = document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute('content');
+
+    if (csrfToken) {
+        const tokenInput = document.createElement('input');
+        tokenInput.type = 'hidden';
+        tokenInput.name = '_token';
+        tokenInput.value = csrfToken;
+        form.appendChild(tokenInput);
+    }
+
+    selectedIds.value.forEach((id) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'quote_ids[]';
+        input.value = String(id);
+        form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+};
+
+const openBulkActionDialog = (action: 'delete' | 'archive'): void => {
+    if (selectedIds.value.length === 0) {
+        return;
+    }
+
+    bulkActionType.value = action;
+    bulkActionDialogOpen.value = true;
+};
+
+const executeBulkAction = (): void => {
+    if (!bulkActionType.value || selectedIds.value.length === 0) {
+        bulkActionDialogOpen.value = false;
+
+        return;
+    }
+
+    bulkActionLoading.value = true;
+
+    router.post(
+        QuoteController.bulkAction().url,
+        {
+            ids: selectedIds.value,
+            action: bulkActionType.value,
+        },
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                selectedIds.value = [];
+                bulkActionDialogOpen.value = false;
+                bulkActionType.value = null;
+            },
+            onFinish: () => {
+                bulkActionLoading.value = false;
+            },
+        },
+    );
+};
+
+const bulkActionDialogTitle = computed(() =>
+    bulkActionType.value === 'delete'
+        ? 'Delete selected quotes'
+        : 'Archive selected quotes',
+);
+
+const bulkActionDialogDescription = computed(() => {
+    const count = selectedIds.value.length;
+
+    if (bulkActionType.value === 'delete') {
+        return `Are you sure you want to delete ${count} selected quote${
+            count === 1 ? '' : 's'
+        }? This action cannot be undone and only draft quotes will be removed.`;
+    }
+
+    return `Are you sure you want to archive ${count} selected quote${
+        count === 1 ? '' : 's'
+    }? Only won or lost quotes are eligible for archiving.`;
+});
+
+const bulkActionDialogConfirmText = computed(() =>
+    bulkActionType.value === 'delete' ? 'Delete' : 'Archive',
+);
+
+watch(
+    () => viewMode.value,
+    (mode) => {
+        if (mode !== 'table') {
+            selectedIds.value = [];
+        }
+    },
+);
 </script>
 
 <template>
     <Head title="Quotes" />
 
     <div class="space-y-4">
-        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div
+            class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+        >
             <Heading
                 title="Quotes"
                 description="Create and manage reusable, trackable quotes from one dynamic builder."
             />
 
-            <div class="flex gap-2">
-                <Button as-child>
-                    <Link href="/quotes/create">New quote</Link>
-                </Button>
-                <Button variant="outline" as-child>
-                    <Link href="/configuration/templates">Templates</Link>
-                </Button>
-            </div>
+            <QuoteHeaderActions
+                :view-mode="viewMode"
+                @open-create-quote="() => router.visit('/quotes/create')"
+                @toggle-view="toggleView"
+            />
         </div>
 
         <div class="rounded-lg border p-3">
             <div class="flex flex-col gap-3 md:flex-row md:items-center">
-                <Input v-model="query.search" placeholder="Search quote number, title, or client" class="w-full md:w-96" />
+                <Input
+                    v-model="query.search"
+                    placeholder="Search quote number, title, or client"
+                    class="w-full md:w-96"
+                />
 
                 <Select v-model="query.status">
                     <SelectTrigger class="w-full md:w-44">
@@ -149,12 +287,14 @@ const openSend = (quote: QuoteListRecord): void => {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem :value="ALL">All statuses</SelectItem>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="sent">Sent</SelectItem>
-                        <SelectItem value="viewed">Viewed</SelectItem>
-                        <SelectItem value="won">Won</SelectItem>
-                        <SelectItem value="lost">Lost</SelectItem>
-                        <SelectItem value="expired">Expired</SelectItem>
+
+                        <SelectItem
+                            v-for="status in quoteStatuses"
+                            :key="status.value"
+                            :value="status.value"
+                        >
+                            {{ status.label }}
+                        </SelectItem>
                     </SelectContent>
                 </Select>
 
@@ -172,52 +312,70 @@ const openSend = (quote: QuoteListRecord): void => {
             </div>
         </div>
 
-        <div class="rounded-lg border" v-if="hasQuotes">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Number</TableHead>
-                        <TableHead>Title</TableHead>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead class="text-right">Total</TableHead>
-                        <TableHead>Valid until</TableHead>
-                        <TableHead class="text-right">Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    <TableRow v-for="quote in quotes.data" :key="quote.id">
-                        <TableCell>{{ quote.number || '—' }}</TableCell>
-                        <TableCell class="font-medium">{{ quote.title }}</TableCell>
-                        <TableCell>{{ quote.client?.company_name || '—' }}</TableCell>
-                        <TableCell>
-                            <Badge :variant="statusVariant(quote.status)">
-                                {{ quote.status }}
-                            </Badge>
-                        </TableCell>
-                        <TableCell class="text-right">{{ quote.total.toFixed(2) }}</TableCell>
-                        <TableCell>{{ quote.valid_until || '—' }}</TableCell>
-                        <TableCell class="text-right space-x-2">
-                            <Button size="sm" @click="openSend(quote)">Send</Button>
-                            <Button size="sm">
-                                <Link :href="QuoteController.show(quote.id).url" >View</Link>
-                            </Button>
-                            <Button size="sm" variant="outline" as-child>
-                                <Link :href="QuoteController.edit(quote.id).url">Edit</Link>
-                            </Button>
-                            <Button size="sm" variant="destructive" @click="removeQuote(quote.id)">Delete</Button>
-                        </TableCell>
-                    </TableRow>
-                </TableBody>
-            </Table>
-        </div>
+        <template v-if="viewMode === 'kanban'">
+            <QuoteKanban :quote-statuses="quoteStatuses" />
+        </template>
 
-        <div v-else class="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
-            No quotes yet. Create your first quote from scratch or from a template.
-        </div>
+        <template v-else>
+            <div
+                v-if="hasSelection"
+                class="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/40 p-3"
+            >
+                <span class="text-sm text-muted-foreground">
+                    {{ selectedIds.length }} selected
+                </span>
 
-        <div class="flex w-full flex-wrap items-center justify-end gap-2" v-if="quotes.links.length > 1">
-            <template v-for="(link, index) in quotes.links" :key="`${link.label}-${index}`">
+                <Button variant="outline" size="sm" @click="exportSelected">
+                    <Download class="mr-2 h-4 w-4" />
+                    Export selected
+                </Button>
+
+                <Button
+                    variant="outline"
+                    size="sm"
+                    @click="openBulkActionDialog('archive')"
+                >
+                    <Archive class="mr-2 h-4 w-4" />
+                    Archive selected
+                </Button>
+
+                <Button
+                    variant="destructive"
+                    size="sm"
+                    @click="openBulkActionDialog('delete')"
+                >
+                    <Trash2 class="mr-2 h-4 w-4" />
+                    Delete selected
+                </Button>
+            </div>
+
+            <QuotesDataTable
+                v-if="hasQuotes"
+                :data="quotes.data"
+                :quote-statuses="quoteStatuses"
+                :is-client="false"
+                @send="sendQuote"
+                @delete="removeQuote"
+                @update:selected-ids="selectedIds = $event"
+            />
+
+            <div
+                v-else
+                class="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground"
+            >
+                No quotes yet. Create your first quote from scratch or from a
+                template.
+            </div>
+        </template>
+
+        <div
+            v-if="viewMode === 'table' && quotes.links.length > 1"
+            class="flex w-full flex-wrap items-center justify-end gap-2"
+        >
+            <template
+                v-for="(link, index) in quotes.links"
+                :key="`${link.label}-${index}`"
+            >
                 <Link
                     v-if="link.url"
                     :href="link.url"
@@ -236,7 +394,10 @@ const openSend = (quote: QuoteListRecord): void => {
                               : link.label
                     }}
                 </Link>
-                <span v-else class="inline-flex h-9 items-center rounded-md border px-3 text-sm text-muted-foreground">
+                <span
+                    v-else
+                    class="inline-flex h-9 items-center rounded-md border px-3 text-sm text-muted-foreground"
+                >
                     {{
                         index === 0
                             ? 'Previous'
@@ -248,10 +409,31 @@ const openSend = (quote: QuoteListRecord): void => {
             </template>
         </div>
 
-        <SendModal
-            v-model:open="sendOpen"
-            :quote="selectedForSend"
-            :send-defaults="sendDefaults"
+        <ConfirmDialog
+            v-model:open="showDeleteDialog"
+            title="Delete quote"
+            description="Are you sure you want to delete this quote? This action cannot be undone."
+            confirm-text="Delete"
+            variant="destructive"
+            @confirm="executeDelete"
+        />
+
+        <ConfirmDialog
+            v-model:open="bulkActionDialogOpen"
+            :title="bulkActionDialogTitle"
+            :description="bulkActionDialogDescription"
+            :confirm-text="bulkActionDialogConfirmText"
+            :variant="bulkActionType === 'delete' ? 'destructive' : 'default'"
+            :loading="bulkActionLoading"
+            @confirm="executeBulkAction"
+        />
+
+        <ConfirmDialog
+            v-model:open="showSendDialog"
+            title="Send quote"
+            description="Are you sure you want to send this quote to the client?"
+            confirm-text="Send"
+            @confirm="executeSend"
         />
     </div>
 </template>

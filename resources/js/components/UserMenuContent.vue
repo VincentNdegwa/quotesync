@@ -17,16 +17,19 @@ type Props = {
     user: User;
 };
 
-const handleLogout = () => {
+const handleLogout = (): void => {
     router.flushAll();
 };
 
 const page = usePage();
 const auth = computed(() => page.props.auth as Auth);
-const workspaces = computed<WorkspaceSummary[]>(() => auth.value.workspaces ?? []);
-const currentWorkspace = computed<WorkspaceSummary | null>(() => auth.value.currentWorkspace ?? null);
+const workspaces = computed<WorkspaceSummary[]>(() => auth.value.workspaces);
+const currentWorkspace = computed<WorkspaceSummary | null>(
+    () => auth.value.currentWorkspace ?? null,
+);
 
-const switchWorkspaceHref = (workspace: WorkspaceSummary): string => `/workspaces/${workspace.id}/switch`;
+const switchWorkspaceHref = (workspace: WorkspaceSummary): string =>
+    `/workspaces/${workspace.id}/switch`;
 
 defineProps<Props>();
 </script>
@@ -49,7 +52,9 @@ defineProps<Props>();
 
     <template v-if="workspaces.length > 1">
         <DropdownMenuSeparator />
-        <DropdownMenuLabel class="px-2 py-1.5 text-xs uppercase tracking-wide text-muted-foreground">
+        <DropdownMenuLabel
+            class="px-2 py-1.5 text-xs tracking-wide text-muted-foreground uppercase"
+        >
             Workspaces
         </DropdownMenuLabel>
         <DropdownMenuGroup>

@@ -2,121 +2,142 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\SendQuoteRequest;
-use App\Jobs\SendQuoteEmailJob;
+use App\Enums\QuoteApprovalStatus;
+use App\Enums\QuoteStatus;
 use App\Models\Quote;
-use App\Models\QuoteActivity;
+use App\Models\QuoteApproval;
 use App\Models\Workspace;
-use App\Notifications\QuoteSentInternalNotification;
-use App\Services\WorkspaceSettings\WorkspaceSettingsService;
+use App\Services\ApprovalService;
+use App\Services\Quotes\QuoteSendingService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class QuoteSendController extends Controller
 {
+    public function __construct(
+        private QuoteSendingService $quoteSendingService,
+        private ApprovalService $approvalService,
+    ) {}
+
     public function store(
-        SendQuoteRequest $request,
+        Request $request,
         Quote $quote,
-        WorkspaceSettingsService $workspaceSettingsService,
     ): RedirectResponse {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
 
-        $quote->loadMissing(['client', 'sections.lineItems']);
+        $currentStatus = $quote->status instanceof QuoteStatus
+            ? $quote->status
+            : QuoteStatus::from((string) $quote->status);
 
-        $emailFields = collect($workspaceSettingsService->groupForFrontend($workspace, 'email')['fields'] ?? [])->keyBy('key');
-        $brandFields = collect($workspaceSettingsService->groupForFrontend($workspace, 'brand')['fields'] ?? [])->keyBy('key');
+        if ($currentStatus === QuoteStatus::PendingApproval) {
+            Inertia::flash('toast', [
+                'type' => 'warning',
+                'message' => __('Quote is pending approval and cannot be sent yet.'),
+            ]);
 
-        $companyName = (string) ($brandFields->get('company_name')['value'] ?? config('app.name'));
-        $logoPath = $brandFields->get('logo_path')['value'] ?? null;
-        $logoUrl = is_string($logoPath) && $logoPath !== '' ? Storage::url($logoPath) : null;
+            return back();
+        }
 
-        $subjectTemplate = trim((string) $request->string('subject'));
-        $bodyTemplate = (string) ($request->input('message_body') ?? ($emailFields->get('quote_email_template')['value'] ?? ''));
+        $approvalRequired = $quote->approval_granted !== true
+            && $this->approvalService->checkApprovalRequired($quote);
 
-        $merge = [
-            '{client_name}' => (string) ($quote->client?->contact_name ?: $quote->client?->company_name ?: 'Client'),
-            '{quote_number}' => (string) ($quote->number ?? 'Draft'),
-            '{quote_total}' => number_format((float) $quote->total, 2).' '.($quote->currency ?? ''),
-            '{valid_until}' => (string) ($quote->valid_until?->toDateString() ?? 'N/A'),
-            '{company_name}' => $companyName,
-            '{number}' => (string) ($quote->number ?? 'Draft'),
-            '{company}' => $companyName,
-        ];
+        if ($approvalRequired) {
+            $hasPendingApprovals = QuoteApproval::query()
+                ->where('quote_id', $quote->id)
+                ->where('status', QuoteApprovalStatus::Pending->value)
+                ->exists();
 
-        $subjectLine = strtr($subjectTemplate, $merge);
-        $messageBody = strtr($bodyTemplate, $merge);
+            if (! $hasPendingApprovals) {
+                $this->approvalService->initiateApproval($quote, $request->user()->id);
+            }
 
-        $cc = collect(Arr::wrap($request->input('cc', [])))
-            ->map(fn ($email): string => trim((string) $email))
-            ->filter()
-            ->values()
-            ->all();
+            Inertia::flash('toast', [
+                'type' => 'info',
+                'message' => __('Quote requires approval before it can be sent. Approval requests have been created.'),
+            ]);
 
-        $scheduleEnabled = (bool) $request->boolean('schedule_enabled');
-        $sendAt = $scheduleEnabled && $request->filled('send_at')
-            ? Carbon::parse((string) $request->input('send_at'))
-            : now();
+            return back();
+        }
 
-        $viewUrl = route('public-quotes.show', ['quoteUuid' => $quote->quote_uuid]);
-        $unsubscribeUrl = $quote->client?->email
-            ? url('/unsubscribe?email='.urlencode($quote->client->email))
-            : null;
+        $quote->loadMissing(['client']);
 
-        SendQuoteEmailJob::dispatch(
-            quoteId: $quote->id,
-            to: (string) $request->string('to'),
-            cc: $cc,
-            subjectLine: $subjectLine,
-            messageBody: $messageBody,
-            companyName: $companyName,
-            logoUrl: $logoUrl,
-            viewUrl: $viewUrl,
-            unsubscribeUrl: $unsubscribeUrl,
-        )->delay($sendAt);
+        if (empty($quote->client?->email)) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('Client does not have an email address.'),
+            ]);
+
+            return back();
+        }
+
+        // Handle CC/BCC recipients
+        $ccRecipients = $request->input('cc_recipients', []);
+        $bccRecipients = $request->input('bcc_recipients', []);
+        $scheduledAt = $request->input('scheduled_at');
+
+        // Update quote with CC/BCC recipients
+        $quote->cc_recipients = is_array($ccRecipients) ? $ccRecipients : [];
+        $quote->bcc_recipients = is_array($bccRecipients) ? $bccRecipients : [];
+
+        // Handle scheduled send
+        if ($scheduledAt) {
+            $quote->scheduled_at = $scheduledAt;
+            $quote->save();
+
+            \App\Models\QuoteActivity::query()->create([
+                'quote_id' => $quote->id,
+                'workspace_id' => $quote->workspace_id,
+                'user_id' => $request->user()?->id,
+                'type' => 'scheduled',
+                'description' => 'Quote scheduled to be sent at ' . $scheduledAt,
+                'metadata' => ['scheduled_at' => $scheduledAt],
+            ]);
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('Quote scheduled to be sent at :date.', ['date' => $scheduledAt]),
+            ]);
+
+            return back();
+        }
+
+        // Send immediately
+        $sendAt = now();
+
+        $this->quoteSendingService->sendQuote(
+            quote: $quote,
+            workspace: $workspace,
+            userId: $request->user()?->id,
+            attachPdf: $request->boolean('attach_pdf', false),
+            ipAddress: $request->ip(),
+            userAgent: $request->userAgent(),
+            ccRecipients: $quote->cc_recipients,
+            bccRecipients: $quote->bcc_recipients,
+        );
 
         $quote->forceFill([
-            'status' => 'sent',
+            'status' => QuoteStatus::Sent->value,
             'sent_at' => $sendAt,
         ])->save();
 
-        QuoteActivity::query()->create([
+        \App\Models\QuoteActivity::query()->create([
             'quote_id' => $quote->id,
-            'workspace_id' => $workspace->id,
+            'workspace_id' => $quote->workspace_id,
             'user_id' => $request->user()?->id,
-            'type' => $scheduleEnabled ? 'scheduled' : 'sent',
-            'description' => $scheduleEnabled
-                ? 'Quote delivery scheduled.'
-                : 'Quote sent to client.',
+            'type' => 'sent',
+            'description' => 'Quote sent to client',
             'metadata' => [
-                'to' => (string) $request->string('to'),
-                'cc' => $cc,
-                'channel' => 'email',
-                'scheduled_at' => $scheduleEnabled ? $sendAt->toISOString() : null,
+                'cc_recipients' => $quote->cc_recipients,
+                'bcc_recipients' => $quote->bcc_recipients,
             ],
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
         ]);
-
-        Notification::send(
-            $workspace->members()->get(),
-            new QuoteSentInternalNotification(
-                quote: $quote,
-                scheduled: $scheduleEnabled,
-                scheduledAt: $scheduleEnabled ? $sendAt->toDateTimeString() : null,
-            ),
-        );
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => $scheduleEnabled
-                ? __('Quote send scheduled.')
-                : __('Quote sent successfully.'),
+            'message' => __('Quote sent successfully.'),
         ]);
 
         return back();

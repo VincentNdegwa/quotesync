@@ -35,12 +35,6 @@ const styleOptions = [
     },
 ] as const;
 
-const fontSizeOptions = [
-    { value: 'sm', label: 'S' },
-    { value: 'md', label: 'M' },
-    { value: 'lg', label: 'L' },
-] as const;
-
 const rowToggles = [
     { key: 'showSubtotal', label: 'Show subtotal' },
     { key: 'showTaxBreakdown', label: 'Show tax breakdown' },
@@ -49,12 +43,9 @@ const rowToggles = [
     { key: 'highlightTotal', label: 'Highlight total' },
 ] as const;
 
-const updateNullableColor = (
-    key: 'backgroundColor' | 'totalRowColor',
-    value: unknown,
-): void => {
+const updateTotalRowBackground = (value: unknown): void => {
     const normalized = String(value ?? '').trim();
-    config.value[key] = normalized.length > 0 ? normalized : null;
+    config.value.totalRowBackground = normalized.length > 0 ? normalized : null;
 };
 
 const updateToggle = (
@@ -150,156 +141,72 @@ const updateToggle = (
         </div>
 
         <div class="border-b px-4 py-3">
-            <div>
-                <p
-                    class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+            <p
+                class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+            >
+                Layout
+            </p>
+            <p class="mb-1.5 text-xs text-muted-foreground">Alignment</p>
+            <div class="grid grid-cols-3 gap-1">
+                <button
+                    v-for="option in alignmentOptions"
+                    :key="option.value"
+                    type="button"
+                    class="rounded border p-1.5 text-center text-xs font-medium transition-colors"
+                    :class="
+                        config.alignment === option.value
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'hover:border-muted-foreground/50'
+                    "
+                    @click="config.alignment = option.value"
                 >
-                    Layout
-                </p>
-
-                <div class="mb-3">
-                    <p class="mb-1.5 text-xs text-muted-foreground">Alignment</p>
-                    <div class="grid grid-cols-3 gap-1">
-                        <button
-                            v-for="option in alignmentOptions"
-                            :key="option.value"
-                            type="button"
-                            class="rounded border p-1.5 text-center text-xs font-medium transition-colors"
-                            :class="
-                                config.alignment === option.value
-                                    ? 'border-primary bg-primary/10 text-primary'
-                                    : 'hover:border-muted-foreground/50'
-                            "
-                            @click="config.alignment = option.value"
-                        >
-                            {{ option.label }}
-                        </button>
-                    </div>
-                </div>
-
-                <div>
-                    <p class="mb-1.5 text-xs text-muted-foreground">Font size</p>
-                    <div class="flex gap-1">
-                        <button
-                            v-for="size in fontSizeOptions"
-                            :key="size.value"
-                            type="button"
-                            class="flex-1 rounded border py-1 text-sm font-semibold transition-colors"
-                            :class="
-                                config.fontSize === size.value
-                                    ? 'border-primary bg-primary/10 text-primary'
-                                    : 'hover:border-muted-foreground/50'
-                            "
-                            @click="config.fontSize = size.value"
-                        >
-                            {{ size.label }}
-                        </button>
-                    </div>
-                </div>
+                    {{ option.label }}
+                </button>
             </div>
         </div>
 
         <div class="px-4 py-3">
-            <div>
-                <p
-                    class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+            <p
+                class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+            >
+                Appearance
+            </p>
+            <p class="mb-1.5 text-xs text-muted-foreground">
+                Total row background
+            </p>
+            <div class="flex items-center gap-2">
+                <div
+                    class="h-8 w-8 shrink-0 cursor-pointer overflow-hidden rounded border"
+                    :style="{
+                        backgroundColor: config.totalRowBackground ?? '#dbeafe',
+                    }"
                 >
-                    Appearance
-                </p>
-
-                <div class="mb-3">
-                    <p class="mb-1.5 text-xs text-muted-foreground">
-                        Background color
-                    </p>
-                    <div class="flex items-center gap-2">
-                        <div
-                            class="h-8 w-8 shrink-0 cursor-pointer overflow-hidden rounded border"
-                            :style="{
-                                backgroundColor:
-                                    config.backgroundColor ?? '#f8fafc',
-                            }"
-                        >
-                            <input
-                                :value="config.backgroundColor ?? '#f8fafc'"
-                                type="color"
-                                class="h-10 w-10 -translate-x-1 -translate-y-1 cursor-pointer opacity-0"
-                                @input="
-                                    updateNullableColor(
-                                        'backgroundColor',
-                                        ($event.target as HTMLInputElement)
-                                            .value,
-                                    )
-                                "
-                            />
-                        </div>
-                        <Input
-                            :model-value="config.backgroundColor ?? ''"
-                            class="h-8 font-mono text-xs"
-                            placeholder="Auto"
-                            @update:model-value="
-                                (value) =>
-                                    updateNullableColor(
-                                        'backgroundColor',
-                                        value,
-                                    )
-                            "
-                        />
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            class="h-8 px-2 text-xs"
-                            @click="config.backgroundColor = null"
-                        >
-                            ✕
-                        </Button>
-                    </div>
+                    <input
+                        :value="config.totalRowBackground ?? '#dbeafe'"
+                        type="color"
+                        class="h-10 w-10 -translate-x-1 -translate-y-1 cursor-pointer opacity-0"
+                        @input="
+                            updateTotalRowBackground(
+                                ($event.target as HTMLInputElement).value,
+                            )
+                        "
+                    />
                 </div>
-
-                <div class="mb-3">
-                    <p class="mb-1.5 text-xs text-muted-foreground">
-                        Total row color
-                    </p>
-                    <div class="flex items-center gap-2">
-                        <div
-                            class="h-8 w-8 shrink-0 cursor-pointer overflow-hidden rounded border"
-                            :style="{
-                                backgroundColor: config.totalRowColor ?? '#dbeafe',
-                            }"
-                        >
-                            <input
-                                :value="config.totalRowColor ?? '#dbeafe'"
-                                type="color"
-                                class="h-10 w-10 -translate-x-1 -translate-y-1 cursor-pointer opacity-0"
-                                @input="
-                                    updateNullableColor(
-                                        'totalRowColor',
-                                        ($event.target as HTMLInputElement)
-                                            .value,
-                                    )
-                                "
-                            />
-                        </div>
-                        <Input
-                            :model-value="config.totalRowColor ?? ''"
-                            class="h-8 font-mono text-xs"
-                            placeholder="Auto"
-                            @update:model-value="
-                                (value) =>
-                                    updateNullableColor('totalRowColor', value)
-                            "
-                        />
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            class="h-8 px-2 text-xs"
-                            @click="config.totalRowColor = null"
-                        >
-                            ✕
-                        </Button>
-                    </div>
-                </div>
+                <Input
+                    :model-value="config.totalRowBackground ?? ''"
+                    class="h-8 font-mono text-xs"
+                    placeholder="Auto"
+                    @update:model-value="updateTotalRowBackground"
+                />
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    class="h-8 px-2 text-xs"
+                    @click="config.totalRowBackground = null"
+                >
+                    ✕
+                </Button>
             </div>
         </div>
     </div>

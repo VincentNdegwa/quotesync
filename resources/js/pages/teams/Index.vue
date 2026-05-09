@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Form, Head, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
@@ -28,14 +30,29 @@ defineOptions({
     },
 });
 
-const roleDisplay = (role: WorkspaceRoleOption): string => role.display_name ?? role.name;
+const roleDisplay = (role: WorkspaceRoleOption): string =>
+    role.display_name ?? role.name;
 
 const inviteAction = '/teams/invitations';
 
+const deleteOpen = ref(false);
+const invitationToCancel = ref<string | null>(null);
+
 const cancelInvitation = (code: string): void => {
-    router.delete(`/teams/invitations/${code}`, {
-        preserveScroll: true,
-    });
+    invitationToCancel.value = code;
+    deleteOpen.value = true;
+};
+
+const executeCancel = (): void => {
+    if (invitationToCancel.value) {
+        router.delete(`/teams/invitations/${invitationToCancel.value}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                deleteOpen.value = false;
+                invitationToCancel.value = null;
+            },
+        });
+    }
 };
 </script>
 
@@ -53,7 +70,8 @@ const cancelInvitation = (code: string): void => {
             <CardHeader>
                 <CardTitle>Invite member</CardTitle>
                 <CardDescription>
-                    Send an email invitation and assign a role for this workspace.
+                    Send an email invitation and assign a role for this
+                    workspace.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -84,7 +102,9 @@ const cancelInvitation = (code: string): void => {
                             class="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                             required
                         >
-                            <option value="" disabled selected>Select a role</option>
+                            <option value="" disabled selected>
+                                Select a role
+                            </option>
                             <option
                                 v-for="role in availableRoles"
                                 :key="role.id"
@@ -113,7 +133,10 @@ const cancelInvitation = (code: string): void => {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div v-if="members.length === 0" class="text-sm text-muted-foreground">
+                <div
+                    v-if="members.length === 0"
+                    class="text-sm text-muted-foreground"
+                >
                     No members found.
                 </div>
                 <div v-else class="space-y-3">
@@ -125,7 +148,9 @@ const cancelInvitation = (code: string): void => {
                         <div class="flex items-start justify-between gap-3">
                             <div>
                                 <p class="font-medium">{{ member.name }}</p>
-                                <p class="text-sm text-muted-foreground">{{ member.email }}</p>
+                                <p class="text-sm text-muted-foreground">
+                                    {{ member.email }}
+                                </p>
                             </div>
                             <div class="flex flex-wrap justify-end gap-1">
                                 <Badge
@@ -164,9 +189,12 @@ const cancelInvitation = (code: string): void => {
                     >
                         <div class="flex items-start justify-between gap-3">
                             <div>
-                                <p class="font-medium">{{ invitation.email }}</p>
+                                <p class="font-medium">
+                                    {{ invitation.email }}
+                                </p>
                                 <p class="text-sm text-muted-foreground">
-                                    Invited by {{ invitation.invited_by ?? 'Unknown' }}
+                                    Invited by
+                                    {{ invitation.invited_by ?? 'Unknown' }}
                                 </p>
                             </div>
                             <div class="flex items-center gap-2">
@@ -186,5 +214,14 @@ const cancelInvitation = (code: string): void => {
                 </div>
             </CardContent>
         </Card>
+
+        <ConfirmDialog
+            v-model:open="deleteOpen"
+            title="Cancel invitation"
+            description="Are you sure you want to cancel this invitation? This action cannot be undone."
+            confirm-text="Cancel invitation"
+            variant="destructive"
+            @confirm="executeCancel"
+        />
     </div>
 </template>

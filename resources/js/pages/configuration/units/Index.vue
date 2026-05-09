@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,8 @@ defineOptions({
 const createOpen = ref(false);
 const editOpen = ref(false);
 const editingUnit = ref<UnitRecord | null>(null);
+const deleteOpen = ref(false);
+const unitToDelete = ref<UnitRecord | null>(null);
 
 const openEdit = (unit: UnitRecord): void => {
     editingUnit.value = unit;
@@ -42,9 +45,20 @@ const openEdit = (unit: UnitRecord): void => {
 };
 
 const removeUnit = (unit: UnitRecord): void => {
-    router.delete(`/configuration/units/${unit.id}`, {
-        preserveScroll: true,
-    });
+    unitToDelete.value = unit;
+    deleteOpen.value = true;
+};
+
+const executeDelete = (): void => {
+    if (unitToDelete.value) {
+        router.delete(`/configuration/units/${unitToDelete.value.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                deleteOpen.value = false;
+                unitToDelete.value = null;
+            },
+        });
+    }
 };
 </script>
 
@@ -73,16 +87,32 @@ const removeUnit = (unit: UnitRecord): void => {
                 </TableHeader>
                 <TableBody>
                     <TableRow v-for="unit in units" :key="unit.id">
-                        <TableCell class="font-medium">{{ unit.name }}</TableCell>
+                        <TableCell class="font-medium">{{
+                            unit.name
+                        }}</TableCell>
                         <TableCell>{{ unit.symbol || '—' }}</TableCell>
                         <TableCell>
-                            <Badge :variant="unit.is_active ? 'default' : 'secondary'">
+                            <Badge
+                                :variant="
+                                    unit.is_active ? 'default' : 'secondary'
+                                "
+                            >
                                 {{ unit.is_active ? 'Active' : 'Inactive' }}
                             </Badge>
                         </TableCell>
-                        <TableCell class="text-right space-x-2">
-                            <Button size="sm" variant="outline" @click="openEdit(unit)">Edit</Button>
-                            <Button size="sm" variant="destructive" @click="removeUnit(unit)">Delete</Button>
+                        <TableCell class="space-x-2 text-right">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                @click="openEdit(unit)"
+                                >Edit</Button
+                            >
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                @click="removeUnit(unit)"
+                                >Delete</Button
+                            >
                         </TableCell>
                     </TableRow>
                 </TableBody>
@@ -91,5 +121,14 @@ const removeUnit = (unit: UnitRecord): void => {
 
         <CreateDialog v-model:open="createOpen" />
         <EditDialog v-model:open="editOpen" :unit="editingUnit" />
+
+        <ConfirmDialog
+            v-model:open="deleteOpen"
+            title="Delete unit"
+            description="Are you sure you want to delete this unit? This action cannot be undone."
+            confirm-text="Delete"
+            variant="destructive"
+            @confirm="executeDelete"
+        />
     </div>
 </template>

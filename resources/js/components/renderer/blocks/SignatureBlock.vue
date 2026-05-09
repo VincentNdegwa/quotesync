@@ -1,19 +1,45 @@
 <script setup lang="ts">
+import { inject, computed } from 'vue';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
 import { Button } from '@/components/ui/button';
-import type { BrandingData, QuoteData, SignatureBlockConfig } from '@/types';
+import {
+    blockBaseStyle,
+    blockFontSizeClass,
+} from '@/composables/useBlockStyles';
+import { useFormat } from '@/composables/useFormat';
+import type {
+    DocumentData,
+    SignatureBlockConfig,
+    WorkspaceSettings,
+} from '@/types';
 
-defineProps<{
+const props = defineProps<{
     config: SignatureBlockConfig;
-    quote: QuoteData;
-    branding: BrandingData;
+    data: DocumentData;
+    settings: WorkspaceSettings;
     previewMode: boolean;
     editMode?: boolean;
 }>();
 
+const isQuote = computed(() => props.data.documentType === 'quote');
+
 const emit = defineEmits<{
-    (e: 'update-signature-content', payload: { acceptButtonText?: string | null; declineButtonText?: string | null; legalText?: string | null }): void;
+    (
+        e: 'update-signature-content',
+        payload: {
+            acceptButtonText?: string | null;
+            declineButtonText?: string | null;
+            contextText?: string | null;
+        },
+    ): void;
 }>();
+
+const effectiveContextText = computed(() => props.config.contextText);
+
+const openApproveModal = inject('openApproveModal', () => {});
+const openDeclineModal = inject('openDeclineModal', () => {});
+
+const { formatDateTime } = useFormat();
 
 const updateAcceptText = (value: string | null): void => {
     emit('update-signature-content', { acceptButtonText: value });
@@ -23,23 +49,24 @@ const updateDeclineText = (value: string | null): void => {
     emit('update-signature-content', { declineButtonText: value });
 };
 
-const updateLegalText = (value: string | null): void => {
-    emit('update-signature-content', { legalText: value });
+const updateContextText = (value: string | null): void => {
+    emit('update-signature-content', { contextText: value });
 };
 </script>
 
 <template>
     <div
-        class="space-y-3 px-6"
-        :style="{
-            backgroundColor: config.backgroundColor ?? 'transparent',
-            paddingTop: config.paddingSize === 'sm' ? '12px' : config.paddingSize === 'lg' ? '28px' : '20px',
-            paddingBottom: config.paddingSize === 'sm' ? '12px' : config.paddingSize === 'lg' ? '28px' : '20px',
-        }"
+        :style="blockBaseStyle(config)"
+        :class="blockFontSizeClass(config.fontSize)"
     >
-        <div class="flex flex-wrap gap-2">
-            <template v-if="editMode">
-                <div class="min-w-[10rem] rounded-md px-3 py-2 text-sm font-medium text-primary-foreground" :style="{ backgroundColor: config.acceptButtonColor ?? undefined }">
+        <template v-if="editMode">
+            <div class="flex flex-wrap gap-3">
+                <div
+                    class="min-w-40 rounded-md px-4 py-2 text-sm font-medium text-primary-foreground"
+                    :style="{
+                        backgroundColor: config.acceptButtonColor ?? undefined,
+                    }"
+                >
                     <InlineEditableText
                         :model-value="config.acceptButtonText"
                         :edit-mode="editMode"
@@ -50,7 +77,9 @@ const updateLegalText = (value: string | null): void => {
                         @update:model-value="updateAcceptText"
                     />
                 </div>
-                <div class="min-w-[10rem] rounded-md px-3 py-2 text-sm font-medium text-primary-foreground">
+                <div
+                    class="min-w-40 rounded-md border border-border px-4 py-2 text-sm font-medium"
+                >
                     <InlineEditableText
                         :model-value="config.declineButtonText"
                         :edit-mode="editMode"
@@ -61,30 +90,76 @@ const updateLegalText = (value: string | null): void => {
                         @update:model-value="updateDeclineText"
                     />
                 </div>
-            </template>
+            </div>
+        </template>
 
-            <template v-else>
-                <Button type="button" :style="{ backgroundColor: config.acceptButtonColor ?? undefined }">{{ config.acceptButtonText }}</Button>
-                <Button type="button" variant="outline">{{ config.declineButtonText }}</Button>
-            </template>
-        </div>
+        <template
+            v-else-if="
+                isQuote && (data.status === 'accepted' || data.status === 'won')
+            "
+        >
+            <div class="flex flex-col items-start gap-6">
+                <div class="flex flex-col">
+                    <img
+                        v-if="data.signature_url"
+                        :src="data.signature_url"
+                        alt="Signature"
+                        class="h-20 w-auto object-contain"
+                    />
+                    <span
+                        v-if="data.signer_name"
+                        class="mt-1 text-sm"
+                        style="
+                            font-family: 'Dancing Script', cursive;
+                            font-size: 1.25rem;
+                            line-height: 1;
+                        "
+                        >{{ data.signer_name }}</span
+                    >
+                </div>
+                <div class="text-sm text-muted-foreground">
+                    <p>Signed on {{ formatDateTime(data.accepted_at) }}</p>
+                </div>
+            </div>
+        </template>
+
+        <template v-else-if="isQuote && data.status === 'declined'">
+            <p class="text-sm text-muted-foreground">
+                This quote was declined.
+            </p>
+        </template>
+
+        <template v-else>
+            <div class="flex flex-wrap gap-3">
+                <Button
+                    type="button"
+                    @click="openApproveModal"
+                    :style="{
+                        backgroundColor: config.acceptButtonColor ?? undefined,
+                    }"
+                    class="text-white"
+                >
+                    {{ config.acceptButtonText || 'Accept & Sign' }}
+                </Button>
+                <Button
+                    type="button"
+                    @click="openDeclineModal"
+                    variant="outline"
+                >
+                    {{ config.declineButtonText || 'Decline' }}
+                </Button>
+            </div>
+        </template>
 
         <InlineEditableText
-            v-if="config.showLegalText || editMode"
-            :model-value="config.legalText"
+            v-if="config.showContextText || editMode"
+            :model-value="effectiveContextText"
             :edit-mode="editMode"
-            :rows="3"
+            :rows="2"
             placeholder="By signing you agree to the terms listed above."
             empty-text="By signing you agree to the terms listed above."
-            display-class="text-xs text-muted-foreground whitespace-pre-wrap"
-            @update:model-value="updateLegalText"
+            display-class="text-xs text-muted-foreground whitespace-pre-wrap mt-3"
+            @update:model-value="updateContextText"
         />
-
-        <div v-if="previewMode" class="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
-            <span v-if="config.requireNameTyped" class="rounded-full bg-muted px-2 py-0.5">Name required</span>
-            <span v-if="config.allowDrawSignature" class="rounded-full bg-muted px-2 py-0.5">Draw signature</span>
-            <span v-if="config.showTimestamp" class="rounded-full bg-muted px-2 py-0.5">Timestamp</span>
-            <span v-if="config.showIpAddress" class="rounded-full bg-muted px-2 py-0.5">IP address</span>
-        </div>
     </div>
 </template>

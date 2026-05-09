@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Download, Trash2 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import ClientSlideOver from '@/components/clients/ClientSlideOver.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import CountryCombobox from '@/components/location/CountryCombobox.vue';
 import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
@@ -42,7 +44,9 @@ const props = defineProps<{
 }>();
 
 const countryFilterOptions = computed<CountryOption[]>(() => {
-    const commonCodes = new Set(commonCountryOptions.map((country) => country.code));
+    const commonCodes = new Set(
+        commonCountryOptions.map((country) => country.code),
+    );
 
     return [
         { code: ALL_OPTION, label: 'All countries', currency: '' },
@@ -52,12 +56,16 @@ const countryFilterOptions = computed<CountryOption[]>(() => {
 });
 
 const currencyFilterOptions = computed(() => {
-    const commonCodes = new Set(commonCurrencyOptions.map((currency) => currency.code));
+    const commonCodes = new Set(
+        commonCurrencyOptions.map((currency) => currency.code),
+    );
 
     return [
         { code: ALL_OPTION, label: 'All currencies' },
         ...commonCurrencyOptions,
-        ...currencyOptions.filter((currency) => !commonCodes.has(currency.code)),
+        ...currencyOptions.filter(
+            (currency) => !commonCodes.has(currency.code),
+        ),
     ];
 });
 
@@ -73,7 +81,7 @@ defineOptions({
 });
 
 const query = useForm({
-    search: props.filters.search ?? '',
+    search: props.filters.search || '',
     country: props.filters.country ? props.filters.country : ALL_OPTION,
     currency: props.filters.currency ? props.filters.currency : ALL_OPTION,
     tag: props.filters.tag ? props.filters.tag : ALL_OPTION,
@@ -112,6 +120,7 @@ watch(
 const selectedIds = ref<number[]>([]);
 const isSlideOverOpen = ref(false);
 const editingClient = ref<ClientRecord | null>(null);
+const deleteDialogOpen = ref(false);
 const tagDialogOpen = ref(false);
 
 const form = useForm({
@@ -139,7 +148,7 @@ const openCreate = (): void => {
 const openEdit = (client: ClientRecord): void => {
     editingClient.value = client;
     form.defaults({
-        company_name: client.company_name ?? '',
+        company_name: client.company_name || '',
         contact_name: client.contact_name ?? '',
         email: client.email ?? '',
         phone: client.phone ?? '',
@@ -177,6 +186,10 @@ const bulkDelete = (): void => {
         return;
     }
 
+    deleteDialogOpen.value = true;
+};
+
+const executeDelete = (): void => {
     router.post(
         '/clients/bulk-delete',
         { ids: selectedIds.value },
@@ -184,6 +197,7 @@ const bulkDelete = (): void => {
             preserveScroll: true,
             onSuccess: () => {
                 selectedIds.value = [];
+                deleteDialogOpen.value = false;
             },
         },
     );
@@ -194,7 +208,19 @@ const exportSelected = (): void => {
         return;
     }
 
-    window.location.href = `/clients/export/csv?ids=${selectedIds.value.join(',')}`;
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/clients/export/selected';
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'ids';
+    input.value = JSON.stringify(selectedIds.value);
+
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
 };
 </script>
 
@@ -254,7 +280,11 @@ const exportSelected = (): void => {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem :value="ALL_OPTION">All tags</SelectItem>
-                        <SelectItem v-for="tag in tags" :key="tag.id" :value="tag.name">
+                        <SelectItem
+                            v-for="tag in tags"
+                            :key="tag.id"
+                            :value="tag.name"
+                        >
                             {{ tag.name }}
                         </SelectItem>
                     </SelectContent>
@@ -263,12 +293,14 @@ const exportSelected = (): void => {
         </div>
 
         <div class="flex items-center gap-2" v-if="selectedIds.length > 0">
-            <Button variant="outline" @click="exportSelected"
-                >Export selected</Button
-            >
-            <Button variant="destructive" @click="bulkDelete"
-                >Delete selected</Button
-            >
+            <Button variant="outline" @click="exportSelected">
+                <Download class="mr-2 h-4 w-4" />
+                Export selected
+            </Button>
+            <Button variant="destructive" @click="bulkDelete">
+                <Trash2 class="mr-2 h-4 w-4" />
+                Delete selected
+            </Button>
         </div>
 
         <ClientsDataTable
@@ -329,5 +361,14 @@ const exportSelected = (): void => {
         />
 
         <ConfigurationTagCreateDialog v-model:open="tagDialogOpen" />
+
+        <ConfirmDialog
+            v-model:open="deleteDialogOpen"
+            title="Delete selected clients"
+            :description="`Are you sure you want to delete ${selectedIds.length} selected client${selectedIds.length > 1 ? 's' : ''}? This action cannot be undone.`"
+            confirm-text="Delete"
+            variant="destructive"
+            @confirm="executeDelete"
+        />
     </div>
 </template>

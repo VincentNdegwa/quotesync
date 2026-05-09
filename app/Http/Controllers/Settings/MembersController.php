@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Models\Role;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -29,20 +28,7 @@ class MembersController extends Controller
             }])
             ->select(['users.id', 'users.name', 'users.email'])
             ->orderByRaw('LOWER(users.name)')
-            ->get()
-            ->map(fn (User $member): array => [
-                'id' => $member->id,
-                'name' => $member->name,
-                'email' => $member->email,
-                'roles' => $member->roles
-                    ->map(fn (Role $role): array => [
-                        'id' => $role->id,
-                        'name' => $role->name,
-                        'display_name' => $role->display_name,
-                    ])
-                    ->values(),
-            ])
-            ->values();
+            ->get();
 
         $pendingInvitations = $workspace->invitations()
             ->with(['role:id,name,display_name', 'inviter:id,name'])
@@ -52,18 +38,7 @@ class MembersController extends Controller
                     ->orWhere('expires_at', '>', now());
             })
             ->orderByDesc('created_at')
-            ->get()
-            ->map(fn ($invitation): array => [
-                'id' => $invitation->id,
-                'code' => $invitation->code,
-                'email' => $invitation->email,
-                'role_id' => $invitation->role_id,
-                'role_name' => $invitation->role?->display_name ?? $invitation->role?->name,
-                'invited_by' => $invitation->inviter?->name,
-                'expires_at' => $invitation->expires_at?->toIso8601String(),
-                'created_at' => $invitation->created_at?->toIso8601String(),
-            ])
-            ->values();
+            ->get();
 
         $availableRoles = Role::query()
             ->where(function ($query) use ($workspace) {
@@ -71,13 +46,7 @@ class MembersController extends Controller
                     ->orWhere('workspace_id', $workspace->id);
             })
             ->orderByRaw('LOWER(name)')
-            ->get(['id', 'name', 'display_name'])
-            ->map(fn (Role $role): array => [
-                'id' => $role->id,
-                'name' => $role->name,
-                'display_name' => $role->display_name,
-            ])
-            ->values();
+            ->get(['id', 'name', 'display_name']);
 
         $canInvite = $workspace->owner_id === $user->id || $user->hasRole('admin', $workspace);
 

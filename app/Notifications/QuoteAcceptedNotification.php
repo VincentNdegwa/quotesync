@@ -14,7 +14,7 @@ class QuoteAcceptedNotification extends QuoteNotification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return $this->getChannelsFromSettings($notifiable, 'notify_quote_accepted', 'notify_quote_accepted_channel');
     }
 
     /**

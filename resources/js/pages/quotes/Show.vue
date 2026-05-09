@@ -1,154 +1,445 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, setLayoutProps } from '@inertiajs/vue3';
+import { router } from '@inertiajs/vue3';
+import { computed, ref, watchEffect } from 'vue';
 import Heading from '@/components/Heading.vue';
-import QuoteActivityTimeline from '@/components/quotes/QuoteActivityTimeline.vue';
+import QuoteActivityFeed from '@/components/quotes/QuoteActivityFeed.vue';
+import QuoteChat from '@/components/quotes/QuoteChat.vue';
+import QuoteFollowUps from '@/components/quotes/QuoteFollowUps.vue';
+import QuoteInvoicesPanel from '@/components/quotes/QuoteInvoicesPanel.vue';
 import QuoteStatsPanel from '@/components/quotes/QuoteStatsPanel.vue';
+import QuoteVersionHistory from '@/components/quotes/QuoteVersionHistory.vue';
+import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { useEnums } from '@/composables/useEnums';
+import { useFormat } from '@/composables/useFormat';
+import type {
+    WorkspaceSettings,
+    QuoteData,
+    QuoteStatusEnum,
+    QuoteInvoicesPayload,
+} from '@/types';
+import QuoteActions from './components/QuoteActions.vue';
 
-defineProps<{
-    quote: {
-        id: number;
-        quote_uuid: string;
-        number: string | null;
-        title: string;
-        status: string;
-        total: number;
-        subtotal: number;
-        discount_amount: number;
-        tax_amount: number;
-        currency: string | null;
-        valid_until: string | null;
-        view_count: number;
-        time_spent_seconds: number;
-        viewed_at: string | null;
-        sent_at: string | null;
-        accepted_at: string | null;
-        declined_at: string | null;
-        decline_reason: string | null;
-        created_at: string | null;
-        updated_at: string | null;
-        client: { id: number; company_name: string } | null;
-        sections: Array<{
-            id: number;
-            title: string;
-            line_items: Array<{
-                id: number;
-                name: string;
-                description: string | null;
-                quantity: number;
-                unit_price: number;
-                total: number;
-                is_optional: boolean;
-            }>;
-        }>;
-        activities: Array<{
-            id: number;
-            type: string;
-            description: string;
-            metadata: Record<string, unknown> | null;
-            created_at: string | null;
-            user: { id: number; name: string } | null;
-        }>;
-    };
+const props = defineProps<{
+    quote: QuoteData;
+    settings: WorkspaceSettings;
+    quoteStatuses: QuoteStatusEnum[];
+    teamMembers: Array<{ id: number; name: string; email: string }>;
+    quoteInvoices: QuoteInvoicesPayload;
 }>();
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Quotes',
-                href: '/quotes',
-            },
-            {
-                title: 'Quote details',
-                href: '/quotes',
-            },
-        ],
-    },
+const breadcrumbs = computed(() => [
+    { title: 'Quotes', href: '/quotes' },
+    { title: props.quote.title || 'Quote details', href: '#' },
+]);
+
+watchEffect(() => {
+    setLayoutProps({
+        breadcrumbs: breadcrumbs.value,
+    });
 });
+
+const { getQuoteStatus } = useEnums();
+const { formatCurrency: fmt, formatDate: fmtDate } = useFormat(
+    props.quote.base_currency || props.quote.currency || undefined,
+);
+
+const getWinProbabilityColor = (probability: number): string => {
+    if (probability >= 70) {
+        return 'text-green-600';
+    }
+
+    if (probability >= 40) {
+        return 'text-yellow-600';
+    }
+
+    return 'text-red-600';
+};
+
+const getWinProbabilityBgColor = (probability: number): string => {
+    if (probability >= 70) {
+        return 'bg-green-500';
+    }
+
+    if (probability >= 40) {
+        return 'bg-yellow-500';
+    }
+
+    return 'bg-red-500';
+};
+
+const approvalComments = ref('');
+
+const approveApproval = (): void => {
+    router.post(
+        `/approvals/${props.quote.id}/approve`,
+        {
+            comments: approvalComments.value,
+        },
+        {
+            onSuccess: () => {
+                approvalComments.value = '';
+            },
+        },
+    );
+};
+
+const rejectApproval = (): void => {
+    router.post(
+        `/approvals/${props.quote.id}/reject`,
+        {
+            comments: approvalComments.value,
+        },
+        {
+            onSuccess: () => {
+                approvalComments.value = '';
+            },
+        },
+    );
+};
+
+const handleCommentCreated = (): void => {
+    router.reload();
+};
+
+const handleCommentDeleted = (): void => {
+    router.reload();
+};
 </script>
 
 <template>
     <Head :title="quote.title" />
 
-    <div class="space-y-4">
-        <div class="flex items-center justify-between gap-3">
-            <Heading
-                :title="quote.title"
-                :description="quote.number ? `Quote ${quote.number}` : 'Quote details'"
-            />
+    <div class="space-y-6">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <Heading
+                    :title="quote.title"
+                    :description="
+                        quote.number ? `${quote.number}` : 'Quote details'
+                    "
+                />
+            </div>
 
-            <Button as-child>
-                <Link :href="`/quotes/${quote.id}/edit`">Edit quote</Link>
-            </Button>
+            <div class="flex flex-wrap items-center gap-2">
+                <Badge
+                    :variant="getQuoteStatus(quote.status)?.badgeColor"
+                    :class="[
+                        'px-3 py-1 text-xs font-semibold',
+                        getQuoteStatus(quote.status)?.cssColor,
+                    ]"
+                >
+                    {{ getQuoteStatus(quote.status)?.label }}
+                </Badge>
+                <QuoteFollowUps
+                    v-if="quote.quote_follow_ups"
+                    :quote-id="quote.id"
+                    :follow-ups="quote.quote_follow_ups"
+                />
+
+                <QuoteActions
+                    :quote="quote"
+                    :quote-statuses="quoteStatuses"
+                    :task-users="teamMembers"
+                    variant="buttons"
+                    @success="() => {}"
+                />
+            </div>
+
+            <div
+                v-if="
+                    quote.win_probability &&
+                    quote.win_probability.probability !== null
+                "
+                class="w-full"
+            >
+                <div class="mb-1 flex items-center justify-between">
+                    <span class="text-xs font-medium text-muted-foreground"
+                        >Win Probability</span
+                    >
+                    <span
+                        class="text-xs font-bold"
+                        :class="
+                            getWinProbabilityColor(
+                                quote.win_probability.probability,
+                            )
+                        "
+                    >
+                        {{ Math.round(quote.win_probability.probability) }}%
+                    </span>
+                </div>
+                <div
+                    class="h-2 w-full overflow-hidden rounded-full bg-gray-200"
+                >
+                    <div
+                        class="h-full rounded-full transition-all duration-500"
+                        :class="
+                            getWinProbabilityBgColor(
+                                quote.win_probability.probability,
+                            )
+                        "
+                        :style="{
+                            width: `${quote.win_probability.probability}%`,
+                        }"
+                    />
+                </div>
+            </div>
         </div>
 
-        <div class="grid gap-4 lg:grid-cols-[1.4fr_0.8fr]">
+        <div class="grid gap-6 xl:grid-cols-[1fr_340px]">
             <div class="space-y-4">
-                <section class="rounded-lg border p-4">
-                    <div class="grid gap-4 md:grid-cols-2">
-                        <div>
-                            <p class="text-xs text-muted-foreground">Status</p>
-                            <Badge variant="outline" class="mt-1">{{ quote.status }}</Badge>
-                        </div>
-                        <div>
-                            <p class="text-xs text-muted-foreground">Client</p>
-                            <p class="mt-1 text-sm font-semibold">{{ quote.client?.company_name || '—' }}</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-muted-foreground">Total</p>
-                            <p class="mt-1 text-sm font-semibold">{{ quote.total.toFixed(2) }} {{ quote.currency || '' }}</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-muted-foreground">Valid until</p>
-                            <p class="mt-1 text-sm">{{ quote.valid_until || '—' }}</p>
-                        </div>
+                <div
+                    class="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border bg-muted/30 px-5 py-3 text-sm"
+                >
+                    <div>
+                        <span class="text-muted-foreground">Client&ensp;</span>
+                        <span class="font-semibold">{{
+                            quote.client?.company_name || '—'
+                        }}</span>
                     </div>
-                </section>
+                    <div>
+                        <span class="text-muted-foreground">Total&ensp;</span>
+                        <span class="font-semibold">{{
+                            fmt(props.quote.base_total)
+                        }}</span>
+                    </div>
+                    <div>
+                        <span class="text-muted-foreground"
+                            >Valid until&ensp;</span
+                        >
+                        <span class="font-semibold">{{
+                            fmtDate(quote.valid_until)
+                        }}</span>
+                    </div>
+                    <div v-if="quote.sent_at">
+                        <span class="text-muted-foreground">Sent&ensp;</span>
+                        <span class="font-semibold">{{
+                            fmtDate(quote.sent_at)
+                        }}</span>
+                    </div>
+                </div>
 
-                <section class="rounded-lg border p-4">
-                    <h3 class="mb-3 text-sm font-semibold">Quote content</h3>
-                    <div v-for="section in quote.sections" :key="section.id" class="mb-4 last:mb-0">
-                        <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ section.title }}</p>
-                        <div class="overflow-hidden rounded-md border">
-                            <table class="w-full text-sm">
-                                <thead class="bg-muted/30 text-xs uppercase tracking-wide text-muted-foreground">
-                                    <tr>
-                                        <th class="px-3 py-2 text-left">Item</th>
-                                        <th class="px-3 py-2 text-right">Qty</th>
-                                        <th class="px-3 py-2 text-right">Unit</th>
-                                        <th class="px-3 py-2 text-right">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="item in section.line_items" :key="item.id" class="border-t">
-                                        <td class="px-3 py-2">
-                                            <p class="font-medium">{{ item.name }}</p>
-                                            <p v-if="item.description" class="text-xs text-muted-foreground">{{ item.description }}</p>
-                                        </td>
-                                        <td class="px-3 py-2 text-right">{{ item.quantity }}</td>
-                                        <td class="px-3 py-2 text-right">{{ item.unit_price.toFixed(2) }}</td>
-                                        <td class="px-3 py-2 text-right font-semibold">{{ item.total.toFixed(2) }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                <div
+                    class="overflow-hidden rounded-xl border bg-white shadow-sm"
+                >
+                    <QuoteRenderer
+                        v-if="quote.layout_snapshot && settings"
+                        :data="{ ...quote, documentType: 'quote' }"
+                        :layout="quote.layout_snapshot"
+                        :settings="settings"
+                        :preview-mode="true"
+                        :edit-mode="false"
+                        :is-internal-view="true"
+                    />
 
-                    <div class="mt-4 rounded-md border bg-muted/30 p-3 text-sm">
-                        <div class="flex items-center justify-between"><span>Subtotal</span><span>{{ quote.subtotal.toFixed(2) }}</span></div>
-                        <div class="mt-1 flex items-center justify-between"><span>Discount</span><span>{{ quote.discount_amount.toFixed(2) }}</span></div>
-                        <div class="mt-1 flex items-center justify-between"><span>Tax</span><span>{{ quote.tax_amount.toFixed(2) }}</span></div>
-                        <div class="mt-2 flex items-center justify-between border-t pt-2 font-semibold"><span>Total</span><span>{{ quote.total.toFixed(2) }} {{ quote.currency || '' }}</span></div>
+                    <template v-else>
+                        <div class="border-b bg-muted/20 px-6 py-4">
+                            <h3 class="font-semibold text-foreground">
+                                Quote Details
+                            </h3>
+                        </div>
+
+                        <div class="divide-y">
+                            <template
+                                v-for="(section, si) in quote.sections"
+                                :key="section.id"
+                            >
+                                <div class="px-6 py-4">
+                                    <h4
+                                        class="mb-3 text-sm font-semibold text-foreground"
+                                    >
+                                        {{ section.title }}
+                                    </h4>
+
+                                    <div class="space-y-1">
+                                        <div
+                                            v-for="item in section.line_items"
+                                            :key="item.id"
+                                            class="grid grid-cols-[1fr_auto_auto] items-start gap-4 rounded-lg px-3 py-2.5 hover:bg-muted/30"
+                                        >
+                                            <div class="min-w-0">
+                                                <p class="text-sm font-medium">
+                                                    {{ item.name }}
+                                                </p>
+                                                <p
+                                                    v-if="item.description"
+                                                    class="mt-0.5 text-xs text-muted-foreground"
+                                                >
+                                                    {{ item.description }}
+                                                </p>
+                                            </div>
+                                            <div
+                                                class="text-right text-xs text-muted-foreground tabular-nums"
+                                            >
+                                                {{ Number(item.quantity) }} ×
+                                                {{ fmt(item.unit_price) }}
+                                            </div>
+                                            <div
+                                                class="w-24 text-right text-sm font-semibold tabular-nums"
+                                            >
+                                                {{ fmt(item.total) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Separator
+                                    v-if="si < quote.sections.length - 1"
+                                />
+                            </template>
+                        </div>
+
+                        <!-- Totals -->
+                        <div class="border-t bg-muted/20 px-6 py-5">
+                            <div class="ml-auto max-w-xs space-y-2 text-sm">
+                                <div
+                                    class="flex justify-between text-muted-foreground"
+                                >
+                                    <span>Subtotal</span>
+                                    <span
+                                        class="font-medium text-foreground tabular-nums"
+                                    >
+                                        {{ fmt(quote.subtotal) }}
+                                    </span>
+                                </div>
+
+                                <div
+                                    v-if="Number(quote.discount_amount) > 0"
+                                    class="flex justify-between text-muted-foreground"
+                                >
+                                    <span>Discount</span>
+                                    <span
+                                        class="font-medium text-foreground tabular-nums"
+                                    >
+                                        −{{ fmt(quote.discount_amount) }}
+                                    </span>
+                                </div>
+
+                                <div
+                                    v-if="Number(quote.tax_amount) > 0"
+                                    class="flex justify-between text-muted-foreground"
+                                >
+                                    <span>Tax</span>
+                                    <span
+                                        class="font-medium text-foreground tabular-nums"
+                                    >
+                                        {{ fmt(quote.tax_amount) }}
+                                    </span>
+                                </div>
+
+                                <Separator class="opacity-40" />
+
+                                <div
+                                    class="flex justify-between text-base font-bold"
+                                >
+                                    <span>Total</span>
+                                    <span class="tabular-nums">{{
+                                        fmt(props.quote.total)
+                                    }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Pending Approval -->
+                <div
+                    v-if="
+                        quote.status === 'pending_approval' &&
+                        quote.pending_approval
+                    "
+                    class="rounded-xl border border-yellow-200 bg-yellow-50 p-4"
+                >
+                    <h3 class="mb-3 font-semibold text-yellow-800">
+                        PENDING YOUR APPROVAL
+                    </h3>
+                    <div class="mb-4 space-y-2 text-sm">
+                        <p>
+                            <span class="text-muted-foreground"
+                                >Requested by:</span
+                            >
+                            {{
+                                quote.pending_approval.requested_by?.name ||
+                                'Unknown'
+                            }}
+                        </p>
+                        <p>
+                            <span class="text-muted-foreground">Value:</span>
+                            {{ fmt(props.quote.base_total) }}
+                        </p>
+                        <p v-if="quote.discount_amount > 0">
+                            <span class="text-muted-foreground">Discount:</span>
+                            {{ fmt(quote.discount_amount) }} ({{
+                                (
+                                    (Number(quote.discount_amount) /
+                                        Number(quote.subtotal)) *
+                                    100
+                                ).toFixed(1)
+                            }}%)
+                        </p>
                     </div>
-                </section>
+                    <div class="mb-4">
+                        <label class="mb-2 block text-sm font-medium"
+                            >Comments (optional)</label
+                        >
+                        <textarea
+                            v-model="approvalComments"
+                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                            rows="3"
+                            placeholder="Add any comments for the requester..."
+                        />
+                    </div>
+                    <div class="flex gap-2">
+                        <Button
+                            variant="outline"
+                            @click="rejectApproval"
+                            class="flex-1"
+                        >
+                            Reject
+                        </Button>
+                        <Button @click="approveApproval" class="flex-1">
+                            Approve ✓
+                        </Button>
+                    </div>
+                </div>
+
+                <QuoteActivityFeed
+                    :activities="quote.activities ?? []"
+                    :comments="(quote as any).comments ?? []"
+                    :commentable-id="quote.id"
+                    commentable-type="quote"
+                    :team-members="teamMembers"
+                    @comment-created="handleCommentCreated"
+                    @comment-deleted="handleCommentDeleted"
+                />
             </div>
 
             <div class="space-y-4">
                 <QuoteStatsPanel :quote="quote" />
-                <QuoteActivityTimeline :activities="quote.activities" />
+
+                <QuoteInvoicesPanel
+                    :quote-id="quote.id"
+                    :invoices="quoteInvoices"
+                />
+
+                <QuoteVersionHistory
+                    v-if="
+                        (quote as any).versions &&
+                        (quote as any).versions.length > 0
+                    "
+                    :quote="quote"
+                    :versions="(quote as any).versions"
+                    @restore="(versionId) => {}"
+                />
             </div>
         </div>
+
+        <QuoteChat
+            :quote-id="String(quote.id)"
+            :messages="(quote as any).messages"
+        />
     </div>
 </template>

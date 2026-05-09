@@ -1,52 +1,40 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import { Eye, MoreHorizontal, Pencil } from 'lucide-vue-next';
-import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { ref } from 'vue';
 import type { ClientRecord } from '@/types';
+import ClientActions from './ClientActions.vue';
+import InvitePortalDialog from './InvitePortalDialog.vue';
 
-defineProps<{
+const props = defineProps<{
     client: ClientRecord;
 }>();
 
 const emit = defineEmits<{
     edit: [client: ClientRecord];
 }>();
+
+const inviteDialogOpen = ref(false);
+
+const handleEdit = (client: ClientRecord): void => {
+    emit('edit', client);
+};
+
+const handleInvite = (): void => {
+    inviteDialogOpen.value = true;
+};
 </script>
 
 <template>
     <div class="flex justify-end">
-        <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-                <Button
-                    size="icon"
-                    variant="ghost"
-                    class="h-8 w-8"
-                    title="Row actions"
-                    aria-label="Row actions"
-                >
-                    <MoreHorizontal class="h-4 w-4" />
-                </Button>
-            </DropdownMenuTrigger>
+        <ClientActions
+            :client="props.client"
+            variant="dropdown"
+            @edit="handleEdit"
+            @invite="handleInvite"
+        />
 
-            <DropdownMenuContent align="end" class="w-40">
-                <DropdownMenuItem :as-child="true">
-                    <Link :href="`/clients/${client.id}`" class="flex w-full items-center gap-2">
-                        <Eye class="h-4 w-4" />
-                        <span>View</span>
-                    </Link>
-                </DropdownMenuItem>
-
-                <DropdownMenuItem class="flex items-center gap-2" @select="emit('edit', client)">
-                    <Pencil class="h-4 w-4" />
-                    <span>Edit</span>
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
+        <InvitePortalDialog
+            v-model:open="inviteDialogOpen"
+            :client="props.client"
+        />
     </div>
 </template>

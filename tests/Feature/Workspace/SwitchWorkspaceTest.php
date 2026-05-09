@@ -29,10 +29,11 @@ test('user can switch to another workspace they belong to', function () {
 
 test('user cannot switch to a workspace they do not belong to', function () {
     $user = User::factory()->create();
+    $owner = User::factory()->create();
     $workspace = Workspace::query()->create([
         'name' => 'Forbidden Workspace #'.$user->id,
         'display_name' => 'Forbidden Workspace',
-        'owner_id' => $user->id + 1,
+        'owner_id' => $owner->id,
     ]);
 
     $response = $this->actingAs($user)

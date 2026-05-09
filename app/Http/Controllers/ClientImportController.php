@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Clients\ClientImportPreviewRequest;
+use App\Http\Requests\Clients\ClientImportStoreRequest;
 use App\Jobs\ImportClientsJob;
 use App\Models\Client;
+use App\Models\ImportHistory;
 use App\Models\Workspace;
+use App\Services\Import\ClientImportValidator;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ClientImportController extends Controller
 {
@@ -19,15 +24,31 @@ class ClientImportController extends Controller
         return Inertia::render('clients/Import');
     }
 
-    public function preview(Request $request): Response|RedirectResponse
+    public function template(): StreamedResponse
+    {
+        $headers = ['company_name', 'contact_name', 'email', 'phone', 'country'];
+        $rows = [
+            ['Acme Corp', 'John Doe', 'john@example.com', '+1234567890', 'US'],
+            ['Globex Inc', 'Jane Smith', 'jane@example.com', '+9876543210', 'GB'],
+        ];
+
+        return response()->streamDownload(function () use ($headers, $rows) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $headers);
+            foreach ($rows as $row) {
+                fputcsv($file, $row);
+            }
+            fclose($file);
+        }, 'clients-template.csv');
+    }
+
+    public function preview(ClientImportPreviewRequest $request): JsonResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace, 404);
 
-        $validated = $request->validate([
-            'file' => ['required', 'file', 'mimes:csv,txt', 'max:5120'],
-        ]);
+        $validated = $request->validated();
 
         $rows = array_map('str_getcsv', file($validated['file']->getRealPath()));
         $header = collect(array_shift($rows) ?? [])->map(fn ($value) => Str::lower(trim((string) $value)))->values()->all();
@@ -47,28 +68,42 @@ class ClientImportController extends Controller
             ->filter(fn (array $row): bool => $row['company_name'] !== '')
             ->values();
 
+        $validator = new ClientImportValidator;
+        $validatedRows = $mapped->map(function ($row, $index) use ($validator) {
+            return $validator->validate($row, $index + 2);
+        });
+
+        $errorCount = $validatedRows->where('valid', false)->count();
+
+        $detectedColumns = $header;
+        $requiredColumns = ['company_name', 'contact_name', 'email', 'phone', 'country'];
+        $optionalColumns = [];
+
         $token = Str::uuid()->toString();
 
         Cache::put("client_import:{$workspace->id}:{$token}", $mapped->all(), now()->addMinutes(30));
 
-        return Inertia::render('clients/Import', [
-            'previewRows' => $mapped->take(20)->all(),
+        return response()->json([
+            'detectedColumns' => $detectedColumns,
+            'requiredColumns' => $requiredColumns,
+            'optionalColumns' => $optionalColumns,
+            'previewRows' => $validatedRows->take(20)->all(),
             'importToken' => $token,
-            'totalRows' => $mapped->count(),
+            'totalRows' => $validatedRows->count(),
+            'errorCount' => $errorCount,
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(ClientImportStoreRequest $request): RedirectResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace, 404);
 
-        $validated = $request->validate([
-            'import_token' => ['required', 'string'],
-        ]);
+        $validated = $request->validated();
 
         $token = $validated['import_token'];
+        $columnMapping = $validated['column_mapping'] ?? [];
         $rows = collect(Cache::pull("client_import:{$workspace->id}:{$token}", []));
 
         if ($rows->isEmpty()) {
@@ -77,8 +112,29 @@ class ClientImportController extends Controller
             return back();
         }
 
+        if ($columnMapping) {
+            $rows = $rows->map(function ($row) use ($columnMapping) {
+                $mapped = [];
+                foreach ($columnMapping as $targetField => $sourceColumn) {
+                    if ($sourceColumn && $sourceColumn !== '__skip__' && isset($row[$sourceColumn])) {
+                        $mapped[$targetField] = $row[$sourceColumn];
+                    }
+                }
+
+                return $mapped;
+            });
+        }
+
         if ($rows->count() > 100) {
-            ImportClientsJob::dispatch($workspace->id, $request->user()?->id, $rows->all());
+            $importHistory = ImportHistory::create([
+                'workspace_id' => $workspace->id,
+                'user_id' => $request->user()?->id,
+                'type' => 'clients',
+                'status' => 'pending',
+                'total_rows' => $rows->count(),
+            ]);
+
+            ImportClientsJob::dispatch($workspace->id, $request->user()?->id, $rows->all(), $importHistory->id);
 
             Inertia::flash('toast', ['type' => 'success', 'message' => __('Client import queued.')]);
 

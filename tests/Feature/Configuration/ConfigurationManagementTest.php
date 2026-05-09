@@ -43,6 +43,7 @@ test('configuration entities can be created updated and deleted', function () {
         ->post('/configuration/taxes', [
             'name' => 'VAT',
             'rate' => 16,
+            'inclusive' => false,
             'is_default' => true,
             'is_active' => true,
         ])

@@ -4,6 +4,7 @@ namespace App\Services\Clients;
 
 use App\Models\Client;
 use App\Models\ConfigurationTag;
+use App\Models\Quote;
 use App\Models\Workspace;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -54,7 +55,7 @@ class ClientService
 
         if (Schema::hasTable('quotes')) {
             $quoteSummary = DB::table('quotes')
-                ->selectRaw('client_id, COUNT(*) as quotes_sent_count, COALESCE(SUM(CASE WHEN status = ? THEN total ELSE 0 END), 0) as total_value_won', ['won'])
+                ->selectRaw('client_id, COUNT(*) as quotes_sent_count, COALESCE(SUM(CASE WHEN status = ? THEN base_total ELSE 0 END), 0) as total_value_won', ['won'])
                 ->groupBy('client_id');
 
             $query
@@ -158,35 +159,27 @@ class ClientService
             ];
         }
 
-        $quotes = DB::table('quotes')
+        $quotes = Quote::query()
             ->where('client_id', $client->id)
             ->orderByDesc('created_at')
-            ->get([
-                'id',
-                'number',
-                'title',
-                'status',
-                'total',
-                'created_at',
-                'accepted_at',
-            ]);
+            ->get();
 
         $totalQuotes = $quotes->count();
         $wonQuotes = $quotes->where('status', 'won');
         $acceptedDurations = $wonQuotes
             ->filter(fn ($quote): bool => $quote->accepted_at !== null)
             ->map(function ($quote): float {
-                $createdAt = now()->parse($quote->created_at);
-                $acceptedAt = now()->parse($quote->accepted_at);
+                $createdAt = $quote->created_at;
+                $closedAt = $quote->accepted_at;
 
-                return $acceptedAt->diffInSeconds($createdAt) / 86400;
+                return $createdAt->diffInSeconds($closedAt) / 86400;
             });
 
         return [
             'total_quotes_sent' => $totalQuotes,
             'win_rate' => $totalQuotes > 0 ? round(($wonQuotes->count() / $totalQuotes) * 100, 2) : 0,
-            'total_value_won' => (float) $wonQuotes->sum('total'),
-            'average_quote_value' => $totalQuotes > 0 ? round((float) $quotes->avg('total'), 2) : 0,
+            'total_value_won' => (float) $wonQuotes->sum('base_total'),
+            'average_quote_value' => $totalQuotes > 0 ? round((float) $quotes->avg('base_total'), 2) : 0,
             'average_time_to_acceptance_days' => $acceptedDurations->isNotEmpty() ? round((float) $acceptedDurations->avg(), 2) : 0,
             'quote_history' => $quotes->values()->all(),
         ];

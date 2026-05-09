@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,10 +19,10 @@ use Illuminate\Support\Facades\Auth;
     'name',
     'description',
     'sku',
-    'unit',
+    'unit_id',
     'unit_price',
     'cost_price',
-    'image_path',
+    'image_url',
     'is_active',
     'usage_count',
     'created_by',
@@ -60,6 +60,14 @@ class CatalogItem extends Model
     }
 
     /**
+     * @return BelongsTo<ConfigurationUnit, $this>
+     */
+    public function configurationUnit(): BelongsTo
+    {
+        return $this->belongsTo(ConfigurationUnit::class, 'unit_id');
+    }
+
+    /**
      * @return BelongsToMany<Tax, $this>
      */
     public function taxes(): BelongsToMany
@@ -82,6 +90,22 @@ class CatalogItem extends Model
     public function notes(): MorphMany
     {
         return $this->morphMany(Note::class, 'noteable');
+    }
+
+    /**
+     * @return HasMany<CatalogItemVariant, $this>
+     */
+    public function variants(): HasMany
+    {
+        return $this->hasMany(CatalogItemVariant::class)->orderBy('sort_order');
+    }
+
+    /**
+     * @return HasMany<CatalogItemPriceTier, $this>
+     */
+    public function priceTiers(): HasMany
+    {
+        return $this->hasMany(CatalogItemPriceTier::class)->orderBy('min_quantity');
     }
 
     /**

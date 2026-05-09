@@ -30,6 +30,7 @@ class QuoteSentMail extends Mailable
         public array $lineItems,
         public string $viewUrl,
         public ?string $unsubscribeUrl,
+        public ?string $pdfPath = null,
     ) {}
 
     /**
@@ -48,7 +49,7 @@ class QuoteSentMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'mail.quote-sent',
+            markdown: 'mail.quote-sent',
             with: [
                 'subjectLine' => $this->subjectLine,
                 'messageBody' => $this->messageBody,
@@ -73,6 +74,14 @@ class QuoteSentMail extends Mailable
      */
     public function attachments(): array
     {
-        return [];
+        $attachments = [];
+
+        if ($this->pdfPath) {
+            $attachments[] = Attachment::fromStorageDisk('local', $this->pdfPath)
+                ->as('quote-'.$this->quoteNumber.'.pdf')
+                ->withMime('application/pdf');
+        }
+
+        return $attachments;
     }
 }

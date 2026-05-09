@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,7 +41,7 @@ defineOptions({
 const ALL = '__all__';
 
 const query = ref({
-    search: props.filters.search ?? '',
+    search: props.filters.search || '',
     is_active: props.filters.is_active || ALL,
 });
 
@@ -58,7 +59,10 @@ watch(
                 '/configuration/templates',
                 {
                     search: query.value.search,
-                    is_active: query.value.is_active === ALL ? '' : query.value.is_active,
+                    is_active:
+                        query.value.is_active === ALL
+                            ? ''
+                            : query.value.is_active,
                 },
                 {
                     preserveState: true,
@@ -71,14 +75,28 @@ watch(
     { deep: true },
 );
 
+const deleteOpen = ref(false);
+const templateToDelete = ref<QuoteTemplateRecord | null>(null);
+
 const removeTemplate = (template: QuoteTemplateRecord): void => {
     if (template.is_system) {
         return;
     }
 
-    router.delete(`/quote-templates/${template.id}`, {
-        preserveScroll: true,
-    });
+    templateToDelete.value = template;
+    deleteOpen.value = true;
+};
+
+const executeDelete = (): void => {
+    if (templateToDelete.value) {
+        router.delete(`/quote-templates/${templateToDelete.value.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                deleteOpen.value = false;
+                templateToDelete.value = null;
+            },
+        });
+    }
 };
 
 const hasTemplates = computed(() => props.templates.data.length > 0);
@@ -101,7 +119,11 @@ const hasTemplates = computed(() => props.templates.data.length > 0);
 
         <div class="rounded-lg border p-3">
             <div class="flex flex-col gap-3 md:flex-row md:items-center">
-                <Input v-model="query.search" placeholder="Search template name or industry" class="w-full md:w-80" />
+                <Input
+                    v-model="query.search"
+                    placeholder="Search template name or industry"
+                    class="w-full md:w-80"
+                />
 
                 <Select v-model="query.is_active">
                     <SelectTrigger class="w-full md:w-44">
@@ -128,26 +150,51 @@ const hasTemplates = computed(() => props.templates.data.length > 0);
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    <TableRow v-for="template in templates.data" :key="template.id">
+                    <TableRow
+                        v-for="template in templates.data"
+                        :key="template.id"
+                    >
                         <TableCell class="font-medium">
                             {{ template.name }}
-                            <p v-if="template.description" class="text-xs text-muted-foreground">
+                            <p
+                                v-if="template.description"
+                                class="text-xs text-muted-foreground"
+                            >
                                 {{ template.description }}
                             </p>
                         </TableCell>
                         <TableCell>{{ template.industry || '—' }}</TableCell>
                         <TableCell>
                             <div class="flex items-center gap-2">
-                                <Badge :variant="template.is_active ? 'default' : 'secondary'">
-                                    {{ template.is_active ? 'Active' : 'Inactive' }}
+                                <Badge
+                                    :variant="
+                                        template.is_active
+                                            ? 'default'
+                                            : 'secondary'
+                                    "
+                                >
+                                    {{
+                                        template.is_active
+                                            ? 'Active'
+                                            : 'Inactive'
+                                    }}
                                 </Badge>
-                                <Badge v-if="template.is_system" variant="outline">System</Badge>
+                                <Badge
+                                    v-if="template.is_system"
+                                    variant="outline"
+                                    >System</Badge
+                                >
                             </div>
                         </TableCell>
-                        <TableCell class="text-right">{{ template.usage_count }}</TableCell>
-                        <TableCell class="text-right space-x-2">
+                        <TableCell class="text-right">{{
+                            template.usage_count
+                        }}</TableCell>
+                        <TableCell class="space-x-2 text-right">
                             <Button size="sm" variant="outline" as-child>
-                                <Link :href="`/quote-templates/${template.id}/edit`">Edit</Link>
+                                <Link
+                                    :href="`/quote-templates/${template.id}/edit`"
+                                    >Edit</Link
+                                >
                             </Button>
                             <Button
                                 size="sm"
@@ -163,12 +210,21 @@ const hasTemplates = computed(() => props.templates.data.length > 0);
             </Table>
         </div>
 
-        <div v-else class="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+        <div
+            v-else
+            class="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground"
+        >
             No templates yet. Create one to speed up recurring quote workflows.
         </div>
 
-        <div class="flex w-full flex-wrap items-center justify-end gap-2" v-if="templates.links.length > 1">
-            <template v-for="(link, index) in templates.links" :key="`${link.label}-${index}`">
+        <div
+            class="flex w-full flex-wrap items-center justify-end gap-2"
+            v-if="templates.links.length > 1"
+        >
+            <template
+                v-for="(link, index) in templates.links"
+                :key="`${link.label}-${index}`"
+            >
                 <Link
                     v-if="link.url"
                     :href="link.url"
@@ -187,7 +243,10 @@ const hasTemplates = computed(() => props.templates.data.length > 0);
                               : link.label
                     }}
                 </Link>
-                <span v-else class="inline-flex h-9 items-center rounded-md border px-3 text-sm text-muted-foreground">
+                <span
+                    v-else
+                    class="inline-flex h-9 items-center rounded-md border px-3 text-sm text-muted-foreground"
+                >
                     {{
                         index === 0
                             ? 'Previous'
@@ -198,5 +257,14 @@ const hasTemplates = computed(() => props.templates.data.length > 0);
                 </span>
             </template>
         </div>
+
+        <ConfirmDialog
+            v-model:open="deleteOpen"
+            title="Delete template"
+            description="Are you sure you want to delete this template? This action cannot be undone."
+            confirm-text="Delete"
+            variant="destructive"
+            @confirm="executeDelete"
+        />
     </div>
 </template>

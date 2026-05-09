@@ -41,7 +41,10 @@ const submit = (): void => {
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>Create unit</DialogTitle>
-                <DialogDescription>Add reusable units like hour, day, meter, or package.</DialogDescription>
+                <DialogDescription
+                    >Add reusable units like hour, day, meter, or
+                    package.</DialogDescription
+                >
             </DialogHeader>
 
             <form class="space-y-4" @submit.prevent="submit">
@@ -53,21 +56,36 @@ const submit = (): void => {
 
                 <div class="grid gap-2">
                     <Label for="unit_create_symbol">Symbol (optional)</Label>
-                    <Input id="unit_create_symbol" v-model="form.symbol" placeholder="hr" />
+                    <Input
+                        id="unit_create_symbol"
+                        v-model="form.symbol"
+                        placeholder="hr"
+                    />
                     <InputError :message="form.errors.symbol" />
                 </div>
 
-                <div class="flex items-center justify-between rounded-md border p-3">
+                <div
+                    class="flex items-center justify-between rounded-md border p-3"
+                >
                     <span class="text-sm">Active</span>
                     <Switch
                         :model-value="Boolean(form.is_active)"
-                        @update:model-value="(checked: boolean) => (form.is_active = checked)"
+                        @update:model-value="
+                            (checked: boolean) => (form.is_active = checked)
+                        "
                     />
                 </div>
 
                 <DialogFooter>
-                    <Button type="button" variant="outline" @click="open = false">Cancel</Button>
-                    <Button type="submit" :disabled="form.processing">Create unit</Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="open = false"
+                        >Cancel</Button
+                    >
+                    <Button type="submit" :disabled="form.processing"
+                        >Create unit</Button
+                    >
                 </DialogFooter>
             </form>
         </DialogContent>

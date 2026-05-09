@@ -31,25 +31,16 @@ const gapOptions = [
     { value: 'lg', label: 'L' },
 ] as const;
 
-const radiusOptions = [
-    { value: 'none', label: 'None' },
-    { value: 'sm', label: 'S' },
-    { value: 'md', label: 'M' },
-    { value: 'lg', label: 'L' },
-] as const;
-
-const paddingOptions = [
-    { value: 'sm', label: 'S' },
-    { value: 'md', label: 'M' },
-    { value: 'lg', label: 'L' },
-] as const;
-
 const syncImageSlots = (columns: 2 | 3): void => {
     if (config.value.images.length < columns) {
         const needed = columns - config.value.images.length;
 
         for (let index = 0; index < needed; index += 1) {
-            config.value.images.push({ imageUrl: null, altText: '', caption: null });
+            config.value.images.push({
+                imageUrl: null,
+                altText: '',
+                caption: null,
+            });
         }
 
         return;
@@ -64,9 +55,15 @@ const syncImageSlots = (columns: 2 | 3): void => {
 <template>
     <div class="flex h-full min-h-0 flex-col">
         <div class="border-b px-4 py-3">
-            <p class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Content</p>
+            <p
+                class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+            >
+                Content
+            </p>
 
-            <label class="mb-3 flex cursor-pointer items-center justify-between rounded border px-2.5 py-1.5 text-sm hover:bg-muted/40">
+            <label
+                class="mb-3 flex cursor-pointer items-center justify-between rounded border px-2.5 py-1.5 text-sm hover:bg-muted/40"
+            >
                 <span>Show captions</span>
                 <Switch v-model="config.showCaptions" class="scale-75" />
             </label>
@@ -74,17 +71,46 @@ const syncImageSlots = (columns: 2 | 3): void => {
             <div class="space-y-2">
                 <p class="text-xs text-muted-foreground">Image values</p>
                 <div class="space-y-2">
-                    <div v-for="(image, index) in config.images" :key="index" class="grid grid-cols-1 gap-2 rounded-md border p-2">
-                        <Input :model-value="image.imageUrl ?? ''" placeholder="Image URL" @update:model-value="(value) => (image.imageUrl = String(value ?? '').trim().length > 0 ? String(value) : null)" />
+                    <div
+                        v-for="(image, index) in config.images"
+                        :key="index"
+                        class="grid grid-cols-1 gap-2 rounded-md border p-2"
+                    >
+                        <Input
+                            :model-value="image.imageUrl ?? ''"
+                            placeholder="Image URL"
+                            @update:model-value="
+                                (value) =>
+                                    (image.imageUrl =
+                                        String(value ?? '').trim().length > 0
+                                            ? String(value)
+                                            : null)
+                            "
+                        />
                         <Input v-model="image.altText" placeholder="Alt text" />
-                        <Input :model-value="image.caption ?? ''" placeholder="Caption" :disabled="!config.showCaptions" @update:model-value="(value) => (image.caption = String(value ?? '').trim().length > 0 ? String(value) : null)" />
+                        <Input
+                            :model-value="image.caption ?? ''"
+                            placeholder="Caption"
+                            :disabled="!config.showCaptions"
+                            @update:model-value="
+                                (value) =>
+                                    (image.caption =
+                                        String(value ?? '').trim().length > 0
+                                            ? String(value)
+                                            : null)
+                            "
+                        />
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="border-b px-4 py-3">
-            <p class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Design</p>
+            <p
+                class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+            >
+                Design
+            </p>
             <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <button
                     v-for="option in columnOptions"
@@ -96,62 +122,82 @@ const syncImageSlots = (columns: 2 | 3): void => {
                             ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
                             : 'hover:border-muted-foreground/50'
                     "
-                    @click="config.columns = option.value; syncImageSlots(option.value)"
+                    @click="
+                        config.columns = option.value;
+                        syncImageSlots(option.value);
+                    "
                 >
-                    <div class="mb-2 grid gap-1 rounded bg-muted p-1.5" :class="option.value === 2 ? 'grid-cols-2' : 'grid-cols-3'">
-                        <div v-for="n in option.value" :key="n" class="h-5 rounded bg-foreground/25" />
+                    <div
+                        class="mb-2 grid gap-1 rounded bg-muted p-1.5"
+                        :class="
+                            option.value === 2 ? 'grid-cols-2' : 'grid-cols-3'
+                        "
+                    >
+                        <div
+                            v-for="n in option.value"
+                            :key="n"
+                            class="h-5 rounded bg-foreground/25"
+                        />
                     </div>
-                    <p class="text-xs leading-none font-medium">{{ option.label }}</p>
-                    <p class="mt-0.5 text-[10px] leading-snug text-muted-foreground">{{ option.description }}</p>
+                    <p class="text-xs leading-none font-medium">
+                        {{ option.label }}
+                    </p>
+                    <p
+                        class="mt-0.5 text-[10px] leading-snug text-muted-foreground"
+                    >
+                        {{ option.description }}
+                    </p>
                 </button>
             </div>
         </div>
 
         <div class="border-b px-4 py-3">
-            <div>
-                <p class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Layout</p>
-
-                <div class="mb-3">
-                    <p class="mb-1.5 text-xs text-muted-foreground">Aspect ratio</p>
-                    <div class="grid grid-cols-2 gap-1">
-                        <button v-for="option in aspectOptions" :key="option.value" type="button" class="rounded border py-1 text-xs font-semibold transition-colors" :class="config.aspectRatio === option.value ? 'border-primary bg-primary/10 text-primary' : 'hover:border-muted-foreground/50'" @click="config.aspectRatio = option.value">
-                            {{ option.label }}
-                        </button>
-                    </div>
-                </div>
-
-                <div>
-                    <p class="mb-1.5 text-xs text-muted-foreground">Padding</p>
-                    <div class="flex gap-1">
-                        <button v-for="size in paddingOptions" :key="size.value" type="button" class="flex-1 rounded border py-1 text-sm font-semibold transition-colors" :class="config.paddingSize === size.value ? 'border-primary bg-primary/10 text-primary' : 'hover:border-muted-foreground/50'" @click="config.paddingSize = size.value">
-                            {{ size.label }}
-                        </button>
-                    </div>
-                </div>
+            <p
+                class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+            >
+                Layout
+            </p>
+            <p class="mb-1.5 text-xs text-muted-foreground">Aspect ratio</p>
+            <div class="grid grid-cols-2 gap-1">
+                <button
+                    v-for="option in aspectOptions"
+                    :key="option.value"
+                    type="button"
+                    class="rounded border py-1 text-xs font-semibold transition-colors"
+                    :class="
+                        config.aspectRatio === option.value
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'hover:border-muted-foreground/50'
+                    "
+                    @click="config.aspectRatio = option.value"
+                >
+                    {{ option.label }}
+                </button>
             </div>
         </div>
 
         <div class="px-4 py-3">
-            <div>
-                <p class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Appearance</p>
-
-                <div class="mb-3">
-                    <p class="mb-1.5 text-xs text-muted-foreground">Gap</p>
-                    <div class="flex gap-1">
-                        <button v-for="option in gapOptions" :key="option.value" type="button" class="flex-1 rounded border py-1 text-sm font-semibold transition-colors" :class="config.gap === option.value ? 'border-primary bg-primary/10 text-primary' : 'hover:border-muted-foreground/50'" @click="config.gap = option.value">
-                            {{ option.label }}
-                        </button>
-                    </div>
-                </div>
-
-                <div>
-                    <p class="mb-1.5 text-xs text-muted-foreground">Corner radius</p>
-                    <div class="flex flex-wrap gap-1">
-                        <button v-for="option in radiusOptions" :key="option.value" type="button" class="min-w-10 rounded border px-2 py-1 text-xs font-semibold transition-colors" :class="config.borderRadius === option.value ? 'border-primary bg-primary/10 text-primary' : 'hover:border-muted-foreground/50'" @click="config.borderRadius = option.value">
-                            {{ option.label }}
-                        </button>
-                    </div>
-                </div>
+            <p
+                class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+            >
+                Appearance
+            </p>
+            <p class="mb-1.5 text-xs text-muted-foreground">Gap</p>
+            <div class="flex gap-1">
+                <button
+                    v-for="option in gapOptions"
+                    :key="option.value"
+                    type="button"
+                    class="flex-1 rounded border py-1 text-sm font-semibold transition-colors"
+                    :class="
+                        config.gap === option.value
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'hover:border-muted-foreground/50'
+                    "
+                    @click="config.gap = option.value"
+                >
+                    {{ option.label }}
+                </button>
             </div>
         </div>
     </div>

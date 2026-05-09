@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 
-#[Fillable(['workspace_id', 'name', 'rate', 'is_default', 'is_active', 'created_by'])]
+#[Fillable(['workspace_id', 'name', 'rate', 'inclusive', 'is_default', 'is_active', 'created_by'])]
 class Tax extends Model
 {
     /** @use HasFactory<TaxFactory> */
@@ -61,6 +61,7 @@ class Tax extends Model
     {
         return [
             'rate' => 'decimal:2',
+            'inclusive' => 'boolean',
             'is_default' => 'boolean',
             'is_active' => 'boolean',
             'deleted_at' => 'datetime',

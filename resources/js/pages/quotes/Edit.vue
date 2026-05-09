@@ -1,100 +1,108 @@
 <script setup lang="ts">
-import { Head, useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { Head, router, setLayoutProps, useForm } from '@inertiajs/vue3';
+import { computed, ref, watchEffect } from 'vue';
+import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
+import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
-import SendModal from '@/components/quotes/SendModal.vue';
-import { Button } from '@/components/ui/button';
 import type {
     BuilderCatalogItem,
-    BuilderBranding,
+    BuilderConfigurationUnit,
     BuilderClientOption,
     BuilderTaxOption,
     BuilderTemplateOption,
     QuoteBuilderState,
+    WorkspaceSettings,
 } from '@/types';
 
 const props = defineProps<{
     quoteId: number;
     initialState: QuoteBuilderState;
-    sendDefaults: {
-        company_name: string;
-        subject_template: string;
-        body_template: string;
-    };
     clients: BuilderClientOption[];
     templates: BuilderTemplateOption[];
     catalogItems: BuilderCatalogItem[];
     taxes: BuilderTaxOption[];
-    branding: BuilderBranding;
+    units: BuilderConfigurationUnit[];
+    settings: WorkspaceSettings;
 }>();
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Quotes',
-                href: '/quotes',
-            },
-            {
-                title: 'Edit',
-                href: '/quotes',
-            },
-        ],
-    },
+const breadcrumbs = computed(() => {
+    return [
+        {
+            title: 'Quotes',
+            href: '/quotes',
+        },
+        {
+            title: props.initialState.title || 'Quote details',
+            href: QuoteController.show(props.quoteId).url,
+        },
+        {
+            title: 'Edit',
+            href: '/quotes',
+        },
+    ];
 });
 
-const form = useForm<QuoteBuilderState>(JSON.parse(JSON.stringify(props.initialState)) as QuoteBuilderState);
-const sendOpen = ref(false);
+watchEffect(() => {
+    setLayoutProps({
+        breadcrumbs: breadcrumbs.value,
+    });
+});
 
-const quoteForSend = computed(() => {
-    const client = props.clients.find((entry) => entry.id === form.client_id) ?? null;
+const form = useForm<QuoteBuilderState>(props.initialState);
 
-    return {
-        id: props.quoteId,
-        quote_uuid: form.quote_uuid ?? null,
-        number: form.number,
-        title: form.title,
-        total: form.total,
-        currency: form.currency,
-        valid_until: form.valid_until,
-        client: client
-            ? {
-                company_name: client.company_name,
-                email: client.email ?? null,
+const save = (updatedState?: QuoteBuilderState): void => {
+    if (updatedState) {
+        Object.keys(updatedState).forEach((key) => {
+            if (key in form) {
+                (form as any)[key] =
+                    updatedState[key as keyof QuoteBuilderState];
             }
-            : null,
-    };
-});
+        });
+    }
 
-const save = (): void => {
-    form.put(`/quotes/${props.quoteId}`, {
+    form.put(QuoteController.update(props.quoteId).url, {
         preserveScroll: true,
     });
+};
+
+const showSendDialog = ref(false);
+
+const executeSend = (): void => {
+    router.post(
+        QuoteSendController.store(props.quoteId).url,
+        {},
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                showSendDialog.value = false;
+            },
+        },
+    );
 };
 </script>
 
 <template>
     <Head :title="`Edit quote #${quoteId}`" />
 
-    <div class="mb-3 flex justify-end">
-        <Button @click="sendOpen = true">Send to client</Button>
-    </div>
-
     <QuoteBuilder
-        v-model="form"
+        :model-value="form"
         mode="quote"
         :clients="clients"
         :templates="templates"
         :catalog-items="catalogItems"
         :taxes="taxes"
-        :branding="branding"
+        :units="units"
+        :settings="settings"
         :processing="form.processing"
         @save="save"
     />
 
-    <SendModal
-        v-model:open="sendOpen"
-        :quote="quoteForSend"
-        :send-defaults="sendDefaults"
+    <ConfirmDialog
+        v-model:open="showSendDialog"
+        title="Send quote"
+        description="Are you sure you want to send this quote to the client?"
+        confirm-text="Send"
+        @confirm="executeSend"
     />
 </template>

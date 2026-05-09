@@ -1,49 +1,63 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import InlineEditableText from '@/components/renderer/blocks/InlineEditableText.vue';
-import type { BrandingData, CoverMessageBlockConfig, QuoteData } from '@/types';
+import {
+    blockContentStyle,
+    blockFontSizeClass,
+} from '@/composables/useBlockStyles';
+import type {
+    CoverMessageBlockConfig,
+    DocumentData,
+    WorkspaceSettings,
+} from '@/types';
 
 const props = defineProps<{
     config: CoverMessageBlockConfig;
-    quote: QuoteData;
-    branding: BrandingData;
+    data: DocumentData;
+    settings: WorkspaceSettings;
     previewMode: boolean;
     editMode?: boolean;
 }>();
 
 const emit = defineEmits<{
     (e: 'update-cover-message', value: string | null): void;
-    (e: 'update-cover-label', value: string | null): void;
+    (e: 'update-cover-label', value: string): void;
 }>();
 
-const fontClass: Record<CoverMessageBlockConfig['fontSize'], string> = {
-    sm: 'text-sm leading-6 whitespace-pre-wrap text-gray-700',
-    md: 'text-base leading-7 whitespace-pre-wrap text-gray-700',
-    lg: 'text-lg leading-8 whitespace-pre-wrap text-gray-700',
-};
+const effectiveContextText = computed(() => {
+    const data = props.data as QuoteData | InvoiceData;
 
-const showBlock = computed(() => !!props.quote.coverMessage?.trim() || props.previewMode || props.editMode);
-
-const borderLeftStyle = computed(() => {
-    if (!props.config.borderLeft) {
-        return {};
-    }
-
-    return {
-        borderLeft: `3px solid ${props.config.borderLeftColor ?? props.branding.primaryColor}`,
-        paddingLeft: '16px',
-    };
+    return (
+        data.cover_message ??
+        props.config.contextText ??
+        props.settings.quotes.default_cover_message
+    );
 });
+
+const fontSizeClass = computed(() => {
+    const size = props.config.fontSize ?? 'md';
+    const sizeMap: Record<string, string> = {
+        sm: 'text-sm leading-6',
+        md: 'text-base leading-7',
+        lg: 'text-lg leading-8',
+    };
+
+    return sizeMap[size];
+});
+
+const showBlock = computed(
+    () =>
+        !!effectiveContextText.value?.trim() ||
+        props.previewMode ||
+        props.editMode,
+);
 </script>
 
 <template>
     <div
         v-if="showBlock"
-        class="px-6 py-4"
-        :style="{
-            backgroundColor: config.backgroundColor ?? 'transparent',
-            ...borderLeftStyle,
-        }"
+        :style="blockContentStyle(config)"
+        :class="blockFontSizeClass(config.fontSize)"
     >
         <InlineEditableText
             v-if="config.showLabel"
@@ -52,17 +66,17 @@ const borderLeftStyle = computed(() => {
             :multiline="false"
             placeholder="A note from us"
             empty-text="A note from us"
-            display-class="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+            display-class="mb-2 font-semibold text-base"
             @update:model-value="(value) => emit('update-cover-label', value)"
         />
 
         <InlineEditableText
-            :model-value="quote.coverMessage"
+            :model-value="effectiveContextText"
             :edit-mode="editMode"
             :rows="4"
             placeholder="Write a personal intro message for your client..."
             empty-text="Write a personal intro message for your client..."
-            :display-class="fontClass[config.fontSize]"
+            :display-class="`whitespace-pre-wrap text-gray-700 ${fontSizeClass}`"
             @update:model-value="(value) => emit('update-cover-message', value)"
         />
     </div>

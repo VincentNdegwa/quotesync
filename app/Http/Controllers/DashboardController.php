@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\QuoteStatus;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
 use App\Models\Workspace;
@@ -13,64 +14,336 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    /**
-     * Handle the incoming request.
-     */
+    private Workspace $workspace;
+
+    private array $pipelineStatuses;
+
+    private array $sentStatuses;
+
+    private array $wonStatuses;
+
+    public function __construct()
+    {
+        $this->pipelineStatuses = QuoteStatus::pipelineStatuses();
+        $this->sentStatuses = QuoteStatus::sentStatuses();
+        $this->wonStatuses = QuoteStatus::closedWonStatuses();
+    }
+
     public function __invoke(Request $request): Response
     {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace, 404);
 
-        $quotesQuery = Quote::query()->where('workspace_id', $workspace->id);
+        $this->workspace = $workspace;
 
-        $totalQuotes = (clone $quotesQuery)->count();
+        return Inertia::render('Dashboard', [
+            'stats' => $this->stats(),
+            'revenue_trend' => $this->revenueTrend(),
+            'win_rate_trend' => $this->winRateTrend(),
+            'quote_activity' => $this->quoteActivity(),
+            'needs_attention' => $this->needsAttention(),
+            'recent_activity' => $this->recentActivity(),
+            'team_performance' => $this->teamPerformance($request),
+            'generated_at' => Carbon::now()->toIso8601String(),
+        ]);
+    }
 
-        /** @var Collection<string, int|string> $statusCounts */
-        $statusCounts = (clone $quotesQuery)
-            ->selectRaw('status, COUNT(*) as aggregate')
-            ->groupBy('status')
-            ->pluck('aggregate', 'status')
-            ->map(fn (int|string $count): int => (int) $count);
+    private function baseQuery()
+    {
+        return Quote::query()->where('workspace_id', $this->workspace->id);
+    }
 
-        $acceptedRevenue = (float) (clone $quotesQuery)
-            ->whereNotNull('accepted_at')
-            ->sum('total');
+    private function stats(): array
+    {
+        $now = now();
+        $thisMonth = [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()];
+        $lastMonthStart = $now->copy()->subMonth()->startOfMonth();
+        $lastMonthEnd = $now->copy()->subMonth()->endOfMonth();
 
-        $openPipeline = (float) (clone $quotesQuery)
-            ->whereIn('status', ['draft', 'sent'])
-            ->sum('total');
+        $pipelineValueThisMonth = (float) $this->baseQuery()
+            ->whereIn('status', $this->pipelineStatuses)
+            ->sum('base_total');
 
-        $averageQuote = (float) ((clone $quotesQuery)->avg('total') ?? 0);
+        $pipelineValueLastMonth = (float) $this->baseQuery()
+            ->whereIn('status', $this->pipelineStatuses)
+            ->where('created_at', '<', $now->copy()->startOfMonth())
+            ->sum('base_total');
 
-        $startDate = now()->subDays(29)->startOfDay();
+        $wonThisMonth = (float) $this->baseQuery()
+            ->whereIn('status', $this->wonStatuses)
+            ->whereBetween('won_at', $thisMonth)
+            ->sum('base_total');
 
-        /** @var Collection<int, object{date: string, quotes_count: int|string, total_amount: float|string}> $trendRows */
-        $trendRows = (clone $quotesQuery)
-            ->whereDate('created_at', '>=', $startDate->toDateString())
-            ->selectRaw('DATE(created_at) as date, COUNT(*) as quotes_count, COALESCE(SUM(total), 0) as total_amount')
-            ->groupBy('date')
-            ->orderBy('date')
-            ->get();
+        $wonLastMonth = (float) $this->baseQuery()
+            ->whereIn('status', $this->wonStatuses)
+            ->whereBetween('won_at', [$lastMonthStart, $lastMonthEnd])
+            ->sum('base_total');
 
-        $trendByDate = $trendRows
-            ->keyBy(fn (object $row): string => $row->date);
+        $sentThisMonthCount = (int) $this->baseQuery()
+            ->whereNotNull('sent_at')
+            ->whereBetween('sent_at', $thisMonth)
+            ->count();
 
-        $trend = collect(range(0, 29))
-            ->map(function (int $offset) use ($startDate, $trendByDate): array {
-                $date = $startDate->copy()->addDays($offset)->toDateString();
-                $row = $trendByDate->get($date);
+        $wonThisMonthCount = (int) $this->baseQuery()
+            ->whereIn('status', $this->wonStatuses)
+            ->whereBetween('sent_at', $thisMonth)
+            ->count();
+
+        $sentLastMonthCount = (int) $this->baseQuery()
+            ->whereNotNull('sent_at')
+            ->whereBetween('sent_at', [$lastMonthStart, $lastMonthEnd])
+            ->count();
+
+        $wonLastMonthCount = (int) $this->baseQuery()
+            ->whereIn('status', $this->wonStatuses)
+            ->whereBetween('sent_at', [$lastMonthStart, $lastMonthEnd])
+            ->count();
+
+        $winRateThisMonth = $sentThisMonthCount > 0
+            ? round(($wonThisMonthCount / $sentThisMonthCount) * 100, 1)
+            : 0.0;
+
+        $winRateLastMonth = $sentLastMonthCount > 0
+            ? round(($wonLastMonthCount / $sentLastMonthCount) * 100, 1)
+            : 0.0;
+
+        $quotesExpiring = (int) $this->baseQuery()
+            ->whereIn('status', $this->pipelineStatuses)
+            ->whereNotNull('valid_until')
+            ->whereBetween('valid_until', [
+                $now->copy()->startOfDay(),
+                $now->copy()->addDays(7)->endOfDay(),
+            ])
+            ->count();
+
+        // Average deal size (this month)
+        $averageDealSizeThisMonth = $wonThisMonthCount > 0
+            ? round($wonThisMonth / $wonThisMonthCount, 2)
+            : 0.0;
+
+        $averageDealSizeLastMonth = $wonLastMonthCount > 0
+            ? round($wonLastMonth / $wonLastMonthCount, 2)
+            : 0.0;
+
+        // Average time to close (this month)
+        $averageTimeToCloseThisMonth = $this->baseQuery()
+            ->whereIn('status', $this->wonStatuses)
+            ->whereBetween('won_at', $thisMonth)
+            ->whereNotNull('sent_at')
+            ->whereNotNull('won_at')
+            ->get()
+            ->avg(fn (Quote $quote) => $quote->sent_at && $quote->won_at
+                ? $quote->won_at->diffInDays($quote->sent_at)
+                : 0
+            );
+
+        $averageTimeToCloseLastMonth = $this->baseQuery()
+            ->whereIn('status', $this->wonStatuses)
+            ->whereBetween('won_at', [$lastMonthStart, $lastMonthEnd])
+            ->whereNotNull('sent_at')
+            ->whereNotNull('won_at')
+            ->get()
+            ->avg(fn (Quote $quote) => $quote->sent_at && $quote->won_at
+                ? $quote->won_at->diffInDays($quote->sent_at)
+                : 0
+            );
+
+        return [
+            'pipeline_value' => $pipelineValueThisMonth,
+            'pipeline_trend' => $this->percentageTrend($pipelineValueThisMonth, $pipelineValueLastMonth),
+            'won_this_month' => $wonThisMonth,
+            'won_trend' => $this->percentageTrend($wonThisMonth, $wonLastMonth),
+            'win' => [
+                'rate' => $winRateThisMonth,
+                'win_count' => $wonThisMonthCount,
+                'sent_count' => $sentThisMonthCount,
+                'trend' => $this->percentageTrend($winRateThisMonth, $winRateLastMonth),
+            ],
+            'quotes_expiring' => $quotesExpiring,
+            'average_deal_size' => $averageDealSizeThisMonth,
+            'average_deal_size_trend' => $this->percentageTrend($averageDealSizeThisMonth, $averageDealSizeLastMonth),
+            'average_time_to_close' => round($averageTimeToCloseThisMonth ?: 0, 1),
+            'average_time_to_close_trend' => $this->percentageTrend(
+                $averageTimeToCloseThisMonth ?: 0,
+                $averageTimeToCloseLastMonth ?: 0
+            ),
+        ];
+    }
+
+    private function revenueTrend(): Collection
+    {
+        return collect(range(0, 5))
+            ->map(function (int $offset): array {
+                $date = now()->subMonths(5 - $offset);
+                $start = $date->copy()->startOfMonth();
+                $end = $date->copy()->endOfMonth();
+
+                $wonRevenue = (float) $this->baseQuery()
+                    ->whereIn('status', $this->wonStatuses)
+                    ->whereBetween('won_at', [$start, $end])
+                    ->sum('base_total');
+
+                $pipelineValue = (float) $this->baseQuery()
+                    ->whereIn('status', $this->pipelineStatuses)
+                    ->sum('base_total');
 
                 return [
-                    'date' => $date,
-                    'quotes_count' => (int) ($row->quotes_count ?? 0),
-                    'total_amount' => (float) ($row->total_amount ?? 0),
+                    'month' => $date->format('M'),
+                    'won' => $wonRevenue,
+                    'pipeline' => $pipelineValue,
                 ];
             })
             ->values();
+    }
 
-        $recentActivity = QuoteActivity::query()
-            ->where('workspace_id', $workspace->id)
+    private function winRateTrend(): Collection
+    {
+        return collect(range(0, 5))
+            ->map(function (int $offset): array {
+                $date = now()->subMonths(5 - $offset);
+                $start = $date->copy()->startOfMonth();
+                $end = $date->copy()->endOfMonth();
+
+                $sentCount = (int) $this->baseQuery()
+                    ->whereNotNull('sent_at')
+                    ->whereBetween('sent_at', [$start, $end])
+                    ->count();
+
+                $wonCount = (int) $this->baseQuery()
+                    ->whereIn('status', $this->wonStatuses)
+                    ->whereBetween('sent_at', [$start, $end])
+                    ->count();
+
+                $winRate = $sentCount > 0
+                    ? round(($wonCount / $sentCount) * 100, 1)
+                    : 0.0;
+
+                return [
+                    'month' => $date->format('M'),
+                    'win_rate' => $winRate,
+                ];
+            })
+            ->values();
+    }
+
+    private function quoteActivity(): array
+    {
+        $counts = $this->baseQuery()
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->map(fn (int|string $count): int => (int) $count)
+            ->toArray();
+
+        $result = collect(QuoteStatus::cases())
+            ->map(fn (QuoteStatus $status, int $index): array => [
+                'order' => $index,
+                'status' => $status->value,
+                'label' => $status->label(),
+                'count' => $counts[$status->value] ?? 0,
+            ])
+            ->values()
+            ->all();
+
+        return $result;
+    }
+
+    private function needsAttention(): array
+    {
+        return [
+            'hot_leads' => $this->hotLeads(),
+            'follow_up_due' => $this->followUpDue(),
+            'expiring_soon' => $this->expiringSoon(),
+        ];
+    }
+
+    private function hotLeads(): Collection
+    {
+        return $this->baseQuery()
+            ->whereIn('status', QuoteStatus::pipelineStatuses())
+            ->where('view_count', '>=', 3)
+            ->with('client:id,company_name')
+            ->orderByDesc('view_count')
+            ->limit(5)
+            ->get()
+            ->map(fn (Quote $quote): array => [
+                'id' => $quote->id,
+                'number' => $quote->number,
+                'title' => $quote->title,
+                'client_name' => $quote->client?->company_name ?? 'Unknown',
+                'view_count' => $quote->view_count,
+                'last_viewed_at' => $quote->viewed_at?->toIso8601String(),
+            ])
+            ->values();
+    }
+
+    private function followUpDue(): Collection
+    {
+        return $this->baseQuery()
+            ->whereIn('status', QuoteStatus::pipelineStatuses())
+            ->whereNotNull('sent_at')
+            ->where('sent_at', '<', now()->subDays(4))
+            ->where(function ($query): void {
+                $query
+                    ->whereDoesntHave('quoteFollowUps')
+                    ->orWhereHas('quoteFollowUps', function ($q): void {
+                        $q->where('status', 'sent')
+                            ->where('sent_at', '<', now()->subDays(4))
+                            ->whereDoesntHave('step', function ($sq): void {
+                                $sq->whereHas('quoteFollowUps', function ($pq): void {
+                                    $pq->where('status', 'pending');
+                                });
+                            });
+                    });
+            })
+            ->with('client:id,company_name')
+            ->orderBy('sent_at')
+            ->limit(5)
+            ->get()
+            ->map(fn (Quote $quote): array => [
+                'id' => $quote->id,
+                'number' => $quote->number,
+                'title' => $quote->title,
+                'client_name' => $quote->client?->company_name ?? 'Unknown',
+                'sent_at' => $quote->sent_at?->toIso8601String(),
+                'days_since_sent' => $quote->sent_at
+                    ? (int) now()->diffInDays($quote->sent_at)
+                    : 0,
+            ])
+            ->values();
+    }
+
+    private function expiringSoon(): Collection
+    {
+        return $this->baseQuery()
+            ->whereIn('status', QuoteStatus::pipelineStatuses())
+            ->whereNotNull('valid_until')
+            ->whereBetween('valid_until', [
+                now()->startOfDay(),
+                now()->addDays(7)->endOfDay(),
+            ])
+            ->with('client:id,company_name')
+            ->orderBy('valid_until')
+            ->limit(5)
+            ->get()
+            ->map(fn (Quote $quote): array => [
+                'id' => $quote->id,
+                'number' => $quote->number,
+                'title' => $quote->title,
+                'client_name' => $quote->client?->company_name ?? 'Unknown',
+                'valid_until' => $quote->valid_until?->toIso8601String(),
+                'days_until_expiry' => $quote->valid_until
+                    ? (int) now()->diffInDays($quote->valid_until)
+                    : 0,
+            ])
+            ->values();
+    }
+
+    private function recentActivity(): Collection
+    {
+        return QuoteActivity::query()
+            ->where('workspace_id', $this->workspace->id)
             ->with(['quote:id,number,title', 'user:id,name'])
             ->latest()
             ->limit(10)
@@ -80,50 +353,81 @@ class DashboardController extends Controller
                 'type' => $activity->type,
                 'description' => $activity->description,
                 'created_at' => $activity->created_at?->toIso8601String(),
-                'quote' => $activity->quote ? [
-                    'id' => $activity->quote->id,
-                    'number' => $activity->quote->number,
-                    'title' => $activity->quote->title,
-                ] : null,
-                'user' => $activity->user ? [
-                    'id' => $activity->user->id,
-                    'name' => $activity->user->name,
-                ] : null,
+                'quote' => $activity->quote
+                    ? [
+                        'id' => $activity->quote->id,
+                        'number' => $activity->quote->number,
+                        'title' => $activity->quote->title,
+                    ]
+                    : null,
+                'user' => $activity->user
+                    ? [
+                        'id' => $activity->user->id,
+                        'name' => $activity->user->name,
+                    ]
+                    : null,
             ])
             ->values();
+    }
 
-        $topClients = (clone $quotesQuery)
-            ->whereNotNull('client_id')
-            ->with('client:id,company_name')
-            ->selectRaw('client_id, COUNT(*) as quotes_count, COALESCE(SUM(total), 0) as quoted_amount, COALESCE(SUM(CASE WHEN accepted_at IS NOT NULL THEN total ELSE 0 END), 0) as accepted_amount')
-            ->groupBy('client_id')
-            ->orderByDesc('quoted_amount')
-            ->limit(5)
-            ->get()
-            ->map(fn (Quote $quote): array => [
-                'client_id' => (int) $quote->client_id,
-                'client_name' => (string) ($quote->client?->company_name ?? 'Unknown'),
-                'quotes_count' => (int) ($quote->quotes_count ?? 0),
-                'quoted_amount' => (float) ($quote->quoted_amount ?? 0),
-                'accepted_amount' => (float) ($quote->accepted_amount ?? 0),
+    private function teamPerformance(Request $request): ?Collection
+    {
+        $userId = $request->user()?->id;
+        $isOwner = $this->workspace->owner_id === $userId;
+
+        if (!$isOwner && !$userId) {
+            return null;
+        }
+
+        $now = now();
+        $start = $now->copy()->startOfMonth();
+        $end = $now->copy()->endOfMonth();
+
+        $sentStatuses = QuoteStatus::sentStatuses();
+
+        $query = $this->baseQuery()
+            ->whereNotNull('created_by')
+            ->whereBetween('sent_at', [$start, $end]);
+
+        // If not owner, only show current user's stats
+        if (!$isOwner) {
+            $query->where('created_by', $userId);
+        }
+
+        $rows = $query
+            ->selectRaw(
+                implode(', ', [
+                    'created_by',
+                    'COUNT(*) as sent_count',
+                    'SUM(CASE WHEN status IN ('.implode(', ', array_map(fn ($status) => "'{$status}'", QuoteStatus::closedWonStatuses())).') THEN 1 ELSE 0 END) as won_count',
+                    'SUM(CASE WHEN status IN ('.implode(', ', array_map(fn ($status) => "'{$status}'", QuoteStatus::closedWonStatuses())).') THEN base_total ELSE 0 END) as total_value',
+                ])
+            )
+            ->groupBy('created_by')
+            ->with('creator:id,name')
+            ->get();
+
+        return $rows
+            ->map(fn (Quote $row): array => [
+                'user_id' => (int) $row->created_by,
+                'user_name' => $row->creator?->name ?? 'Unknown',
+                'sent_count' => (int) ($row->sent_count ?? 0),
+                'won_count' => (int) ($row->won_count ?? 0),
+                'win_rate' => $row->sent_count > 0
+                    ? round(($row->won_count / $row->sent_count) * 100, 1)
+                    : 0.0,
+                'total_value' => (float) ($row->total_value ?? 0),
             ])
+            ->sortByDesc('won_count')
             ->values();
+    }
 
-        return Inertia::render('Dashboard', [
-            'metrics' => [
-                'total_quotes' => $totalQuotes,
-                'draft_quotes' => (int) ($statusCounts->get('draft', 0)),
-                'sent_quotes' => (int) ($statusCounts->get('sent', 0)),
-                'accepted_quotes' => (int) ($statusCounts->get('accepted', 0)),
-                'declined_quotes' => (int) ($statusCounts->get('declined', 0)),
-                'accepted_revenue' => $acceptedRevenue,
-                'open_pipeline' => $openPipeline,
-                'average_quote' => $averageQuote,
-            ],
-            'trend' => $trend,
-            'recentActivity' => $recentActivity,
-            'topClients' => $topClients,
-            'generatedAt' => Carbon::now()->toIso8601String(),
-        ]);
+    private function percentageTrend(float $current, float $previous): ?float
+    {
+        if ($previous <= 0) {
+            return 100.0;
+        }
+
+        return round((($current - $previous) / $previous) * 100, 1);
     }
 }

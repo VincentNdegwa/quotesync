@@ -97,11 +97,21 @@ const selectLanguage = (selectedValue: string): void => {
                             v-for="language in filteredLanguages"
                             :key="language.code"
                             :value="language.code"
-                            @select="(ev) => selectLanguage(ev.detail.value as string)"
+                            @select="
+                                (ev) =>
+                                    selectLanguage(ev.detail.value as string)
+                            "
                         >
                             {{ language.label }}
                             <CheckIcon
-                                :class="cn('ml-auto h-4 w-4', model === language.code ? 'opacity-100' : 'opacity-0')"
+                                :class="
+                                    cn(
+                                        'ml-auto h-4 w-4',
+                                        model === language.code
+                                            ? 'opacity-100'
+                                            : 'opacity-0',
+                                    )
+                                "
                             />
                         </CommandItem>
                     </CommandGroup>

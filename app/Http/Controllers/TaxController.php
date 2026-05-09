@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreTaxRequest;
-use App\Http\Requests\UpdateTaxRequest;
+use App\Http\Requests\Taxes\StoreTaxRequest;
+use App\Http\Requests\Taxes\UpdateTaxRequest;
 use App\Models\Tax;
 use App\Models\Workspace;
 use App\Services\Taxes\TaxService;
@@ -34,6 +34,7 @@ class TaxController extends Controller
         $payload = $request->validated();
         $payload['is_default'] = (bool) ($payload['is_default'] ?? false);
         $payload['is_active'] = (bool) ($payload['is_active'] ?? true);
+        $payload['inclusive'] = (bool) ($payload['inclusive'] ?? false);
         $payload['created_by'] = $request->user()?->id;
 
         $tax = $taxService->create($workspace, $payload);

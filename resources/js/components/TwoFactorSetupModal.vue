@@ -69,7 +69,7 @@ const modalConfig = computed<TwoFactorConfigContent>(() => {
     };
 });
 
-const handleModalNextStep = () => {
+const handleModalNextStep = (): void => {
     if (props.requiresConfirmation) {
         showVerificationStep.value = true;
 
@@ -84,7 +84,7 @@ const handleModalNextStep = () => {
     isOpen.value = false;
 };
 
-const resetModalState = () => {
+const resetModalState = (): void => {
     if (props.twoFactorEnabled) {
         clearSetupData();
     }

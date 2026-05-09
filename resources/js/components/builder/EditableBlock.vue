@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { ChevronDown, ChevronUp, Copy, EyeOff, GripVertical, Lock, Plus, Trash2 } from 'lucide-vue-next';
+import {
+    ChevronDown,
+    ChevronUp,
+    Copy,
+    EyeOff,
+    GripVertical,
+    Lock,
+    Plus,
+    Trash2,
+} from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import {
     DropdownMenu,
@@ -74,14 +83,20 @@ const isTypingTarget = (target: EventTarget | null): boolean => {
 
     const tagName = target.tagName;
 
-    return target.isContentEditable
-        || tagName === 'INPUT'
-        || tagName === 'TEXTAREA'
-        || tagName === 'SELECT'
-        || target.closest('[contenteditable="true"]') !== null;
+    return (
+        target.isContentEditable ||
+        tagName === 'INPUT' ||
+        tagName === 'TEXTAREA' ||
+        tagName === 'SELECT' ||
+        target.closest('[contenteditable="true"]') !== null
+    );
 };
 
-const handleSelect = (): void => {
+const handleSelect = (event?: MouseEvent): void => {
+    if (event && isTypingTarget(event.target)) {
+        return;
+    }
+
     emit('select');
     rootRef.value?.focus();
 };
@@ -111,7 +126,10 @@ const handleKeydown = (event: KeyboardEvent): void => {
         return;
     }
 
-    if ((event.key === 'Delete' || event.key === 'Backspace') && canDelete.value) {
+    if (
+        (event.key === 'Delete' || event.key === 'Backspace') &&
+        canDelete.value
+    ) {
         event.preventDefault();
         emit('delete');
     }
@@ -138,7 +156,9 @@ const handleDragStart = (event: DragEvent): void => {
         tabindex="0"
         class="group relative rounded-md border border-transparent p-2 transition-all"
         :class="[
-            isSelected ? 'border-gray-400 ring-2 ring-gray-400/45' : 'hover:border-gray-300',
+            isSelected
+                ? 'border-gray-400 ring-2 ring-gray-400/45'
+                : 'hover:border-gray-300',
             block.visible ? '' : 'opacity-60',
         ]"
         @keydown="handleKeydown"
@@ -146,7 +166,7 @@ const handleDragStart = (event: DragEvent): void => {
         @drop.prevent="emit('drop', block.id)"
         @mouseenter="isHovered = true"
         @mouseleave="isHovered = false"
-        @click.stop="handleSelect"
+        @click.stop="handleSelect($event)"
     >
         <div
             v-if="showActions"
@@ -236,11 +256,16 @@ const handleDragStart = (event: DragEvent): void => {
 
             <div class="mx-1 h-4 w-px bg-border" />
 
-            <span class="px-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            <span
+                class="px-1 text-[10px] font-medium tracking-wide text-muted-foreground uppercase"
+            >
                 {{ block.type.replace('_', ' ') }}
             </span>
 
-            <span class="rounded px-1.5 py-0.5 text-[10px] font-medium" :class="editabilityClass">
+            <span
+                class="rounded px-1.5 py-0.5 text-[10px] font-medium"
+                :class="editabilityClass"
+            >
                 {{ editabilityLabel }}
             </span>
 

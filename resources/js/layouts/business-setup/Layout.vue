@@ -18,9 +18,7 @@ const groupItems = (page.props.groups ?? []).map((group) => ({
     href: `/business-setup/${group.key}`,
 }));
 
-const sidebarNavItems: NavItem[] = [
-    ...groupItems,
-];
+const sidebarNavItems: NavItem[] = [...groupItems];
 
 const { isCurrentOrParentUrl } = useCurrentUrl();
 </script>

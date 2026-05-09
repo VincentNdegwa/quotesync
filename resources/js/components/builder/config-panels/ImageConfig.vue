@@ -18,20 +18,6 @@ const alignmentOptions = [
     { value: 'right', label: 'Right' },
 ] as const;
 
-const radiusOptions = [
-    { value: 'none', label: 'None' },
-    { value: 'sm', label: 'Small' },
-    { value: 'md', label: 'Medium' },
-    { value: 'lg', label: 'Large' },
-    { value: 'full', label: 'Pill' },
-] as const;
-
-const paddingOptions = [
-    { value: 'sm', label: 'S' },
-    { value: 'md', label: 'M' },
-    { value: 'lg', label: 'L' },
-] as const;
-
 const captionAlignmentOptions = [
     { value: 'left', label: 'Left' },
     { value: 'center', label: 'Center' },
@@ -174,58 +160,6 @@ const captionAlignmentOptions = [
                             {{ option.label }}
                         </p>
                     </button>
-                </div>
-            </div>
-
-            <div class="border-t px-4 py-3">
-                <p
-                    class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
-                >
-                    Layout
-                </p>
-
-                <div class="mb-3">
-                    <p class="mb-1.5 text-xs text-muted-foreground">
-                        Corner radius
-                    </p>
-                    <div class="flex flex-wrap gap-1">
-                        <button
-                            v-for="option in radiusOptions"
-                            :key="option.value"
-                            type="button"
-                            class="min-w-10 rounded border px-2 py-1 text-xs font-semibold transition-colors"
-                            :class="
-                                config.borderRadius === option.value
-                                    ? 'border-primary bg-primary/10 text-primary'
-                                    : 'hover:border-muted-foreground/50'
-                            "
-                            @click="config.borderRadius = option.value"
-                        >
-                            {{ option.label }}
-                        </button>
-                    </div>
-                </div>
-
-                <div>
-                    <p class="mb-1.5 text-xs text-muted-foreground">
-                        Padding
-                    </p>
-                    <div class="flex gap-1">
-                        <button
-                            v-for="size in paddingOptions"
-                            :key="size.value"
-                            type="button"
-                            class="flex-1 rounded border py-1 text-sm font-semibold transition-colors"
-                            :class="
-                                config.paddingSize === size.value
-                                    ? 'border-primary bg-primary/10 text-primary'
-                                    : 'hover:border-muted-foreground/50'
-                            "
-                            @click="config.paddingSize = size.value"
-                        >
-                            {{ size.label }}
-                        </button>
-                    </div>
                 </div>
             </div>
 

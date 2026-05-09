@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'tax_id',
     'tax_label',
     'tax_rate',
+    'inclusive',
 ])]
 class QuoteTemplateLineItemTax extends Model
 {
@@ -37,6 +38,7 @@ class QuoteTemplateLineItemTax extends Model
     {
         return [
             'tax_rate' => 'decimal:3',
+            'inclusive' => 'boolean',
         ];
     }
 }

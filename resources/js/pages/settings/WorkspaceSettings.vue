@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
+import { Form, Head, Link, useForm } from '@inertiajs/vue3';
+import { Globe } from 'lucide-vue-next';
 import { computed, reactive, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -21,15 +22,18 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import type {
+    IndustryModel,
     WorkspaceSettingsField,
     WorkspaceSettingsPageProps,
 } from '@/types';
-import {
-    translationLanguageOptions,
-} from '@/utils/location-options';
+import { translationLanguageOptions } from '@/utils/location-options';
 import type { LanguageOption } from '@/utils/location-options';
 
-const props = defineProps<WorkspaceSettingsPageProps>();
+const props = defineProps<
+    WorkspaceSettingsPageProps & {
+        industries: IndustryModel[];
+    }
+>();
 
 defineOptions({
     layout: {
@@ -85,7 +89,7 @@ const buildFormValues = (
                 return values;
             }
 
-            if (field.value === null || field.value === undefined) {
+            if (field.value === null) {
                 values[field.key] = '';
 
                 return values;
@@ -146,7 +150,7 @@ const inputType = (field: WorkspaceSettingsField): string => {
 };
 
 const asString = (value: WorkspaceSettingsField['value']): string => {
-    if (value === null || value === undefined) {
+    if (value === null) {
         return '';
     }
 
@@ -173,22 +177,44 @@ const optionDisplayLabel = (option: string): string => {
 };
 
 const isLanguageField = (field: WorkspaceSettingsField): boolean => {
-    return field.type === 'select' && field.key.toLowerCase().includes('language');
+    return (
+        field.type === 'select' && field.key.toLowerCase().includes('language')
+    );
 };
 
-const languageOptionsForField = (field: WorkspaceSettingsField): LanguageOption[] => {
+const languageOptionsForField = (
+    field: WorkspaceSettingsField,
+): LanguageOption[] => {
     const labels = new Map(
-        translationLanguageOptions.map((language) => [language.code, language.label]),
+        translationLanguageOptions.map((language) => [
+            language.code,
+            language.label,
+        ]),
     );
 
-    const source = field.options && field.options.length > 0
-        ? field.options
-        : translationLanguageOptions.map((language) => language.code);
+    const source =
+        field.options && field.options.length > 0
+            ? field.options
+            : translationLanguageOptions.map((language) => language.code);
 
     return source.map((code) => ({
         code,
         label: labels.get(code) ?? optionDisplayLabel(code),
     }));
+};
+
+const isColorField = (field: WorkspaceSettingsField): boolean => {
+    return field.key.toLowerCase().includes('color');
+};
+
+const industryForm = useForm({
+    industry_id: props.workspace.industry_id ?? null,
+});
+
+const updateIndustry = (): void => {
+    industryForm.put(`/business-setup/${props.currentGroup.group}`, {
+        preserveScroll: true,
+    });
 };
 </script>
 
@@ -197,11 +223,55 @@ const languageOptionsForField = (field: WorkspaceSettingsField): LanguageOption[
     <h1 class="sr-only">{{ currentGroup.label }}</h1>
 
     <div class="space-y-6">
-        <Heading
-            variant="small"
-            :title="currentGroup.label"
-            :description="currentGroup.description ?? undefined"
-        />
+        <div class="flex items-center justify-between">
+            <Heading
+                variant="small"
+                :title="currentGroup.label"
+                :description="currentGroup.description ?? undefined"
+            />
+            <Button
+                v-if="currentGroup.group === 'brand'"
+                variant="outline"
+                as-child
+            >
+                <Link href="/custom-domains">
+                    <Globe class="mr-2 h-4 w-4" />
+                    Custom Domains
+                </Link>
+            </Button>
+        </div>
+
+        <div v-if="currentGroup.group === 'brand'" class="space-y-2">
+            <Label>Industry</Label>
+            <Select
+                v-model="industryForm.industry_id"
+                name="industry_id"
+                @update:model-value="updateIndustry"
+            >
+                <SelectTrigger class="w-full"
+                    ><SelectValue placeholder="Select your industry"
+                /></SelectTrigger>
+                <SelectContent>
+                    <SelectItem
+                        v-for="industry in industries"
+                        :key="industry.id"
+                        :value="String(industry.id)"
+                    >
+                        <div class="flex items-center gap-2">
+                            <div
+                                class="h-3 w-3 rounded-full"
+                                :style="{
+                                    backgroundColor: industry.color || '#000',
+                                }"
+                            />
+                            {{ industry.name }}
+                        </div>
+                    </SelectItem>
+                </SelectContent>
+            </Select>
+            <InputError :message="industryForm.errors.industry_id" />
+        </div>
+
         <Form
             :action="updateAction"
             method="put"
@@ -289,7 +359,11 @@ const languageOptionsForField = (field: WorkspaceSettingsField): LanguageOption[
                     :required="field.required"
                 >
                     <SelectTrigger class="w-full" :id="`setting-${field.key}`">
-                        <SelectValue :placeholder="field.placeholder ?? 'Select an option'" />
+                        <SelectValue
+                            :placeholder="
+                                field.placeholder ?? 'Select an option'
+                            "
+                        />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem
@@ -311,19 +385,22 @@ const languageOptionsForField = (field: WorkspaceSettingsField): LanguageOption[
                     v-model="formValues[field.key]"
                 />
 
-                <div
-                    v-else-if="field.type === 'array'"
-                    class="space-y-2"
-                >
+                <div v-else-if="field.type === 'array'" class="space-y-2">
                     <Select
                         v-model="formValues[field.key]"
                         multiple
                         :id="`setting-${field.key}`"
                         :required="field.required"
                     >
-                        <SelectTrigger class="w-full" :id="`setting-${field.key}`">
+                        <SelectTrigger
+                            class="w-full"
+                            :id="`setting-${field.key}`"
+                        >
                             <SelectValue
-                                :placeholder="field.placeholder ?? 'Select one or more options'"
+                                :placeholder="
+                                    field.placeholder ??
+                                    'Select one or more options'
+                                "
                             />
                         </SelectTrigger>
                         <SelectContent>
@@ -356,14 +433,14 @@ const languageOptionsForField = (field: WorkspaceSettingsField): LanguageOption[
                     </p>
                 </div>
 
-                <div
-                    v-else-if="field.type === 'json'"
-                    class="space-y-2"
-                >
+                <div v-else-if="field.type === 'json'" class="space-y-2">
                     <Textarea
                         :id="`setting-${field.key}`"
                         :required="field.required"
-                        :placeholder="field.placeholder ?? 'Enter JSON values, one per line or comma-separated'"
+                        :placeholder="
+                            field.placeholder ??
+                            'Enter JSON values, one per line or comma-separated'
+                        "
                         v-model="formValues[field.key]"
                     />
 
@@ -393,6 +470,31 @@ const languageOptionsForField = (field: WorkspaceSettingsField): LanguageOption[
                     >
                         Current file: {{ asString(field.value) }}
                     </p>
+                </div>
+
+                <div v-else-if="isColorField(field)" class="space-y-2">
+                    <div class="flex items-center gap-3">
+                        <Input
+                            :id="`setting-${field.key}`"
+                            :name="`settings[${field.key}]`"
+                            type="color"
+                            class="h-10 w-16 cursor-pointer p-1"
+                            v-model="formValues[field.key]"
+                        />
+                        <Input
+                            :id="`setting-${field.key}-text`"
+                            :name="`settings[${field.key}]`"
+                            type="text"
+                            placeholder="#000000"
+                            v-model="formValues[field.key]"
+                            class="flex-1"
+                        />
+                    </div>
+                    <input
+                        :name="`settings[${field.key}]`"
+                        type="hidden"
+                        :value="formValues[field.key]"
+                    />
                 </div>
 
                 <Input
