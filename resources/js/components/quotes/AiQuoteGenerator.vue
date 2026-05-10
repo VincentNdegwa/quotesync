@@ -60,12 +60,6 @@ const generate = async (): Promise<void> => {
             headers: {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
-                'X-CSRF-TOKEN':
-                    (
-                        document.querySelector(
-                            'meta[name="csrf-token"]',
-                        ) as HTMLMetaElement
-                    ).content || '',
             },
             body: JSON.stringify({ description: description.value }),
         });
@@ -73,6 +67,11 @@ const generate = async (): Promise<void> => {
         const data = await response.json();
 
         if (!response.ok) {
+            console.error('AI Quote Generation Error:', {
+                status: response.status,
+                statusText: response.statusText,
+                data,
+            });
             error.value =
                 data.message || 'Failed to generate quote. Please try again.';
 
@@ -80,7 +79,8 @@ const generate = async (): Promise<void> => {
         }
 
         generated.value = data;
-    } catch {
+    } catch (err) {
+        console.error('AI Quote Generation Exception:', err);
         error.value = 'Failed to generate quote. Please try again.';
     } finally {
         loading.value = false;
