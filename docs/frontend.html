@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuoteSync — Send smarter. Close faster. Get paid.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,700;12..96,800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ── RESET ─────────────────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  /* ── TOKENS ─────────────────────────────────────────────────────────────── */
+  :root {
+    --gold:      oklch(0.852 0.199 91.936);
+    --gold-dim:  oklch(0.78  0.18  91.936);
+    --gold-glow: oklch(0.852 0.199 91.936 / 0.25);
+    --ink:       oklch(0.148 0.004 228.8);
+    --ink-60:    oklch(0.148 0.004 228.8 / 0.6);
+    --ink-20:    oklch(0.148 0.004 228.8 / 0.12);
+    --white:     #ffffff;
+    --off:       #f8f7f4;
+    --border:    oklch(0.148 0.004 228.8 / 0.1);
+
+    --font-display: 'Bricolage Grotesque', sans-serif;
+    --font-body:    'Instrument Sans', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
+
+    --radius: 16px;
+    --radius-sm: 10px;
+    --radius-lg: 24px;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--white);
+    color: var(--ink);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── UTILITIES ──────────────────────────────────────────────────────────── */
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+  .tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ink-60);
+    border: 1px solid var(--border); border-radius: 100px;
+    padding: 6px 14px;
+  }
+  .tag::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--gold); display: block;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.7); }
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--font-body); font-size: 15px; font-weight: 600;
+    border-radius: 100px; padding: 14px 28px; cursor: pointer;
+    text-decoration: none; border: none; transition: all 0.2s ease;
+    position: relative; overflow: hidden;
+  }
+  .btn-primary {
+    background: var(--gold); color: var(--ink);
+  }
+  .btn-primary::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, white 0%, transparent 60%);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .btn-primary:hover::after { opacity: 0.15; }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px var(--gold-glow); }
+
+  .btn-outline {
+    background: transparent; color: var(--ink);
+    border: 1.5px solid var(--border);
+  }
+  .btn-outline:hover { border-color: var(--ink-60); background: var(--ink-20); }
+
+  .section-label {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--ink-60); margin-bottom: 16px;
+  }
+
+  /* ── ANIMATIONS ─────────────────────────────────────────────────────────── */
+  .reveal {
+    opacity: 0; transform: translateY(32px);
+    transition: opacity 0.7s cubic-bezier(0.22,1,0.36,1), transform 0.7s cubic-bezier(0.22,1,0.36,1);
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+  .reveal-delay-4 { transition-delay: 0.4s; }
+  .reveal-delay-5 { transition-delay: 0.5s; }
+
+  /* ── NAV ────────────────────────────────────────────────────────────────── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 20px 0;
+    transition: all 0.3s ease;
+  }
+  nav.scrolled {
+    background: oklch(1 0 0 / 0.88);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 0;
+  }
+  .nav-inner {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo {
+    font-family: var(--font-display); font-size: 22px; font-weight: 800;
+    color: var(--ink); text-decoration: none; letter-spacing: -0.03em;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .nav-logo-mark {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--gold);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .nav-logo-mark svg { width: 18px; height: 18px; }
+  .nav-links { display: flex; align-items: center; gap: 32px; }
+  .nav-links a {
+    font-size: 14px; font-weight: 500; color: var(--ink-60);
+    text-decoration: none; transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-cta { display: flex; align-items: center; gap: 12px; }
+  .nav-cta .btn { padding: 10px 22px; font-size: 14px; }
+
+  /* ── HERO ───────────────────────────────────────────────────────────────── */
+  #hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center;
+    padding: 120px 24px 80px;
+    position: relative; overflow: hidden;
+  }
+
+  /* Grain overlay */
+  #hero::before {
+    content: '';
+    position: absolute; inset: 0; z-index: 0;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-size: 128px 128px;
+    pointer-events: none;
+  }
+
+  /* Ambient glow blobs */
+  .hero-blob {
+    position: absolute; border-radius: 50%;
+    filter: blur(80px); pointer-events: none; z-index: 0;
+  }
+  .hero-blob-1 {
+    width: 600px; height: 600px;
+    background: var(--gold-glow);
+    top: -200px; right: -100px;
+    animation: float-blob 8s ease-in-out infinite;
+  }
+  .hero-blob-2 {
+    width: 400px; height: 400px;
+    background: oklch(0.78 0.15 91.936 / 0.15);
+    bottom: 0; left: -100px;
+    animation: float-blob 10s ease-in-out infinite reverse;
+  }
+  @keyframes float-blob {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -20px) scale(1.05); }
+    66% { transform: translate(-20px, 30px) scale(0.95); }
+  }
+
+  /* Grid lines background */
+  .hero-grid {
+    position: absolute; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
+  }
+
+  .hero-content {
+    position: relative; z-index: 1;
+    text-align: center; max-width: 900px;
+  }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--ink-20); border: 1px solid var(--border);
+    border-radius: 100px; padding: 8px 16px 8px 8px;
+    font-size: 13px; font-weight: 500; margin-bottom: 32px;
+    color: var(--ink);
+    animation: badge-in 0.6s cubic-bezier(0.22,1,0.36,1) 0.2s both;
+  }
+  @keyframes badge-in {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .hero-badge-pill {
+    background: var(--gold); border-radius: 100px;
+    padding: 3px 10px; font-size: 11px; font-weight: 700;
+    font-family: var(--font-mono); letter-spacing: 0.06em;
+    color: var(--ink);
+  }
+
+  .hero-h1 {
+    font-family: var(--font-display);
+    font-size: clamp(52px, 7vw, 96px);
+    font-weight: 800;
+    line-height: 1.0;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+    margin-bottom: 28px;
+    animation: hero-h1-in 0.8s cubic-bezier(0.22,1,0.36,1) 0.3s both;
+  }
+  @keyframes hero-h1-in {
+    from { opacity: 0; transform: translateY(24px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .hero-h1 em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dim) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    font-size: clamp(17px, 2vw, 21px);
+    color: var(--ink-60); line-height: 1.5;
+    max-width: 580px; margin: 0 auto 40px;
+    animation: hero-sub-in 0.8s cubic-bezier(0.22,1,0.36,1) 0.45s both;
+  }
+  @keyframes hero-sub-in {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero-actions {
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    flex-wrap: wrap; margin-bottom: 64px;
+    animation: hero-actions-in 0.8s cubic-bezier(0.22,1,0.36,1) 0.55s both;
+  }
+  @keyframes hero-actions-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .hero-note {
+    font-size: 12px; color: var(--ink-60);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .hero-note::before {
+    content: '✓'; color: var(--gold); font-weight: 700;
+  }
+
+  /* Hero product preview */
+  .hero-preview {
+    position: relative; z-index: 1;
+    max-width: 960px; width: 100%;
+    animation: preview-in 1s cubic-bezier(0.22,1,0.36,1) 0.7s both;
+  }
+  @keyframes preview-in {
+    from { opacity: 0; transform: translateY(40px) perspective(1000px) rotateX(4deg); }
+    to   { opacity: 1; transform: translateY(0) perspective(1000px) rotateX(0deg); }
+  }
+  .hero-preview-frame {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px var(--border),
+      0 40px 80px oklch(0.148 0.004 228.8 / 0.12),
+      0 80px 120px oklch(0.148 0.004 228.8 / 0.06);
+  }
+  .preview-bar {
+    background: var(--off);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .preview-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+  }
+  .preview-dot:nth-child(1) { background: #ff5f57; }
+  .preview-dot:nth-child(2) { background: #febc2e; }
+  .preview-dot:nth-child(3) { background: #28c840; }
+  .preview-url {
+    flex: 1; background: var(--white); border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 12px;
+    font-family: var(--font-mono); font-size: 11px; color: var(--ink-60);
+    margin: 0 16px;
+  }
+
+  /* Mock quote document inside preview */
+  .preview-content {
+    display: grid; grid-template-columns: 1fr 260px;
+    min-height: 340px;
+  }
+  .preview-doc {
+    padding: 28px 32px; border-right: 1px solid var(--border);
+  }
+  .preview-doc-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 24px; padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .preview-logo-text {
+    font-family: var(--font-display); font-size: 18px; font-weight: 800;
+    color: var(--gold); letter-spacing: -0.03em;
+  }
+  .preview-meta { text-align: right; }
+  .preview-meta .num {
+    font-family: var(--font-mono); font-size: 13px; font-weight: 500;
+    color: var(--ink);
+  }
+  .preview-meta .date { font-size: 11px; color: var(--ink-60); margin-top: 2px; }
+
+  .preview-from-to {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 16px; margin-bottom: 20px;
+  }
+  .preview-from-to .label {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--ink-60); margin-bottom: 4px;
+  }
+  .preview-from-to .name { font-size: 12px; font-weight: 600; color: var(--ink); }
+  .preview-from-to .sub { font-size: 11px; color: var(--ink-60); }
+
+  .preview-table { width: 100%; border-collapse: collapse; }
+  .preview-table th {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--ink-60);
+    text-align: left; padding: 8px 0; border-bottom: 1px solid var(--border);
+  }
+  .preview-table th:last-child { text-align: right; }
+  .preview-table td {
+    padding: 10px 0; font-size: 11px; color: var(--ink);
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .preview-table td:last-child { text-align: right; font-weight: 600; }
+  .preview-table td.sub { font-size: 10px; color: var(--ink-60); }
+
+  .preview-total-row {
+    display: flex; justify-content: flex-end; margin-top: 12px;
+    gap: 40px; align-items: center;
+  }
+  .preview-total-label {
+    font-family: var(--font-display); font-size: 14px; font-weight: 700;
+  }
+  .preview-total-value {
+    font-family: var(--font-display); font-size: 20px; font-weight: 800;
+    color: var(--gold);
+  }
+
+  .preview-sidebar {
+    padding: 20px; background: var(--off);
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .preview-stat {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 14px 16px;
+  }
+  .preview-stat .stat-label {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--ink-60); margin-bottom: 6px;
+  }
+  .preview-stat .stat-val {
+    font-family: var(--font-display); font-size: 24px; font-weight: 800;
+    color: var(--ink); letter-spacing: -0.03em;
+  }
+  .preview-stat .stat-sub { font-size: 11px; color: var(--ink-60); margin-top: 2px; }
+
+  .preview-accept-btn {
+    background: var(--gold); border: none; border-radius: var(--radius-sm);
+    padding: 12px 16px; width: 100%;
+    font-family: var(--font-display); font-size: 14px; font-weight: 700;
+    color: var(--ink); cursor: default;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+
+  .preview-badge {
+    background: oklch(0.92 0.08 140) ; border-radius: 100px;
+    padding: 4px 10px; font-size: 10px; font-weight: 600;
+    color: oklch(0.35 0.12 140); width: fit-content;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .preview-badge::before { content: '●'; font-size: 7px; }
+
+  /* ── LOGOS STRIP ────────────────────────────────────────────────────────── */
+  #logos {
+    padding: 40px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .logos-label {
+    text-align: center;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ink-60); margin-bottom: 28px;
+  }
+  .logos-track {
+    display: flex; align-items: center; gap: 56px;
+    animation: logos-scroll 20s linear infinite;
+    width: max-content;
+  }
+  @keyframes logos-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+  .logo-item {
+    font-family: var(--font-display); font-size: 18px; font-weight: 700;
+    color: var(--ink-60); letter-spacing: -0.02em; white-space: nowrap;
+  }
+
+  /* ── FEATURES ───────────────────────────────────────────────────────────── */
+  #features { padding: 120px 0; }
+  .section-header { text-align: center; margin-bottom: 80px; }
+  .section-h2 {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 4vw, 60px);
+    font-weight: 800; letter-spacing: -0.04em;
+    line-height: 1.05; margin-bottom: 16px;
+  }
+  .section-sub {
+    font-size: 18px; color: var(--ink-60); max-width: 520px; margin: 0 auto;
+  }
+
+  .features-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 2px; background: var(--border);
+    border: 1px solid var(--border); border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .feature-card {
+    background: var(--white); padding: 36px 32px;
+    transition: background 0.2s;
+    position: relative; overflow: hidden;
+  }
+  .feature-card::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: var(--gold);
+    transform: scaleX(0); transform-origin: left;
+    transition: transform 0.3s cubic-bezier(0.22,1,0.36,1);
+  }
+  .feature-card:hover::before { transform: scaleX(1); }
+  .feature-card:hover { background: var(--off); }
+
+  .feature-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: var(--gold-glow); border: 1px solid oklch(0.852 0.199 91.936 / 0.3);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px; font-size: 20px;
+  }
+  .feature-h3 {
+    font-family: var(--font-display); font-size: 19px; font-weight: 700;
+    letter-spacing: -0.03em; margin-bottom: 10px;
+  }
+  .feature-p { font-size: 14px; color: var(--ink-60); line-height: 1.6; }
+
+  /* ── HOW IT WORKS ───────────────────────────────────────────────────────── */
+  #how { padding: 120px 0; background: var(--ink); }
+  #how .section-h2 { color: var(--white); }
+  #how .section-sub { color: oklch(1 0 0 / 0.5); }
+  #how .section-label { color: oklch(1 0 0 / 0.4); }
+
+  .steps-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 0; position: relative;
+  }
+  .steps-grid::before {
+    content: '';
+    position: absolute; top: 28px; left: calc(12.5% + 16px); right: calc(12.5% + 16px);
+    height: 1px; background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.2), transparent);
+  }
+  .step {
+    padding: 0 24px; text-align: center; position: relative;
+  }
+  .step-num {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: oklch(1 0 0 / 0.08); border: 1px solid oklch(1 0 0 / 0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 13px; font-weight: 500;
+    color: var(--gold); margin: 0 auto 24px;
+    position: relative; z-index: 1;
+    transition: all 0.3s;
+  }
+  .step:hover .step-num {
+    background: var(--gold); color: var(--ink);
+    box-shadow: 0 0 32px var(--gold-glow);
+  }
+  .step-h3 {
+    font-family: var(--font-display); font-size: 18px; font-weight: 700;
+    color: var(--white); letter-spacing: -0.03em; margin-bottom: 10px;
+  }
+  .step-p { font-size: 13px; color: oklch(1 0 0 / 0.5); line-height: 1.6; }
+
+  /* ── METRICS STRIP ──────────────────────────────────────────────────────── */
+  #metrics {
+    padding: 80px 0;
+    background: var(--gold);
+  }
+  .metrics-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 0; divide: var(--ink-20);
+  }
+  .metric {
+    padding: 0 40px; text-align: center;
+    border-right: 1px solid oklch(0.148 0.004 228.8 / 0.15);
+  }
+  .metric:last-child { border-right: none; }
+  .metric-val {
+    font-family: var(--font-display); font-size: 52px; font-weight: 800;
+    color: var(--ink); letter-spacing: -0.04em; line-height: 1;
+    margin-bottom: 8px;
+    counter-reset: num var(--target);
+  }
+  .metric-label { font-size: 14px; color: var(--ink-60); font-weight: 500; }
+
+  /* ── TESTIMONIALS ───────────────────────────────────────────────────────── */
+  #testimonials { padding: 120px 0; }
+  .testimonials-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  }
+  .testimonial {
+    background: var(--off); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 32px;
+    transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), box-shadow 0.3s;
+  }
+  .testimonial:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 60px oklch(0.148 0.004 228.8 / 0.08);
+  }
+  .testimonial-stars {
+    color: var(--gold); font-size: 14px; margin-bottom: 16px;
+    letter-spacing: 2px;
+  }
+  .testimonial-quote {
+    font-size: 15px; color: var(--ink); line-height: 1.6;
+    margin-bottom: 24px; font-style: italic;
+  }
+  .testimonial-author {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .author-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--gold-glow); border: 2px solid var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display); font-size: 14px; font-weight: 800;
+    color: var(--ink);
+  }
+  .author-name { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .author-role { font-size: 12px; color: var(--ink-60); }
+
+  /* ── PRICING ────────────────────────────────────────────────────────────── */
+  #pricing { padding: 120px 0; background: var(--off); }
+  .pricing-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+    max-width: 900px; margin: 0 auto;
+  }
+  .pricing-card {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 36px 32px;
+    position: relative; transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .pricing-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 60px oklch(0.148 0.004 228.8 / 0.08);
+  }
+  .pricing-card.featured {
+    border-color: var(--gold); background: var(--ink);
+    box-shadow: 0 0 0 4px var(--gold-glow);
+  }
+  .pricing-badge {
+    position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    background: var(--gold); border-radius: 100px; padding: 4px 16px;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--ink); font-weight: 600;
+    white-space: nowrap;
+  }
+  .pricing-name {
+    font-family: var(--font-display); font-size: 13px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-60); margin-bottom: 12px;
+  }
+  .pricing-card.featured .pricing-name { color: oklch(1 0 0 / 0.5); }
+  .pricing-price {
+    font-family: var(--font-display); font-size: 48px; font-weight: 800;
+    letter-spacing: -0.04em; color: var(--ink); margin-bottom: 4px;
+    line-height: 1;
+  }
+  .pricing-card.featured .pricing-price { color: var(--white); }
+  .pricing-period { font-size: 13px; color: var(--ink-60); margin-bottom: 28px; }
+  .pricing-card.featured .pricing-period { color: oklch(1 0 0 / 0.4); }
+  .pricing-features { list-style: none; space-y: 12px; margin-bottom: 32px; }
+  .pricing-features li {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; color: var(--ink); padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .pricing-card.featured .pricing-features li {
+    color: oklch(1 0 0 / 0.8);
+    border-bottom-color: oklch(1 0 0 / 0.1);
+  }
+  .pricing-features li::before {
+    content: '✓'; color: var(--gold); font-weight: 700; flex-shrink: 0;
+  }
+  .btn-pricing {
+    width: 100%; justify-content: center; border-radius: var(--radius-sm);
+    padding: 13px; font-size: 14px;
+  }
+  .btn-pricing-outline {
+    background: transparent; border: 1.5px solid var(--border);
+    color: var(--ink);
+  }
+  .btn-pricing-outline:hover { border-color: var(--ink-60); background: var(--ink-20); }
+  .btn-pricing-featured {
+    background: var(--gold); color: var(--ink); border: none;
+  }
+  .btn-pricing-featured:hover {
+    box-shadow: 0 8px 32px var(--gold-glow);
+    transform: translateY(-2px);
+  }
+
+  /* ── CTA SECTION ────────────────────────────────────────────────────────── */
+  #cta {
+    padding: 140px 24px;
+    background: var(--ink);
+    text-align: center; position: relative; overflow: hidden;
+  }
+  #cta::before {
+    content: ''; position: absolute;
+    width: 700px; height: 700px; border-radius: 50%;
+    background: var(--gold-glow);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    filter: blur(100px);
+    pointer-events: none;
+  }
+  .cta-h2 {
+    font-family: var(--font-display);
+    font-size: clamp(44px, 6vw, 80px); font-weight: 800;
+    letter-spacing: -0.04em; line-height: 1.0;
+    color: var(--white); margin-bottom: 20px;
+    position: relative; z-index: 1;
+  }
+  .cta-h2 em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dim) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .cta-sub {
+    font-size: 18px; color: oklch(1 0 0 / 0.5);
+    max-width: 480px; margin: 0 auto 40px;
+    position: relative; z-index: 1;
+  }
+  .cta-form {
+    display: flex; gap: 12px; max-width: 420px; margin: 0 auto;
+    position: relative; z-index: 1;
+  }
+  .cta-input {
+    flex: 1; background: oklch(1 0 0 / 0.08);
+    border: 1px solid oklch(1 0 0 / 0.15);
+    border-radius: 100px; padding: 14px 20px;
+    font-family: var(--font-body); font-size: 14px;
+    color: var(--white); outline: none;
+    transition: border-color 0.2s;
+  }
+  .cta-input::placeholder { color: oklch(1 0 0 / 0.3); }
+  .cta-input:focus { border-color: var(--gold); }
+
+  /* ── FOOTER ─────────────────────────────────────────────────────────────── */
+  footer {
+    background: var(--ink); border-top: 1px solid oklch(1 0 0 / 0.08);
+    padding: 60px 0 40px;
+  }
+  .footer-grid {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 48px; margin-bottom: 48px;
+  }
+  .footer-brand-name {
+    font-family: var(--font-display); font-size: 22px; font-weight: 800;
+    color: var(--white); letter-spacing: -0.03em; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .footer-brand-sub { font-size: 13px; color: oklch(1 0 0 / 0.4); line-height: 1.6; }
+  .footer-col-title {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: oklch(1 0 0 / 0.3);
+    margin-bottom: 16px;
+  }
+  .footer-links { list-style: none; }
+  .footer-links li { margin-bottom: 10px; }
+  .footer-links a {
+    font-size: 14px; color: oklch(1 0 0 / 0.5);
+    text-decoration: none; transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--white); }
+  .footer-bottom {
+    border-top: 1px solid oklch(1 0 0 / 0.08);
+    padding-top: 32px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .footer-copy { font-size: 13px; color: oklch(1 0 0 / 0.3); }
+  .footer-tagline {
+    font-family: var(--font-mono); font-size: 11px; color: var(--gold);
+    letter-spacing: 0.06em;
+  }
+
+  /* ── SCROLL PROGRESS ────────────────────────────────────────────────────── */
+  .scroll-progress {
+    position: fixed; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--gold); transform-origin: left;
+    transform: scaleX(0); z-index: 200;
+    transition: transform 0.1s linear;
+  }
+
+  /* ── RESPONSIVE ─────────────────────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .features-grid { grid-template-columns: 1fr 1fr; }
+    .steps-grid { grid-template-columns: 1fr 1fr; gap: 40px; }
+    .metrics-grid { grid-template-columns: 1fr 1fr; }
+    .metric { border-right: none; border-bottom: 1px solid oklch(0.148 0.004 228.8 / 0.15); padding: 24px 0; }
+    .testimonials-grid { grid-template-columns: 1fr; }
+    .pricing-grid { grid-template-columns: 1fr; }
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+    .preview-content { grid-template-columns: 1fr; }
+    .preview-sidebar { display: none; }
+    nav .nav-links { display: none; }
+  }
+  @media (max-width: 600px) {
+    .features-grid { grid-template-columns: 1fr; }
+    .steps-grid { grid-template-columns: 1fr; }
+    .metrics-grid { grid-template-columns: 1fr 1fr; }
+    .cta-form { flex-direction: column; }
+    .footer-grid { grid-template-columns: 1fr; }
+    .hero-h1 { font-size: 44px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Scroll progress indicator -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- ─── NAV ──────────────────────────────────────────────────────────────── -->
+<nav id="nav">
+  <div class="container">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <div class="nav-logo-mark">
+          <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 2L15 5.5V12.5L9 16L3 12.5V5.5L9 2Z" fill="oklch(0.148 0.004 228.8)" opacity="0.9"/>
+            <path d="M9 6L12 7.73V11.27L9 13L6 11.27V7.73L9 6Z" fill="oklch(0.852 0.199 91.936)"/>
+          </svg>
+        </div>
+        QuoteSync
+      </a>
+
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#testimonials">Reviews</a>
+        <a href="#pricing">Pricing</a>
+      </div>
+
+      <div class="nav-cta">
+        <a href="/login" class="btn btn-outline">Sign in</a>
+        <a href="/register" class="btn btn-primary">Start free →</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ─── HERO ──────────────────────────────────────────────────────────────── -->
+<section id="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-blob hero-blob-1"></div>
+  <div class="hero-blob hero-blob-2"></div>
+
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="hero-badge-pill">NEW</span>
+      AI-powered quote generation — build a quote in seconds
+    </div>
+
+    <h1 class="hero-h1">
+      Send smarter.<br>
+      Close <em>faster.</em><br>
+      Get paid.
+    </h1>
+
+    <p class="hero-sub">
+      Professional quotes, invoices, and payments — built for the businesses that Africa runs on. From Nairobi electricians to Lagos agencies.
+    </p>
+
+    <div class="hero-actions">
+      <a href="/register" class="btn btn-primary" style="font-size:16px; padding: 16px 32px;">
+        Start for free — no card needed
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="#how" class="btn btn-outline" style="font-size:16px; padding: 16px 32px;">
+        See how it works
+      </a>
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:center; gap:24px; flex-wrap:wrap;">
+      <span class="hero-note">No credit card required</span>
+      <span class="hero-note">Setup in under 5 minutes</span>
+      <span class="hero-note">Cancel anytime</span>
+    </div>
+  </div>
+
+  <!-- Product preview mockup -->
+  <div class="hero-preview" style="margin-top: 64px;">
+    <div class="hero-preview-frame">
+      <div class="preview-bar">
+        <div class="preview-dot"></div>
+        <div class="preview-dot"></div>
+        <div class="preview-dot"></div>
+        <div class="preview-url">quotesync.app/q/qs-2026-042</div>
+      </div>
+      <div class="preview-content">
+        <div class="preview-doc">
+          <div class="preview-doc-header">
+            <div class="preview-logo-text">Hartwell Electric</div>
+            <div class="preview-meta">
+              <div class="num">QS-2026-042</div>
+              <div class="date">Issued May 10, 2026 · Valid until Jun 09, 2026</div>
+            </div>
+          </div>
+          <div class="preview-from-to">
+            <div>
+              <div class="label">From</div>
+              <div class="name">Hartwell Electric Co.</div>
+              <div class="sub">Nairobi, Kenya</div>
+            </div>
+            <div>
+              <div class="label">To</div>
+              <div class="name">Savanna Properties Ltd</div>
+              <div class="sub">Westlands, Nairobi</div>
+            </div>
+          </div>
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Unit</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  Electrical wiring — 3BR apartment
+                  <div class="sub">Full installation, 40 downlights, DB board</div>
+                </td>
+                <td>1</td>
+                <td>KES 85,000</td>
+                <td>KES 85,000</td>
+              </tr>
+              <tr>
+                <td>
+                  Materials &amp; consumables
+                  <div class="sub">PVC conduit, cables, sockets</div>
+                </td>
+                <td>1</td>
+                <td>KES 32,000</td>
+                <td>KES 32,000</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="preview-total-row">
+            <div class="preview-total-label">Total</div>
+            <div class="preview-total-value">KES 133,040</div>
+          </div>
+        </div>
+        <div class="preview-sidebar">
+          <div class="preview-badge">● Viewed 4× this week</div>
+          <div class="preview-stat">
+            <div class="stat-label">Win probability</div>
+            <div class="stat-val">78%</div>
+            <div class="stat-sub">High engagement signal</div>
+          </div>
+          <div class="preview-stat">
+            <div class="stat-label">Time reading</div>
+            <div class="stat-val">6m 32s</div>
+            <div class="stat-sub">Reviewed in detail</div>
+          </div>
+          <button class="preview-accept-btn">
+            ✓ Accept &amp; Sign
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── SOCIAL PROOF LOGOS ────────────────────────────────────────────────── -->
+<section id="logos">
+  <div class="logos-label">Trusted by businesses across East Africa</div>
+  <div style="overflow:hidden;">
+    <div class="logos-track">
+      <span class="logo-item">Hartwell Electric</span>
+      <span class="logo-item">Savanna Properties</span>
+      <span class="logo-item">BluePeak Consulting</span>
+      <span class="logo-item">Oasis Events</span>
+      <span class="logo-item">TechVault Kenya</span>
+      <span class="logo-item">Meridian Studio</span>
+      <span class="logo-item">GreenLeaf Retail</span>
+      <span class="logo-item">Apex Contractors</span>
+      <!-- duplicate for seamless scroll -->
+      <span class="logo-item">Hartwell Electric</span>
+      <span class="logo-item">Savanna Properties</span>
+      <span class="logo-item">BluePeak Consulting</span>
+      <span class="logo-item">Oasis Events</span>
+      <span class="logo-item">TechVault Kenya</span>
+      <span class="logo-item">Meridian Studio</span>
+      <span class="logo-item">GreenLeaf Retail</span>
+      <span class="logo-item">Apex Contractors</span>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FEATURES ──────────────────────────────────────────────────────────── -->
+<section id="features">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label reveal">Everything in one place</div>
+      <h2 class="section-h2 reveal reveal-delay-1">Built for how you actually work</h2>
+      <p class="section-sub reveal reveal-delay-2">Not another generic SaaS. Every feature was designed for service businesses who send proposals and get paid.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="feature-icon">✦</div>
+        <h3 class="feature-h3">AI Quote Builder</h3>
+        <p class="feature-p">Describe the job in plain text. Our AI reads your catalog, matches line items, and builds the quote. Review and send in under 60 seconds.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-icon">⚡</div>
+        <h3 class="feature-h3">E-Signature &amp; Acceptance</h3>
+        <p class="feature-p">Clients accept, sign, and pay their deposit — all in one link. No printing, scanning, or PDF emailing. Legal and instant.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-icon">👁</div>
+        <h3 class="feature-h3">Real-Time Tracking</h3>
+        <p class="feature-p">Know the moment your client opens the quote. See how long they spent on each section. Follow up at exactly the right time.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-icon">🏦</div>
+        <h3 class="feature-h3">M-Pesa &amp; Card Payments</h3>
+        <p class="feature-p">Collect deposits and full payments via M-Pesa, Flutterwave, or Stripe — directly from the quote. African gateways, not an afterthought.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-icon">📊</div>
+        <h3 class="feature-h3">Win Intelligence</h3>
+        <p class="feature-p">Win probability scores, loss reason analytics, best-performing templates. Know what works and what does not — before you send.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-icon">🔄</div>
+        <h3 class="feature-h3">Auto Follow-Ups</h3>
+        <p class="feature-p">Set a follow-up sequence once. QuoteSync sends timed reminders automatically — personalized with your quote data. Never let a lead go cold.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── HOW IT WORKS ───────────────────────────────────────────────────────── -->
+<section id="how">
+  <div class="container">
+    <div class="section-header" style="margin-bottom: 64px;">
+      <div class="section-label reveal">Simple process</div>
+      <h2 class="section-h2 reveal reveal-delay-1">From job to payment in four steps</h2>
+      <p class="section-sub reveal reveal-delay-2">Your clients do not need an account. They open a link, read, sign, and pay.</p>
+    </div>
+
+    <div class="steps-grid">
+      <div class="step reveal">
+        <div class="step-num">01</div>
+        <h3 class="step-h3">Build your quote</h3>
+        <p class="step-p">Type the job description or pick from your catalog. AI fills in the rest. Add your logo, terms, and payment conditions.</p>
+      </div>
+      <div class="step reveal reveal-delay-1">
+        <div class="step-num">02</div>
+        <h3 class="step-h3">Send to your client</h3>
+        <p class="step-p">One click sends a beautiful, branded link via email. The client opens it on any device — no login required.</p>
+      </div>
+      <div class="step reveal reveal-delay-2">
+        <div class="step-num">03</div>
+        <h3 class="step-h3">Client accepts &amp; signs</h3>
+        <p class="step-p">They review, sign digitally, and pay the deposit. You are notified instantly. The deal is locked.</p>
+      </div>
+      <div class="step reveal reveal-delay-3">
+        <div class="step-num">04</div>
+        <h3 class="step-h3">Invoice &amp; get paid</h3>
+        <p class="step-p">Convert the accepted quote to an invoice in one click. Automatic payment reminders handle the rest.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── METRICS ────────────────────────────────────────────────────────────── -->
+<section id="metrics">
+  <div class="container">
+    <div class="metrics-grid">
+      <div class="metric reveal">
+        <div class="metric-val" data-target="2x">2×</div>
+        <div class="metric-label">faster quote creation vs Word</div>
+      </div>
+      <div class="metric reveal reveal-delay-1">
+        <div class="metric-val">68%</div>
+        <div class="metric-label">of clients open within 24 hours</div>
+      </div>
+      <div class="metric reveal reveal-delay-2">
+        <div class="metric-val">5 min</div>
+        <div class="metric-label">average setup time</div>
+      </div>
+      <div class="metric reveal reveal-delay-3">
+        <div class="metric-val">KES 0</div>
+        <div class="metric-label">to get started — forever free tier</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── TESTIMONIALS ──────────────────────────────────────────────────────── -->
+<section id="testimonials">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label reveal">From the field</div>
+      <h2 class="section-h2 reveal reveal-delay-1">Real businesses, real results</h2>
+    </div>
+
+    <div class="testimonials-grid">
+      <div class="testimonial reveal">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-quote">"Before QuoteSync I was sending Word documents. Clients would ask for revisions over WhatsApp. Now everything is in one place. My acceptance rate went from 40% to 71%."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">JH</div>
+          <div>
+            <div class="author-name">James Hartwell</div>
+            <div class="author-role">Hartwell Electrical, Nairobi</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial reveal reveal-delay-1">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-quote">"The AI quote generator is unbelievable. I describe the project in English and it fills in all the line items from my catalog. What used to take 45 minutes takes 3."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">SK</div>
+          <div>
+            <div class="author-name">Sarah Kimani</div>
+            <div class="author-role">BluePeak Consulting, Nairobi</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial reveal reveal-delay-2">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-quote">"My clients are in the UAE and they pay in AED. QuoteSync handles the currency conversion automatically. Finally a tool that understands how we actually do business here."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">AO</div>
+          <div>
+            <div class="author-name">Amina Osman</div>
+            <div class="author-role">Oasis Events, Dubai</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PRICING ────────────────────────────────────────────────────────────── -->
+<section id="pricing">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label reveal">Simple pricing</div>
+      <h2 class="section-h2 reveal reveal-delay-1">No surprises. No hidden fees.</h2>
+      <p class="section-sub reveal reveal-delay-2">Start free. Upgrade when you are ready.</p>
+    </div>
+
+    <div class="pricing-grid">
+      <div class="pricing-card reveal">
+        <div class="pricing-name">Starter</div>
+        <div class="pricing-price">Free</div>
+        <div class="pricing-period">Forever. No card required.</div>
+        <ul class="pricing-features">
+          <li>5 quotes per month</li>
+          <li>2 invoices per month</li>
+          <li>Client portal</li>
+          <li>PDF export</li>
+          <li>Email delivery</li>
+        </ul>
+        <a href="/register" class="btn btn-pricing btn-pricing-outline">Get started free</a>
+      </div>
+
+      <div class="pricing-card featured reveal reveal-delay-1">
+        <div class="pricing-badge">Most popular</div>
+        <div class="pricing-name">Growth</div>
+        <div class="pricing-price" style="color: var(--gold);">$29</div>
+        <div class="pricing-period">per month, billed monthly</div>
+        <ul class="pricing-features">
+          <li>Unlimited quotes</li>
+          <li>Unlimited invoices</li>
+          <li>AI quote generator</li>
+          <li>M-Pesa &amp; card payments</li>
+          <li>Follow-up automation</li>
+          <li>Win probability scoring</li>
+          <li>Custom domain portal</li>
+          <li>White-label mode</li>
+        </ul>
+        <a href="/register" class="btn btn-pricing btn-pricing-featured">Start 14-day trial</a>
+      </div>
+
+      <div class="pricing-card reveal reveal-delay-2">
+        <div class="pricing-name">Team</div>
+        <div class="pricing-price">$79</div>
+        <div class="pricing-period">per month, up to 10 users</div>
+        <ul class="pricing-features">
+          <li>Everything in Growth</li>
+          <li>Approval workflows</li>
+          <li>Team analytics</li>
+          <li>Role-based permissions</li>
+          <li>Priority support</li>
+        </ul>
+        <a href="/register" class="btn btn-pricing btn-pricing-outline">Start 14-day trial</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CTA ───────────────────────────────────────────────────────────────── -->
+<section id="cta">
+  <h2 class="cta-h2 reveal">
+    Your next quote<br>
+    <em>closes itself.</em>
+  </h2>
+  <p class="cta-sub reveal reveal-delay-1">
+    Join the businesses across East Africa that stopped chasing clients and started closing deals.
+  </p>
+  <form class="cta-form reveal reveal-delay-2" onsubmit="event.preventDefault(); window.location='/register';">
+    <input type="email" class="cta-input" placeholder="your@email.com" required>
+    <button type="submit" class="btn btn-primary">Get started →</button>
+  </form>
+</section>
+
+<!-- ─── FOOTER ────────────────────────────────────────────────────────────── -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand-name">
+          <div class="nav-logo-mark">
+            <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 2L15 5.5V12.5L9 16L3 12.5V5.5L9 2Z" fill="white" opacity="0.2"/>
+              <path d="M9 6L12 7.73V11.27L9 13L6 11.27V7.73L9 6Z" fill="oklch(0.852 0.199 91.936)"/>
+            </svg>
+          </div>
+          QuoteSync
+        </div>
+        <p class="footer-brand-sub">Send smarter. Close faster.<br>Get paid — built by EpochWeave.</p>
+      </div>
+      <div>
+        <div class="footer-col-title">Product</div>
+        <ul class="footer-links">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#how">How it works</a></li>
+          <li><a href="/changelog">Changelog</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Company</div>
+        <ul class="footer-links">
+          <li><a href="/about">About</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a href="/careers">Careers</a></li>
+          <li><a href="/contact">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Legal</div>
+        <ul class="footer-links">
+          <li><a href="/privacy">Privacy Policy</a></li>
+          <li><a href="/terms">Terms of Service</a></li>
+          <li><a href="/security">Security</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span class="footer-copy">© 2026 EpochWeave Ltd. All rights reserved.</span>
+      <span class="footer-tagline">SEND · CLOSE · GET PAID</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── Scroll progress bar
+const progress = document.getElementById('scrollProgress');
+window.addEventListener('scroll', () => {
+  const scrolled = window.scrollY;
+  const total = document.documentElement.scrollHeight - window.innerHeight;
+  progress.style.transform = `scaleX(${scrolled / total})`;
+}, { passive: true });
+
+// ── Nav background on scroll
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 40);
+}, { passive: true });
+
+// ── Intersection Observer for reveal animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ── Smooth parallax on hero blobs
+window.addEventListener('mousemove', (e) => {
+  const x = (e.clientX / window.innerWidth - 0.5) * 30;
+  const y = (e.clientY / window.innerHeight - 0.5) * 30;
+  document.querySelector('.hero-blob-1').style.transform =
+    `translate(${x * 0.5}px, ${y * 0.5}px)`;
+  document.querySelector('.hero-blob-2').style.transform =
+    `translate(${-x * 0.3}px, ${-y * 0.3}px)`;
+}, { passive: true });
+</script>
+</body>
+</html>
