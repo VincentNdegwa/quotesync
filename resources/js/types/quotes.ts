@@ -230,6 +230,7 @@ export type Quote = {
     version: number | null;
     cover_message: string | null;
     terms: string | null;
+    is_hot_lead: boolean;
 };
 
 export type EnumOption<T = string> = {

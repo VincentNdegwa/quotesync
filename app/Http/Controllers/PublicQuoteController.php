@@ -105,6 +105,7 @@ class PublicQuoteController extends Controller
             'quote_uuid' => $quote->quote_uuid,
             'layout' => $this->quoteLayoutPayload($quote),
             'settings' => $workspaceSettingsService->builderSettings($quote->workspace),
+            'localization' => $workspaceSettingsService->groupForFrontend($quote->workspace, 'localization')['fields'] ?? [],
             'clientState' => $this->resolveClientState($quote),
             'isWorkspaceMember' => $isWorkspaceMember,
         ]);

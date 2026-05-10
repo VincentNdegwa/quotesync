@@ -209,6 +209,11 @@ class Quote extends Model
     public function isHotLead(): bool
     {
         $workspace = $this->workspace;
+
+        if (!$workspace) {
+            return false;
+        }
+
         $settingsService = app(\App\Services\WorkspaceSettings\WorkspaceSettingsService::class);
         $settings = $settingsService->groupForFrontend($workspace, 'notifications')['fields'] ?? [];
 
@@ -218,9 +223,7 @@ class Quote extends Model
             return false;
         }
 
-        $viewCount = $this->trackingEvents()
-            ->where('event_type', \App\Enums\TrackingEventType::VIEW)
-            ->count();
+        $viewCount = $this->view_count ?? 0;
 
         return $viewCount >= $hotLeadThreshold;
     }
@@ -274,39 +277,41 @@ class Quote extends Model
         return $this->morphMany(Task::class, 'taskable');
     }
 
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    protected $casts = [
+        'status' => QuoteStatus::class,
+        'valid_until' => 'date',
+        'layout_snapshot' => 'array',
+        'subtotal' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'tax_amount' => 'decimal:2',
+        'total' => 'decimal:2',
+        'fx_rate' => 'decimal:6',
+        'base_total' => 'decimal:2',
+        'base_subtotal' => 'decimal:2',
+        'base_discount_amount' => 'decimal:2',
+        'base_tax_amount' => 'decimal:2',
+        'requires_deposit' => 'boolean',
+        'deposit_amount' => 'decimal:2',
+        'approval_granted' => 'boolean',
+        'approval_granted_at' => 'datetime',
+        'sent_at' => 'datetime',
+        'viewed_at' => 'datetime',
+        'accepted_at' => 'datetime',
+        'declined_at' => 'datetime',
+        'won_at' => 'datetime',
+        'lost_at' => 'datetime',
+        'scheduled_at' => 'datetime',
+        'delivered_at' => 'datetime',
+        'bounced_at' => 'datetime',
+        'is_locked' => 'boolean',
+        'cc_recipients' => 'array',
+        'bcc_recipients' => 'array',
+    ];
+
+    protected $appends = ['is_hot_lead'];
+
+    public function getIsHotLeadAttribute(): bool
     {
-        return [
-            'status' => QuoteStatus::class,
-            'valid_until' => 'date',
-            'layout_snapshot' => 'array',
-            'subtotal' => 'decimal:2',
-            'discount_amount' => 'decimal:2',
-            'tax_amount' => 'decimal:2',
-            'total' => 'decimal:2',
-            'fx_rate' => 'decimal:6',
-            'base_total' => 'decimal:2',
-            'base_subtotal' => 'decimal:2',
-            'base_discount_amount' => 'decimal:2',
-            'base_tax_amount' => 'decimal:2',
-            'requires_deposit' => 'boolean',
-            'deposit_amount' => 'decimal:2',
-            'approval_granted' => 'boolean',
-            'approval_granted_at' => 'datetime',
-            'sent_at' => 'datetime',
-            'viewed_at' => 'datetime',
-            'accepted_at' => 'datetime',
-            'declined_at' => 'datetime',
-            'won_at' => 'datetime',
-            'lost_at' => 'datetime',
-            'view_count' => 'integer',
-            'time_spent_seconds' => 'integer',
-            'deleted_at' => 'datetime',
-            'cc_recipients' => 'array',
-            'bcc_recipients' => 'array',
-        ];
+        return $this->isHotLead();
     }
 }

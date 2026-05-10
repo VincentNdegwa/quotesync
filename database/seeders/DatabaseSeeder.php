@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             IndustrySeeder::class,
+            PlumbingDemoSeeder::class,
         ]);
     }
 }

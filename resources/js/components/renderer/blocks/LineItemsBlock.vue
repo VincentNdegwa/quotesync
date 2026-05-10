@@ -490,7 +490,7 @@ const stripeClass = (index: number): string => {
                                                         config.showItemDescription &&
                                                         item.description
                                                     "
-                                                    class="mt-0.5 text-xs text-muted-foreground"
+                                                    class="mt-0.5 text-xs text-wrap text-muted-foreground"
                                                 >
                                                     {{ item.description }}
                                                 </p>

@@ -40,7 +40,7 @@ enum QuoteActivityType: string
         return match ($this) {
             self::Created => 'text-primary bg-primary/10',
             self::Sent => 'text-primary bg-primary/10',
-            self::Viewed => 'text-secondary bg-secondary/10',
+            self::Viewed => 'text-primary bg-primary/10',
             self::Accepted => 'text-primary bg-primary/10',
             self::Declined => 'text-destructive bg-destructive/10',
             self::FollowUpSent => 'text-destructive bg-destructive/10',

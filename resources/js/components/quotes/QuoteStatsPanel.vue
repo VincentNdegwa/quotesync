@@ -37,9 +37,7 @@ const readingLabel = computed(() => {
 
 const viewCount = computed(() => props.quote.view_count || 0);
 
-const isHotLead = computed(
-    () => viewCount.value >= 3 && props.quote.status === 'viewed',
-);
+const isHotLead = computed(() => props.quote.is_hot_lead || false);
 
 const daysUntilExpiry = computed(() => {
     if (!props.quote.valid_until) {
@@ -95,7 +93,7 @@ const statusTimeline = computed(() => [
         label: 'First viewed',
         at: props.quote.viewed_at,
         icon: Eye,
-        color: 'text-secondary',
+        color: 'text-primary',
         done: !!props.quote.viewed_at,
     },
     {
@@ -103,7 +101,7 @@ const statusTimeline = computed(() => [
         label: 'Accepted',
         at: props.quote.accepted_at,
         icon: CheckCircle2,
-        color: 'text-primary',
+        color: 'text-green-500',
         done: !!props.quote.accepted_at,
     },
     {
