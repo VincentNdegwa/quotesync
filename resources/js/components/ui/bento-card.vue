@@ -34,6 +34,8 @@ const props = withDefaults(defineProps<Props>(), {
             )
         "
     >
+        <slot name="background" />
+
         <div class="p-6">
             <div
                 class="pointer-events-none z-10 mb-4 flex transform-gpu items-center gap-4 transition-all duration-300 lg:group-hover:-translate-y-2"

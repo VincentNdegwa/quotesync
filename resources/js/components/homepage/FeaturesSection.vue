@@ -3,7 +3,6 @@ import { ref } from 'vue';
 import BentoGrid from '@/components/ui/bento-grid.vue';
 import BentoCard from '@/components/ui/bento-card.vue';
 import { Marquee } from '@/components/ui/marquee';
-import Safari from '@/components/ui/safari.vue';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Bell, Share2, BarChart3, Eye, MessageSquare, Check, Send } from 'lucide-vue-next';
@@ -27,33 +26,30 @@ const quoteFiles = [
     { name: 'Q-006.pdf', status: 'Viewed' },
 ];
 
-// Pipeline statuses
-const pipelineStatuses = ['Draft', 'Sent', 'Viewed', 'Approved'];
-
 // Features
 const features = [
-    {
-        name: 'Real-Time Tracking',
-        description:
-            'Know exactly when clients open, view, and interact with your quotes. Track every engagement moment.',
-        icon: Bell,
-        className: 'col-span-3 lg:col-span-2',
-        hasActivityList: true,
-    },
     {
         name: 'Quote Builder',
         description:
             'Drag-and-drop quote builder with customizable sections and line items. Create quotes in minutes.',
         icon: FileText,
+        className: 'col-span-3 lg:col-span-2',
+        hasBuilderImage: true,
+    },
+    {
+        name: 'Real-Time Tracking',
+        description:
+            'Know exactly when clients open, view, and interact with your quotes. Track every engagement moment.',
+        icon: Bell,
         className: 'col-span-3 lg:col-span-1',
-        hasSafari: true,
+        hasActivityList: true,
     },
     {
         name: 'Client Portal',
         description:
             'Let clients review, comment, request changes, and approve quotes in a beautiful branded portal.',
         icon: Share2,
-        className: 'col-span-3 lg:col-span-2',
+        className: 'col-span-3 lg:col-span-1',
         hasMarquee: true,
     },
     {
@@ -61,8 +57,8 @@ const features = [
         description:
             'Visual kanban boards to track quotes from draft to signed deal. Never lose track of a deal again.',
         icon: BarChart3,
-        className: 'col-span-3 lg:col-span-1',
-        hasPipeline: true,
+        className: 'col-span-3 lg:col-span-2',
+        hasKanbanImage: true,
     },
 ];
 </script>
@@ -100,49 +96,52 @@ const features = [
                 <template v-if="feature.hasActivityList" #background>
                     <div
                         class="absolute top-4 right-2 h-[300px] w-full scale-75 border-none transition-all duration-300 ease-out group-hover:scale-90"
-                        style="mask-image: linear-gradient(to top, transparent 10%, black 100%)"
+                        style="mask-image: linear-gradient(to bottom, transparent 40%, black 100%)"
                     >
-                        <div class="flex flex-col gap-2">
-                            <Card
-                                v-for="(activity, idx) in activities"
-                                :key="idx"
-                                class="flex items-center gap-3 border-border bg-muted/50 px-4 py-3"
-                            >
-                                <component :is="activity.icon" class="h-4 w-4 text-primary" />
-                                <div class="flex-1">
-                                    <div class="text-sm font-medium text-foreground">
-                                        {{ activity.text }}
-                                    </div>
-                                    <div class="text-xs text-muted-foreground">
-                                        {{ activity.time }}
-                                    </div>
+                        <div class="relative flex flex-col gap-4 pl-6">
+                            <!-- Timeline line -->
+                            <div class="absolute left-2 top-2 bottom-2 w-0.5 bg-border" />
+                            <div class="flex flex-col gap-4">
+                                <div
+                                    v-for="(activity, idx) in activities"
+                                    :key="idx"
+                                    class="relative flex items-start gap-3"
+                                >
+                                    <!-- Timeline dot -->
+                                    <div class="absolute -left-6 top-1.5 h-3 w-3 rounded-full bg-primary border-2 border-background" />
+                                    <Card class="flex items-center gap-3 border-border bg-muted/50 px-4 py-3">
+                                        <component :is="activity.icon" class="h-4 w-4 text-primary" />
+                                        <div class="flex-1">
+                                            <div class="text-sm font-medium text-foreground">
+                                                {{ activity.text }}
+                                            </div>
+                                            <div class="text-xs text-muted-foreground">
+                                                {{ activity.time }}
+                                            </div>
+                                        </div>
+                                    </Card>
                                 </div>
-                            </Card>
+                            </div>
                         </div>
                     </div>
                 </template>
 
-                <!-- SafarS Background -->
-                <template v-if="feature.hasSafari" #background>
-                    <div
-                        class="absolute top-10 left-1/2 -translate-x-1/2 w-[300px]"
-                        style="mask-image: linear-gradient(to top, transparent 40%, black 100%)"
-                    >
-                        <Safari url="app.quotesync.com" class="w-full">
-                            <div class="space-y-3">
-                                <div class="mb-4 flex items-center gap-2">
-                                    <div class="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                                        <img src="/favicon.svg" alt="QuoteSync" class="h-4 w-4" />
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="h-3 w-24 rounded bg-muted" />
-                                        <div class="mt-1 h-2 w-16 rounded bg-muted/50" />
-                                    </div>
-                                </div>
-                                <div class="h-2 w-full rounded bg-muted" />
-                                <div class="h-2 w-2/3 rounded bg-muted/50" />
-                            </div>
-                        </Safari>
+                <!-- Builder Image Background -->
+                <template v-if="feature.hasBuilderImage" #background>
+                    <div class="absolute inset-0 overflow-hidden">
+                        <img
+                            src="/home/features/builder.png"
+                            alt="Quote Builder"
+                            class="w-full h-full object-cover dark:hidden"
+                            style="mask-image: linear-gradient(to bottom, transparent 40%, black 100%)"
+                        />
+                        <img
+                            src="/home/features/dark-builder.png"
+                            alt="Quote Builder"
+                            class="w-full h-full object-cover hidden dark:block"
+                            style="mask-image: linear-gradient(to bottom, transparent 40%, black 100%)"
+                        />
+                        <div class="absolute inset-0 bg-gradient-to-b from-background/60 via-background/30 to-background/10" />
                     </div>
                 </template>
 
@@ -173,28 +172,22 @@ const features = [
                     </Marquee>
                 </template>
 
-                <!-- Pipeline Background -->
-                <template v-if="feature.hasPipeline" #background>
-                    <div
-                        class="absolute top-10 right-0 w-[180px]"
-                        style="mask-image: linear-gradient(to top, transparent 40%, black 100%)"
-                    >
-                        <div class="space-y-2">
-                            <Card
-                                v-for="(status, idx) in pipelineStatuses"
-                                :key="idx"
-                                class="flex items-center gap-2 border-border bg-muted/50 px-3 py-2"
-                            >
-                                <div
-                                    :class="`h-2 w-2 rounded-full ${
-                                        idx === 3 ? 'bg-primary' : 'bg-muted-foreground/30'
-                                    }`"
-                                />
-                                <div class="text-xs font-medium text-foreground">
-                                    {{ status }}
-                                </div>
-                            </Card>
-                        </div>
+                <!-- Kanban Image Background -->
+                <template v-if="feature.hasKanbanImage" #background>
+                    <div class="absolute inset-0 overflow-hidden">
+                        <img
+                            src="/home/features/kanban.png"
+                            alt="Pipeline Management"
+                            class="w-full h-full object-cover dark:hidden"
+                            style="mask-image: linear-gradient(to bottom, transparent 40%, black 100%)"
+                        />
+                        <img
+                            src="/home/features/dark-kanban.png"
+                            alt="Pipeline Management"
+                            class="w-full h-full object-cover hidden dark:block"
+                            style="mask-image: linear-gradient(to bottom, transparent 40%, black 100%)"
+                        />
+                        <div class="absolute inset-0 bg-gradient-to-b from-background/60 via-background/30 to-background/10" />
                     </div>
                 </template>
             </BentoCard>

@@ -167,11 +167,13 @@ const props = defineProps<Props>();
                     src="/home/screenshot1.png"
                     alt="QuoteSync Quote Interface"
                     class="w-full h-full rounded-sm dark:hidden"
+                    style="mask-image: linear-gradient(to bottom, transparent 0%, black 100%)"
                 />
                 <img
                     src="/home/dark-screenshot1.png"
                     alt="QuoteSync Quote Interface"
                     class="w-full h-full rounded-sm hidden dark:block"
+                    style="mask-image: linear-gradient(to bottom, transparent 0%, black 100%)"
                 />
             </Safari>
         </div>
