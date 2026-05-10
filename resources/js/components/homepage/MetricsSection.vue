@@ -14,14 +14,8 @@ const metrics = [
                 <div
                     v-for="(metric, index) in metrics"
                     :key="metric.label"
-                    v-motion
-                    :initial="{ opacity: 0, y: 20 }"
-                    :visible="{
-                        opacity: 1,
-                        y: 0,
-                        transition: { duration: 500, delay: index * 100 },
-                    }"
-                    class="text-center"
+                    class="text-center animate-fade-in-up"
+                    :style="{ animationDelay: `${index * 100}ms` }"
                 >
                     <div
                         class="mb-2 text-5xl font-bold text-foreground"

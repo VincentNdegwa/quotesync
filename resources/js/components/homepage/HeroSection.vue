@@ -3,7 +3,7 @@ import { Link } from '@inertiajs/vue3';
 import { dashboard, login, register } from '@/routes';
 import GradientText from '@/components/ui/gradient-text.vue';
 import Safari from '@/components/ui/safari.vue';
-import { FileText, ArrowRight, Check, BarChart3, MessageSquare, Users } from 'lucide-vue-next';
+import { FileText, ArrowRight, Check, BarChart3, MessageSquare, Users, Receipt, LayoutGrid } from 'lucide-vue-next';
 
 interface Props {
     canRegister: boolean;
@@ -101,10 +101,8 @@ const props = defineProps<Props>();
 
         <!-- Hero Visual - Safari with QuoteSync Dashboard -->
         <div
-            v-motion
-            :initial="{ opacity: 0, scale: 0.9 }"
-            :enter="{ opacity: 1, scale: 1, transition: { duration: 1000, delay: 700 } }"
-            class="mt-20 w-full max-w-[900px]"
+            class="mt-20 w-full max-w-[900px] animate-fade-in-scale"
+            style="animation-delay: 700ms"
         >
             <Safari url="app.quotesync.com" class="w-full">
                 <div class="flex h-full bg-background">
@@ -112,7 +110,7 @@ const props = defineProps<Props>();
                     <div class="w-64 border-r border-border bg-muted/30 p-4">
                         <div class="mb-6 flex items-center gap-3">
                             <div class="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                                <FileText class="h-4 w-4 text-primary" />
+                                <img src="/favicon.svg" alt="QuoteSync" class="h-4 w-4" />
                             </div>
                             <div>
                                 <div class="text-sm font-semibold">QuoteSync</div>
@@ -155,19 +153,19 @@ const props = defineProps<Props>();
                         <!-- Stats -->
                         <div class="mb-6 grid grid-cols-4 gap-4">
                             <div class="rounded-lg border border-border bg-card p-4">
-                                <div class="text-2xl font-bold text-primary">12</div>
+                                <div class="text-2xl font-bold text-primary">$45,200</div>
                                 <div class="text-xs text-muted-foreground">Draft</div>
                             </div>
                             <div class="rounded-lg border border-border bg-card p-4">
-                                <div class="text-2xl font-bold text-yellow-500">8</div>
+                                <div class="text-2xl font-bold text-yellow-500">$128,500</div>
                                 <div class="text-xs text-muted-foreground">Sent</div>
                             </div>
                             <div class="rounded-lg border border-border bg-card p-4">
-                                <div class="text-2xl font-bold text-blue-500">5</div>
+                                <div class="text-2xl font-bold text-blue-500">$89,300</div>
                                 <div class="text-xs text-muted-foreground">Viewed</div>
                             </div>
                             <div class="rounded-lg border border-border bg-card p-4">
-                                <div class="text-2xl font-bold text-green-500">15</div>
+                                <div class="text-2xl font-bold text-green-500">$312,750</div>
                                 <div class="text-xs text-muted-foreground">Approved</div>
                             </div>
                         </div>
@@ -195,7 +193,7 @@ const props = defineProps<Props>();
                                     <tr class="border-b border-border">
                                         <td class="px-4 py-3 text-sm font-medium">Q-001</td>
                                         <td class="px-4 py-3 text-sm text-muted-foreground">
-                                            Acme Corp
+                                            Summit Digital
                                         </td>
                                         <td class="px-4 py-3 text-sm">$12,500</td>
                                         <td class="px-4 py-3">
@@ -207,7 +205,7 @@ const props = defineProps<Props>();
                                     <tr class="border-b border-border">
                                         <td class="px-4 py-3 text-sm font-medium">Q-002</td>
                                         <td class="px-4 py-3 text-sm text-muted-foreground">
-                                            Tech Solutions
+                                            Nexus Labs
                                         </td>
                                         <td class="px-4 py-3 text-sm">$8,200</td>
                                         <td class="px-4 py-3">
@@ -219,7 +217,7 @@ const props = defineProps<Props>();
                                     <tr class="border-b border-border">
                                         <td class="px-4 py-3 text-sm font-medium">Q-003</td>
                                         <td class="px-4 py-3 text-sm text-muted-foreground">
-                                            Global Inc
+                                            Aurora Media
                                         </td>
                                         <td class="px-4 py-3 text-sm">$25,000</td>
                                         <td class="px-4 py-3">
@@ -231,12 +229,12 @@ const props = defineProps<Props>();
                                     <tr>
                                         <td class="px-4 py-3 text-sm font-medium">Q-004</td>
                                         <td class="px-4 py-3 text-sm text-muted-foreground">
-                                            Startup Co
+                                            Vertex Systems
                                         </td>
-                                        <td class="px-4 py-3 text-sm">$15,000</td>
+                                        <td class="px-4 py-3 text-sm">$15,750</td>
                                         <td class="px-4 py-3">
-                                            <span class="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
-                                                Draft
+                                            <span class="inline-flex rounded-full bg-yellow-500/10 px-2 py-1 text-xs font-medium text-yellow-500">
+                                                Sent
                                             </span>
                                         </td>
                                     </tr>

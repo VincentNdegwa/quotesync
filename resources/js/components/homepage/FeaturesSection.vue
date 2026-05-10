@@ -2,8 +2,8 @@
 import { ref } from 'vue';
 import BentoGrid from '@/components/ui/bento-grid.vue';
 import BentoCard from '@/components/ui/bento-card.vue';
-import Marquee from '@/components/ui/marquee.vue';
-import Iphone from '@/components/ui/iphone.vue';
+import { Marquee } from '@/components/ui/marquee';
+import Safari from '@/components/ui/safari.vue';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Bell, Share2, BarChart3, Eye, MessageSquare, Check, Send } from 'lucide-vue-next';
@@ -46,7 +46,7 @@ const features = [
             'Drag-and-drop quote builder with customizable sections and line items. Create quotes in minutes.',
         icon: FileText,
         className: 'col-span-3 lg:col-span-1',
-        hasIphone: true,
+        hasSafari: true,
     },
     {
         name: 'Client Portal',
@@ -93,13 +93,8 @@ const features = [
                 :description="feature.description"
                 :icon="feature.icon"
                 :class="feature.className"
-                v-motion
-                :initial="{ opacity: 0, y: 30 }"
-                :visible="{
-                    opacity: 1,
-                    y: 0,
-                    transition: { duration: 600, delay: index * 100 },
-                }"
+                class="animate-fade-in-up"
+                :style="{ animationDelay: `${index * 100}ms` }"
             >
                 <!-- Activity List Background -->
                 <template v-if="feature.hasActivityList" #background>
@@ -127,59 +122,41 @@ const features = [
                     </div>
                 </template>
 
-                <!-- iPhone Background -->
-                <template v-if="feature.hasIphone" #background>
+                <!-- SafarS Background -->
+                <template v-if="feature.hasSafari" #background>
                     <div
-                        class="absolute top-10 left-1/2 -translate-x-1/2 w-[200px]"
+                        class="absolute top-10 left-1/2 -translate-x-1/2 w-[300px]"
                         style="mask-image: linear-gradient(to top, transparent 40%, black 100%)"
                     >
-                        <Iphone class="w-full">
-                            <div class="flex h-full flex-col bg-background p-4">
+                        <Safari url="app.quotesync.com" class="w-full">
+                            <div class="space-y-3">
                                 <div class="mb-4 flex items-center gap-2">
-                                    <div class="h-8 w-8 rounded-lg bg-primary/20" />
+                                    <div class="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                                        <img src="/favicon.svg" alt="QuoteSync" class="h-4 w-4" />
+                                    </div>
                                     <div class="flex-1">
                                         <div class="h-3 w-24 rounded bg-muted" />
                                         <div class="mt-1 h-2 w-16 rounded bg-muted/50" />
                                     </div>
                                 </div>
-                                <div class="space-y-3">
-                                    <div class="flex gap-2">
-                                        <div class="h-12 w-12 rounded bg-muted" />
-                                        <div class="flex-1 space-y-2">
-                                            <div class="h-2 w-full rounded bg-muted" />
-                                            <div class="h-2 w-3/4 rounded bg-muted/50" />
-                                        </div>
-                                    </div>
-                                    <div class="flex gap-2">
-                                        <div class="h-12 w-12 rounded bg-muted" />
-                                        <div class="flex-1 space-y-2">
-                                            <div class="h-2 w-full rounded bg-muted" />
-                                            <div class="h-2 w-3/4 rounded bg-muted/50" />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mt-auto pt-4 border-t border-border">
-                                    <div class="flex justify-between">
-                                        <div class="h-3 w-16 rounded bg-muted" />
-                                        <div class="h-4 w-20 rounded bg-primary" />
-                                    </div>
-                                </div>
+                                <div class="h-2 w-full rounded bg-muted" />
+                                <div class="h-2 w-2/3 rounded bg-muted/50" />
                             </div>
-                        </Iphone>
+                        </Safari>
                     </div>
                 </template>
 
                 <!-- Marquee Background -->
                 <template v-if="feature.hasMarquee" #background>
                     <Marquee
-                        pause-on-hover
+                        :pause-on-hover="true"
                         class="absolute top-10 [--duration:20s]"
                         style="mask-image: linear-gradient(to top, transparent 40%, black 100%)"
                     >
                         <Card
                             v-for="(file, idx) in quoteFiles"
                             :key="idx"
-                            class="relative mx-4 w-32 cursor-pointer overflow-hidden rounded-xl border border-border bg-muted/50 p-4 transition-all duration-300 ease-out hover:bg-muted hover:scale-105"
+                            class="relative w-32 cursor-pointer overflow-hidden rounded-xl border border-border bg-muted/50 p-4 transition-all duration-300 ease-out hover:bg-muted hover:scale-105"
                         >
                             <div class="flex items-center gap-2">
                                 <FileText class="h-5 w-5 text-primary" />

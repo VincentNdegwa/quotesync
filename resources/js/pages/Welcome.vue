@@ -82,7 +82,7 @@ onUnmounted(() => {
                     <div
                         class="flex h-10 w-10 items-center justify-center rounded-lg border border-primary/20 bg-primary/10"
                     >
-                        <FileText class="h-5 w-5 text-primary" />
+                        <img src="/favicon.svg" alt="QuoteSync" class="h-5 w-5" />
                     </div>
                     <span
                         class="text-xl font-bold tracking-tight text-foreground"

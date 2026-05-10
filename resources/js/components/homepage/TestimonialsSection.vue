@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Marquee from '@/components/ui/marquee.vue';
+import { Marquee } from '@/components/ui/marquee';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -49,7 +49,7 @@ const testimonials = [
             <Card
                 v-for="(testimonial, index) in testimonials"
                 :key="index"
-                class="mx-4 w-[400px] border-border/50 bg-background p-8 shadow-sm"
+                class="w-[400px] border-border/50 bg-background p-8 shadow-sm"
             >
                 <div class="mb-6 flex gap-1">
                     <span v-for="i in 5" :key="i" class="text-primary">★</span>

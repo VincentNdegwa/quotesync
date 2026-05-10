@@ -35,14 +35,8 @@ const steps = [
                     <div
                         v-for="(step, index) in steps"
                         :key="step.num"
-                        v-motion
-                        :initial="{ opacity: 0, y: 30 }"
-                        :visible="{
-                            opacity: 1,
-                            y: 0,
-                            transition: { duration: 600, delay: index * 150 },
-                        }"
-                        class="relative text-center"
+                        class="relative text-center animate-fade-in-up"
+                        :style="{ animationDelay: `${index * 150}ms` }"
                     >
                         <div
                             class="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full border border-border bg-background text-sm font-mono font-medium text-primary shadow-lg"
