@@ -20,8 +20,10 @@ import { FileText } from 'lucide-vue-next';
                     </div>
                 </Link>
                 <p class="text-sm text-muted-foreground">
-                    2026 QuoteSync. Professional quoting made simple.
                     © 2026 QuoteSync. Professional quoting made simple.
+                </p>
+                <p class="text-sm text-muted-foreground">
+                    Powered by EpochWeave
                 </p>
             </div>
         </div>
