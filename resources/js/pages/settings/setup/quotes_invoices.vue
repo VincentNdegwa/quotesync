@@ -147,11 +147,18 @@ const _isInvoicesField = (key: string): boolean => {
     return key.startsWith('invoice_');
 };
 
+const _isCreditNotesField = (key: string): boolean => {
+    return key.startsWith('credit_note_');
+};
+
 const _quotesFields = computed(() =>
     props.currentGroup.fields.filter((f) => _isQuotesField(f.key)),
 );
 const _invoicesFields = computed(() =>
     props.currentGroup.fields.filter((f) => _isInvoicesField(f.key)),
+);
+const _creditNotesFields = computed(() =>
+    props.currentGroup.fields.filter((f) => _isCreditNotesField(f.key)),
 );
 </script>
 
@@ -582,6 +589,83 @@ const _invoicesFields = computed(() =>
                             <InputError
                                 :message="
                                     errors['settings.invoice_payment_terms']
+                                "
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Credit Notes Section -->
+            <div class="space-y-4">
+                <h3 class="flex items-center gap-2 text-lg font-semibold">
+                    <FileText class="h-5 w-5" />
+                    Credit Notes
+                </h3>
+
+                <!-- Numbering -->
+                <div class="space-y-4">
+                    <h4 class="text-sm font-medium text-muted-foreground">
+                        Numbering
+                    </h4>
+                    <div class="grid gap-4 md:grid-cols-3">
+                        <div class="space-y-2">
+                            <Label for="credit_note_prefix">Credit Note Prefix</Label>
+                            <Input
+                                id="credit_note_prefix"
+                                name="settings[credit_note_prefix]"
+                                type="text"
+                                v-model="formValues.credit_note_prefix"
+                            />
+                            <InputError
+                                :message="errors['settings.credit_note_prefix']"
+                            />
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="credit_note_number_sequence"
+                                >Starting Sequence</Label
+                            >
+                            <Input
+                                id="credit_note_number_sequence"
+                                name="settings[credit_note_number_sequence]"
+                                type="number"
+                                v-model="formValues.credit_note_number_sequence"
+                            />
+                            <InputError
+                                :message="
+                                    errors['settings.credit_note_number_sequence']
+                                "
+                            />
+                        </div>
+                        <div class="flex items-center space-y-2">
+                            <div class="flex-1">
+                                <Label for="credit_note_number_reset_yearly"
+                                    >Reset Yearly</Label
+                                >
+                                <p class="text-xs text-muted-foreground">
+                                    Reset sequence at start of year
+                                </p>
+                            </div>
+                            <Switch
+                                id="credit_note_number_reset_yearly"
+                                :model-value="
+                                    Boolean(
+                                        formValues.credit_note_number_reset_yearly,
+                                    )
+                                "
+                                @update:model-value="
+                                    (checked: boolean) =>
+                                        (formValues.credit_note_number_reset_yearly =
+                                            checked)
+                                "
+                            />
+                            <input
+                                name="settings[credit_note_number_reset_yearly]"
+                                type="hidden"
+                                :value="
+                                    formValues.credit_note_number_reset_yearly
+                                        ? '1'
+                                        : '0'
                                 "
                             />
                         </div>
