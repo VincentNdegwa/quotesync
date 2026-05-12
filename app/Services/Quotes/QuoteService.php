@@ -33,7 +33,7 @@ class QuoteService
     {
         $query = Quote::query()
             ->where('workspace_id', $workspace->id)
-            ->parents()
+            // ->parents()
             ->with(['client:id,company_name,email', 'assignee:id,name', 'winProbability.signals']);
 
         $search = trim((string) Arr::get($filters, 'search', ''));
