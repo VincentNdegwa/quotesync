@@ -9,6 +9,8 @@ import type {
     DocumentData,
     PaymentTermsBlockConfig,
     WorkspaceSettings,
+    QuoteData,
+    InvoiceData,
 } from '@/types';
 
 const props = defineProps<{
@@ -34,6 +36,42 @@ const effectiveContextText = computed(() => {
         props.config.contextText ??
         props.settings.quotes.default_payment_terms
     );
+});
+
+const quoteContext = computed(() => {
+    const data = props.data as any;
+    const context: any = {};
+
+    if (data.client) {
+        if (data.client.company_name) {
+            context.client = {
+                company_name: data.client.company_name,
+            };
+            if (data.client.email) {
+                context.client.email = data.client.email;
+            }
+        }
+    }
+
+    if (data.line_items && data.line_items.length > 0) {
+        context.line_items = data.line_items
+            .filter((item: any) => item.name)
+            .map((item: any) => ({
+                name: item.name,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+            }));
+    }
+
+    if (data.total != null) {
+        context.total = typeof data.total === 'string' ? parseFloat(data.total) : data.total;
+    }
+
+    if (data.currency) {
+        context.currency = data.currency;
+    }
+
+    return context;
 });
 
 const methodLabelMap: Record<
@@ -106,7 +144,27 @@ const updateContextText = (value: string | null): void => {
             </span>
         </div>
 
+        <div v-if="editMode" class="relative">
+            <InlineEditableText
+                :model-value="effectiveContextText"
+                :edit-mode="editMode"
+                :rows="6"
+                placeholder="Add payment instructions"
+                :empty-text="
+                    previewMode
+                        ? 'Add payment instructions in block settings.'
+                        : 'Click to add payment instructions.'
+                "
+                display-class="w-full whitespace-pre-wrap text-sm text-gray-700"
+                enable-ai-write
+                block-type="payment_terms"
+                :quote-context="quoteContext"
+                @update:model-value="updateContextText"
+            />
+        </div>
+
         <InlineEditableText
+            v-else
             :model-value="effectiveContextText"
             :edit-mode="editMode"
             :rows="6"

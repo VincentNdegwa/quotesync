@@ -107,6 +107,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('ai/quote/generate', [AiQuoteController::class, 'generate'])->name('ai.quote.generate');
         Route::post('ai/template/generate', [AiTemplateController::class, 'generate'])->name('ai.template.generate');
         Route::post('ai/writing/improve', [AiWritingController::class, 'improve'])->name('ai.writing.improve');
+        Route::get('ai/writing/write', [AiWritingController::class, 'write'])->name('ai.writing.write');
         Route::post('clients/bulk-delete', [ClientController::class, 'bulkDestroy'])->name('clients.bulk-delete');
         Route::get('clients/export/csv', [ClientController::class, 'exportCsv'])->name('clients.export.csv');
         Route::get('clients/export', [ClientExportController::class, 'export'])->name('clients.export');

@@ -72,12 +72,12 @@ const hasUnsavedChanges = computed(() => {
 });
 
 // Warn on page navigation with unsaved changes
-useEventListener(window, 'beforeunload', (e) => {
-    if (hasUnsavedChanges.value) {
-        e.preventDefault();
-        e.returnValue = '';
-    }
-});
+// useEventListener(window, 'beforeunload', (e) => {
+//     if (hasUnsavedChanges.value) {
+//         e.preventDefault();
+//         e.returnValue = '';
+//     }
+// });
 
 watch(
     () => props.modelValue,

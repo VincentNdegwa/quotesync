@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import Highlight from '@tiptap/extension-highlight';
-import Typography from '@tiptap/extension-typography';
-import StarterKit from '@tiptap/starter-kit';
-import { useEditor, EditorContent } from '@tiptap/vue-3';
-import { computed, ref, watch, onUnmounted, nextTick } from 'vue';
+import { computed, ref, watch, nextTick } from 'vue';
+import { marked } from 'marked';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import AiWritingAssistant from '@/components/AiWritingAssistant.vue';
+import TiptapEditor from '@/components/ui/tiptap-editor/TiptapEditor.vue';
 
 const props = withDefaults(
     defineProps<{
@@ -16,6 +15,9 @@ const props = withDefaults(
         placeholder?: string;
         emptyText?: string;
         displayClass?: string;
+        enableAiWrite?: boolean;
+        blockType?: 'cover_message' | 'terms' | 'notes' | 'payment_terms';
+        quoteContext?: any;
     }>(),
     {
         editMode: false,
@@ -24,6 +26,7 @@ const props = withDefaults(
         placeholder: '',
         emptyText: '',
         displayClass: '',
+        enableAiWrite: false,
     },
 );
 
@@ -34,6 +37,7 @@ const emit = defineEmits<{
 const isEditing = ref(false);
 const draft = ref('');
 const inputElRef = ref<HTMLInputElement | null>(null);
+const tiptapEditorRef = ref<{ editor: any; insertText: (text: string) => void } | null>(null);
 
 const hasValue = computed(
     () => String(props.modelValue ?? '').trim().length > 0,
@@ -49,19 +53,6 @@ watch(
     { immediate: true },
 );
 
-const editor = useEditor({
-    content: '',
-    extensions: [StarterKit, Highlight, Typography],
-    editorProps: {
-        attributes: {
-            class: 'prose prose-sm max-w-none focus:outline-none min-h-[100px] p-2',
-        },
-    },
-    onUpdate: ({ editor }) => {
-        draft.value = editor.getHTML();
-    },
-});
-
 watch(
     () => isEditing.value,
     (editing) => {
@@ -69,10 +60,9 @@ watch(
             return;
         }
 
-        if (props.multiline && editor.value?.commands) {
-            editor.value.commands.setContent(draft.value || '<p></p>');
+        if (props.multiline && tiptapEditorRef.value) {
             nextTick(() => {
-                editor.value?.commands.focus('end');
+                tiptapEditorRef.value?.editor?.commands.focus('end');
             });
         } else if (!props.multiline) {
             nextTick(() => {
@@ -95,8 +85,8 @@ const startEditing = (): void => {
 const save = (): void => {
     let content = draft.value;
 
-    if (props.multiline && editor.value) {
-        content = editor.value.getHTML();
+    if (props.multiline && tiptapEditorRef.value) {
+        content = tiptapEditorRef.value.editor?.getHTML() ?? draft.value;
     }
 
     emit('update:modelValue', content.length > 0 ? content : null);
@@ -106,6 +96,15 @@ const save = (): void => {
 const cancel = (): void => {
     draft.value = props.modelValue ?? '';
     isEditing.value = false;
+};
+
+const handleAiUpdate = (newContent: string): void => {
+    draft.value = newContent;
+    if (props.multiline && tiptapEditorRef.value) {
+        const htmlContent = marked(newContent || '');
+        tiptapEditorRef.value.editor?.commands.setContent(htmlContent || '<p></p>');
+    }
+    emit('update:modelValue', newContent || null);
 };
 
 const onKeydown = (event: KeyboardEvent): void => {
@@ -132,10 +131,6 @@ const onKeydown = (event: KeyboardEvent): void => {
         save();
     }
 };
-
-onUnmounted(() => {
-    editor.value?.destroy();
-});
 </script>
 
 <template>
@@ -152,21 +147,38 @@ onUnmounted(() => {
         </div>
 
         <div v-else class="rounded-sm border border-primary p-2">
-            <EditorContent
-                v-if="multiline"
-                :editor="editor"
-                class="w-full"
-                @keydown="onKeydown"
-            />
-            <Input
-                v-else
-                ref="inputElRef"
-                v-model="draft"
-                :placeholder="placeholder"
-                class="w-full"
-                :class="displayClass"
-                @keydown="onKeydown"
-            />
+            <div class="flex gap-2">
+                <div class="flex-1">
+                    <TiptapEditor
+                        v-if="multiline"
+                        ref="tiptapEditorRef"
+                        :model-value="draft || ''"
+                        :placeholder="placeholder"
+                        :show-toolbar="false"
+                        class="w-full"
+                        @update:model-value="(value) => draft = value"
+                        @keydown="onKeydown"
+                    />
+                    <Input
+                        v-else
+                        ref="inputElRef"
+                        v-model="draft"
+                        :placeholder="placeholder"
+                        class="w-full"
+                        :class="displayClass"
+                        @keydown="onKeydown"
+                    />
+                </div>
+                <div v-if="enableAiWrite" class="flex items-start">
+                    <AiWritingAssistant
+                        :content="draft || modelValue || ''"
+                        :on-update="handleAiUpdate"
+                        mode="write"
+                        :block-type="blockType"
+                        :quote-context="quoteContext"
+                    />
+                </div>
+            </div>
 
             <div class="mt-2 flex justify-end gap-2">
                 <Button variant="secondary" @click="cancel"> Cancel </Button>
