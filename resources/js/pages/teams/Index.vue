@@ -1,23 +1,14 @@
 <script setup lang="ts">
-import { Form, Head, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import { Head } from '@inertiajs/vue3';
+import { Mail, Users } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
-import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import type { MembersPageProps, WorkspaceRoleOption } from '@/types';
+import InvitationDataTable from './components/InvitationDataTable.vue';
+import TeamActions from './components/TeamActions.vue';
 
-defineProps<MembersPageProps>();
+const props = defineProps<MembersPageProps>();
 
 defineOptions({
     layout: {
@@ -30,29 +21,15 @@ defineOptions({
     },
 });
 
+const activeTab = ref<'members' | 'invitations'>('members');
+
 const roleDisplay = (role: WorkspaceRoleOption): string =>
     role.display_name ?? role.name;
 
-const inviteAction = '/teams/invitations';
+const pendingCount = computed(() => props.pendingInvitations.length);
 
-const deleteOpen = ref(false);
-const invitationToCancel = ref<string | null>(null);
-
-const cancelInvitation = (code: string): void => {
-    invitationToCancel.value = code;
-    deleteOpen.value = true;
-};
-
-const executeCancel = (): void => {
-    if (invitationToCancel.value) {
-        router.delete(`/teams/invitations/${invitationToCancel.value}`, {
-            preserveScroll: true,
-            onSuccess: () => {
-                deleteOpen.value = false;
-                invitationToCancel.value = null;
-            },
-        });
-    }
+const handleSuccess = (): void => {
+    // Refresh handled by Inertia
 };
 </script>
 
@@ -60,168 +37,117 @@ const executeCancel = (): void => {
     <Head title="Teams" />
 
     <div class="space-y-6">
-        <Heading
-            variant="small"
-            title="Teams"
-            :description="`Manage members and invitations for ${workspace.display_name ?? workspace.name}`"
-        />
+        <div class="flex items-start justify-between gap-4">
+            <Heading
+                title="Teams"
+                :description="`Manage members and invitations for ${workspace.display_name ?? workspace.name}`"
+            />
 
-        <Card v-if="canInvite">
-            <CardHeader>
-                <CardTitle>Invite member</CardTitle>
-                <CardDescription>
-                    Send an email invitation and assign a role for this
-                    workspace.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Form
-                    :action="inviteAction"
-                    method="post"
-                    class="grid gap-4"
-                    #default="{ errors, processing }"
-                    reset-on-success
+            <div v-if="canInvite" class="flex justify-end">
+                <TeamActions
+                    :available-roles="availableRoles"
+                    @success="handleSuccess"
+                />
+            </div>
+        </div>
+
+        <!-- Tab bar -->
+        <div
+            class="flex w-fit items-center gap-1 rounded-lg border bg-muted/30 p-1"
+        >
+            <button
+                type="button"
+                class="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors"
+                :class="
+                    activeTab === 'members'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                "
+                @click="activeTab = 'members'"
+            >
+                <Users class="h-4 w-4" />
+                Members
+                <span class="ml-1 text-xs text-muted-foreground"
+                    >({{ members.length }})</span
                 >
-                    <div class="grid gap-2">
-                        <Label for="invite-email" required>Email</Label>
-                        <Input
-                            id="invite-email"
-                            name="email"
-                            type="email"
-                            required
-                            placeholder="member@example.com"
-                        />
-                        <InputError :message="errors.email" />
-                    </div>
+            </button>
+            <button
+                type="button"
+                class="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors"
+                :class="
+                    activeTab === 'invitations'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                "
+                @click="activeTab = 'invitations'"
+            >
+                <Mail class="h-4 w-4" />
+                Invitations
+                <span
+                    v-if="pendingCount > 0"
+                    class="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground"
+                >
+                    {{ pendingCount }}
+                </span>
+            </button>
+        </div>
 
-                    <div class="grid gap-2">
-                        <Label for="invite-role" required>Role</Label>
-                        <select
-                            id="invite-role"
-                            name="role_id"
-                            class="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                            required
-                        >
-                            <option value="" disabled selected>
-                                Select a role
-                            </option>
-                            <option
-                                v-for="role in availableRoles"
-                                :key="role.id"
-                                :value="role.id"
+        <!-- ── MEMBERS TAB ──────────────────────────────────────────── -->
+        <template v-if="activeTab === 'members'">
+            <div
+                v-if="members.length === 0"
+                class="rounded-xl border border-dashed py-16 text-center"
+            >
+                <Users
+                    class="mx-auto mb-3 h-10 w-10 text-muted-foreground/30"
+                />
+                <p class="font-medium text-foreground">No members found</p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    Members with access to this workspace will appear here.
+                </p>
+            </div>
+
+            <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div
+                    v-for="member in members"
+                    :key="member.id"
+                    class="group rounded-xl border bg-card p-4 transition-shadow hover:shadow-sm"
+                >
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate font-semibold text-foreground">
+                                {{ member.name }}
+                            </p>
+                            <p
+                                class="truncate text-sm text-muted-foreground"
                             >
-                                {{ roleDisplay(role) }}
-                            </option>
-                        </select>
-                        <InputError :message="errors.role_id" />
-                    </div>
-
-                    <div>
-                        <Button :disabled="processing" type="submit">
-                            Send invitation
-                        </Button>
-                    </div>
-                </Form>
-            </CardContent>
-        </Card>
-
-        <Card>
-            <CardHeader>
-                <CardTitle>Members</CardTitle>
-                <CardDescription>
-                    People who currently have access to this workspace.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div
-                    v-if="members.length === 0"
-                    class="text-sm text-muted-foreground"
-                >
-                    No members found.
-                </div>
-                <div v-else class="space-y-3">
-                    <div
-                        v-for="member in members"
-                        :key="member.id"
-                        class="rounded-md border p-3"
-                    >
-                        <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <p class="font-medium">{{ member.name }}</p>
-                                <p class="text-sm text-muted-foreground">
-                                    {{ member.email }}
-                                </p>
-                            </div>
-                            <div class="flex flex-wrap justify-end gap-1">
-                                <Badge
-                                    v-for="role in member.roles"
-                                    :key="`${member.id}-${role.id}`"
-                                    variant="secondary"
-                                >
-                                    {{ roleDisplay(role) }}
-                                </Badge>
-                            </div>
+                                {{ member.email }}
+                            </p>
                         </div>
                     </div>
-                </div>
-            </CardContent>
-        </Card>
-
-        <Card>
-            <CardHeader>
-                <CardTitle>Pending invitations</CardTitle>
-                <CardDescription>
-                    Invitations sent but not accepted yet.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div
-                    v-if="pendingInvitations.length === 0"
-                    class="text-sm text-muted-foreground"
-                >
-                    No pending invitations.
-                </div>
-                <div v-else class="space-y-3">
                     <div
-                        v-for="invitation in pendingInvitations"
-                        :key="invitation.id"
-                        class="rounded-md border p-3"
+                        v-if="member.roles.length > 0"
+                        class="mt-3 flex flex-wrap gap-1"
                     >
-                        <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <p class="font-medium">
-                                    {{ invitation.email }}
-                                </p>
-                                <p class="text-sm text-muted-foreground">
-                                    Invited by
-                                    {{ invitation.invited_by ?? 'Unknown' }}
-                                </p>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <Badge variant="outline">
-                                    {{ invitation.role_name ?? 'No role' }}
-                                </Badge>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    @click="cancelInvitation(invitation.code)"
-                                >
-                                    Cancel
-                                </Button>
-                            </div>
-                        </div>
+                        <Badge
+                            v-for="role in member.roles"
+                            :key="`${member.id}-${role.id}`"
+                            variant="secondary"
+                            class="text-xs"
+                        >
+                            {{ roleDisplay(role) }}
+                        </Badge>
                     </div>
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </template>
 
-        <ConfirmDialog
-            v-model:open="deleteOpen"
-            title="Cancel invitation"
-            description="Are you sure you want to cancel this invitation? This action cannot be undone."
-            confirm-text="Cancel invitation"
-            variant="destructive"
-            @confirm="executeCancel"
-        />
+        <!-- ── INVITATIONS TAB ──────────────────────────────────────────── -->
+        <template v-if="activeTab === 'invitations'">
+            <InvitationDataTable
+                :data="pendingInvitations"
+                @success="handleSuccess"
+            />
+        </template>
     </div>
 </template>
