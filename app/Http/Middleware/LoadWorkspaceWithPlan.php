@@ -33,7 +33,6 @@ class LoadWorkspaceWithPlan
             return $next($request);
         }
 
-        // Append workspace to request attributes for use in controllers and form requests
         $request->attributes->set('workspace', $workspace);
         $request->attributes->set('workspace_plan', $this->planCache->getPlan($workspace));
         $request->attributes->set('workspace_plan_features', $this->planCache->getPlanFeatures($workspace));

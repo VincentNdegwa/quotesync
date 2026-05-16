@@ -10,6 +10,16 @@ use Inertia\Inertia;
 
 class SubscriptionController extends Controller
 {
+    public function plans()
+    {
+        $workspace = Auth::user()->currentWorkspace;
+
+        return Inertia::render('billing/Plans', [
+            'workspace' => $workspace,
+            'plans' => Plan::active()->ordered()->get(),
+        ]);
+    }
+
     public function subscribe(Request $request, string $planSlug)
     {
         $workspace = Auth::user()->currentWorkspace;
@@ -26,14 +36,23 @@ class SubscriptionController extends Controller
             return redirect()->back();
         }
 
-        $checkout = $workspace->subscribe($plan->paddle_monthly_price_id, 'default')
-            ->returnTo(route('dashboard'))
-            ->customData(['workspace_id' => $workspace->id]);
+        try {
+            $checkout = $workspace->subscribe($plan->paddle_monthly_price_id, 'default')
+                ->returnTo(route('dashboard', ['checkout_success' => true]))
+                ->customData(['workspace_id' => $workspace->id, 'plan_id' => $plan->id]);
 
-        return Inertia::render('billing/Subscribe', [
-            'plan' => $plan,
-            'checkout' => $checkout,
-        ]);
+            return Inertia::render('billing/Subscribe', [
+                'plan' => $plan,
+                'checkout' => $checkout,
+            ]);
+        } catch (\Laravel\Paddle\Exceptions\PaddleException $e) {
+            \Inertia\Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('Payment processing is not configured. Please contact support.'),
+            ]);
+
+            return redirect()->back();
+        }
     }
 
     public function show(Request $request)
@@ -54,7 +73,7 @@ class SubscriptionController extends Controller
                 'max_invoices_per_month' => $features['max_invoices_per_month'] ?? null,
                 'ai_credits_per_month' => $features['ai_credits_per_month'] ?? null,
             ],
-            'plans' => Plan::active()->ordered()->get(),
+            'paymentMethod' => null,
         ]);
     }
 

@@ -258,3 +258,5 @@ Route::middleware(['auth'])->group(function () {
 require __DIR__.'/settings.php';
 require __DIR__.'/billing.php';
 
+Route::post('paddle/webhook', \App\Http\Controllers\Webhook\PaddleWebhookController::class)->name('cashier.webhook');
+

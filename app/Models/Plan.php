@@ -11,16 +11,24 @@ class Plan extends Model
 {
     use HasFactory;
 
-    protected static function booted(): void
+    protected static function booted()
     {
         static::updated(function (Plan $plan) {
             if ($plan->isDirty('features')) {
-                app(WorkspacePlanCache::class)->invalidateAll();
+                // Invalidate cache for workspaces with this plan
+                $workspaces = \App\Models\Workspace::where('plan_id', $plan->id)->get();
+                foreach ($workspaces as $workspace) {
+                    app(WorkspacePlanCache::class)->invalidate($workspace);
+                }
             }
         });
 
         static::deleted(function (Plan $plan) {
-            app(WorkspacePlanCache::class)->invalidateAll();
+            // Invalidate cache for workspaces with this plan
+            $workspaces = \App\Models\Workspace::where('plan_id', $plan->id)->get();
+            foreach ($workspaces as $workspace) {
+                app(WorkspacePlanCache::class)->invalidate($workspace);
+            }
         });
     }
 

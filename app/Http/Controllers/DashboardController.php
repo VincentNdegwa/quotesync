@@ -35,6 +35,13 @@ class DashboardController extends Controller
 
         abort_unless($workspace instanceof Workspace, 404);
 
+        if ($request->has('checkout_success')) {
+            \Inertia\Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('Subscription created successfully! Welcome to your new plan.'),
+            ]);
+        }
+
         $this->workspace = $workspace;
 
         return Inertia::render('Dashboard', [

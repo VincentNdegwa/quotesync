@@ -9,6 +9,9 @@ Route::middleware(['auth', 'verified', EnsureWorkspaceSettingsOnboarded::class])
         Route::get('/', [SubscriptionController::class, 'show'])
             ->name('billing.index');
 
+        Route::get('/subscribe', [SubscriptionController::class, 'plans'])
+            ->name('billing.plans');
+
         Route::get('/subscribe/{plan}', [SubscriptionController::class, 'subscribe'])
             ->name('billing.subscribe');
 

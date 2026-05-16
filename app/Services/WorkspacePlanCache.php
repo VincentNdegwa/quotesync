@@ -70,11 +70,6 @@ class WorkspacePlanCache
         Cache::forget($this->getCacheKey($workspace->id, 'features'));
     }
 
-    public function invalidateAll(): void
-    {
-        Cache::forgetMatching($this->getCacheKey('*', '*'));
-    }
-
     private function getCacheKey(int $workspaceId, string $type): string
     {
         return self::CACHE_PREFIX.$workspaceId.':'.$type;
