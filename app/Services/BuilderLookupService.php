@@ -8,13 +8,14 @@ use App\Models\ConfigurationUnit;
 use App\Models\QuoteTemplate;
 use App\Models\Tax;
 use App\Models\Workspace;
+use Illuminate\Database\Eloquent\Collection;
 
 class BuilderLookupService
 {
     /**
      * Get catalog items for builder
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection
      */
     public function getCatalogItems(Workspace $workspace)
     {
@@ -30,7 +31,7 @@ class BuilderLookupService
     /**
      * Get taxes for builder
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection
      */
     public function getTaxes(Workspace $workspace)
     {
@@ -45,7 +46,7 @@ class BuilderLookupService
     /**
      * Get configuration units for builder
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection
      */
     public function getUnits(Workspace $workspace)
     {
@@ -59,7 +60,7 @@ class BuilderLookupService
     /**
      * Get clients for quote builder
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection
      */
     public function getClients(Workspace $workspace)
     {
@@ -72,7 +73,7 @@ class BuilderLookupService
     /**
      * Get quote templates for builder
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection
      */
     public function getQuoteTemplates(Workspace $workspace)
     {

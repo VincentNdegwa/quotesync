@@ -21,6 +21,7 @@ class PaymentReminderMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         $invoice = $this->reminder->invoice;
+
         return new Envelope(
             subject: "Payment Reminder: Invoice #{$invoice->number}",
         );

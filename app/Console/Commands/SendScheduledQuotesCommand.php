@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\QuoteStatus;
 use App\Models\Quote;
-use App\Models\Workspace;
+use App\Models\QuoteActivity;
 use App\Services\Quotes\QuoteSendingService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 class SendScheduledQuotesCommand extends Command
 {
     protected $signature = 'quotes:send-scheduled';
+
     protected $description = 'Send quotes that are scheduled to be sent';
 
     public function __construct(
@@ -33,6 +34,7 @@ class SendScheduledQuotesCommand extends Command
 
         if ($scheduledQuotes->isEmpty()) {
             $this->info('No scheduled quotes to send.');
+
             return self::SUCCESS;
         }
 
@@ -64,7 +66,7 @@ class SendScheduledQuotesCommand extends Command
                 ])->save();
 
                 // Log activity
-                \App\Models\QuoteActivity::query()->create([
+                QuoteActivity::query()->create([
                     'quote_id' => $quote->id,
                     'workspace_id' => $quote->workspace_id,
                     'user_id' => null,
@@ -91,6 +93,7 @@ class SendScheduledQuotesCommand extends Command
         }
 
         $this->info('Scheduled quotes processing completed.');
+
         return self::SUCCESS;
     }
 }

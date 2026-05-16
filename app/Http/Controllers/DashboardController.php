@@ -375,7 +375,7 @@ class DashboardController extends Controller
         $userId = $request->user()?->id;
         $isOwner = $this->workspace->owner_id === $userId;
 
-        if (!$isOwner && !$userId) {
+        if (! $isOwner && ! $userId) {
             return null;
         }
 
@@ -390,7 +390,7 @@ class DashboardController extends Controller
             ->whereBetween('sent_at', [$start, $end]);
 
         // If not owner, only show current user's stats
-        if (!$isOwner) {
+        if (! $isOwner) {
             $query->where('created_by', $userId);
         }
 

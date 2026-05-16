@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\InvoiceStatus;
 use App\Enums\QuoteFollowUpStatus;
 use App\Enums\QuoteStatus;
 use App\Http\Requests\Quotes\QuoteBulkActionRequest;
@@ -10,14 +11,14 @@ use App\Http\Requests\Quotes\UpdateQuoteRequest;
 use App\Http\Requests\Quotes\UpdateQuoteStatusRequest;
 use App\Jobs\SendFollowUpJob;
 use App\Models\Invoice;
-use App\Enums\InvoiceStatus;
 use App\Models\Quote;
 use App\Models\QuoteFollowUp;
 use App\Models\QuoteTemplate;
+use App\Models\TaskStatus;
 use App\Models\User;
 use App\Models\Workspace;
-use App\Services\Quotes\QuoteAnalyticsService;
 use App\Services\BuilderLookupService;
+use App\Services\Quotes\QuoteAnalyticsService;
 use App\Services\Quotes\QuoteService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\JsonResponse;
@@ -31,7 +32,7 @@ class QuoteController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request, QuoteService $quoteService, WorkspaceSettingsService $workspaceSettingsService): Response | JsonResponse
+    public function index(Request $request, QuoteService $quoteService, WorkspaceSettingsService $workspaceSettingsService): Response|JsonResponse
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -162,7 +163,7 @@ class QuoteController extends Controller
             'tasks.status',
         ]);
 
-        $taskStatuses = \App\Models\TaskStatus::where('workspace_id', $workspace->id)
+        $taskStatuses = TaskStatus::where('workspace_id', $workspace->id)
             ->orderBy('sort_order')
             ->get(['id', 'name', 'slug', 'color', 'sort_order']);
 
@@ -321,7 +322,7 @@ class QuoteController extends Controller
             $message = trans_choice(':count quote processed.|:count quotes processed.', $processed, ['count' => $processed]);
 
             if ($skipped > 0) {
-                $message .= ' ' . trans_choice(':count quote skipped due to status restrictions.|:count quotes skipped due to status restrictions.', $skipped, ['count' => $skipped]);
+                $message .= ' '.trans_choice(':count quote skipped due to status restrictions.|:count quotes skipped due to status restrictions.', $skipped, ['count' => $skipped]);
             }
         } elseif ($skipped > 0) {
             $message = trans_choice('All selected quotes were skipped (:count affected).|All selected quotes were skipped (:count affected).', $skipped, ['count' => $skipped]);

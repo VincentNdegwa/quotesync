@@ -48,17 +48,17 @@ return new class extends Migration
 
     private function convertWorkspacePathsToUrls(): void
     {
-        \DB::table('workspaces')->whereNotNull('logo_url')->get()->each(function ($workspace) {
-            if (!str_starts_with($workspace->logo_url, 'http')) {
-                \DB::table('workspaces')
+        DB::table('workspaces')->whereNotNull('logo_url')->get()->each(function ($workspace) {
+            if (! str_starts_with($workspace->logo_url, 'http')) {
+                DB::table('workspaces')
                     ->where('id', $workspace->id)
                     ->update(['logo_url' => Storage::url($workspace->logo_url)]);
             }
         });
 
-        \DB::table('workspaces')->whereNotNull('favicon_url')->get()->each(function ($workspace) {
-            if (!str_starts_with($workspace->favicon_url, 'http')) {
-                \DB::table('workspaces')
+        DB::table('workspaces')->whereNotNull('favicon_url')->get()->each(function ($workspace) {
+            if (! str_starts_with($workspace->favicon_url, 'http')) {
+                DB::table('workspaces')
                     ->where('id', $workspace->id)
                     ->update(['favicon_url' => Storage::url($workspace->favicon_url)]);
             }
@@ -67,9 +67,9 @@ return new class extends Migration
 
     private function convertCatalogItemPathsToUrls(): void
     {
-        \DB::table('catalog_items')->whereNotNull('image_url')->get()->each(function ($item) {
-            if (!str_starts_with($item->image_url, 'http')) {
-                \DB::table('catalog_items')
+        DB::table('catalog_items')->whereNotNull('image_url')->get()->each(function ($item) {
+            if (! str_starts_with($item->image_url, 'http')) {
+                DB::table('catalog_items')
                     ->where('id', $item->id)
                     ->update(['image_url' => Storage::url($item->image_url)]);
             }
@@ -78,17 +78,17 @@ return new class extends Migration
 
     private function convertQuotePathsToUrls(): void
     {
-        \DB::table('quotes')->whereNotNull('signature_url')->get()->each(function ($quote) {
-            if (!str_starts_with($quote->signature_url, 'http')) {
-                \DB::table('quotes')
+        DB::table('quotes')->whereNotNull('signature_url')->get()->each(function ($quote) {
+            if (! str_starts_with($quote->signature_url, 'http')) {
+                DB::table('quotes')
                     ->where('id', $quote->id)
                     ->update(['signature_url' => Storage::url($quote->signature_url)]);
             }
         });
 
-        \DB::table('quotes')->whereNotNull('pdf_url')->get()->each(function ($quote) {
-            if (!str_starts_with($quote->pdf_url, 'http')) {
-                \DB::table('quotes')
+        DB::table('quotes')->whereNotNull('pdf_url')->get()->each(function ($quote) {
+            if (! str_starts_with($quote->pdf_url, 'http')) {
+                DB::table('quotes')
                     ->where('id', $quote->id)
                     ->update(['pdf_url' => Storage::url($quote->pdf_url)]);
             }

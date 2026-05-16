@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasTable('recurring_invoices')) {
+        if (! Schema::hasTable('recurring_invoices')) {
             Schema::create('recurring_invoices', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('workspace_id')->constrained()->onDelete('cascade');
@@ -26,7 +26,7 @@ return new class extends Migration
                 $table->string('currency', 3)->default('USD');
                 $table->text('notes')->nullable();
                 $table->timestamps();
-                
+
                 $table->index(['workspace_id', 'status']);
                 $table->index(['next_invoice_date']);
             });

@@ -19,10 +19,10 @@ use App\Models\PortalInvitation;
 use App\Models\Workspace;
 use App\Services\ApprovalService;
 use App\Services\WhiteLabelService;
+use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Auth;
-use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -84,7 +84,7 @@ class HandleInertiaRequests extends Middleware
             'brand' => config('app.brand'),
             'whiteLabel' => $whiteLabel,
             'workspace_currency' => $this->getWorkspaceCurrency($workspace),
-            'pending_approvals_count' => $user && $workspace && !$isPortalUser ? $this->approvalService->count($workspace, $user) : 0,
+            'pending_approvals_count' => $user && $workspace && ! $isPortalUser ? $this->approvalService->count($workspace, $user) : 0,
             'localization' => $workspace ? $this->getLocalizationSettings($workspace) : null,
             'auth' => [
                 'user' => $user,
@@ -104,6 +104,7 @@ class HandleInertiaRequests extends Middleware
     private function getAuthenticatedUser(Request $request): mixed
     {
         $portalUser = Auth::guard('portal')->user();
+
         return $portalUser ?? $request->user();
     }
 
@@ -114,6 +115,11 @@ class HandleInertiaRequests extends Middleware
     {
         if (! $user) {
             return null;
+        }
+
+        $workspaceFromAttribute = $request->attributes->get('workspace');
+        if ($workspaceFromAttribute) {
+            return $workspaceFromAttribute;
         }
 
         $isPortalUser = Auth::guard('portal')->user() !== null;
@@ -150,10 +156,21 @@ class HandleInertiaRequests extends Middleware
             return null;
         }
 
+        $request = request();
+        $plan = $request->attributes->get('workspace_plan');
+        $features = $request->attributes->get('workspace_plan_features', []);
+
         return [
             'id' => $workspace->id,
             'name' => $workspace->name,
             'display_name' => $workspace->display_name,
+            'plan' => $plan ? [
+                'id' => $plan->id,
+                'name' => $plan->name,
+                'slug' => $plan->slug,
+                'features' => $features,
+                'monthly_price' => $plan->monthly_price,
+            ] : null,
         ];
     }
 

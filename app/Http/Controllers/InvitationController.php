@@ -6,6 +6,7 @@ use App\Http\Requests\Invitations\CreateInvitationRequest;
 use App\Models\Invitation;
 use App\Models\User;
 use App\Services\Invitations\InvitationService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -42,7 +43,7 @@ class InvitationController extends Controller
 
         try {
             $invitationService->cancel($invitation, $request->user());
-        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+        } catch (AuthorizationException $e) {
             abort(403);
         }
 

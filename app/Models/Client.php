@@ -9,11 +9,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
-
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'workspace_id',
@@ -115,6 +114,7 @@ class Client extends Model
         if ($quotes->isEmpty()) {
             $this->health_score = 50; // Default score for new clients
             $this->save();
+
             return;
         }
 
@@ -131,6 +131,7 @@ class Client extends Model
             $totalDays = $closedQuotes->sum(function ($quote) {
                 $closedAt = $quote->accepted_at ?? $quote->declined_at;
                 $createdAt = $quote->created_at;
+
                 return $closedAt ? $closedAt->diffInDays($createdAt) : 0;
             });
             $avgTimeToClose = $totalDays / $closedQuotes->count();

@@ -12,16 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('credit_notes', function (Blueprint $table) {
-            if (!Schema::hasColumn('credit_notes', 'type')) {
+            if (! Schema::hasColumn('credit_notes', 'type')) {
                 $table->string('type')->after('title')->default('partial');
             }
-            if (!Schema::hasColumn('credit_notes', 'fx_rate')) {
+            if (! Schema::hasColumn('credit_notes', 'fx_rate')) {
                 $table->decimal('fx_rate', 15, 6)->default(1)->after('pdf_url');
             }
-            if (!Schema::hasColumn('credit_notes', 'base_amount')) {
+            if (! Schema::hasColumn('credit_notes', 'base_amount')) {
                 $table->decimal('base_amount', 15, 2)->nullable()->after('fx_rate');
             }
-            if (!Schema::hasColumn('credit_notes', 'base_total')) {
+            if (! Schema::hasColumn('credit_notes', 'base_total')) {
                 $table->decimal('base_total', 15, 2)->nullable()->after('base_amount');
             }
         });

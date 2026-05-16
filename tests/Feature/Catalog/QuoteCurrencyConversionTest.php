@@ -18,12 +18,12 @@ beforeEach(function () {
         'owner_id' => $this->user->id,
         'currency' => 'GBP',
     ]);
-    
+
     $this->client = Client::factory()->create([
         'workspace_id' => $this->workspace->id,
         'created_by' => $this->user->id,
     ]);
-    
+
     // Create an inclusive tax
     $this->inclusiveTax = Tax::factory()->create([
         'workspace_id' => $this->workspace->id,
@@ -45,11 +45,11 @@ beforeEach(function () {
 
 test('it correctly calculates quote with currency conversion, multiple taxes, and discount', function () {
     $quoteService = app(QuoteService::class);
-    
+
     // Scenario: Workspace in GBP, Quote in KES with fx_rate 174.75
     // Item: 200 GBP, 10% discount
     // Taxes: 10% inclusive (GST), 10% exclusive (VAT)
-    
+
     $payload = [
         'title' => 'Test Quote Currency Conversion',
         'client_id' => $this->client->id,
@@ -90,14 +90,14 @@ test('it correctly calculates quote with currency conversion, multiple taxes, an
     ];
 
     $quote = $quoteService->create($this->workspace, $payload);
-    
+
     expect($quote)->not->toBeNull();
     expect($quote->currency)->toBe('KES');
     expect($quote->base_currency)->toBe('GBP');
     expect((float) $quote->fx_rate)->toBe(174.75);
-    
+
     $lineItem = $quote->sections->first()->lineItems->first();
-    
+
     // Expected calculations in GBP (base currency):
     // unit_price: 200 GBP
     // discount: 10% = 20 GBP
@@ -152,7 +152,7 @@ test('it correctly calculates quote with currency conversion, multiple taxes, an
 
 test('it correctly updates quote with currency conversion and taxes', function () {
     $quoteService = app(QuoteService::class);
-    
+
     // Create initial quote
     $createPayload = [
         'title' => 'Test Quote',
@@ -186,7 +186,7 @@ test('it correctly updates quote with currency conversion and taxes', function (
     ];
 
     $quote = $quoteService->create($this->workspace, $createPayload);
-    
+
     // Update with different values
     $updatePayload = [
         'title' => 'Updated Quote',
@@ -224,7 +224,7 @@ test('it correctly updates quote with currency conversion and taxes', function (
 
     $quote->refresh();
     $lineItem = $quote->sections->first()->lineItems->first();
-    
+
     // Expected:
     // quantity: 2, unit_price: 200, discount: 10%
     // after discount: 200 * 2 * 0.9 = 360 GBP
@@ -269,7 +269,7 @@ test('it correctly updates quote with currency conversion and taxes', function (
 
 test('it correctly handles quote without currency conversion (same currency)', function () {
     $quoteService = app(QuoteService::class);
-    
+
     $payload = [
         'title' => 'Test Quote Same Currency',
         'client_id' => $this->client->id,
@@ -308,9 +308,9 @@ test('it correctly handles quote without currency conversion (same currency)', f
     ];
 
     $quote = $quoteService->create($this->workspace, $payload);
-    
+
     $lineItem = $quote->sections->first()->lineItems->first();
-    
+
     // When currencies are the same (fx_rate = 1.0), base_* and normal fields should be equal
     // Expected calculations in GBP:
     // unit_price: 200 GBP
@@ -339,7 +339,7 @@ test('it correctly handles quote without currency conversion (same currency)', f
 
 test('it correctly calculates base_tax_amount as sum of tax base_tax_amounts', function () {
     $quoteService = app(QuoteService::class);
-    
+
     $payload = [
         'title' => 'Test Quote Base Tax Amount',
         'client_id' => $this->client->id,
@@ -378,7 +378,7 @@ test('it correctly calculates base_tax_amount as sum of tax base_tax_amounts', f
     ];
 
     $quote = $quoteService->create($this->workspace, $payload);
-    
+
     $lineItem = $quote->sections->first()->lineItems->first();
 
     // Expected calculations in GBP (base currency):
@@ -402,7 +402,7 @@ test('it correctly calculates base_tax_amount as sum of tax base_tax_amounts', f
 
 test('it correctly sets line item base_* fields with currency conversion', function () {
     $quoteService = app(QuoteService::class);
-    
+
     $payload = [
         'title' => 'Test Quote Line Item Base Fields',
         'client_id' => $this->client->id,
@@ -437,9 +437,9 @@ test('it correctly sets line item base_* fields with currency conversion', funct
     ];
 
     $quote = $quoteService->create($this->workspace, $payload);
-    
+
     $lineItem = $quote->sections->first()->lineItems->first();
-    
+
     // Expected calculations in GBP (base currency):
     // unit_price: 200 GBP
     // discount: 10% = 20 GBP
@@ -447,18 +447,18 @@ test('it correctly sets line item base_* fields with currency conversion', funct
     // VAT (exclusive 10%): 180 * 10 / 100 = 18 GBP
     // subtotal: 180 GBP
     // total: 180 + 18 = 198 GBP
-    
+
     // Base fields should be in GBP (base currency)
     expect((float) $lineItem->base_unit_price)->toBe(200.00);
     expect((float) $lineItem->base_subtotal)->toBe(180.00);
     expect((float) $lineItem->base_total)->toBe(198.00);
     expect((float) $lineItem->base_tax_amount)->toBe(18.00);
-    
+
     // Normal fields should be in KES (quote currency) = base * fx_rate
     expect((float) $lineItem->unit_price)->toBe(20000.00); // 200 * 100
     expect((float) $lineItem->subtotal)->toBe(18000.00); // 180 * 100
     expect((float) $lineItem->total)->toBe(19800.00); // 198 * 100
-    
+
     // Tax entries should also have base_tax_amount in GBP and tax_amount in KES
     $taxEntry = $lineItem->taxes->first();
     expect((float) $taxEntry->base_tax_amount)->toBe(18.00); // in GBP

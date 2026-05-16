@@ -2,16 +2,31 @@
 
 namespace App\Models;
 
+use App\Services\WorkspacePlanCache;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notification;
 use Laratrust\Models\Team as LaratrustTeam;
+use Laravel\Paddle\Billable;
 
 class Workspace extends LaratrustTeam
 {
-    use HasFactory;
+    use Billable, HasFactory;
+
+    protected static function booted(): void
+    {
+        static::updated(function (Workspace $workspace) {
+            if ($workspace->isDirty('plan_id')) {
+                app(WorkspacePlanCache::class)->invalidate($workspace);
+            }
+        });
+
+        static::deleted(function (Workspace $workspace) {
+            app(WorkspacePlanCache::class)->invalidate($workspace);
+        });
+    }
 
     protected $fillable = [
         'name',
@@ -33,6 +48,7 @@ class Workspace extends LaratrustTeam
         'white_label_mode',
         'favicon_url',
         'custom_domain',
+        'plan_id',
     ];
 
     /**
@@ -43,6 +59,16 @@ class Workspace extends LaratrustTeam
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    /**
+     * The billing plan for this workspace.
+     *
+     * @return BelongsTo<Plan, $this>
+     */
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class, 'plan_id');
     }
 
     /**
@@ -95,6 +121,75 @@ class Workspace extends LaratrustTeam
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    /**
+     * Get usage tracking records for this workspace.
+     *
+     * @return HasMany<WorkspaceUsage, $this>
+     */
+    public function usage(): HasMany
+    {
+        return $this->hasMany(WorkspaceUsage::class);
+    }
+
+    /**
+     * Get or create current month's usage record.
+     */
+    public function currentUsage(): WorkspaceUsage
+    {
+        $period = now()->startOfMonth()->format('Y-m-d H:i:s');
+        
+        $usage = WorkspaceUsage::where('workspace_id', $this->id)
+            ->where('period', $period)
+            ->first();
+
+        if (!$usage) {
+            $usage = WorkspaceUsage::create([
+                'workspace_id' => $this->id,
+                'period' => $period,
+                'quotes_sent' => 0,
+                'invoices_sent' => 0,
+                'ai_credits_used' => 0,
+            ]);
+        }
+
+        return $usage;
+    }
+
+    /**
+     * Increment quote count for current month.
+     */
+    public function incrementQuoteCount(): void
+    {
+        $usage = $this->currentUsage();
+        $usage->increment('quotes_sent');
+    }
+
+    /**
+     * Increment invoice count for current month.
+     */
+    public function incrementInvoiceCount(): void
+    {
+        $usage = $this->currentUsage();
+        $usage->increment('invoices_sent');
+    }
+
+    /**
+     * Increment AI credit usage for current month.
+     */
+    public function incrementAiCreditUsage(): void
+    {
+        $usage = $this->currentUsage();
+        $usage->increment('ai_credits_used');
+    }
+
+    /**
+     * Check if workspace is on Free plan.
+     */
+    public function isOnFreePlan(): bool
+    {
+        return $this->plan_id === null || $this->plan->slug === 'free';
     }
 
     /**

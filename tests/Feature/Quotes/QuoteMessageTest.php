@@ -307,4 +307,3 @@ it('can scope messages to be visible to portal', function () {
     expect($visibleMessages)->toHaveCount(1)
         ->and($visibleMessages->first()->is_internal)->toBe(false);
 });
-

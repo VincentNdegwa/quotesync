@@ -7,6 +7,7 @@ use App\Models\TaskStatus;
 use App\Models\Workspace;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class TaskStatusController extends Controller
@@ -17,7 +18,7 @@ class TaskStatusController extends Controller
 
         abort_unless($workspace instanceof Workspace, 404);
 
-        $slug = \Illuminate\Support\Str::slug($request->input('name'));
+        $slug = Str::slug($request->input('name'));
 
         $maxStatus = TaskStatus::where('workspace_id', $workspace->id)
             ->orderByDesc('sort_order')

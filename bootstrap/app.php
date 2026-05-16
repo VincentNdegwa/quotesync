@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\LoadWorkspaceWithPlan;
 use App\Http\Middleware\RedirectIfPortalAuthenticated;
 use App\Http\Middleware\RedirectIfPortalGuest;
 use App\Http\Middleware\SetPortalWorkspaceContext;
@@ -12,6 +13,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -34,6 +36,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
+        $middleware->preventRequestForgery(except: [
+            'paddle/*',
+        ]);
+
         $middleware->alias([
             'portal.guest' => RedirectIfPortalGuest::class,
             'portal.auth' => RedirectIfPortalAuthenticated::class,
@@ -41,11 +47,46 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->web(append: [
+            LoadWorkspaceWithPlan::class,
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (Throwable $e, Request $request) {
+            if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
+                if ($request->header('X-Inertia') === 'true') {
+                    \Inertia\Inertia::flash('toast', [
+                        'type' => 'error',
+                        'message' => __('The requested resource was not found.'),
+                    ]);
+
+                    return back();
+                }
+
+                if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'message' => __('The requested resource was not found.'),
+                    ], 404);
+                }
+            }
+
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
+                if ($request->header('X-Inertia') === 'true') {
+                    \Inertia\Inertia::flash('toast', [
+                        'type' => 'error',
+                        'message' => __('The requested page was not found.'),
+                    ]);
+
+                    return back();
+                }
+
+                if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'message' => __('The requested page was not found.'),
+                    ], 404);
+                }
+            }
+        });
     })->create();

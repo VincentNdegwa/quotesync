@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('status')->default('pending'); // pending, sent, failed
             $table->text('error_message')->nullable();
             $table->timestamps();
-            
+
             $table->index(['invoice_id', 'reminder_type']);
             $table->index(['scheduled_at', 'status']);
         });

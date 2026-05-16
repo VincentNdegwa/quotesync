@@ -4,6 +4,7 @@ import {
     BarChart3,
     Building2,
     CheckSquare2,
+    CreditCard,
     FileMinus,
     FileText,
     LayoutGrid,
@@ -104,6 +105,11 @@ const footerNavItems: NavItem[] = [
         title: 'Teams',
         href: '/teams',
         icon: Users,
+    },
+    {
+        title: 'Billing',
+        href: '/billing',
+        icon: CreditCard,
     },
 ];
 </script>

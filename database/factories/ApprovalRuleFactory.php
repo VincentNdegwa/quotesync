@@ -8,7 +8,7 @@ use App\Models\Workspace;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<ApprovalRule>
+ * @extends Factory<ApprovalRule>
  */
 class ApprovalRuleFactory extends Factory
 {

@@ -4,10 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Comments\StoreCommentRequest;
 use App\Models\Comment;
-use App\Models\Quote;
 use App\Models\Invoice;
-use App\Models\Workspace;
+use App\Models\Quote;
 use App\Models\User;
+use App\Models\Workspace;
+use App\Notifications\MentionedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -72,7 +73,7 @@ class CommentController extends Controller
                 ->get();
 
             foreach ($mentionedUsers as $mentionedUser) {
-                $mentionedUser->notify(new \App\Notifications\MentionedNotification($comment, $commentable));
+                $mentionedUser->notify(new MentionedNotification($comment, $commentable));
             }
         }
 

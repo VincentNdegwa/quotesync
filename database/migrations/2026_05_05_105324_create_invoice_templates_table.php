@@ -26,7 +26,7 @@ return new class extends Migration
             $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
             $table->text('layout')->nullable();
             $table->timestamps();
-            
+
             $table->index(['workspace_id', 'is_active']);
         });
     }

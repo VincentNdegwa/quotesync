@@ -25,8 +25,9 @@ class SendInvoiceReminderJob implements ShouldQueue
         $step = $this->reminder->step;
         $client = $invoice->client;
 
-        if (!$invoice || !$step || !$client) {
+        if (! $invoice || ! $step || ! $client) {
             $this->reminder->update(['status' => 'failed', 'error_message' => 'Missing invoice, step, or client']);
+
             return;
         }
 
@@ -67,8 +68,9 @@ class SendInvoiceReminderJob implements ShouldQueue
     protected function replaceVariables(string $text, array $variables): string
     {
         foreach ($variables as $key => $value) {
-            $text = str_replace('{' . $key . '}', $value, $text);
+            $text = str_replace('{'.$key.'}', $value, $text);
         }
+
         return $text;
     }
 }

@@ -13,6 +13,7 @@ class ApprovalRule extends Model
 {
     /** @use HasFactory<ApprovalRuleFactory> */
     use HasFactory;
+
     protected $fillable = [
         'workspace_id',
         'trigger_type',

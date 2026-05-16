@@ -11,7 +11,6 @@ class QuoteObserver
         protected ExchangeRateService $exchangeRateService
     ) {}
 
-
     public function saving(Quote $quote): void
     {
         $workspace = $quote->workspace;
@@ -30,7 +29,6 @@ class QuoteObserver
             $quote->fx_rate = 1.0;
         }
     }
-
 
     public function updated(Quote $quote): void
     {

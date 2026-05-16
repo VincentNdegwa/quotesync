@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 class Task extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'workspace_id',
         'taskable_id',

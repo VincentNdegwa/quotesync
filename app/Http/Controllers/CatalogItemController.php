@@ -9,8 +9,8 @@ use App\Http\Requests\Catalog\StoreCatalogItemRequest;
 use App\Http\Requests\Catalog\UpdateCatalogItemRequest;
 use App\Models\CatalogCategory;
 use App\Models\CatalogItem;
-use App\Models\CatalogItemVariant;
 use App\Models\CatalogItemPriceTier;
+use App\Models\CatalogItemVariant;
 use App\Models\ConfigurationUnit;
 use App\Models\Tax;
 use App\Models\Workspace;
@@ -70,7 +70,7 @@ class CatalogItemController extends Controller
 
         if ($request->hasFile('image')) {
             $result = $fileStorageService->store($request->file('image'), "workspaces/{$workspace->id}/catalog");
-            if (!$result['error']) {
+            if (! $result['error']) {
                 $payload['image_url'] = $result['url'];
             }
         }
@@ -122,7 +122,7 @@ class CatalogItemController extends Controller
 
         if ($request->hasFile('image')) {
             $result = $fileStorageService->store($request->file('image'), "workspaces/{$workspace->id}/catalog");
-            if (!$result['error']) {
+            if (! $result['error']) {
                 $payload['image_url'] = $result['url'];
             }
         }

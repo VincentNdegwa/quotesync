@@ -73,18 +73,18 @@ class WorkspaceSettingsController extends Controller
                 'tax_number' => $workspace->tax_number,
                 'favicon_url' => $workspace->favicon_url,
                 'white_label_mode' => $workspace->white_label_mode,
-                'industry_id' => $workspace->industry_id
+                'industry_id' => $workspace->industry_id,
             ];
         } elseif ($defaultGroup === 'quotes_invoices') {
             $settings = $settingsService->groupForFrontend($workspace, $defaultGroup);
             $allFields = [];
-            
+
             if (isset($settings['subsections'])) {
                 foreach ($settings['subsections'] as $subsection) {
                     $allFields = array_merge($allFields, $subsection['fields']);
                 }
             }
-            
+
             $settings['fields'] = $allFields;
             $props['currentGroup'] = $settings;
         } else {
@@ -126,20 +126,20 @@ class WorkspaceSettingsController extends Controller
                 'white_label_mode' => $validated['white_label_mode'] ?? null,
             ], fn ($value) => $value !== null);
 
-            if (!empty($updateData)) {
+            if (! empty($updateData)) {
                 $workspace->update($updateData);
             }
 
             if ($request->hasFile('logo_path')) {
                 $result = $fileStorageService->store($request->file('logo_path'), "workspaces/{$workspace->id}/branding");
-                if (!$result['error']) {
+                if (! $result['error']) {
                     $workspace->update(['logo_url' => $result['url']]);
                 }
             }
 
             if ($request->hasFile('favicon_path')) {
                 $result = $fileStorageService->store($request->file('favicon_path'), "workspaces/{$workspace->id}/branding");
-                if (!$result['error']) {
+                if (! $result['error']) {
                     $workspace->update(['favicon_url' => $result['url']]);
                 }
             }
@@ -171,7 +171,7 @@ class WorkspaceSettingsController extends Controller
 
             if ($request->hasFile('settings.logo_path')) {
                 $result = $fileStorageService->store($request->file('settings.logo_path'), "workspaces/{$workspace->id}/branding");
-                if (!$result['error']) {
+                if (! $result['error']) {
                     $settingsPayload['logo_path'] = $result['url'];
                 }
             }

@@ -1,15 +1,15 @@
 <?php
 
 use App\Models\CatalogItem;
-use App\Models\CatalogItemVariant;
 use App\Models\CatalogItemPriceTier;
+use App\Models\CatalogItemVariant;
 use App\Models\Client;
 use App\Models\Contact;
 use App\Models\Quote;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Quotes\QuoteService;
-use Illuminate\Support\Facades\DB;
+
 use function Pest\Laravel\actingAs;
 
 beforeEach(function () {

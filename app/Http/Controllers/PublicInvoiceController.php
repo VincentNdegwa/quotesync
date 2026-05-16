@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
-use App\Models\Workspace;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;

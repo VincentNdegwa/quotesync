@@ -2,11 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\Quote;
 use App\Models\Task;
 use App\Models\TaskStatus;
 use App\Models\User;
 use App\Models\Workspace;
-use App\Models\Quote;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

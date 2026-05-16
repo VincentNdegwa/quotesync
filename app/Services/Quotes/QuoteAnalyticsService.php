@@ -90,6 +90,7 @@ class QuoteAnalyticsService
                 if ($cutoffTime && $event->occurred_at->greaterThanOrEqualTo($cutoffTime)) {
                     return false;
                 }
+
                 return true;
             });
 

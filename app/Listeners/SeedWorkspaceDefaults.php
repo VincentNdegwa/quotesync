@@ -11,8 +11,8 @@ class SeedWorkspaceDefaults
 {
     public function handle(WorkspaceCreated $event): void
     {
-        (new DefaultUnitsSeeder())->seedForWorkspace($event->workspace);
-        (new DefaultIndustriesSeeder())->seedForWorkspace($event->workspace);
-        (new TaskStatusSeeder())->seedForWorkspace($event->workspace);
+        (new DefaultUnitsSeeder)->seedForWorkspace($event->workspace);
+        (new DefaultIndustriesSeeder)->seedForWorkspace($event->workspace);
+        (new TaskStatusSeeder)->seedForWorkspace($event->workspace);
     }
 }

@@ -12,6 +12,7 @@ class QuoteApproval extends Model
 {
     /** @use HasFactory<QuoteApprovalFactory> */
     use HasFactory;
+
     protected $fillable = [
         'quote_id',
         'approval_rule_id',

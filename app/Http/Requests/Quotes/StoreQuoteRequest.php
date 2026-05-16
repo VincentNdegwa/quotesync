@@ -143,7 +143,7 @@ class StoreQuoteRequest extends FormRequest
 
                 $sections = $this->input('sections', []);
                 foreach ($sections as $sectionIndex => $section) {
-                    if (!isset($section['line_items'])) {
+                    if (! isset($section['line_items'])) {
                         continue;
                     }
 

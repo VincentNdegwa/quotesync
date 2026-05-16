@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Configuration;
 
 use App\Http\Requests\FormRequest;
+use Illuminate\Contracts\Validation\ValidationRule;
 
 class ConfigIndustryFormRequest extends FormRequest
 {
@@ -17,7 +18,7 @@ class ConfigIndustryFormRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {

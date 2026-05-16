@@ -70,8 +70,8 @@ class QuoteContextWritingAgent implements Agent
             $instructions .= "\n\nTranslate the text to {$this->locale}.";
         }
 
-        \Log::info("Ai write instruction", [
-            'instruction' => $instructions
+        \Log::info('Ai write instruction', [
+            'instruction' => $instructions,
         ]);
 
         return $instructions;

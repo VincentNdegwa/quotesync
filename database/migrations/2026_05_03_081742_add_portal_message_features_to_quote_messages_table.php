@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('quote_messages', function (Blueprint $table) {
-            if (!Schema::hasColumn('quote_messages', 'is_internal')) {
+            if (! Schema::hasColumn('quote_messages', 'is_internal')) {
                 $table->boolean('is_internal')->default(false)->after('message');
             }
-            if (!Schema::hasColumn('quote_messages', 'attachments')) {
+            if (! Schema::hasColumn('quote_messages', 'attachments')) {
                 $table->json('attachments')->nullable()->after('is_internal');
             }
             // typing_status removed - handled by Laravel Reverb/websockets

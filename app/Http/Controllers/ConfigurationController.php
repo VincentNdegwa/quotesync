@@ -31,7 +31,7 @@ class ConfigurationController extends Controller
                 ->where('workspace_id', $workspace->id)
                 ->orderByDesc('is_default')
                 ->orderByRaw('LOWER(name)')
-                ->get(['id', 'name', 'rate', 'is_default', 'is_active', 'inclusive' ,'created_at']),
+                ->get(['id', 'name', 'rate', 'is_default', 'is_active', 'inclusive', 'created_at']),
         ]);
     }
 

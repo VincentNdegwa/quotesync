@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CreditNoteStatus;
+use App\Http\Requests\CreditNotes\CreditNoteBulkActionRequest;
 use App\Http\Requests\CreditNotes\StoreCreditNoteRequest;
 use App\Http\Requests\CreditNotes\UpdateCreditNoteRequest;
-use App\Http\Requests\CreditNotes\CreditNoteBulkActionRequest;
 use App\Models\CreditNote;
 use App\Models\Invoice;
 use App\Models\Workspace;
@@ -13,6 +13,7 @@ use App\Services\CreditNoteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -142,6 +143,7 @@ class CreditNoteController extends Controller
 
         if ($creditNote->status === CreditNoteStatus::Issued || $creditNote->status === CreditNoteStatus::Voided) {
             Inertia::flash('toast', ['type' => 'error', 'message' => __('Cannot edit issued or voided credit notes.')]);
+
             return back();
         }
 
@@ -165,6 +167,7 @@ class CreditNoteController extends Controller
 
         if ($creditNote->status !== CreditNoteStatus::Draft) {
             Inertia::flash('toast', ['type' => 'error', 'message' => __('Only draft credit notes can be issued.')]);
+
             return back();
         }
 
@@ -188,6 +191,7 @@ class CreditNoteController extends Controller
 
         if ($creditNote->status !== CreditNoteStatus::Issued) {
             Inertia::flash('toast', ['type' => 'error', 'message' => __('Only issued credit notes can be applied.')]);
+
             return back();
         }
 
@@ -211,6 +215,7 @@ class CreditNoteController extends Controller
 
         if ($creditNote->status === CreditNoteStatus::Voided) {
             Inertia::flash('toast', ['type' => 'error', 'message' => __('Credit note is already voided.')]);
+
             return back();
         }
 
@@ -218,10 +223,11 @@ class CreditNoteController extends Controller
             $validated = $request->validate([
                 'void_reason' => 'required|string',
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             $errors = $e->errors();
             $errorMessage = collect($errors)->flatten()->implode(', ');
             Inertia::flash('toast', ['type' => 'error', 'message' => $errorMessage]);
+
             return back()->withErrors($errors);
         }
 
@@ -263,11 +269,11 @@ class CreditNoteController extends Controller
             $message = trans_choice(':count credit note processed.|:count credit notes processed.', $processed, ['count' => $processed]);
 
             if ($skipped > 0) {
-                $message .= ' ' . trans_choice(':count skipped.|:count skipped.', $skipped, ['count' => $skipped]);
+                $message .= ' '.trans_choice(':count skipped.|:count skipped.', $skipped, ['count' => $skipped]);
             }
 
             if ($missing > 0) {
-                $message .= ' ' . trans_choice(':count not found.|:count not found.', $missing, ['count' => $missing]);
+                $message .= ' '.trans_choice(':count not found.|:count not found.', $missing, ['count' => $missing]);
             }
         } elseif ($skipped > 0) {
             $message = trans_choice(':count credit note skipped.|:count credit notes skipped.', $skipped, ['count' => $skipped]);
