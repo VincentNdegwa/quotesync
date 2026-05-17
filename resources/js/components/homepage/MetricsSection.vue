@@ -14,12 +14,15 @@ const metrics = [
                 <div
                     v-for="(metric, index) in metrics"
                     :key="metric.label"
-                    class="text-center animate-fade-in-up"
+                    class="animate-fade-in-up text-center"
                     :style="{ animationDelay: `${index * 100}ms` }"
                 >
                     <div
                         class="mb-2 text-5xl font-bold text-foreground"
-                        style="font-family: var(--font-display); letter-spacing: -0.04em"
+                        style="
+                            font-family: var(--font-display);
+                            letter-spacing: -0.04em;
+                        "
                     >
                         {{ metric.value }}
                     </div>

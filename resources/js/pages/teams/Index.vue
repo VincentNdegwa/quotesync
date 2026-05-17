@@ -118,9 +118,7 @@ const handleSuccess = (): void => {
                             <p class="truncate font-semibold text-foreground">
                                 {{ member.name }}
                             </p>
-                            <p
-                                class="truncate text-sm text-muted-foreground"
-                            >
+                            <p class="truncate text-sm text-muted-foreground">
                                 {{ member.email }}
                             </p>
                         </div>

@@ -67,10 +67,6 @@ const localState = ref<QuoteBuilderState>(
 );
 const initialState = ref<string>(JSON.stringify(props.modelValue));
 
-const hasUnsavedChanges = computed(() => {
-    return JSON.stringify(localState.value) !== initialState.value;
-});
-
 // Warn on page navigation with unsaved changes
 // useEventListener(window, 'beforeunload', (e) => {
 //     if (hasUnsavedChanges.value) {
@@ -674,10 +670,6 @@ const toggleLineItemTax = (
     tax: BuilderTaxOption,
     enabled: boolean,
 ): void => {
-    if (!tax) {
-        return;
-    }
-
     withLineItem(sectionIndex, lineItemIndex, (item) => {
         if (enabled) {
             if (!item.taxes.some((entry) => entry.tax_id === tax.id)) {
@@ -688,11 +680,9 @@ const toggleLineItemTax = (
                     inclusive: tax.inclusive,
                 });
             }
-
-            return;
+        } else {
+            item.taxes = item.taxes.filter((entry) => entry.tax_id !== tax.id);
         }
-
-        item.taxes = item.taxes.filter((entry) => entry.tax_id !== tax.id);
     });
     recompute();
 };
@@ -701,10 +691,6 @@ const toggleLineItemTaxForSelected = (payload: {
     tax: BuilderTaxOption;
     enabled: boolean;
 }): void => {
-    if (!payload.tax) {
-        return;
-    }
-
     withSelectedLineItem(({ sectionIndex, lineItemIndex }) => {
         toggleLineItemTax(
             sectionIndex,
@@ -799,19 +785,15 @@ const applyCatalogItemToLineItem = (
     item: QuoteBuilderLineItem,
     catalogItem: BuilderCatalogItem,
 ): void => {
-    if (!catalogItem) {
-        return;
-    }
-
     item.catalog_item_id = catalogItem.id;
     item.catalog_item_variant_id = null;
     item.name = catalogItem.name;
     item.description = catalogItem.description;
     item.unit = catalogItem.configuration_unit?.symbol || '';
     item.unit_id = catalogItem.configuration_unit?.id ?? null;
-    item.unit_price = Number(catalogItem.unit_price || 0);
-    item.cost_price = Number(catalogItem.cost_price || 0);
-    item.taxes = (catalogItem.taxes || []).filter(Boolean).map((tax) => ({
+    item.unit_price = Number(catalogItem.unit_price);
+    item.cost_price = Number(catalogItem.cost_price);
+    item.taxes = catalogItem.taxes.filter(Boolean).map((tax) => ({
         tax_id: tax.id,
         tax_label: tax.name,
         tax_rate: tax.rate,
@@ -819,19 +801,11 @@ const applyCatalogItemToLineItem = (
     }));
     item.price_tier_applied = false;
 
-    const resolvedVariant =
-        catalogItem.variants?.find((variant) => variant.is_default) ||
-        catalogItem.variants?.[0];
+    const resolvedVariant = catalogItem.variants.find((variant) => variant.is_default) ?? catalogItem.variants[0];
 
-    if (resolvedVariant) {
-        item.catalog_item_variant_id = resolvedVariant.id;
-        item.unit_price = Number(
-            resolvedVariant.unit_price || item.unit_price || 0,
-        );
-        item.cost_price = Number(
-            resolvedVariant.cost_price || item.cost_price || 0,
-        );
-    }
+    item.catalog_item_variant_id = resolvedVariant.id;
+    item.unit_price = Number(resolvedVariant.unit_price);
+    item.cost_price = Number(resolvedVariant.cost_price);
 };
 
 const selectCatalogItem = (
@@ -1083,19 +1057,11 @@ const ensureDefaultVariants = (): void => {
                 return;
             }
 
-            const resolvedVariant =
-                catalogItem.variants?.find((variant) => variant.is_default) ||
-                catalogItem.variants?.[0];
+            const resolvedVariant = catalogItem.variants.find((variant) => variant.is_default) ?? catalogItem.variants[0];
 
-            if (resolvedVariant) {
-                item.catalog_item_variant_id = resolvedVariant.id;
-                item.unit_price = Number(
-                    resolvedVariant.unit_price || item.unit_price || 0,
-                );
-                item.cost_price = Number(
-                    resolvedVariant.cost_price || item.cost_price || 0,
-                );
-            }
+            item.catalog_item_variant_id = resolvedVariant.id;
+            item.unit_price = Number(resolvedVariant.unit_price);
+            item.cost_price = Number(resolvedVariant.cost_price);
         });
     });
 

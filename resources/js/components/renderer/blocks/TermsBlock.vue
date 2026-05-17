@@ -45,6 +45,7 @@ const quoteContext = computed(() => {
             context.client = {
                 company_name: data.client.company_name,
             };
+
             if (data.client.email) {
                 context.client.email = data.client.email;
             }
@@ -62,7 +63,10 @@ const quoteContext = computed(() => {
     }
 
     if (data.total != null) {
-        context.total = typeof data.total === 'string' ? parseFloat(data.total) : data.total;
+        context.total =
+            typeof data.total === 'string'
+                ? parseFloat(data.total)
+                : data.total;
     }
 
     if (data.currency) {

@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { dashboard, login, register } from '@/routes';
 import { ref, onMounted, onUnmounted } from 'vue';
-import HeroSection from '@/components/homepage/HeroSection.vue';
-import MetricsSection from '@/components/homepage/MetricsSection.vue';
-import FeaturesSection from '@/components/homepage/FeaturesSection.vue';
-import HowItWorksSection from '@/components/homepage/HowItWorksSection.vue';
-import TestimonialsSection from '@/components/homepage/TestimonialsSection.vue';
 import CtaSection from '@/components/homepage/CtaSection.vue';
+import FeaturesSection from '@/components/homepage/FeaturesSection.vue';
 import Footer from '@/components/homepage/Footer.vue';
-import { FileText } from 'lucide-vue-next';
+import HeroSection from '@/components/homepage/HeroSection.vue';
+import HowItWorksSection from '@/components/homepage/HowItWorksSection.vue';
+import MetricsSection from '@/components/homepage/MetricsSection.vue';
+import TestimonialsSection from '@/components/homepage/TestimonialsSection.vue';
+import { dashboard, login, register } from '@/routes';
 
 withDefaults(
     defineProps<{
@@ -23,9 +22,10 @@ withDefaults(
 // Scroll progress
 const scrollProgress = ref(0);
 
-const handleScroll = () => {
+const handleScroll = (): void => {
     const scrollTop = window.scrollY;
-    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const docHeight =
+        document.documentElement.scrollHeight - window.innerHeight;
     scrollProgress.value = (scrollTop / docHeight) * 100;
 };
 
@@ -49,40 +49,66 @@ onUnmounted(() => {
     <div class="relative min-h-screen bg-background font-sans text-foreground">
         <!-- Scroll Progress Indicator -->
         <div
-            class="fixed top-0 left-0 right-0 z-50 h-[2px] bg-primary origin-left transition-transform duration-100"
+            class="fixed top-0 right-0 left-0 z-50 h-[2px] origin-left bg-primary transition-transform duration-100"
             :style="{ transform: `scaleX(${scrollProgress / 100})` }"
         />
 
         <!-- Grain Texture Overlay -->
         <div
-            class="fixed inset-0 pointer-events-none z-0 opacity-[0.035]"
-            style="background-image: url('data:image/svg+xml,%3Csvg viewBox=%270 0 256 256%27 xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cfilter id=%27noise%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.9%27 numOctaves=%274%27 stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23noise)%27/%3E%3C/svg%3E'); background-size: 128px 128px;"
+            class="pointer-events-none fixed inset-0 z-0 opacity-[0.035]"
+            style="
+                background-image: url('data:image/svg+xml,%3Csvg viewBox=%270 0 256 256%27 xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cfilter id=%27noise%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.9%27 numOctaves=%274%27 stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23noise)%27/%3E%3C/svg%3E');
+                background-size: 128px 128px;
+            "
         />
 
         <!-- Ambient Glow Blobs -->
-        <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="pointer-events-none fixed inset-0 overflow-hidden">
             <div
-                class="absolute -right-[100px] -top-[200px] h-[600px] w-[600px] rounded-full bg-primary/20 blur-[80px] animate-blob"
+                class="animate-blob absolute -top-[200px] -right-[100px] h-[600px] w-[600px] rounded-full bg-primary/20 blur-[80px]"
             />
             <div
-                class="absolute -left-[100px] bottom-0 h-[400px] w-[400px] rounded-full bg-primary/10 blur-[80px] animate-blob-reverse"
+                class="animate-blob-reverse absolute bottom-0 -left-[100px] h-[400px] w-[400px] rounded-full bg-primary/10 blur-[80px]"
             />
         </div>
 
         <!-- Grid Lines Background -->
         <div
-            class="fixed inset-0 pointer-events-none z-0"
-            style="background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 60px 60px; mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%); -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);"
+            class="pointer-events-none fixed inset-0 z-0"
+            style="
+                background-image:
+                    linear-gradient(var(--border) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+                background-size: 60px 60px;
+                mask-image: radial-gradient(
+                    ellipse 80% 80% at 50% 50%,
+                    black 20%,
+                    transparent 100%
+                );
+                -webkit-mask-image: radial-gradient(
+                    ellipse 80% 80% at 50% 50%,
+                    black 20%,
+                    transparent 100%
+                );
+            "
         />
 
         <!-- Navigation -->
-        <nav class="fixed top-0 left-0 right-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-2xl transition-all duration-300">
-            <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+        <nav
+            class="fixed top-0 right-0 left-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-2xl transition-all duration-300"
+        >
+            <div
+                class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4"
+            >
                 <Link :href="dashboard()" class="flex items-center gap-3">
                     <div
                         class="flex h-10 w-10 items-center justify-center rounded-lg border border-primary/20 bg-primary/10"
                     >
-                        <img src="/favicon.svg" alt="QuoteSync" class="h-5 w-5" />
+                        <img
+                            src="/favicon.svg"
+                            alt="QuoteSync"
+                            class="h-5 w-5"
+                        />
                     </div>
                     <span
                         class="text-xl font-bold tracking-tight text-foreground"
