@@ -12,19 +12,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import type { ClientRecord } from '@/types';
+import type { ClientRecord, ContactRecord } from '@/pages/clients/types';
 
 const props = defineProps<{
     client: ClientRecord;
     open: boolean;
-    contact?: {
-        id: number;
-        name: string;
-        email: string | null;
-        phone: string | null;
-        position: string | null;
-        is_primary: boolean;
-    } | null;
+    contact?: ContactRecord | null;
 }>();
 
 const emit = defineEmits<{

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { ClientRecord } from '@/types';
+import type { ClientRecord } from '@/pages/clients/types';
 import ClientActions from './ClientActions.vue';
 import InvitePortalDialog from './InvitePortalDialog.vue';
 

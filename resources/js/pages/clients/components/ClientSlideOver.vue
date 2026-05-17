@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import ClientForm from '@/components/clients/ClientForm.vue';
+import ClientForm from '@/pages/clients/components/ClientForm.vue';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -10,11 +10,9 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import type { Client } from '@/eloquent-types/models';
 
-type MinimalClient = {
-    id: number;
-    company_name: string;
-};
+type MinimalClient = Pick<Client, 'id' | 'company_name'>;
 
 const form = defineModel<Record<string, any>>('form', {
     required: true,

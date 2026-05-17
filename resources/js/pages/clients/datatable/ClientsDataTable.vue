@@ -16,7 +16,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { valueUpdater } from '@/components/ui/table/utils';
-import type { ClientRecord } from '@/types';
+import type { ClientRecord } from '@/pages/clients/types';
 import { getClientColumns } from './columns';
 import { clientsDataTableTheme } from './theme';
 

@@ -2,7 +2,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { Download, Trash2 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
-import ClientSlideOver from '@/components/clients/ClientSlideOver.vue';
+import ClientSlideOver from '@/pages/clients/components/ClientSlideOver.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
 import CountryCombobox from '@/components/location/CountryCombobox.vue';
@@ -16,10 +16,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import ClientHeaderActions from '@/pages/clients/components/ClientHeaderActions.vue';
-import ClientsDataTable from '@/pages/clients/components/ClientsDataTable.vue';
+import ClientHeaderActions from '@/pages/clients/datatable/ClientHeaderActions.vue';
+import ClientsDataTable from '@/pages/clients/datatable/ClientsDataTable.vue';
 import ConfigurationTagCreateDialog from '@/pages/configuration/tags/components/CreateDialog.vue';
-import type { ClientRecord, Paginator } from '@/types';
+import type { ClientRecord, Paginator } from '@/pages/clients/types';
 import type { CountryOption } from '@/utils/location-options';
 import {
     commonCountryOptions,

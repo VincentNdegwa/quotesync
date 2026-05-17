@@ -6,7 +6,7 @@ import type { VNode } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useFormat } from '@/composables/useFormat';
-import type { ClientRecord } from '@/types';
+import type { ClientRecord } from '@/pages/clients/types';
 import ClientTableRowActions from './ClientTableRowActions.vue';
 
 type ClientColumnOptions = {

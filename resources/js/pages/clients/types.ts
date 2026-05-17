@@ -1,11 +1,25 @@
-import type { QuoteModel } from './models';
-import type { 
-    Client, 
-    ConfigurationUnit, 
-    CatalogCategory, 
+import type { QuoteModel } from '@/types/models';
+import type {
+    Client,
+    ConfigurationUnit,
+    CatalogCategory,
     Tax,
-    CatalogItem 
+    CatalogItem,
+    Contact,
 } from '@/eloquent-types/models';
+
+export type Paginator<T> = {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    links: Array<{
+        url: string | null;
+        label: string;
+        active: boolean;
+    }>;
+};
 
 // ClientRecord extends the eloquent Client type with additional computed fields
 export type ClientRecord = Omit<
@@ -68,15 +82,4 @@ export type CatalogItemRecord = Omit<
     }>;
 };
 
-export type Paginator<T> = {
-    data: T[];
-    current_page: number;
-    last_page: number;
-    per_page: number;
-    total: number;
-    links: Array<{
-        url: string | null;
-        label: string;
-        active: boolean;
-    }>;
-};
+export type ContactRecord = Pick<Contact, 'id' | 'name' | 'email' | 'phone' | 'position' | 'is_primary'>;

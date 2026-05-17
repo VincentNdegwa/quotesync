@@ -15,7 +15,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { ClientRecord } from '@/types';
+import type { ClientRecord } from '@/pages/clients/types';
 
 const props = withDefaults(
     defineProps<{
