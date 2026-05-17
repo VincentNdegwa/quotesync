@@ -2,12 +2,15 @@
 
 namespace App\Services\Quotes;
 
+use App\Enums\Feature;
+use App\Exceptions\LimitExceededException;
 use App\Jobs\SendQuoteEmailJob;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
 use App\Models\Workspace;
 use App\Notifications\QuoteSentInternalNotification;
 use App\Services\Pdf\QuotePdfService;
+use App\Services\UsageLimitService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Support\Facades\Notification;
 
@@ -17,6 +20,7 @@ class QuoteSendingService
         private WorkspaceSettingsService $workspaceSettingsService,
         private QuoteShortCodeService $quoteShortCodeService,
         private QuoteFollowUpSchedulerService $quoteFollowUpSchedulerService,
+        private UsageLimitService $usageLimitService,
     ) {}
 
     public function sendQuote(
@@ -29,6 +33,10 @@ class QuoteSendingService
         array $ccRecipients = [],
         array $bccRecipients = [],
     ): void {
+        if (!$this->usageLimitService->canPerformOperation($workspace, Feature::MAX_QUOTES_PER_MONTH)) {
+            throw new LimitExceededException($this->usageLimitService->getLimitReachedMessage(Feature::MAX_QUOTES_PER_MONTH));
+        }
+
         $quote->loadMissing(['client', 'sections.lineItems']);
 
         $to = $quote->client?->email;

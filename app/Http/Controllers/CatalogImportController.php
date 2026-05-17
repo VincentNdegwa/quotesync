@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Feature;
+use App\Exceptions\LimitExceededException;
 use App\Http\Requests\Catalog\CatalogImportPreviewRequest;
 use App\Http\Requests\Catalog\CatalogImportStoreRequest;
 use App\Jobs\ImportCatalogItemsJob;
@@ -10,6 +12,7 @@ use App\Models\ConfigurationUnit;
 use App\Models\ImportHistory;
 use App\Models\Workspace;
 use App\Services\Import\CatalogImportValidator;
+use App\Services\UsageLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Cache;
@@ -141,6 +144,24 @@ class CatalogImportController extends Controller
             });
         }
 
+        $workspace->loadCount('catalogItems');
+        $usageLimitService = app(UsageLimitService::class);
+        $limit = $usageLimitService->getLimit($workspace, Feature::MAX_CATALOG_ITEMS);
+        $currentUsage = $usageLimitService->getCurrentUsage($workspace, Feature::MAX_CATALOG_ITEMS);
+
+        $canImport = $limit !== null ? ($limit - $currentUsage) : null;
+
+        if ($canImport !== null && $canImport <= 0) {
+            throw new LimitExceededException('You have reached your Catalog Items limit. Please upgrade your plan to import more items.');
+        }
+
+        if ($canImport !== null && $rows->count() > $canImport) {
+            $skippedDueToLimit = $rows->count() - $canImport;
+            $rows = $rows->take($canImport);
+        } else {
+            $skippedDueToLimit = 0;
+        }
+
         if ($rows->count() > 100) {
             $importHistory = ImportHistory::create([
                 'workspace_id' => $workspace->id,
@@ -148,6 +169,7 @@ class CatalogImportController extends Controller
                 'type' => 'catalog',
                 'status' => 'pending',
                 'total_rows' => $rows->count(),
+                'skipped_due_to_limit' => $skippedDueToLimit,
             ]);
 
             ImportCatalogItemsJob::dispatch(
@@ -160,7 +182,11 @@ class CatalogImportController extends Controller
                 $unitMapping
             );
 
-            Inertia::flash('toast', ['type' => 'success', 'message' => 'Catalog import queued.']);
+            $message = $skippedDueToLimit > 0 
+                ? "Catalog import queued. {$skippedDueToLimit} items skipped due to limit."
+                : 'Catalog import queued.';
+
+            Inertia::flash('toast', ['type' => $skippedDueToLimit > 0 ? 'warning' : 'success', 'message' => $message]);
 
             return to_route('catalog.index');
         }
@@ -217,12 +243,17 @@ class CatalogImportController extends Controller
             $imported++;
         }
 
+        $totalSkipped = $skipped + $skippedDueToLimit;
+        $message = $totalSkipped > 0 
+            ? "Import complete. {$imported} imported, {$totalSkipped} skipped (including {$skippedDueToLimit} due to limit)."
+            : "Import complete. {$imported} imported.";
+
         Inertia::flash('toast', [
-            'type' => $skipped > 0 ? 'warning' : 'success',
-            'message' => "Import complete. {$imported} imported, {$skipped} skipped.",
+            'type' => $totalSkipped > 0 ? 'warning' : 'success',
+            'message' => $message,
         ]);
 
-        if ($skipped > 0) {
+        if ($totalSkipped > 0) {
             session()->put('skippedItems', $skippedItems);
         } else {
             session()->forget('skippedItems');

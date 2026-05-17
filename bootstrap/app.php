@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\LimitExceededException;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\LoadWorkspaceWithPlan;
@@ -54,6 +55,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (LimitExceededException $e, Request $request) {
+            return $e->render($request);
+        });
+
         $exceptions->render(function (Throwable $e, Request $request) {
             if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
                 if ($request->header('X-Inertia') === 'true') {
