@@ -38,6 +38,8 @@ import {
 } from '@/components/ui/table';
 import { useFormat } from '@/composables/useFormat';
 import { paddleConfig } from '@/config/paddle';
+import { plans as billingPlans, subscription as billingSubscription } from '@/routes/billing';
+import { cancel as billingSubscriptionCancel, resume as billingSubscriptionResume } from '@/routes/billing/subscription';
 
 defineOptions({
     layout: {

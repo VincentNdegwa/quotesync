@@ -14,11 +14,15 @@ class SubscriptionController extends Controller
     public function plans()
     {
         $workspace = Auth::user()->currentWorkspace;
+        $subscription = $workspace->subscription('default');
 
         return Inertia::render('billing/Plans', [
             'workspace' => $workspace,
             'plans' => Plan::active()->ordered()->get(),
             'features' => Feature::forFrontend(),
+            'subscription' => $subscription ? [
+                'paddle_price_id' => $subscription->paddle_price_id,
+            ] : null,
         ]);
     }
 

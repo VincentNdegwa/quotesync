@@ -7,6 +7,7 @@ import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { subscribe as billingSubscribe } from '@/routes/billing';
+import { swap as billingSubscriptionSwap } from '@/routes/billing/subscription';
 
 defineOptions({
     layout: {
@@ -21,6 +22,7 @@ const page = usePage();
 const workspace = computed(() => page.props.workspace);
 const plans = computed(() => page.props.plans);
 const features = computed(() => page.props.features);
+const subscription = computed(() => page.props.subscription);
 const currentPlanId = computed(() => workspace.value?.plan_id);
 
 const popularPlanId = computed(() => {
@@ -76,7 +78,20 @@ const cellValue = (plan: any, key: string): { type: string; text?: string } => {
 };
 
 const selectPlan = (planSlug: string): void => {
-    router.get(billingSubscribe(planSlug).url);
+    const plan = plans.value?.find((p) => p.slug === planSlug);
+    
+    if (!plan) {
+        return;
+    }
+
+    // If user has an active subscription, swap the plan instead of creating a new checkout
+    if (subscription.value) {
+        router.put(billingSubscriptionSwap().url, {
+            price_id: plan.paddle_monthly_price_id,
+        });
+    } else {
+        router.get(billingSubscribe(planSlug).url);
+    }
 };
 </script>
 
