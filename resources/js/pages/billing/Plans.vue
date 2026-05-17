@@ -20,6 +20,7 @@ defineOptions({
 const page = usePage()
 const workspace = computed(() => page.props.workspace)
 const plans = computed(() => page.props.plans)
+const features = computed(() => page.props.features)
 const currentPlanId = computed(() => workspace.value?.plan_id)
 
 const popularPlanId = computed(() => {
@@ -32,28 +33,13 @@ const formatPrice = (price) => {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(price)
 }
 
-const featureRows = [
-  { key: 'max_users', label: 'Users' },
-  { key: 'max_quotes_per_month', label: 'Quotes / month' },
-  { key: 'max_invoices_per_month', label: 'Invoices / month' },
-  { key: 'max_catalog_items', label: 'Catalog items' },
-  { key: 'max_templates', label: 'Templates' },
-  { key: 'max_clients', label: 'Clients' },
-  { key: 'ai_credits_per_month', label: 'AI credits / month' },
-  { key: 'follow_up_sequences', label: 'Follow-up sequences' },
-  { key: 'approval_workflows', label: 'Approval workflows' },
-  { key: 'approval_rules', label: 'Approval rules' },
-  { key: 'custom_domains', label: 'Custom domains' },
-  { key: 'workspaces', label: 'Workspaces' },
-]
-
 const visibleRows = computed(() => {
-  return featureRows.filter(row =>
+  return features.value?.filter(row =>
     plans.value?.some(plan => {
       const v = plan.features?.[row.key]
       return v !== false && v !== undefined
     })
-  )
+  ) ?? []
 })
 
 const cellValue = (plan, key) => {

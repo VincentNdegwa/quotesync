@@ -10,7 +10,8 @@ import Heading from '@/components/Heading.vue'
 import {
   CreditCard, TrendingUp, FileText, Sparkles,
   ArrowRight, X, RefreshCw, ExternalLink,
-  CircleCheck
+  CircleCheck, Users, Package, Layout, Building,
+  Globe, Zap, CheckCircle, Shield
 } from 'lucide-vue-next'
 import { plans as billingPlans } from '@/routes/billing'
 import { cancel as billingSubscriptionCancel, resume as billingSubscriptionResume } from '@/routes/billing/subscription'
@@ -30,7 +31,21 @@ const page = usePage()
 const workspace = computed(() => page.props.auth.currentWorkspace)
 const subscription = computed(() => page.props.subscription)
 const usage = computed(() => page.props.usage)
-const paymentMethod = computed(() => page.props.paymentMethod ?? null)
+const features = computed(() => page.props.features)
+
+const iconMap = {
+  Users,
+  TrendingUp,
+  FileText,
+  Layout,
+  Package,
+  Sparkles,
+  CheckCircle,
+  Shield,
+  Globe,
+  Zap,
+  Building,
+}
 
 const currentPlan = computed(() => workspace.value?.plan)
 
@@ -55,9 +70,28 @@ const formatPrice = (price) => {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price ?? 0)
 }
 
+const formatNumber = (value) => {
+  try {
+    if (value === null || value === undefined) return '0'
+    const num = Number(value)
+    if (isNaN(num)) return '0'
+    return num.toLocaleString()
+  } catch {
+    return '0'
+  }
+}
+
 const getUsagePercentage = (current, max) => {
-  if (!max || max === 0) return 0
-  return Math.min((current / max) * 100, 100)
+  try {
+    if (max === null || max === undefined || max === 0) return 0
+    if (current === null || current === undefined) return 0
+    const currentNum = Number(current)
+    const maxNum = Number(max)
+    if (isNaN(currentNum) || isNaN(maxNum)) return 0
+    return Math.min((currentNum / maxNum) * 100, 100)
+  } catch {
+    return 0
+  }
 }
 
 const getProgressTextColor = (pct) => {
@@ -68,29 +102,40 @@ const getProgressTextColor = (pct) => {
 
 const monthlyPrice = computed(() => currentPlan.value?.monthly_price ?? 0)
 
+const isMonthlyMetric = (key) => {
+  return key.includes('_per_month')
+}
+
 const usageMetrics = computed(() => {
-  if (!usage.value) return []
-  return [
-    {
-      label: 'Quotes Sent',
-      icon: FileText,
-      current: usage.value.quotes_sent ?? 0,
-      max: usage.value.max_quotes_per_month,
-    },
-    {
-      label: 'Invoices Sent',
-      icon: TrendingUp,
-      current: usage.value.invoices_sent ?? 0,
-      max: usage.value.max_invoices_per_month,
-    },
-    {
-      label: 'AI Credits',
-      icon: Sparkles,
-      current: usage.value.ai_credits_used ?? 0,
-      max: usage.value.ai_credits_per_month,
-    },
-  ]
+  if (!usage.value || !features.value) return []
+  
+  const currentUsage = usage.value.current || {}
+  const limits = usage.value.limits || {}
+  
+  return features.value
+    .filter(feature => feature.type === 'number')
+    .map(feature => {
+      const limit = limits[feature.key]
+      const current = currentUsage[feature.key]
+      const icon = iconMap[feature.icon]
+      return {
+        label: feature.label || '',
+        icon: icon || FileText,
+        key: feature.key || '',
+        current: Number(current ?? 0) || 0,
+        max: limit !== null && limit !== undefined ? Number(limit) : null,
+        isMonthly: isMonthlyMetric(feature.key || ''),
+      }
+    })
+    .filter(metric => metric.key && metric.label)
+    .sort((a, b) => {
+      if (a.isMonthly === b.isMonthly) return 0
+      return a.isMonthly ? -1 : 1
+    })
 })
+
+const monthlyMetrics = computed(() => usageMetrics.value.filter(m => m.isMonthly))
+const lifetimeMetrics = computed(() => usageMetrics.value.filter(m => !m.isMonthly))
 </script>
 
 <template>
@@ -134,57 +179,68 @@ const usageMetrics = computed(() => {
       </div>
 
       <Separator />
-      <div class="px-6 py-5 space-y-4">
+      <div class="px-6 py-5 space-y-6">
         <p class="text-sm font-medium text-foreground">Usage this period</p>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-10 gap-y-5">
-          <div
-            v-for="metric in usageMetrics"
-            :key="metric.label"
-            class="space-y-1.5"
-          >
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <component :is="metric.icon" class="w-3.5 h-3.5 shrink-0" />
-                <span>{{ metric.label }}</span>
+        
+        <div v-if="monthlyMetrics.length > 0" class="space-y-4">
+          <p class="text-xs text-muted-foreground">Monthly Limits</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-5">
+            <div
+              v-for="metric in monthlyMetrics"
+              :key="metric.key"
+              class="space-y-1.5"
+            >
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <component :is="metric.icon" class="w-3.5 h-3.5 shrink-0" />
+                  <span>{{ metric.label }}</span>
+                </div>
+                <span
+                  v-if="metric.max !== null"
+                  class="text-xs font-medium tabular-nums"
+                  :class="getProgressTextColor(getUsagePercentage(metric.current, metric.max))"
+                >
+                  {{ Math.round(getUsagePercentage(metric.current, metric.max)) + '%' }}
+                </span>
+                <span v-else class="text-xs font-medium text-muted-foreground">—</span>
               </div>
-              <span
-                class="text-xs font-medium tabular-nums"
-                :class="getProgressTextColor(getUsagePercentage(metric.current, metric.max))"
-              >
-                {{ metric.max ? Math.round(getUsagePercentage(metric.current, metric.max)) + '%' : '—' }}
-              </span>
-            </div>
-            <Progress :model-value="getUsagePercentage(metric.current, metric.max)" class="h-1.5" />
-            <p class="text-xs text-muted-foreground tabular-nums">
-              {{ metric.current.toLocaleString() }} of {{ metric.max !== null ? metric.max.toLocaleString() : '∞' }}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <Separator />
-      <div class="flex items-center justify-between gap-4 px-6 py-4">
-        <div class="flex items-center gap-3 min-w-0">
-          <div class="flex items-center justify-center w-10 h-7 rounded border border-border bg-muted shrink-0">
-            <CreditCard class="w-4 h-4 text-muted-foreground" />
-          </div>
-          <div class="min-w-0 space-y-0.5">
-            <div class="flex items-center gap-2 flex-wrap">
-              <p class="text-sm font-medium text-foreground truncate">
-                {{ paymentMethod ? `${paymentMethod.brand} ending in ${paymentMethod.last4}` : 'No payment method on file' }}
+              <Progress v-if="metric.max !== null" :model-value="getUsagePercentage(metric.current, metric.max)" class="h-1.5" />
+              <p class="text-xs text-muted-foreground tabular-nums">
+                {{ formatNumber(metric.current) }} of {{ metric.max != null ? formatNumber(metric.max) : '∞' }}
               </p>
-              <Badge v-if="paymentMethod" variant="secondary" class="text-xs py-0 shrink-0">Default</Badge>
             </div>
-            <p v-if="paymentMethod" class="text-xs text-muted-foreground">
-              Expires {{ paymentMethod.exp_month }}/{{ paymentMethod.exp_year }}
-            </p>
           </div>
         </div>
-        <Button variant="outline" size="sm" class="shrink-0" as-child>
-          <a href="https://vendors.paddle.com/invoices" target="_blank" rel="noopener noreferrer">
-            Change
-          </a>
-        </Button>
+
+        <div v-if="lifetimeMetrics.length > 0" class="space-y-4">
+          <p class="text-xs text-muted-foreground">Lifetime Limits</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-5">
+            <div
+              v-for="metric in lifetimeMetrics"
+              :key="metric.key"
+              class="space-y-1.5"
+            >
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <component :is="metric.icon" class="w-3.5 h-3.5 shrink-0" />
+                  <span>{{ metric.label }}</span>
+                </div>
+                <span
+                  v-if="metric.max !== null"
+                  class="text-xs font-medium tabular-nums"
+                  :class="getProgressTextColor(getUsagePercentage(metric.current, metric.max))"
+                >
+                  {{ Math.round(getUsagePercentage(metric.current, metric.max)) + '%' }}
+                </span>
+                <span v-else class="text-xs font-medium text-muted-foreground">—</span>
+              </div>
+              <Progress v-if="metric.max !== null" :model-value="getUsagePercentage(metric.current, metric.max)" class="h-1.5" />
+              <p class="text-xs text-muted-foreground tabular-nums">
+                {{ formatNumber(metric.current) }} of {{ metric.max != null ? formatNumber(metric.max) : '∞' }}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <Separator />

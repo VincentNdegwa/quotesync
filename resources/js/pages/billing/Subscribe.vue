@@ -8,7 +8,10 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import Heading from '@/components/Heading.vue'
 import PaddleCheckoutButton from '@/components/PaddleCheckoutButton.vue'
-import { Check, ArrowRight, Sparkles, Zap, Shield, Users } from 'lucide-vue-next'
+import {
+  Check, ArrowRight, Sparkles, CheckCircle, Shield, Globe, Zap,
+  Package, Users, TrendingUp, FileText, Layout, Building
+} from 'lucide-vue-next'
 
 defineOptions({
   layout: {
@@ -31,6 +34,22 @@ defineOptions({
 const page = usePage()
 const plan = computed(() => page.props.plan)
 const checkout = computed(() => page.props.checkout)
+const features = computed(() => page.props.features)
+
+const iconMap = {
+  Sparkles,
+  CheckCircle,
+  Shield,
+  Globe,
+  Zap,
+  Package,
+  Users,
+  TrendingUp,
+  FileText,
+  Layout,
+  Building,
+  Check,
+}
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('en-US', {
@@ -40,22 +59,8 @@ const formatPrice = (price) => {
 }
 
 const formatFeatureValue = (key, value) => {
-  const featureLabels = {
-    max_users: 'Users',
-    max_quotes_per_month: 'Quotes per month',
-    max_invoices_per_month: 'Invoices per month',
-    max_catalog_items: 'Catalog items',
-    max_templates: 'Templates',
-    max_clients: 'Clients',
-    ai_credits_per_month: 'AI credits per month',
-    follow_up_sequences: 'Follow-up sequences',
-    approval_workflows: 'Approval workflows',
-    approval_rules: 'Approval rules',
-    custom_domains: 'Custom domains',
-    workspaces: 'Workspaces',
-  }
-
-  const label = featureLabels[key] || key
+  const feature = features.value?.find(f => f.key === key)
+  const label = feature?.label || key
 
   if (value === null || value === true) {
     return label
@@ -65,24 +70,23 @@ const formatFeatureValue = (key, value) => {
     return null
   }
 
+  if (typeof value === 'number') {
+    return value === 0 ? 'Not included' : `${label}: ${value.toLocaleString()}`
+  }
+
   return `${label}: ${value}`
 }
 
 const planFeatures = computed(() => {
-  const features = plan.value?.features || {}
+  const planFeatures = plan.value?.features || {}
   const featureList = []
 
-  Object.entries(features).forEach(([key, value]) => {
+  Object.entries(planFeatures).forEach(([key, value]) => {
     const formatted = formatFeatureValue(key, value)
     if (formatted) {
-      let icon = Check
-      
-      if (key.includes('ai')) icon = Sparkles
-      else if (key.includes('approval')) icon = Shield
-      else if (key.includes('users') || key.includes('workspaces')) icon = Users
-      else if (key.includes('follow_up')) icon = Zap
-
-      featureList.push({ name: formatted, icon })
+      const feature = features.value?.find(f => f.key === key)
+      const iconComponent = iconMap[feature?.icon] || Check
+      featureList.push({ name: formatted, icon: iconComponent })
     }
   })
 

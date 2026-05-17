@@ -10,6 +10,10 @@ class PaddleWebhookController extends CashierWebhookController
     {
         parent::handleSubscriptionCreated($payload);
 
+        \Log::info("Paddle Payload", [
+            'data' => $payload
+        ]);
+
         $customData = $payload['data']['custom_data'] ?? [];
         $workspaceId = $customData['workspace_id'] ?? null;
         $planId = $customData['plan_id'] ?? null;

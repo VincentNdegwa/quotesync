@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Enums\Feature;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ class SubscriptionController extends Controller
         return Inertia::render('billing/Plans', [
             'workspace' => $workspace,
             'plans' => Plan::active()->ordered()->get(),
+            'features' => Feature::forFrontend(),
         ]);
     }
 
@@ -44,6 +46,7 @@ class SubscriptionController extends Controller
             return Inertia::render('billing/Subscribe', [
                 'plan' => $plan,
                 'checkout' => $checkout,
+                'features' => Feature::forFrontend(),
             ]);
         } catch (\Laravel\Paddle\Exceptions\PaddleException $e) {
             \Inertia\Inertia::flash('toast', [
@@ -57,23 +60,32 @@ class SubscriptionController extends Controller
 
     public function show(Request $request)
     {
-        $workspace = Auth::user()->currentWorkspace;
+        $workspace = Auth::user()->currentWorkspace->loadCount(['members', 'catalogItems', 'templates', 'clients', 'followUpSequences'])->load('owner');
         $subscription = $workspace->subscription('default');
         $usage = $workspace->currentUsage();
-        $features = request()->attributes->get('workspace_plan_features', []);
+        $features = $workspace->plan?->features ?? [];
 
         return Inertia::render('billing/Index', [
             'workspace' => $workspace,
             'subscription' => $subscription,
+            'features' => Feature::forFrontend(),
             'usage' => [
-                'quotes_sent' => $usage->quotes_sent,
-                'invoices_sent' => $usage->invoices_sent,
-                'ai_credits_used' => $usage->ai_credits_used,
-                'max_quotes_per_month' => $features['max_quotes_per_month'] ?? null,
-                'max_invoices_per_month' => $features['max_invoices_per_month'] ?? null,
-                'ai_credits_per_month' => $features['ai_credits_per_month'] ?? null,
+                'current' => [
+                    'max_users' => $workspace->members_count,
+                    'max_quotes_per_month' => $usage->quotes_sent ?? 0,
+                    'max_invoices_per_month' => $usage->invoices_sent ?? 0,
+                    'max_catalog_items' => $workspace->catalog_items_count,
+                    'max_templates' => $workspace->templates_count,
+                    'max_clients' => $workspace->clients_count,
+                    'ai_credits_per_month' => $usage->ai_credits_used ?? 0,
+                    'follow_up_sequences' => $workspace->follow_up_sequences_count,
+                    'approval_workflows' => 0,
+                    'approval_rules' => 0,
+                    'custom_domains' => 0,
+                    'workspaces' => $workspace->owner->workspaces->count(),
+                ],
+                'limits' => $features,
             ],
-            'paymentMethod' => null,
         ]);
     }
 

@@ -17,13 +17,13 @@ class Workspace extends LaratrustTeam
 
     protected static function booted(): void
     {
-        static::updated(function (Workspace $workspace) {
+        static::saved(function ($workspace) {
             if ($workspace->isDirty('plan_id')) {
                 app(WorkspacePlanCache::class)->invalidate($workspace);
             }
         });
 
-        static::deleted(function (Workspace $workspace) {
+        static::deleted(function ($workspace) {
             app(WorkspacePlanCache::class)->invalidate($workspace);
         });
     }
@@ -208,6 +208,21 @@ class Workspace extends LaratrustTeam
     public function followUpSequences(): HasMany
     {
         return $this->hasMany(FollowUpSequence::class);
+    }
+
+    public function catalogItems(): HasMany
+    {
+        return $this->hasMany(CatalogItem::class);
+    }
+
+    public function clients(): HasMany
+    {
+        return $this->hasMany(Client::class);
+    }
+
+    public function templates(): HasMany
+    {
+        return $this->hasMany(QuoteTemplate::class);
     }
 
     /**
