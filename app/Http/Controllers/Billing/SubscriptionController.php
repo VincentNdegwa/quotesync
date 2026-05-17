@@ -65,9 +65,32 @@ class SubscriptionController extends Controller
         $usage = $workspace->currentUsage();
         $features = $workspace->plan?->features ?? [];
 
+        $subscriptionData = null;
+        if ($subscription) {
+            $nextPayment = $subscription->nextPayment();
+            $subscriptionData = [
+                'id' => $subscription->id,
+                'paddle_id' => $subscription->paddle_id,
+                'status' => $subscription->status,
+                'trial_ends_at' => $subscription->trial_ends_at?->toIso8601String(),
+                'paused_at' => $subscription->paused_at?->toIso8601String(),
+                'ends_at' => $subscription->ends_at?->toIso8601String(),
+                'cancelled' => $subscription->canceled(),
+                'on_grace_period' => $subscription->onGracePeriod(),
+                'past_due' => $subscription->pastDue(),
+                'trialing' => $subscription->onTrial(),
+                'trial_expired' => $subscription->hasExpiredTrial(),
+                'paused' => $subscription->paused(),
+                'on_paused_grace_period' => $subscription->onPausedGracePeriod(),
+                'next_payment_at' => $nextPayment?->date()?->format('Y-m-d H:i:s'),
+                'next_payment_amount' => $nextPayment?->amount(),
+                'transactions' => $subscription->transactions->take(10)->toArray(),
+            ];
+        }
+
         return Inertia::render('billing/Index', [
             'workspace' => $workspace,
-            'subscription' => $subscription,
+            'subscription' => $subscriptionData,
             'features' => Feature::forFrontend(),
             'usage' => [
                 'current' => [
@@ -96,8 +119,12 @@ class SubscriptionController extends Controller
 
         $workspace->subscription()->swap($newPriceId);
 
-        return redirect()->route('billing.subscription')
-            ->with('success', 'Plan updated successfully.');
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Plan updated successfully.',
+        ]);
+
+        return redirect()->back();
     }
 
     public function cancel(Request $request)
@@ -105,8 +132,12 @@ class SubscriptionController extends Controller
         $workspace = Auth::user()->currentWorkspace;
         $workspace->subscription()->cancel();
 
-        return redirect()->route('billing.subscription')
-            ->with('success', 'Subscription canceled. You will retain access until the end of your billing period.');
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Subscription canceled. You will retain access until the end of your billing period.',
+        ]);
+
+        return redirect()->back();
     }
 
     public function resume(Request $request)
@@ -114,8 +145,12 @@ class SubscriptionController extends Controller
         $workspace = Auth::user()->currentWorkspace;
         $workspace->subscription()->stopCancelation();
 
-        return redirect()->route('billing.subscription')
-            ->with('success', 'Subscription resumed.');
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Subscription resumed.',
+        ]);
+
+        return redirect()->back();
     }
 
     public function updatePaymentMethod(Request $request)
