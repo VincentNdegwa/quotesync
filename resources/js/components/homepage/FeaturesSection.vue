@@ -108,7 +108,8 @@ const features = [
             >
                 <!-- Background -->
                 <template #background>
-                    <div v-if="feature.hasActivityList"
+                    <div
+                        v-if="feature.hasActivityList"
                         class="absolute top-4 right-2 h-[300px] w-full scale-75 border-none transition-all duration-300 ease-out group-hover:scale-90"
                         style="
                             mask-image: linear-gradient(
@@ -158,7 +159,10 @@ const features = [
                         </div>
                     </div>
 
-                    <div v-if="feature.hasBuilderImage" class="absolute inset-0 overflow-hidden">
+                    <div
+                        v-if="feature.hasBuilderImage"
+                        class="absolute inset-0 overflow-hidden"
+                    >
                         <img
                             src="/home/features/builder.png"
                             alt="Quote Builder"
@@ -223,7 +227,10 @@ const features = [
                         </Card>
                     </Marquee>
 
-                    <div v-if="feature.hasKanbanImage" class="absolute inset-0 overflow-hidden">
+                    <div
+                        v-if="feature.hasKanbanImage"
+                        class="absolute inset-0 overflow-hidden"
+                    >
                         <img
                             src="/home/features/kanban.png"
                             alt="Pipeline Management"

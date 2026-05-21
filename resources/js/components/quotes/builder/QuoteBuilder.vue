@@ -801,7 +801,9 @@ const applyCatalogItemToLineItem = (
     }));
     item.price_tier_applied = false;
 
-    const resolvedVariant = catalogItem.variants.find((variant) => variant.is_default) ?? catalogItem.variants[0];
+    const resolvedVariant =
+        catalogItem.variants.find((variant) => variant.is_default) ??
+        catalogItem.variants[0];
 
     item.catalog_item_variant_id = resolvedVariant.id;
     item.unit_price = Number(resolvedVariant.unit_price);
@@ -1057,7 +1059,9 @@ const ensureDefaultVariants = (): void => {
                 return;
             }
 
-            const resolvedVariant = catalogItem.variants.find((variant) => variant.is_default) ?? catalogItem.variants[0];
+            const resolvedVariant =
+                catalogItem.variants.find((variant) => variant.is_default) ??
+                catalogItem.variants[0];
 
             item.catalog_item_variant_id = resolvedVariant.id;
             item.unit_price = Number(resolvedVariant.unit_price);

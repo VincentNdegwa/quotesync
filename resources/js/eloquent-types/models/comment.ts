@@ -22,5 +22,8 @@ export interface Comment extends CommentBase {
     commentable?: unknown;
 }
 
-export type CreateCommentPayload = Omit<CommentBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateCommentPayload = Omit<
+    CommentBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateCommentPayload = Partial<CreateCommentPayload>;

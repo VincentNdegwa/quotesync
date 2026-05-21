@@ -1,16 +1,22 @@
-import type { QuoteModel } from './models';
-import type { 
-    Client, 
-    ConfigurationUnit, 
-    CatalogCategory, 
+import type {
+    Client,
+    ConfigurationUnit,
+    CatalogCategory,
     Tax,
-    CatalogItem 
+    CatalogItem,
 } from '@/eloquent-types/models';
+import type { QuoteModel } from './models';
 
 // ClientRecord extends the eloquent Client type with additional computed fields
 export type ClientRecord = Omit<
     Client,
-    'workspace' | 'creator' | 'tags' | 'notes' | 'contacts' | 'quotes' | 'primaryContact'
+    | 'workspace'
+    | 'creator'
+    | 'tags'
+    | 'notes'
+    | 'contacts'
+    | 'quotes'
+    | 'primaryContact'
 > & {
     tags: string[] | null;
     tag_ids?: number[];
@@ -35,9 +41,15 @@ export type ClientStats = {
     quote_history: QuoteModel[];
 };
 
-export type ConfigurationUnitRecord = Omit<ConfigurationUnit, 'workspace' | 'createdBy'>;
+export type ConfigurationUnitRecord = Omit<
+    ConfigurationUnit,
+    'workspace' | 'createdBy'
+>;
 
-export type CatalogCategoryRecord = Omit<CatalogCategory, 'workspace' | 'createdBy'>;
+export type CatalogCategoryRecord = Omit<
+    CatalogCategory,
+    'workspace' | 'createdBy'
+>;
 
 export type TaxRecord = Omit<Tax, 'workspace' | 'createdBy'>;
 

@@ -1,9 +1,9 @@
 import type { ColumnDef } from '@tanstack/vue-table';
+import { Trash2 } from 'lucide-vue-next';
 import { h } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Trash2 } from 'lucide-vue-next';
 
 export type Rule = {
     id: number;
@@ -24,20 +24,37 @@ export const getRuleColumns = (
     {
         accessorKey: 'trigger_type',
         header: 'Trigger',
-        cell: ({ row }) => {
+        cell: ({ row }): any => {
             const rule = row.original;
+
             if (rule.trigger_type === 'value_above') {
-                return h(Badge, { variant: 'secondary' }, `Value above ${new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(rule.threshold_value ?? 0)}`);
+                return h(
+                    Badge,
+                    { variant: 'secondary' },
+                    `Value above ${new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(rule.threshold_value ?? 0)}`,
+                );
             }
+
             if (rule.trigger_type === 'value_below') {
-                return h(Badge, { variant: 'secondary' }, `Value below ${new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(rule.threshold_value ?? 0)}`);
+                return h(
+                    Badge,
+                    { variant: 'secondary' },
+                    `Value below ${new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(rule.threshold_value ?? 0)}`,
+                );
             }
+
             if (rule.trigger_type === 'client') {
-                return h(Badge, { variant: 'secondary' }, `Client: ${rule.client?.company_name ?? '—'}`);
+                return h(
+                    Badge,
+                    { variant: 'secondary' },
+                    `Client: ${rule.client?.company_name ?? '—'}`,
+                );
             }
+
             if (rule.trigger_type === 'all_quotes') {
                 return h(Badge, { variant: 'secondary' }, 'All quotes');
             }
+
             return h(Badge, { variant: 'outline' }, rule.trigger_type);
         },
     },
@@ -54,20 +71,25 @@ export const getRuleColumns = (
     {
         accessorKey: 'is_active',
         header: 'Active',
-        cell: ({ row }) => 
+        cell: ({ row }) =>
             h(Switch, {
                 checked: row.original.is_active,
-                onCheckedChange: (checked: boolean) => onToggle(row.original, checked),
+                onCheckedChange: (checked: boolean) =>
+                    onToggle(row.original, checked),
             }),
     },
     {
         id: 'actions',
         header: 'Actions',
-        cell: ({ row }) => 
-            h(Button, {
-                size: 'sm',
-                variant: 'ghost',
-                onClick: () => onDelete(row.original),
-            }, h(Trash2, { class: 'h-4 w-4 text-destructive' })),
+        cell: ({ row }) =>
+            h(
+                Button,
+                {
+                    size: 'sm',
+                    variant: 'ghost',
+                    onClick: () => onDelete(row.original),
+                },
+                h(Trash2, { class: 'h-4 w-4 text-destructive' }),
+            ),
     },
 ];

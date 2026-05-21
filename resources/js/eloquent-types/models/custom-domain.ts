@@ -19,5 +19,8 @@ export interface CustomDomain extends CustomDomainBase {
     workspace?: Workspace;
 }
 
-export type CreateCustomDomainPayload = Omit<CustomDomainBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateCustomDomainPayload = Omit<
+    CustomDomainBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateCustomDomainPayload = Partial<CreateCustomDomainPayload>;

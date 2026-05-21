@@ -79,7 +79,7 @@ const cellValue = (plan: any, key: string): { type: string; text?: string } => {
 
 const selectPlan = (planSlug: string): void => {
     const plan = plans.value?.find((p) => p.slug === planSlug);
-    
+
     if (!plan) {
         return;
     }

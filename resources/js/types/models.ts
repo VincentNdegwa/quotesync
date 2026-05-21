@@ -337,10 +337,7 @@ export type InvoiceModel = {
     updated_at: string | null;
     deleted_at: string | null;
     client: ClientModel | null;
-    workspace: Pick<
-        WorkspaceModel,
-        'id' | 'name' | 'owner_id'
-    > | null;
+    workspace: Pick<WorkspaceModel, 'id' | 'name' | 'owner_id'> | null;
     assignee: Pick<UserModel, 'id' | 'name' | 'email'> | null;
     creator: Pick<UserModel, 'id' | 'name' | 'email'> | null;
     quote: Pick<QuoteModel, 'id' | 'number' | 'title'> | null;

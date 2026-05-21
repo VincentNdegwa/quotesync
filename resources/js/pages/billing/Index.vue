@@ -38,8 +38,11 @@ import {
 } from '@/components/ui/table';
 import { useFormat } from '@/composables/useFormat';
 import { paddleConfig } from '@/config/paddle';
-import { plans as billingPlans, subscription as billingSubscription } from '@/routes/billing';
-import { cancel as billingSubscriptionCancel, resume as billingSubscriptionResume } from '@/routes/billing/subscription';
+import { plans as billingPlans } from '@/routes/billing';
+import {
+    cancel as billingSubscriptionCancel,
+    resume as billingSubscriptionResume,
+} from '@/routes/billing/subscription';
 
 defineOptions({
     layout: {
@@ -194,7 +197,8 @@ const handleCancelConfirm = (): void => {
     });
 };
 
-const resumeSubscription = (): void => router.put(billingSubscriptionResume().url);
+const resumeSubscription = (): void =>
+    router.put(billingSubscriptionResume().url);
 const upgradePlan = (): void => router.get(billingPlans().url);
 
 const downloadInvoice = (paddleId: string): void => {

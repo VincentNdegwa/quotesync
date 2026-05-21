@@ -1,20 +1,19 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
 import {
-    AlertTriangle,
     CheckCircle2,
-    ChevronRight,
     Clock,
     Plus,
     Settings2,
     Shield,
-    Trash2,
     XCircle,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import { getApprovalColumns } from '@/components/approvals/approval-columns';
+import ApprovalDataTable from '@/components/approvals/ApprovalDataTable.vue';
+import { getRuleColumns } from '@/components/approvals/rule-columns';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -33,12 +32,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useFormat } from '@/composables/useFormat';
-import ApprovalDataTable from '@/components/approvals/ApprovalDataTable.vue';
-import { getApprovalColumns } from '@/components/approvals/approval-columns';
-import { getRuleColumns } from '@/components/approvals/rule-columns';
 
 defineOptions({
     layout: {
@@ -114,47 +109,6 @@ const approvalColumns = computed(() =>
 const ruleColumns = computed(() =>
     getRuleColumns(props.currency, toggleRule, deleteRule),
 );
-
-const daysAgo = (val: string): string => {
-    const diff = Math.floor((Date.now() - new Date(val).getTime()) / 86400000);
-
-    if (diff === 0) {
-        return 'today';
-    }
-
-    if (diff === 1) {
-        return 'yesterday';
-    }
-
-    return `${diff} days ago`;
-};
-
-type RuleLabelContext = Pick<
-    Rule,
-    'trigger_type' | 'threshold_value' | 'client'
-> & {
-    trigger_type: string;
-};
-
-const triggerLabel = (rule: RuleLabelContext): string => {
-    if (rule.trigger_type === 'value_above') {
-        return `Quote value above ${fmt(rule.threshold_value ?? 0)}`;
-    }
-
-    if (rule.trigger_type === 'value_below') {
-        return `Quote value below ${fmt(rule.threshold_value ?? 0)}`;
-    }
-
-    if (rule.trigger_type === 'client') {
-        return `Client: ${rule.client?.company_name ?? '—'}`;
-    }
-
-    if (rule.trigger_type === 'all_quotes') {
-        return 'All quotes';
-    }
-
-    return rule.trigger_type;
-};
 
 const thresholdRequired = computed(() =>
     ['value_above', 'value_below'].includes(newRuleForm.trigger_type),

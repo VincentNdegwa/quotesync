@@ -45,8 +45,9 @@ export const getApprovalColumns = (
     {
         accessorKey: 'quote.total',
         header: 'Amount',
-        cell: ({ row }) => {
+        cell: ({ row }): string => {
             const value = row.original.quote.total;
+
             return new Intl.NumberFormat('en-US', {
                 style: 'currency',
                 currency: currency,
@@ -61,47 +62,71 @@ export const getApprovalColumns = (
     {
         accessorKey: 'created_at',
         header: 'Submitted',
-        cell: ({ row }) => {
-            const diff = Math.floor((Date.now() - new Date(row.original.created_at).getTime()) / 86400000);
-            if (diff === 0) return 'today';
-            if (diff === 1) return 'yesterday';
+        cell: ({ row }): string => {
+            const diff = Math.floor(
+                (Date.now() - new Date(row.original.created_at).getTime()) /
+                    86400000,
+            );
+
+            if (diff === 0) {
+                return 'today';
+            }
+
+            if (diff === 1) {
+                return 'yesterday';
+            }
+
             return `${diff} days ago`;
         },
     },
     {
         accessorKey: 'approval_rule',
         header: 'Rule',
-        cell: ({ row }) => {
+        cell: ({ row }): any => {
             const rule = row.original.approval_rule;
-            if (!rule) return h(Badge, { variant: 'outline' }, 'Manual');
-            
+
+            if (!rule) {
+                return h(Badge, { variant: 'outline' }, 'Manual');
+            }
+
             if (rule.trigger_type === 'value_above') {
                 return h(Badge, { variant: 'secondary' }, 'Value above');
             }
+
             if (rule.trigger_type === 'value_below') {
                 return h(Badge, { variant: 'secondary' }, 'Value below');
             }
+
             if (rule.trigger_type === 'client') {
                 return h(Badge, { variant: 'secondary' }, 'Client');
             }
+
             return h(Badge, { variant: 'outline' }, rule.trigger_type);
         },
     },
     {
         id: 'actions',
         header: 'Actions',
-        cell: ({ row }) => 
+        cell: ({ row }) =>
             h('div', { class: 'flex gap-2' }, [
-                h(Button, {
-                    size: 'sm',
-                    variant: 'default',
-                    onClick: () => onApprove(row.original),
-                }, 'Approve'),
-                h(Button, {
-                    size: 'sm',
-                    variant: 'destructive',
-                    onClick: () => onReject(row.original),
-                }, 'Reject'),
+                h(
+                    Button,
+                    {
+                        size: 'sm',
+                        variant: 'default',
+                        onClick: () => onApprove(row.original),
+                    },
+                    'Approve',
+                ),
+                h(
+                    Button,
+                    {
+                        size: 'sm',
+                        variant: 'destructive',
+                        onClick: () => onReject(row.original),
+                    },
+                    'Reject',
+                ),
             ]),
     },
 ];

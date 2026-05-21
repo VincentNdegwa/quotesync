@@ -1,5 +1,5 @@
-import type { QuoteModel } from '@/types/models';
 import type { ClientBase, Contact } from '@/eloquent-types/models';
+import type { QuoteModel } from '@/types/models';
 
 export type Paginator<T> = {
     data: T[];
@@ -38,4 +38,7 @@ export type ClientStats = {
     quote_history: QuoteModel[];
 };
 
-export type ContactRecord = Pick<Contact, 'id' | 'name' | 'email' | 'phone' | 'position' | 'is_primary'>;
+export type ContactRecord = Pick<
+    Contact,
+    'id' | 'name' | 'email' | 'phone' | 'position' | 'is_primary'
+>;

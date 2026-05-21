@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import ClientForm from '@/pages/clients/components/ClientForm.vue';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -11,6 +10,7 @@ import {
     SheetTitle,
 } from '@/components/ui/sheet';
 import type { Client } from '@/eloquent-types/models';
+import ClientForm from '@/pages/clients/components/ClientForm.vue';
 
 type MinimalClient = Pick<Client, 'id' | 'company_name'>;
 

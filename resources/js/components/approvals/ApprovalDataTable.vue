@@ -6,7 +6,7 @@ import {
     useVueTable,
 } from '@tanstack/vue-table';
 import type { SortingState } from '@tanstack/vue-table';
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import {
     Table,
     TableBody,
