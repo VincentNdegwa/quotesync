@@ -5,7 +5,7 @@ import type { Invoice } from './invoice';
 import type { Workspace } from './workspace';
 import type { User } from './user';
 
-export interface InvoiceActivity {
+export interface InvoiceActivityBase {
     id: number;
     metadata?: Nullable<Record<string, unknown>>;
     invoice_id: number;
@@ -17,10 +17,13 @@ export interface InvoiceActivity {
     user_agent?: Nullable<string>;
     created_at: string;
     updated_at: string;
+}
+
+export interface InvoiceActivity extends InvoiceActivityBase {
     invoice?: Invoice;
     workspace?: Workspace;
     user?: User;
 }
 
-export type CreateInvoiceActivityPayload = Omit<InvoiceActivity, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'invoice' | 'workspace' | 'user'>;
+export type CreateInvoiceActivityPayload = Omit<InvoiceActivityBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateInvoiceActivityPayload = Partial<CreateInvoiceActivityPayload>;

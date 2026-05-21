@@ -6,7 +6,7 @@ import type { Role } from './role';
 import type { Permission } from './permission';
 import type { DatabaseNotification } from './database-notification';
 
-export interface User {
+export interface UserBase {
     id: number;
     email_verified_at?: Nullable<string>;
     two_factor_confirmed_at?: Nullable<string>;
@@ -15,6 +15,9 @@ export interface User {
     current_workspace_id: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface User extends UserBase {
     workspaces?: Workspace[];
     ownedWorkspaces?: Workspace[];
     currentWorkspace?: Workspace;
@@ -27,5 +30,5 @@ export interface User {
     unreadNotifications?: DatabaseNotification[];
 }
 
-export type CreateUserPayload = Omit<User, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspaces' | 'ownedWorkspaces' | 'currentWorkspace' | 'roles' | 'rolesTeams' | 'permissionsTeams' | 'permissions' | 'notifications' | 'readNotifications' | 'unreadNotifications'>;
+export type CreateUserPayload = Omit<UserBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateUserPayload = Partial<CreateUserPayload>;

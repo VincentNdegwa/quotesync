@@ -6,7 +6,7 @@ import type { CatalogItemVariant } from './catalog-item-variant';
 
 export type PricingType = 'fixed_price' | 'discount_percent';
 
-export interface CatalogItemPriceTier {
+export interface CatalogItemPriceTierBase {
     id: number;
     pricing_type: PricingType;
     unit_price: number;
@@ -17,9 +17,12 @@ export interface CatalogItemPriceTier {
     max_quantity?: Nullable<number>;
     created_at: string;
     updated_at: string;
+}
+
+export interface CatalogItemPriceTier extends CatalogItemPriceTierBase {
     catalogItem?: CatalogItem;
     variant?: CatalogItemVariant;
 }
 
-export type CreateCatalogItemPriceTierPayload = Omit<CatalogItemPriceTier, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'catalogItem' | 'variant'>;
+export type CreateCatalogItemPriceTierPayload = Omit<CatalogItemPriceTierBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateCatalogItemPriceTierPayload = Partial<CreateCatalogItemPriceTierPayload>;

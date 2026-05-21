@@ -2,13 +2,16 @@
 
 import type { Nullable } from './model-helpers';
 
-export interface DatabaseNotification {
+export interface DatabaseNotificationBase {
     data: Record<string, unknown>;
     read_at?: Nullable<string>;
     created_at: string;
     updated_at: string;
+}
+
+export interface DatabaseNotification extends DatabaseNotificationBase {
     notifiable?: unknown;
 }
 
-export type CreateDatabaseNotificationPayload = Omit<DatabaseNotification, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'notifiable'>;
+export type CreateDatabaseNotificationPayload = Omit<DatabaseNotificationBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateDatabaseNotificationPayload = Partial<CreateDatabaseNotificationPayload>;

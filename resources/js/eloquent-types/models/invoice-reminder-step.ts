@@ -6,7 +6,7 @@ import type { InvoiceReminder } from './invoice-reminder';
 export type FollowUpChannel = 'email' | 'whatsapp' | 'sms';
 export type InvoiceReminderType = 'before_due' | 'on_due' | 'after_due';
 
-export interface InvoiceReminderStep {
+export interface InvoiceReminderStepBase {
     id: number;
     day_offset: number;
     channel: FollowUpChannel;
@@ -18,9 +18,12 @@ export interface InvoiceReminderStep {
     message_template: string;
     created_at: string;
     updated_at: string;
+}
+
+export interface InvoiceReminderStep extends InvoiceReminderStepBase {
     sequence?: InvoiceReminderSequence;
     invoiceReminders?: InvoiceReminder[];
 }
 
-export type CreateInvoiceReminderStepPayload = Omit<InvoiceReminderStep, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'sequence' | 'invoiceReminders'>;
+export type CreateInvoiceReminderStepPayload = Omit<InvoiceReminderStepBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateInvoiceReminderStepPayload = Partial<CreateInvoiceReminderStepPayload>;

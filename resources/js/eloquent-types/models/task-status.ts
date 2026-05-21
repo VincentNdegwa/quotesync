@@ -3,7 +3,7 @@
 import type { Workspace } from './workspace';
 import type { Task } from './task';
 
-export interface TaskStatus {
+export interface TaskStatusBase {
     id: number;
     is_default: boolean;
     is_system: boolean;
@@ -14,9 +14,12 @@ export interface TaskStatus {
     sort_order: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface TaskStatus extends TaskStatusBase {
     workspace?: Workspace;
     tasks?: Task[];
 }
 
-export type CreateTaskStatusPayload = Omit<TaskStatus, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'tasks'>;
+export type CreateTaskStatusPayload = Omit<TaskStatusBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateTaskStatusPayload = Partial<CreateTaskStatusPayload>;

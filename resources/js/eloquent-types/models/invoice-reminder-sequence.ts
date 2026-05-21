@@ -3,16 +3,19 @@
 import type { Workspace } from './workspace';
 import type { InvoiceReminderStep } from './invoice-reminder-step';
 
-export interface InvoiceReminderSequence {
+export interface InvoiceReminderSequenceBase {
     id: number;
     is_default: boolean;
     workspace_id: number;
     name: string;
     created_at: string;
     updated_at: string;
+}
+
+export interface InvoiceReminderSequence extends InvoiceReminderSequenceBase {
     workspace?: Workspace;
     steps?: InvoiceReminderStep[];
 }
 
-export type CreateInvoiceReminderSequencePayload = Omit<InvoiceReminderSequence, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'steps'>;
+export type CreateInvoiceReminderSequencePayload = Omit<InvoiceReminderSequenceBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateInvoiceReminderSequencePayload = Partial<CreateInvoiceReminderSequencePayload>;

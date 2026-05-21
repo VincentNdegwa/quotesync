@@ -3,7 +3,7 @@
 import type { Nullable } from './model-helpers';
 import type { CreditNote } from './credit-note';
 
-export interface CreditNoteLineItem {
+export interface CreditNoteLineItemBase {
     id: number;
     quantity: number;
     unit_price: number;
@@ -20,8 +20,11 @@ export interface CreditNoteLineItem {
     unit?: Nullable<string>;
     created_at: string;
     updated_at: string;
+}
+
+export interface CreditNoteLineItem extends CreditNoteLineItemBase {
     creditNote?: CreditNote;
 }
 
-export type CreateCreditNoteLineItemPayload = Omit<CreditNoteLineItem, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'creditNote'>;
+export type CreateCreditNoteLineItemPayload = Omit<CreditNoteLineItemBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateCreditNoteLineItemPayload = Partial<CreateCreditNoteLineItemPayload>;

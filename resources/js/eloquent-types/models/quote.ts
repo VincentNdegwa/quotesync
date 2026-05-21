@@ -20,7 +20,7 @@ import type { Task } from './task';
 
 export type QuoteStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'won' | 'lost' | 'expired' | 'pending_approval';
 
-export interface Quote {
+export interface QuoteBase {
     id: number;
     status: QuoteStatus;
     valid_until?: Nullable<string>;
@@ -76,6 +76,9 @@ export interface Quote {
     win_probability?: Nullable<number>;
     created_at: string;
     updated_at: string;
+}
+
+export interface Quote extends QuoteBase {
     workspace?: Workspace;
     client?: Client;
     assignee?: User;
@@ -99,5 +102,5 @@ export interface Quote {
     tasks?: Task[];
 }
 
-export type CreateQuotePayload = Omit<Quote, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'client' | 'assignee' | 'creator' | 'template' | 'parentQuote' | 'sections' | 'lineItems' | 'activities' | 'invoices' | 'shortCode' | 'quoteFollowUps' | 'trackingEvents' | 'messages' | 'winProbability' | 'quoteApprovals' | 'versions' | 'activeVersion' | 'parent' | 'comments' | 'tasks'>;
+export type CreateQuotePayload = Omit<QuoteBase, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
 export type UpdateQuotePayload = Partial<CreateQuotePayload>;

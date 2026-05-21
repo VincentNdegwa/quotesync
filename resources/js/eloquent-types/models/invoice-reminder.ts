@@ -5,7 +5,7 @@ import type { Invoice } from './invoice';
 import type { Workspace } from './workspace';
 import type { InvoiceReminderStep } from './invoice-reminder-step';
 
-export interface InvoiceReminder {
+export interface InvoiceReminderBase {
     id: number;
     scheduled_at: string;
     sent_at?: Nullable<string>;
@@ -19,10 +19,13 @@ export interface InvoiceReminder {
     error_message?: Nullable<string>;
     created_at: string;
     updated_at: string;
+}
+
+export interface InvoiceReminder extends InvoiceReminderBase {
     invoice?: Invoice;
     workspace?: Workspace;
     step?: InvoiceReminderStep;
 }
 
-export type CreateInvoiceReminderPayload = Omit<InvoiceReminder, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'invoice' | 'workspace' | 'step'>;
+export type CreateInvoiceReminderPayload = Omit<InvoiceReminderBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateInvoiceReminderPayload = Partial<CreateInvoiceReminderPayload>;

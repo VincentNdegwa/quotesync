@@ -5,7 +5,7 @@ import type { Quote } from './quote';
 import type { ApprovalRule } from './approval-rule';
 import type { User } from './user';
 
-export interface QuoteApproval {
+export interface QuoteApprovalBase {
     id: number;
     approved_at?: Nullable<string>;
     quote_id: number;
@@ -15,10 +15,13 @@ export interface QuoteApproval {
     comment?: Nullable<string>;
     created_at: string;
     updated_at: string;
+}
+
+export interface QuoteApproval extends QuoteApprovalBase {
     quote?: Quote;
     approvalRule?: ApprovalRule;
     approver?: User;
 }
 
-export type CreateQuoteApprovalPayload = Omit<QuoteApproval, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'quote' | 'approvalRule' | 'approver'>;
+export type CreateQuoteApprovalPayload = Omit<QuoteApprovalBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateQuoteApprovalPayload = Partial<CreateQuoteApprovalPayload>;

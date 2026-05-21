@@ -4,7 +4,7 @@ import type { Nullable } from './model-helpers';
 import type { Workspace } from './workspace';
 import type { User } from './user';
 
-export interface ImportHistory {
+export interface ImportHistoryBase {
     id: number;
     error_details?: Nullable<Record<string, unknown>>;
     started_at?: Nullable<string>;
@@ -18,9 +18,12 @@ export interface ImportHistory {
     failed_rows: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface ImportHistory extends ImportHistoryBase {
     workspace?: Workspace;
     user?: User;
 }
 
-export type CreateImportHistoryPayload = Omit<ImportHistory, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'user'>;
+export type CreateImportHistoryPayload = Omit<ImportHistoryBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateImportHistoryPayload = Partial<CreateImportHistoryPayload>;

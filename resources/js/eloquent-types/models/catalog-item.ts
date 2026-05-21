@@ -9,7 +9,7 @@ import type { User } from './user';
 import type { CatalogItemVariant } from './catalog-item-variant';
 import type { CatalogItemPriceTier } from './catalog-item-price-tier';
 
-export interface CatalogItem {
+export interface CatalogItemBase {
     id: number;
     unit_price: number;
     cost_price: number;
@@ -26,6 +26,9 @@ export interface CatalogItem {
     created_by?: Nullable<number>;
     created_at: string;
     updated_at: string;
+}
+
+export interface CatalogItem extends CatalogItemBase {
     workspace?: Workspace;
     category?: CatalogCategory;
     configurationUnit?: ConfigurationUnit;
@@ -35,5 +38,5 @@ export interface CatalogItem {
     priceTiers?: CatalogItemPriceTier[];
 }
 
-export type CreateCatalogItemPayload = Omit<CatalogItem, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'category' | 'configurationUnit' | 'taxes' | 'creator' | 'variants' | 'priceTiers'>;
+export type CreateCatalogItemPayload = Omit<CatalogItemBase, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
 export type UpdateCatalogItemPayload = Partial<CreateCatalogItemPayload>;

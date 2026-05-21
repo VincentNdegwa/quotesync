@@ -10,7 +10,7 @@ import type { CreditNoteLineItem } from './credit-note-line-item';
 export type CreditNoteType = 'full' | 'partial' | 'line_items';
 export type CreditNoteStatus = 'draft' | 'issued' | 'applied' | 'voided';
 
-export interface CreditNote {
+export interface CreditNoteBase {
     id: number;
     type: CreditNoteType;
     status: CreditNoteStatus;
@@ -39,6 +39,9 @@ export interface CreditNote {
     void_reason?: Nullable<string>;
     created_at: string;
     updated_at: string;
+}
+
+export interface CreditNote extends CreditNoteBase {
     workspace?: Workspace;
     invoice?: Invoice;
     client?: Client;
@@ -46,5 +49,5 @@ export interface CreditNote {
     lineItems?: CreditNoteLineItem[];
 }
 
-export type CreateCreditNotePayload = Omit<CreditNote, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'invoice' | 'client' | 'createdBy' | 'lineItems'>;
+export type CreateCreditNotePayload = Omit<CreditNoteBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateCreditNotePayload = Partial<CreateCreditNotePayload>;

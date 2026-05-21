@@ -4,7 +4,7 @@ import type { Nullable } from './model-helpers';
 import type { InvoiceLineItem } from './invoice-line-item';
 import type { Tax } from './tax';
 
-export interface InvoiceLineItemTax {
+export interface InvoiceLineItemTaxBase {
     id: number;
     tax_rate: number;
     inclusive: boolean;
@@ -15,9 +15,12 @@ export interface InvoiceLineItemTax {
     tax_label: string;
     created_at: string;
     updated_at: string;
+}
+
+export interface InvoiceLineItemTax extends InvoiceLineItemTaxBase {
     lineItem?: InvoiceLineItem;
     tax?: Tax;
 }
 
-export type CreateInvoiceLineItemTaxPayload = Omit<InvoiceLineItemTax, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'lineItem' | 'tax'>;
+export type CreateInvoiceLineItemTaxPayload = Omit<InvoiceLineItemTaxBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateInvoiceLineItemTaxPayload = Partial<CreateInvoiceLineItemTaxPayload>;

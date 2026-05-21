@@ -5,7 +5,7 @@ import type { Quote } from './quote';
 
 export type TrackingEventType = 'view' | 'section_visible' | 'scroll_depth' | 'time_spent' | 'link_click';
 
-export interface QuoteTrackingEvent {
+export interface QuoteTrackingEventBase {
     id: number;
     event_type: TrackingEventType;
     duration_seconds: number;
@@ -16,8 +16,11 @@ export interface QuoteTrackingEvent {
     section_name?: Nullable<string>;
     ip_address?: Nullable<string>;
     user_agent?: Nullable<string>;
+}
+
+export interface QuoteTrackingEvent extends QuoteTrackingEventBase {
     quote?: Quote;
 }
 
-export type CreateQuoteTrackingEventPayload = Omit<QuoteTrackingEvent, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'quote'>;
+export type CreateQuoteTrackingEventPayload = Omit<QuoteTrackingEventBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateQuoteTrackingEventPayload = Partial<CreateQuoteTrackingEventPayload>;

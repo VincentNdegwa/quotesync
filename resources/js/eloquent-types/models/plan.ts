@@ -3,7 +3,7 @@
 import type { Nullable } from './model-helpers';
 import type { Workspace } from './workspace';
 
-export interface Plan {
+export interface PlanBase {
     id: number;
     features?: Nullable<Record<string, unknown>>;
     monthly_price?: Nullable<number>;
@@ -17,8 +17,11 @@ export interface Plan {
     sort_order: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface Plan extends PlanBase {
     workspaces?: Workspace[];
 }
 
-export type CreatePlanPayload = Omit<Plan, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspaces'>;
+export type CreatePlanPayload = Omit<PlanBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdatePlanPayload = Partial<CreatePlanPayload>;

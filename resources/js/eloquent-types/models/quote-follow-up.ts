@@ -6,7 +6,7 @@ import type { FollowUpStep } from './follow-up-step';
 
 export type QuoteFollowUpStatus = 'pending' | 'sent' | 'cancelled';
 
-export interface QuoteFollowUp {
+export interface QuoteFollowUpBase {
     id: number;
     status: QuoteFollowUpStatus;
     scheduled_at: string;
@@ -16,9 +16,12 @@ export interface QuoteFollowUp {
     follow_up_step_id: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface QuoteFollowUp extends QuoteFollowUpBase {
     quote?: Quote;
     step?: FollowUpStep;
 }
 
-export type CreateQuoteFollowUpPayload = Omit<QuoteFollowUp, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'quote' | 'step'>;
+export type CreateQuoteFollowUpPayload = Omit<QuoteFollowUpBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateQuoteFollowUpPayload = Partial<CreateQuoteFollowUpPayload>;

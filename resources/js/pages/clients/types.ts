@@ -1,12 +1,5 @@
 import type { QuoteModel } from '@/types/models';
-import type {
-    Client,
-    ConfigurationUnit,
-    CatalogCategory,
-    Tax,
-    CatalogItem,
-    Contact,
-} from '@/eloquent-types/models';
+import type { ClientBase, Contact } from '@/eloquent-types/models';
 
 export type Paginator<T> = {
     data: T[];
@@ -21,11 +14,7 @@ export type Paginator<T> = {
     }>;
 };
 
-// ClientRecord extends the eloquent Client type with additional computed fields
-export type ClientRecord = Omit<
-    Client,
-    'workspace' | 'creator' | 'tags' | 'notes' | 'contacts' | 'quotes' | 'primaryContact'
-> & {
+export type ClientRecord = ClientBase & {
     tags: string[] | null;
     tag_ids?: number[];
     contacts?: Array<{
@@ -47,39 +36,6 @@ export type ClientStats = {
     average_quote_value: number;
     average_time_to_acceptance_days: number;
     quote_history: QuoteModel[];
-};
-
-export type ConfigurationUnitRecord = Omit<ConfigurationUnit, 'workspace' | 'createdBy'>;
-
-export type CatalogCategoryRecord = Omit<CatalogCategory, 'workspace' | 'createdBy'>;
-
-export type TaxRecord = Omit<Tax, 'workspace' | 'createdBy'>;
-
-export type CatalogItemRecord = Omit<
-    CatalogItem,
-    'workspace' | 'createdBy' | 'configurationUnit' | 'catalogCategory'
-> & {
-    category?: { id: number; name: string } | null;
-    configuration_unit?: { id: number; name: string; symbol: string } | null;
-    taxes?: Array<{ id: number; name: string; rate: number | string }>;
-    tax_ids?: number[];
-    variants?: Array<{
-        id: number;
-        name: string;
-        sku: string | null;
-        unit_price: number;
-        cost_price: number;
-        is_default: boolean;
-    }>;
-    price_tiers?: Array<{
-        id: number;
-        variant_id: number | null;
-        min_quantity: number;
-        max_quantity: number | null;
-        pricing_type: string;
-        unit_price: number;
-        discount_percent: number;
-    }>;
 };
 
 export type ContactRecord = Pick<Contact, 'id' | 'name' | 'email' | 'phone' | 'position' | 'is_primary'>;

@@ -17,7 +17,7 @@ import type { Customer } from './customer';
 import type { Subscription } from './subscription';
 import type { Transaction } from './transaction';
 
-export interface Workspace {
+export interface WorkspaceBase {
     id: number;
     settings_onboarded_at?: Nullable<string>;
     white_label_mode: boolean;
@@ -42,6 +42,9 @@ export interface Workspace {
     plan_id?: Nullable<number>;
     created_at: string;
     updated_at: string;
+}
+
+export interface Workspace extends WorkspaceBase {
     owner?: User;
     plan?: Plan;
     industry?: Industry;
@@ -60,5 +63,5 @@ export interface Workspace {
     transactions?: Transaction[];
 }
 
-export type CreateWorkspacePayload = Omit<Workspace, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'owner' | 'plan' | 'industry' | 'members' | 'invitations' | 'settings' | 'invoices' | 'usage' | 'creditNotes' | 'followUpSequences' | 'catalogItems' | 'clients' | 'templates' | 'customer' | 'subscriptions' | 'transactions'>;
+export type CreateWorkspacePayload = Omit<WorkspaceBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateWorkspacePayload = Partial<CreateWorkspacePayload>;

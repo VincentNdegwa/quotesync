@@ -3,16 +3,19 @@
 import type { Workspace } from './workspace';
 import type { FollowUpStep } from './follow-up-step';
 
-export interface FollowUpSequence {
+export interface FollowUpSequenceBase {
     id: number;
     is_default: boolean;
     workspace_id: number;
     name: string;
     created_at: string;
     updated_at: string;
+}
+
+export interface FollowUpSequence extends FollowUpSequenceBase {
     workspace?: Workspace;
     steps?: FollowUpStep[];
 }
 
-export type CreateFollowUpSequencePayload = Omit<FollowUpSequence, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'steps'>;
+export type CreateFollowUpSequencePayload = Omit<FollowUpSequenceBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateFollowUpSequencePayload = Partial<CreateFollowUpSequencePayload>;

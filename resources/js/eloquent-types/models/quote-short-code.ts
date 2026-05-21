@@ -2,14 +2,17 @@
 
 import type { Quote } from './quote';
 
-export interface QuoteShortCode {
+export interface QuoteShortCodeBase {
     id: number;
     quote_id: number;
     code: string;
     created_at: string;
     updated_at: string;
+}
+
+export interface QuoteShortCode extends QuoteShortCodeBase {
     quote?: Quote;
 }
 
-export type CreateQuoteShortCodePayload = Omit<QuoteShortCode, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'quote'>;
+export type CreateQuoteShortCodePayload = Omit<QuoteShortCodeBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateQuoteShortCodePayload = Partial<CreateQuoteShortCodePayload>;

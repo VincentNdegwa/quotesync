@@ -5,7 +5,7 @@ import type { Workspace } from './workspace';
 import type { Role } from './role';
 import type { User } from './user';
 
-export interface Invitation {
+export interface InvitationBase {
     id: number;
     expires_at?: Nullable<string>;
     accepted_at?: Nullable<string>;
@@ -15,10 +15,13 @@ export interface Invitation {
     invited_by: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface Invitation extends InvitationBase {
     workspace?: Workspace;
     role?: Role;
     inviter?: User;
 }
 
-export type CreateInvitationPayload = Omit<Invitation, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'role' | 'inviter'>;
+export type CreateInvitationPayload = Omit<InvitationBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateInvitationPayload = Partial<CreateInvitationPayload>;

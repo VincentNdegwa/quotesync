@@ -2,13 +2,16 @@
 
 import type { Subscription } from './subscription';
 
-export interface SubscriptionItem {
+export interface SubscriptionItemBase {
     id: number;
     quantity: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface SubscriptionItem extends SubscriptionItemBase {
     subscription?: Subscription;
 }
 
-export type CreateSubscriptionItemPayload = Omit<SubscriptionItem, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'subscription'>;
+export type CreateSubscriptionItemPayload = Omit<SubscriptionItemBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateSubscriptionItemPayload = Partial<CreateSubscriptionItemPayload>;

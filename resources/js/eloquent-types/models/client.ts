@@ -8,7 +8,7 @@ import type { Note } from './note';
 import type { Contact } from './contact';
 import type { Quote } from './quote';
 
-export interface Client {
+export interface ClientBase {
     id: number;
     deleted_at?: Nullable<string>;
     workspace_id: number;
@@ -28,6 +28,9 @@ export interface Client {
     health_score?: Nullable<number>;
     created_at: string;
     updated_at: string;
+}
+
+export interface Client extends ClientBase {
     workspace?: Workspace;
     creator?: User;
     tags?: ConfigurationTag[];
@@ -37,5 +40,5 @@ export interface Client {
     primaryContact?: Contact;
 }
 
-export type CreateClientPayload = Omit<Client, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'creator' | 'tags' | 'notes' | 'contacts' | 'quotes' | 'primaryContact'>;
+export type CreateClientPayload = Omit<ClientBase, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
 export type UpdateClientPayload = Partial<CreateClientPayload>;

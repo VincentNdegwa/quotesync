@@ -2,14 +2,17 @@
 
 import type { Subscription } from './subscription';
 
-export interface Transaction {
+export interface TransactionBase {
     id: number;
     billed_at: string;
     created_at: string;
     updated_at: string;
+}
+
+export interface Transaction extends TransactionBase {
     billable?: unknown;
     subscription?: Subscription;
 }
 
-export type CreateTransactionPayload = Omit<Transaction, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'billable' | 'subscription'>;
+export type CreateTransactionPayload = Omit<TransactionBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateTransactionPayload = Partial<CreateTransactionPayload>;

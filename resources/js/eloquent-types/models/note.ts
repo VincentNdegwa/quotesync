@@ -4,7 +4,7 @@ import type { Nullable } from './model-helpers';
 import type { Workspace } from './workspace';
 import type { User } from './user';
 
-export interface Note {
+export interface NoteBase {
     id: number;
     deleted_at?: Nullable<string>;
     workspace_id: number;
@@ -14,10 +14,13 @@ export interface Note {
     created_by?: Nullable<number>;
     created_at: string;
     updated_at: string;
+}
+
+export interface Note extends NoteBase {
     noteable?: unknown;
     workspace?: Workspace;
     creator?: User;
 }
 
-export type CreateNotePayload = Omit<Note, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'noteable' | 'workspace' | 'creator'>;
+export type CreateNotePayload = Omit<NoteBase, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
 export type UpdateNotePayload = Partial<CreateNotePayload>;

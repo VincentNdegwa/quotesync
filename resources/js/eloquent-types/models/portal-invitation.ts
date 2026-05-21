@@ -4,7 +4,7 @@ import type { Nullable } from './model-helpers';
 import type { Workspace } from './workspace';
 import type { Client } from './client';
 
-export interface PortalInvitation {
+export interface PortalInvitationBase {
     id: number;
     expires_at: string;
     accepted_at?: Nullable<string>;
@@ -14,9 +14,12 @@ export interface PortalInvitation {
     token: string;
     created_at: string;
     updated_at: string;
+}
+
+export interface PortalInvitation extends PortalInvitationBase {
     workspace?: Workspace;
     client?: Client;
 }
 
-export type CreatePortalInvitationPayload = Omit<PortalInvitation, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'client'>;
+export type CreatePortalInvitationPayload = Omit<PortalInvitationBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdatePortalInvitationPayload = Partial<CreatePortalInvitationPayload>;

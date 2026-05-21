@@ -2,7 +2,7 @@
 
 import type { Nullable } from './model-helpers';
 
-export interface Permission {
+export interface PermissionBase {
     id: number;
     name: string;
     display_name?: Nullable<string>;
@@ -11,5 +11,8 @@ export interface Permission {
     updated_at: string;
 }
 
-export type CreatePermissionPayload = Omit<Permission, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
+export interface Permission extends PermissionBase {
+}
+
+export type CreatePermissionPayload = Omit<PermissionBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdatePermissionPayload = Partial<CreatePermissionPayload>;

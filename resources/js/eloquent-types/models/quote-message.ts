@@ -5,7 +5,7 @@ import type { Quote } from './quote';
 import type { User } from './user';
 import type { PortalUser } from './portal-user';
 
-export interface QuoteMessage {
+export interface QuoteMessageBase {
     id: number;
     is_internal: boolean;
     quote_id: number;
@@ -15,10 +15,13 @@ export interface QuoteMessage {
     sender_type: string;
     created_at: string;
     updated_at: string;
+}
+
+export interface QuoteMessage extends QuoteMessageBase {
     quote?: Quote;
     sender?: User;
     portalUser?: PortalUser;
 }
 
-export type CreateQuoteMessagePayload = Omit<QuoteMessage, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'quote' | 'sender' | 'portalUser'>;
+export type CreateQuoteMessagePayload = Omit<QuoteMessageBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateQuoteMessagePayload = Partial<CreateQuoteMessagePayload>;

@@ -3,16 +3,19 @@
 import type { Invoice } from './invoice';
 import type { InvoiceLineItem } from './invoice-line-item';
 
-export interface InvoiceSection {
+export interface InvoiceSectionBase {
     id: number;
     invoice_id: number;
     title: string;
     sort_order: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface InvoiceSection extends InvoiceSectionBase {
     invoice?: Invoice;
     lineItems?: InvoiceLineItem[];
 }
 
-export type CreateInvoiceSectionPayload = Omit<InvoiceSection, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'invoice' | 'lineItems'>;
+export type CreateInvoiceSectionPayload = Omit<InvoiceSectionBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateInvoiceSectionPayload = Partial<CreateInvoiceSectionPayload>;

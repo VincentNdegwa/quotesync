@@ -6,7 +6,7 @@ import type { QuoteFollowUp } from './quote-follow-up';
 
 export type FollowUpChannel = 'email' | 'whatsapp' | 'sms';
 
-export interface FollowUpStep {
+export interface FollowUpStepBase {
     id: number;
     day_offset: number;
     channel: FollowUpChannel;
@@ -16,9 +16,12 @@ export interface FollowUpStep {
     message_template: string;
     created_at: string;
     updated_at: string;
+}
+
+export interface FollowUpStep extends FollowUpStepBase {
     sequence?: FollowUpSequence;
     quoteFollowUps?: QuoteFollowUp[];
 }
 
-export type CreateFollowUpStepPayload = Omit<FollowUpStep, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'sequence' | 'quoteFollowUps'>;
+export type CreateFollowUpStepPayload = Omit<FollowUpStepBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateFollowUpStepPayload = Partial<CreateFollowUpStepPayload>;

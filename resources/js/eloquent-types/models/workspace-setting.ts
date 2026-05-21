@@ -3,7 +3,7 @@
 import type { Nullable } from './model-helpers';
 import type { Workspace } from './workspace';
 
-export interface WorkspaceSetting {
+export interface WorkspaceSettingBase {
     id: number;
     encrypted: boolean;
     workspace_id: number;
@@ -13,8 +13,11 @@ export interface WorkspaceSetting {
     cast: string;
     created_at: string;
     updated_at: string;
+}
+
+export interface WorkspaceSetting extends WorkspaceSettingBase {
     workspace?: Workspace;
 }
 
-export type CreateWorkspaceSettingPayload = Omit<WorkspaceSetting, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace'>;
+export type CreateWorkspaceSettingPayload = Omit<WorkspaceSettingBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateWorkspaceSettingPayload = Partial<CreateWorkspaceSettingPayload>;

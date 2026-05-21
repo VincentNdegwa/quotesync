@@ -3,7 +3,7 @@
 import type { User } from './user';
 import type { Workspace } from './workspace';
 
-export interface Comment {
+export interface CommentBase {
     id: number;
     mentions: Record<string, unknown>;
     is_internal: boolean;
@@ -14,10 +14,13 @@ export interface Comment {
     content: unknown;
     created_at: string;
     updated_at: string;
+}
+
+export interface Comment extends CommentBase {
     user?: User;
     workspace?: Workspace;
     commentable?: unknown;
 }
 
-export type CreateCommentPayload = Omit<Comment, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'user' | 'workspace' | 'commentable'>;
+export type CreateCommentPayload = Omit<CommentBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateCommentPayload = Partial<CreateCommentPayload>;

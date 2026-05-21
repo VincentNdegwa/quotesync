@@ -6,7 +6,7 @@ import type { Client } from './client';
 import type { User } from './user';
 import type { QuoteApproval } from './quote-approval';
 
-export interface ApprovalRule {
+export interface ApprovalRuleBase {
     id: number;
     threshold_value?: Nullable<number>;
     is_active: boolean;
@@ -16,11 +16,14 @@ export interface ApprovalRule {
     approver_id: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface ApprovalRule extends ApprovalRuleBase {
     workspace?: Workspace;
     client?: Client;
     approver?: User;
     quoteApprovals?: QuoteApproval[];
 }
 
-export type CreateApprovalRulePayload = Omit<ApprovalRule, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'client' | 'approver' | 'quoteApprovals'>;
+export type CreateApprovalRulePayload = Omit<ApprovalRuleBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateApprovalRulePayload = Partial<CreateApprovalRulePayload>;

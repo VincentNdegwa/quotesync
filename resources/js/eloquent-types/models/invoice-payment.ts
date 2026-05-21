@@ -5,7 +5,7 @@ import type { Invoice } from './invoice';
 import type { Workspace } from './workspace';
 import type { User } from './user';
 
-export interface InvoicePayment {
+export interface InvoicePaymentBase {
     id: number;
     amount: number;
     payment_date: string;
@@ -22,11 +22,14 @@ export interface InvoicePayment {
     refunded_by?: Nullable<number>;
     created_at: string;
     updated_at: string;
+}
+
+export interface InvoicePayment extends InvoicePaymentBase {
     invoice?: Invoice;
     workspace?: Workspace;
     refundedBy?: User;
     createdBy?: User;
 }
 
-export type CreateInvoicePaymentPayload = Omit<InvoicePayment, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'invoice' | 'workspace' | 'refundedBy' | 'createdBy'>;
+export type CreateInvoicePaymentPayload = Omit<InvoicePaymentBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateInvoicePaymentPayload = Partial<CreateInvoicePaymentPayload>;

@@ -3,7 +3,7 @@
 import type { Nullable } from './model-helpers';
 import type { Workspace } from './workspace';
 
-export interface CustomDomain {
+export interface CustomDomainBase {
     id: number;
     verified_at?: Nullable<string>;
     is_primary: boolean;
@@ -13,8 +13,11 @@ export interface CustomDomain {
     verification_token?: Nullable<string>;
     created_at: string;
     updated_at: string;
+}
+
+export interface CustomDomain extends CustomDomainBase {
     workspace?: Workspace;
 }
 
-export type CreateCustomDomainPayload = Omit<CustomDomain, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace'>;
+export type CreateCustomDomainPayload = Omit<CustomDomainBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateCustomDomainPayload = Partial<CreateCustomDomainPayload>;

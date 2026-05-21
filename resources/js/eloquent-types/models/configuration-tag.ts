@@ -5,7 +5,7 @@ import type { Workspace } from './workspace';
 import type { User } from './user';
 import type { Client } from './client';
 
-export interface ConfigurationTag {
+export interface ConfigurationTagBase {
     id: number;
     is_active: boolean;
     deleted_at?: Nullable<string>;
@@ -14,10 +14,13 @@ export interface ConfigurationTag {
     created_by?: Nullable<number>;
     created_at: string;
     updated_at: string;
+}
+
+export interface ConfigurationTag extends ConfigurationTagBase {
     workspace?: Workspace;
     creator?: User;
     clients?: Client[];
 }
 
-export type CreateConfigurationTagPayload = Omit<ConfigurationTag, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'creator' | 'clients'>;
+export type CreateConfigurationTagPayload = Omit<ConfigurationTagBase, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
 export type UpdateConfigurationTagPayload = Partial<CreateConfigurationTagPayload>;

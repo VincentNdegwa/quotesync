@@ -5,7 +5,7 @@ import type { Workspace } from './workspace';
 import type { User } from './user';
 import type { CatalogItem } from './catalog-item';
 
-export interface CatalogCategory {
+export interface CatalogCategoryBase {
     id: number;
     is_active: boolean;
     deleted_at?: Nullable<string>;
@@ -15,10 +15,13 @@ export interface CatalogCategory {
     created_by?: Nullable<number>;
     created_at: string;
     updated_at: string;
+}
+
+export interface CatalogCategory extends CatalogCategoryBase {
     workspace?: Workspace;
     creator?: User;
     items?: CatalogItem[];
 }
 
-export type CreateCatalogCategoryPayload = Omit<CatalogCategory, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'creator' | 'items'>;
+export type CreateCatalogCategoryPayload = Omit<CatalogCategoryBase, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
 export type UpdateCatalogCategoryPayload = Partial<CreateCatalogCategoryPayload>;

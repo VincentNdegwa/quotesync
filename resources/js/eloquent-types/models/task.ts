@@ -5,7 +5,7 @@ import type { User } from './user';
 import type { TaskStatus } from './task-status';
 import type { Workspace } from './workspace';
 
-export interface Task {
+export interface TaskBase {
     id: number;
     due_date?: Nullable<string>;
     completed_at?: Nullable<string>;
@@ -19,6 +19,9 @@ export interface Task {
     description?: Nullable<string>;
     created_at: string;
     updated_at: string;
+}
+
+export interface Task extends TaskBase {
     taskable?: unknown;
     assignedTo?: User;
     assignedBy?: User;
@@ -26,5 +29,5 @@ export interface Task {
     workspace?: Workspace;
 }
 
-export type CreateTaskPayload = Omit<Task, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'taskable' | 'assignedTo' | 'assignedBy' | 'status' | 'workspace'>;
+export type CreateTaskPayload = Omit<TaskBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateTaskPayload = Partial<CreateTaskPayload>;

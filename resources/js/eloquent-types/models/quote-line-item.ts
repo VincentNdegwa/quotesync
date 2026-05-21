@@ -7,7 +7,7 @@ import type { CatalogItem } from './catalog-item';
 import type { CatalogItemVariant } from './catalog-item-variant';
 import type { QuoteLineItemTax } from './quote-line-item-tax';
 
-export interface QuoteLineItem {
+export interface QuoteLineItemBase {
     id: number;
     quantity: number;
     unit_price: number;
@@ -33,6 +33,9 @@ export interface QuoteLineItem {
     sort_order: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface QuoteLineItem extends QuoteLineItemBase {
     quote?: Quote;
     section?: QuoteSection;
     catalogItem?: CatalogItem;
@@ -40,5 +43,5 @@ export interface QuoteLineItem {
     taxes?: QuoteLineItemTax[];
 }
 
-export type CreateQuoteLineItemPayload = Omit<QuoteLineItem, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'quote' | 'section' | 'catalogItem' | 'catalogItemVariant' | 'taxes'>;
+export type CreateQuoteLineItemPayload = Omit<QuoteLineItemBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateQuoteLineItemPayload = Partial<CreateQuoteLineItemPayload>;

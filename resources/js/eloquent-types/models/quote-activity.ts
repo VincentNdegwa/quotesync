@@ -5,7 +5,7 @@ import type { Quote } from './quote';
 import type { Workspace } from './workspace';
 import type { User } from './user';
 
-export interface QuoteActivity {
+export interface QuoteActivityBase {
     id: number;
     metadata?: Nullable<Record<string, unknown>>;
     quote_id: number;
@@ -17,10 +17,13 @@ export interface QuoteActivity {
     user_agent?: Nullable<string>;
     created_at: string;
     updated_at: string;
+}
+
+export interface QuoteActivity extends QuoteActivityBase {
     quote?: Quote;
     workspace?: Workspace;
     user?: User;
 }
 
-export type CreateQuoteActivityPayload = Omit<QuoteActivity, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'quote' | 'workspace' | 'user'>;
+export type CreateQuoteActivityPayload = Omit<QuoteActivityBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateQuoteActivityPayload = Partial<CreateQuoteActivityPayload>;

@@ -6,7 +6,7 @@ import type { QuoteTemplateSection } from './quote-template-section';
 import type { CatalogItem } from './catalog-item';
 import type { QuoteTemplateLineItemTax } from './quote-template-line-item-tax';
 
-export interface QuoteTemplateLineItem {
+export interface QuoteTemplateLineItemBase {
     id: number;
     quantity: number;
     unit_price: number;
@@ -22,11 +22,14 @@ export interface QuoteTemplateLineItem {
     sort_order: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface QuoteTemplateLineItem extends QuoteTemplateLineItemBase {
     template?: QuoteTemplate;
     section?: QuoteTemplateSection;
     catalogItem?: CatalogItem;
     taxes?: QuoteTemplateLineItemTax[];
 }
 
-export type CreateQuoteTemplateLineItemPayload = Omit<QuoteTemplateLineItem, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'template' | 'section' | 'catalogItem' | 'taxes'>;
+export type CreateQuoteTemplateLineItemPayload = Omit<QuoteTemplateLineItemBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateQuoteTemplateLineItemPayload = Partial<CreateQuoteTemplateLineItemPayload>;

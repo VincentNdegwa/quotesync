@@ -2,7 +2,7 @@
 
 import type { Nullable } from './model-helpers';
 
-export interface Industry {
+export interface IndustryBase {
     id: number;
     is_active: boolean;
     name: string;
@@ -13,5 +13,8 @@ export interface Industry {
     updated_at: string;
 }
 
-export type CreateIndustryPayload = Omit<Industry, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
+export interface Industry extends IndustryBase {
+}
+
+export type CreateIndustryPayload = Omit<IndustryBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateIndustryPayload = Partial<CreateIndustryPayload>;

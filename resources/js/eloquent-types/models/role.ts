@@ -2,7 +2,7 @@
 
 import type { Nullable } from './model-helpers';
 
-export interface Role {
+export interface RoleBase {
     id: number;
     name: string;
     display_name?: Nullable<string>;
@@ -11,5 +11,8 @@ export interface Role {
     updated_at: string;
 }
 
-export type CreateRolePayload = Omit<Role, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
+export interface Role extends RoleBase {
+}
+
+export type CreateRolePayload = Omit<RoleBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateRolePayload = Partial<CreateRolePayload>;

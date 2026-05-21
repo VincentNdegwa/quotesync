@@ -5,7 +5,7 @@ import type { Workspace } from './workspace';
 import type { User } from './user';
 import type { CatalogItem } from './catalog-item';
 
-export interface Tax {
+export interface TaxBase {
     id: number;
     rate: number;
     inclusive: boolean;
@@ -17,10 +17,13 @@ export interface Tax {
     created_by?: Nullable<number>;
     created_at: string;
     updated_at: string;
+}
+
+export interface Tax extends TaxBase {
     workspace?: Workspace;
     creator?: User;
     catalogItems?: CatalogItem[];
 }
 
-export type CreateTaxPayload = Omit<Tax, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'creator' | 'catalogItems'>;
+export type CreateTaxPayload = Omit<TaxBase, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
 export type UpdateTaxPayload = Partial<CreateTaxPayload>;

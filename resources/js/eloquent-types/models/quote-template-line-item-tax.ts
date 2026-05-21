@@ -4,7 +4,7 @@ import type { Nullable } from './model-helpers';
 import type { QuoteTemplateLineItem } from './quote-template-line-item';
 import type { Tax } from './tax';
 
-export interface QuoteTemplateLineItemTax {
+export interface QuoteTemplateLineItemTaxBase {
     id: number;
     tax_rate: number;
     inclusive: boolean;
@@ -13,9 +13,12 @@ export interface QuoteTemplateLineItemTax {
     tax_label: string;
     created_at: string;
     updated_at: string;
+}
+
+export interface QuoteTemplateLineItemTax extends QuoteTemplateLineItemTaxBase {
     lineItem?: QuoteTemplateLineItem;
     tax?: Tax;
 }
 
-export type CreateQuoteTemplateLineItemTaxPayload = Omit<QuoteTemplateLineItemTax, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'lineItem' | 'tax'>;
+export type CreateQuoteTemplateLineItemTaxPayload = Omit<QuoteTemplateLineItemTaxBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateQuoteTemplateLineItemTaxPayload = Partial<CreateQuoteTemplateLineItemTaxPayload>;

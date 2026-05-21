@@ -3,7 +3,7 @@
 import type { Nullable } from './model-helpers';
 import type { Client } from './client';
 
-export interface Contact {
+export interface ContactBase {
     id: number;
     is_primary: boolean;
     client_id: number;
@@ -13,8 +13,11 @@ export interface Contact {
     position?: Nullable<string>;
     created_at: string;
     updated_at: string;
+}
+
+export interface Contact extends ContactBase {
     client?: Client;
 }
 
-export type CreateContactPayload = Omit<Contact, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'client'>;
+export type CreateContactPayload = Omit<ContactBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateContactPayload = Partial<CreateContactPayload>;

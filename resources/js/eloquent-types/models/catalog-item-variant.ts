@@ -3,7 +3,7 @@
 import type { Nullable } from './model-helpers';
 import type { CatalogItem } from './catalog-item';
 
-export interface CatalogItemVariant {
+export interface CatalogItemVariantBase {
     id: number;
     is_default: boolean;
     unit_price: number;
@@ -14,8 +14,11 @@ export interface CatalogItemVariant {
     sort_order: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface CatalogItemVariant extends CatalogItemVariantBase {
     catalogItem?: CatalogItem;
 }
 
-export type CreateCatalogItemVariantPayload = Omit<CatalogItemVariant, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'catalogItem'>;
+export type CreateCatalogItemVariantPayload = Omit<CatalogItemVariantBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateCatalogItemVariantPayload = Partial<CreateCatalogItemVariantPayload>;

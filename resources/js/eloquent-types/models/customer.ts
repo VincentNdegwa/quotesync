@@ -2,13 +2,16 @@
 
 import type { Nullable } from './model-helpers';
 
-export interface Customer {
+export interface CustomerBase {
     id: number;
     trial_ends_at?: Nullable<string>;
     created_at: string;
     updated_at: string;
+}
+
+export interface Customer extends CustomerBase {
     billable?: unknown;
 }
 
-export type CreateCustomerPayload = Omit<Customer, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'billable'>;
+export type CreateCustomerPayload = Omit<CustomerBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateCustomerPayload = Partial<CreateCustomerPayload>;

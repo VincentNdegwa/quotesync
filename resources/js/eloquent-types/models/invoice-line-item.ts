@@ -7,7 +7,7 @@ import type { CatalogItem } from './catalog-item';
 import type { CatalogItemVariant } from './catalog-item-variant';
 import type { InvoiceLineItemTax } from './invoice-line-item-tax';
 
-export interface InvoiceLineItem {
+export interface InvoiceLineItemBase {
     id: number;
     quantity: number;
     unit_price: number;
@@ -30,6 +30,9 @@ export interface InvoiceLineItem {
     sort_order: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface InvoiceLineItem extends InvoiceLineItemBase {
     invoice?: Invoice;
     section?: InvoiceSection;
     catalogItem?: CatalogItem;
@@ -37,5 +40,5 @@ export interface InvoiceLineItem {
     taxes?: InvoiceLineItemTax[];
 }
 
-export type CreateInvoiceLineItemPayload = Omit<InvoiceLineItem, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'invoice' | 'section' | 'catalogItem' | 'catalogItemVariant' | 'taxes'>;
+export type CreateInvoiceLineItemPayload = Omit<InvoiceLineItemBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateInvoiceLineItemPayload = Partial<CreateInvoiceLineItemPayload>;

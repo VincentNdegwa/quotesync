@@ -4,7 +4,7 @@ import type { Nullable } from './model-helpers';
 import type { Workspace } from './workspace';
 import type { Client } from './client';
 
-export interface PortalMagicLink {
+export interface PortalMagicLinkBase {
     id: number;
     expires_at: string;
     used_at?: Nullable<string>;
@@ -14,9 +14,12 @@ export interface PortalMagicLink {
     token: string;
     created_at: string;
     updated_at: string;
+}
+
+export interface PortalMagicLink extends PortalMagicLinkBase {
     workspace?: Workspace;
     client?: Client;
 }
 
-export type CreatePortalMagicLinkPayload = Omit<PortalMagicLink, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'client'>;
+export type CreatePortalMagicLinkPayload = Omit<PortalMagicLinkBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdatePortalMagicLinkPayload = Partial<CreatePortalMagicLinkPayload>;

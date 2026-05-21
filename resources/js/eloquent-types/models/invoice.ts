@@ -16,7 +16,7 @@ import type { InvoiceReminder } from './invoice-reminder';
 
 export type InvoiceStatus = 'draft' | 'sent' | 'partial' | 'paid' | 'overdue' | 'void';
 
-export interface Invoice {
+export interface InvoiceBase {
     id: number;
     status: InvoiceStatus;
     layout_snapshot?: Nullable<Record<string, unknown>>;
@@ -53,6 +53,9 @@ export interface Invoice {
     pdf_url?: Nullable<string>;
     created_at: string;
     updated_at: string;
+}
+
+export interface Invoice extends InvoiceBase {
     workspace?: Workspace;
     client?: Client;
     quote?: Quote;
@@ -67,5 +70,5 @@ export interface Invoice {
     reminders?: InvoiceReminder[];
 }
 
-export type CreateInvoicePayload = Omit<Invoice, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'client' | 'quote' | 'createdBy' | 'lineItems' | 'sections' | 'activities' | 'comments' | 'payments' | 'recurringInvoice' | 'creditNotes' | 'reminders'>;
+export type CreateInvoicePayload = Omit<InvoiceBase, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
 export type UpdateInvoicePayload = Partial<CreateInvoicePayload>;

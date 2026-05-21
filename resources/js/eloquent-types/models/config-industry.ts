@@ -4,7 +4,7 @@ import type { Nullable } from './model-helpers';
 import type { Workspace } from './workspace';
 import type { User } from './user';
 
-export interface ConfigIndustry {
+export interface ConfigIndustryBase {
     id: number;
     is_active: boolean;
     deleted_at?: Nullable<string>;
@@ -16,9 +16,12 @@ export interface ConfigIndustry {
     created_by?: Nullable<number>;
     created_at: string;
     updated_at: string;
+}
+
+export interface ConfigIndustry extends ConfigIndustryBase {
     workspace?: Workspace;
     creator?: User;
 }
 
-export type CreateConfigIndustryPayload = Omit<ConfigIndustry, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'creator'>;
+export type CreateConfigIndustryPayload = Omit<ConfigIndustryBase, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
 export type UpdateConfigIndustryPayload = Partial<CreateConfigIndustryPayload>;

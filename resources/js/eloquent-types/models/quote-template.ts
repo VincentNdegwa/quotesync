@@ -6,7 +6,7 @@ import type { User } from './user';
 import type { QuoteTemplateSection } from './quote-template-section';
 import type { QuoteTemplateLineItem } from './quote-template-line-item';
 
-export interface QuoteTemplate {
+export interface QuoteTemplateBase {
     id: number;
     is_active: boolean;
     is_system: boolean;
@@ -22,11 +22,14 @@ export interface QuoteTemplate {
     created_by?: Nullable<number>;
     created_at: string;
     updated_at: string;
+}
+
+export interface QuoteTemplate extends QuoteTemplateBase {
     workspace?: Workspace;
     creator?: User;
     sections?: QuoteTemplateSection[];
     lineItems?: QuoteTemplateLineItem[];
 }
 
-export type CreateQuoteTemplatePayload = Omit<QuoteTemplate, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'creator' | 'sections' | 'lineItems'>;
+export type CreateQuoteTemplatePayload = Omit<QuoteTemplateBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateQuoteTemplatePayload = Partial<CreateQuoteTemplatePayload>;

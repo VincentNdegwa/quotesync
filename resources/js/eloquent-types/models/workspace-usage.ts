@@ -2,7 +2,7 @@
 
 import type { Workspace } from './workspace';
 
-export interface WorkspaceUsage {
+export interface WorkspaceUsageBase {
     id: number;
     period: string;
     quotes_sent: number;
@@ -11,8 +11,11 @@ export interface WorkspaceUsage {
     workspace_id: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface WorkspaceUsage extends WorkspaceUsageBase {
     workspace?: Workspace;
 }
 
-export type CreateWorkspaceUsagePayload = Omit<WorkspaceUsage, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace'>;
+export type CreateWorkspaceUsagePayload = Omit<WorkspaceUsageBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateWorkspaceUsagePayload = Partial<CreateWorkspaceUsagePayload>;

@@ -4,7 +4,7 @@ import type { Nullable } from './model-helpers';
 import type { Workspace } from './workspace';
 import type { User } from './user';
 
-export interface ConfigurationUnit {
+export interface ConfigurationUnitBase {
     id: number;
     is_active: boolean;
     deleted_at?: Nullable<string>;
@@ -14,9 +14,12 @@ export interface ConfigurationUnit {
     created_by?: Nullable<number>;
     created_at: string;
     updated_at: string;
+}
+
+export interface ConfigurationUnit extends ConfigurationUnitBase {
     workspace?: Workspace;
     creator?: User;
 }
 
-export type CreateConfigurationUnitPayload = Omit<ConfigurationUnit, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'creator'>;
+export type CreateConfigurationUnitPayload = Omit<ConfigurationUnitBase, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
 export type UpdateConfigurationUnitPayload = Partial<CreateConfigurationUnitPayload>;

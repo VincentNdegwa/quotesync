@@ -6,7 +6,7 @@ import type { QuoteWinProbabilitySignal } from './quote-win-probability-signal';
 
 export type WinProbabilityConfidence = 'none' | 'low' | 'medium' | 'high';
 
-export interface QuoteWinProbability {
+export interface QuoteWinProbabilityBase {
     id: number;
     probability?: Nullable<number>;
     confidence: WinProbabilityConfidence;
@@ -14,9 +14,12 @@ export interface QuoteWinProbability {
     quote_id: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface QuoteWinProbability extends QuoteWinProbabilityBase {
     quote?: Quote;
     signals?: QuoteWinProbabilitySignal[];
 }
 
-export type CreateQuoteWinProbabilityPayload = Omit<QuoteWinProbability, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'quote' | 'signals'>;
+export type CreateQuoteWinProbabilityPayload = Omit<QuoteWinProbabilityBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateQuoteWinProbabilityPayload = Partial<CreateQuoteWinProbabilityPayload>;

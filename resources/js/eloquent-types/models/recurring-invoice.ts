@@ -6,7 +6,7 @@ import type { Client } from './client';
 import type { User } from './user';
 import type { Invoice } from './invoice';
 
-export interface RecurringInvoice {
+export interface RecurringInvoiceBase {
     id: number;
     subtotal: number;
     tax_amount: number;
@@ -27,11 +27,14 @@ export interface RecurringInvoice {
     interval: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface RecurringInvoice extends RecurringInvoiceBase {
     workspace?: Workspace;
     client?: Client;
     createdBy?: User;
     invoices?: Invoice[];
 }
 
-export type CreateRecurringInvoicePayload = Omit<RecurringInvoice, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'client' | 'createdBy' | 'invoices'>;
+export type CreateRecurringInvoicePayload = Omit<RecurringInvoiceBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateRecurringInvoicePayload = Partial<CreateRecurringInvoicePayload>;

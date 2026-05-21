@@ -6,7 +6,7 @@ import type { Client } from './client';
 import type { Quote } from './quote';
 import type { DatabaseNotification } from './database-notification';
 
-export interface PortalUser {
+export interface PortalUserBase {
     id: number;
     email_verified_at?: Nullable<string>;
     workspace_id: number;
@@ -15,6 +15,9 @@ export interface PortalUser {
     email: string;
     created_at: string;
     updated_at: string;
+}
+
+export interface PortalUser extends PortalUserBase {
     workspace?: Workspace;
     client?: Client;
     quotes?: Quote[];
@@ -23,5 +26,5 @@ export interface PortalUser {
     unreadNotifications?: DatabaseNotification[];
 }
 
-export type CreatePortalUserPayload = Omit<PortalUser, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'workspace' | 'client' | 'quotes' | 'notifications' | 'readNotifications' | 'unreadNotifications'>;
+export type CreatePortalUserPayload = Omit<PortalUserBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdatePortalUserPayload = Partial<CreatePortalUserPayload>;

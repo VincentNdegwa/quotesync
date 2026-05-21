@@ -3,16 +3,19 @@
 import type { QuoteTemplate } from './quote-template';
 import type { QuoteTemplateLineItem } from './quote-template-line-item';
 
-export interface QuoteTemplateSection {
+export interface QuoteTemplateSectionBase {
     id: number;
     quote_template_id: number;
     title: string;
     sort_order: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface QuoteTemplateSection extends QuoteTemplateSectionBase {
     template?: QuoteTemplate;
     lineItems?: QuoteTemplateLineItem[];
 }
 
-export type CreateQuoteTemplateSectionPayload = Omit<QuoteTemplateSection, 'id' | 'created_at' | 'updated_at' | 'deleted_at' | 'template' | 'lineItems'>;
+export type CreateQuoteTemplateSectionPayload = Omit<QuoteTemplateSectionBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateQuoteTemplateSectionPayload = Partial<CreateQuoteTemplateSectionPayload>;
