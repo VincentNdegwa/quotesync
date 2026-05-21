@@ -4,7 +4,6 @@ import {
     KanbanSquare,
     LayoutList,
     MoreHorizontal,
-    Plus,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,6 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-    (e: 'open-create-invoice'): void;
     (e: 'toggle-view'): void;
 }>();
 
@@ -39,24 +37,6 @@ const viewIcon = computed(() =>
 
 <template>
     <div class="flex flex-wrap items-center gap-2">
-        <Button
-            class="hidden sm:inline-flex"
-            @click="emit('open-create-invoice')"
-        >
-            <Plus class="mr-2 h-4 w-4" />
-            New invoice
-        </Button>
-
-        <Button
-            class="sm:hidden"
-            size="icon"
-            @click="emit('open-create-invoice')"
-            title="New invoice"
-            aria-label="New invoice"
-        >
-            <Plus class="h-4 w-4" />
-        </Button>
-
         <Button
             variant="outline"
             size="icon"
