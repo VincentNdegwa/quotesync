@@ -141,7 +141,7 @@ class DashboardController extends Controller
             ->whereNotNull('won_at')
             ->get()
             ->avg(fn (Quote $quote) => $quote->sent_at && $quote->won_at
-                ? $quote->won_at->diffInDays($quote->sent_at)
+                ? $quote->sent_at->diffInDays($quote->won_at)
                 : 0
             );
 
@@ -152,7 +152,7 @@ class DashboardController extends Controller
             ->whereNotNull('won_at')
             ->get()
             ->avg(fn (Quote $quote) => $quote->sent_at && $quote->won_at
-                ? $quote->won_at->diffInDays($quote->sent_at)
+                ? $quote->sent_at->diffInDays($quote->won_at)
                 : 0
             );
 

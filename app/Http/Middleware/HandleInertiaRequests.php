@@ -19,6 +19,7 @@ use App\Models\PortalInvitation;
 use App\Models\Workspace;
 use App\Services\ApprovalService;
 use App\Services\WhiteLabelService;
+use App\Services\WorkspacePlanCache;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
@@ -31,6 +32,7 @@ class HandleInertiaRequests extends Middleware
         private WhiteLabelService $whiteLabelService,
         private ApprovalService $approvalService,
         private WorkspaceSettingsService $workspaceSettingsService,
+        private WorkspacePlanCache $planCache,
     ) {}
 
     /**
@@ -159,6 +161,7 @@ class HandleInertiaRequests extends Middleware
         $request = request();
         $plan = $request->attributes->get('workspace_plan');
         $features = $request->attributes->get('workspace_plan_features', []);
+        $subscriptionStatus = $this->planCache->getSubscriptionStatus($workspace);
 
         return [
             'id' => $workspace->id,
@@ -171,6 +174,7 @@ class HandleInertiaRequests extends Middleware
                 'features' => $features,
                 'monthly_price' => $plan->monthly_price,
             ] : null,
+            'subscription' => $subscriptionStatus,
         ];
     }
 

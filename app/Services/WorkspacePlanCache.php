@@ -22,7 +22,7 @@ class WorkspacePlanCache
         }
 
         if ($cached === null) {
-            $cached = $workspace->plan;
+            $cached = $workspace->plan ?? Plan::where('slug', 'free')->first();
             Cache::put($cacheKey, $cached, self::CACHE_TTL);
         }
 
@@ -40,7 +40,8 @@ class WorkspacePlanCache
         }
 
         if ($cached === null) {
-            $cached = $workspace->plan ? $workspace->plan->features : [];
+            $plan = $this->getPlan($workspace);
+            $cached = $plan ? $plan->features : [];
             Cache::put($cacheKey, $cached, self::CACHE_TTL);
         }
 
@@ -87,7 +88,7 @@ class WorkspacePlanCache
             'is_active' => $subscription ? $subscription->active() : false,
             'is_on_trial' => $subscription ? $subscription->onTrial() : false,
             'is_on_grace_period' => $subscription ? $subscription->onGracePeriod() : false,
-            'is_cancelled' => $subscription ? $subscription->cancelled() : false,
+            'is_cancelled' => $subscription ? $subscription->canceled() : false,
             'ends_at' => $subscription?->ends_at,
         ];
     }

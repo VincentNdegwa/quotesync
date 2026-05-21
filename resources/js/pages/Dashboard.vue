@@ -20,7 +20,7 @@ import {
     TrendingDown,
     TrendingUp,
 } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import type { Component } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,6 +40,7 @@ import {
     ChartTooltipContent,
     componentToString,
 } from '@/components/ui/chart';
+import UpgradeBanner from '@/components/UpgradeBanner.vue';
 import { useFormat } from '@/composables/useFormat';
 import { dashboard } from '@/routes';
 
@@ -349,6 +350,8 @@ defineOptions({
     <Head title="Dashboard" />
 
     <div class="space-y-6">
+        <UpgradeBanner />
+
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1 class="text-2xl font-semibold tracking-tight">Dashboard</h1>
@@ -419,7 +422,7 @@ defineOptions({
             </Card>
         </section>
 
-        <section class="grid grid-cols-2 gap-4">
+        <section class="grid lg:grid-cols-2 grid-cols-1 gap-4">
             <Card class="h-full border border-sidebar-border/70">
                 <CardHeader class="pb-0">
                     <div class="flex items-start justify-between">
@@ -606,7 +609,7 @@ defineOptions({
             </Card>
         </section>
 
-        <section class="grid grid-cols-2 gap-4">
+        <section class="grid lg:grid-cols-2 grid-cols-1 gap-4">
             <Card class="h-full border border-sidebar-border/70">
                 <CardHeader class="pb-0">
                     <div class="flex items-start justify-between gap-3">

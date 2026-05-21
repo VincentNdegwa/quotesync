@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
+import PlanStatusBadge from '@/components/PlanStatusBadge.vue';
 import NotificationBell from '@/components/Layout/NotificationBell.vue';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import type { BreadcrumbItem } from '@/types';
@@ -24,6 +25,9 @@ withDefaults(
                 <Breadcrumbs :breadcrumbs="breadcrumbs" />
             </template>
         </div>
-        <NotificationBell />
+        <div class="flex items-center gap-3">
+            <PlanStatusBadge />
+            <NotificationBell />
+        </div>
     </header>
 </template>
