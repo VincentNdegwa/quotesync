@@ -86,22 +86,22 @@ export const getApprovalColumns = (
             const rule = row.original.approval_rule;
 
             if (!rule) {
-                return h(Badge, { variant: 'outline' }, 'Manual');
+                return h(Badge, { variant: 'outline' }, () => 'Manual');
             }
 
             if (rule.trigger_type === 'value_above') {
-                return h(Badge, { variant: 'secondary' }, 'Value above');
+                return h(Badge, { variant: 'secondary' }, () => 'Value above');
             }
 
             if (rule.trigger_type === 'value_below') {
-                return h(Badge, { variant: 'secondary' }, 'Value below');
+                return h(Badge, { variant: 'secondary' }, () => 'Value below');
             }
 
             if (rule.trigger_type === 'client') {
-                return h(Badge, { variant: 'secondary' }, 'Client');
+                return h(Badge, { variant: 'secondary' }, () => 'Client');
             }
 
-            return h(Badge, { variant: 'outline' }, rule.trigger_type);
+            return h(Badge, { variant: 'outline' }, () => rule.trigger_type);
         },
     },
     {
@@ -116,7 +116,7 @@ export const getApprovalColumns = (
                         variant: 'default',
                         onClick: () => onApprove(row.original),
                     },
-                    'Approve',
+                    () => 'Approve',
                 ),
                 h(
                     Button,
@@ -125,7 +125,7 @@ export const getApprovalColumns = (
                         variant: 'destructive',
                         onClick: () => onReject(row.original),
                     },
-                    'Reject',
+                    () => 'Reject',
                 ),
             ]),
     },
