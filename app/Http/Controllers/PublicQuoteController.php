@@ -8,12 +8,11 @@ use App\Enums\QuoteStatus;
 use App\Events\QuoteViewed;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
-use App\Models\Workspace;
 use App\Notifications\QuoteAcceptedNotification;
 use App\Notifications\QuoteDeclinedNotification;
 use App\Notifications\QuoteViewedNotification;
-use App\Services\Quotes\QuoteShortCodeService;
 use App\Services\FileStorageService;
+use App\Services\Quotes\QuoteShortCodeService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use App\Traits\ResolvesClientState;
 use Illuminate\Http\RedirectResponse;
@@ -21,8 +20,6 @@ use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -30,6 +27,7 @@ use Inertia\Response;
 class PublicQuoteController extends Controller
 {
     use ResolvesClientState;
+
     public function show(
         string $quoteUuid,
         Request $request,
@@ -140,6 +138,7 @@ class PublicQuoteController extends Controller
 
         if (in_array($quote->status, [QuoteStatus::Accepted, QuoteStatus::Declined, QuoteStatus::Expired], true)) {
             Inertia::flash('toast', ['type' => 'error', 'message' => 'This quote cannot be accepted.']);
+
             return back();
         }
 
@@ -152,7 +151,7 @@ class PublicQuoteController extends Controller
 
         if ($result['error']) {
             throw ValidationException::withMessages([
-                'signature' => 'Failed to save signature: ' . $result['message'],
+                'signature' => 'Failed to save signature: '.$result['message'],
             ]);
         }
 
@@ -170,7 +169,7 @@ class PublicQuoteController extends Controller
             'user_id' => null,
             'type' => QuoteActivityType::Accepted->value,
             'description' => $validated['signer_name']
-                ? 'Quote was accepted and signed by ' . $validated['signer_name'] . '.'
+                ? 'Quote was accepted and signed by '.$validated['signer_name'].'.'
                 : 'Quote was accepted and signed by the client.',
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
@@ -194,6 +193,7 @@ class PublicQuoteController extends Controller
             ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Quote has been successfully accepted.']);
+
         return back();
     }
 
@@ -205,6 +205,7 @@ class PublicQuoteController extends Controller
 
         if (in_array($quote->status, [QuoteStatus::Accepted, QuoteStatus::Declined, QuoteStatus::Expired], true)) {
             Inertia::flash('toast', ['type' => 'error', 'message' => 'This quote cannot be declined.']);
+
             return back();
         }
 
@@ -245,6 +246,7 @@ class PublicQuoteController extends Controller
             ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Quote has been declined.']);
+
         return back();
     }
 }

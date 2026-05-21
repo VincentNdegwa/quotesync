@@ -22,6 +22,7 @@ class RecurringInvoiceService
 
         if ($recurringInvoice->end_date && $recurringInvoice->next_invoice_date > $recurringInvoice->end_date) {
             $recurringInvoice->update(['is_active' => false]);
+
             return null;
         }
 

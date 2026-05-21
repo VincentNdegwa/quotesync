@@ -17,12 +17,12 @@ beforeEach(function () {
         'display_name' => 'Test Workspace',
         'owner_id' => $this->user->id,
     ]);
-    
+
     $this->client = Client::factory()->create([
         'workspace_id' => $this->workspace->id,
         'created_by' => $this->user->id,
     ]);
-    
+
     // Create an inclusive tax
     $this->inclusiveTax = Tax::factory()->create([
         'workspace_id' => $this->workspace->id,
@@ -44,7 +44,7 @@ beforeEach(function () {
 
 test('it persists inclusive and exclusive tax flags when creating a quote', function () {
     $quoteService = app(QuoteService::class);
-    
+
     $payload = [
         'title' => 'Test Quote',
         'client_id' => $this->client->id,
@@ -85,9 +85,9 @@ test('it persists inclusive and exclusive tax flags when creating a quote', func
     ];
 
     $quote = $quoteService->create($this->workspace, $payload);
-    
+
     expect($quote)->not->toBeNull();
-    
+
     // Check line item totals (10% inc + 10% exc on 200)
     // With inclusive tax: base = 200 / 1.10 = 181.82, tax = 18.18
     // With exclusive tax: tax = 20
@@ -102,11 +102,11 @@ test('it persists inclusive and exclusive tax flags when creating a quote', func
 
     expect($exclusiveTaxEntry)->not->toBeNull();
     expect($inclusiveTaxEntry)->not->toBeNull();
-    
+
     expect((float) $exclusiveTaxEntry->tax_amount)->toEqualWithDelta(18.18, 0.01);
     expect((float) $exclusiveTaxEntry->base_tax_amount)->toEqualWithDelta(18.18, 0.01);
     expect((bool) $exclusiveTaxEntry->inclusive)->toBeFalse();
-    
+
     expect((float) $inclusiveTaxEntry->tax_amount)->toEqualWithDelta(18.18, 0.01);
     expect((float) $inclusiveTaxEntry->base_tax_amount)->toEqualWithDelta(18.18, 0.01);
     expect((bool) $inclusiveTaxEntry->inclusive)->toBeTrue();
@@ -119,7 +119,7 @@ test('it persists inclusive and exclusive tax flags when creating a quote', func
 
 test('it persists inclusive and exclusive tax flags when updating a quote', function () {
     $quoteService = app(QuoteService::class);
-    
+
     $quote = Quote::factory()->create([
         'workspace_id' => $this->workspace->id,
         'client_id' => $this->client->id,
@@ -159,15 +159,15 @@ test('it persists inclusive and exclusive tax flags when updating a quote', func
     $quoteService->update($quote, $payload);
 
     $lineItem = $quote->fresh()->sections->first()->lineItems->first();
-    
+
     expect($lineItem->taxes)->toHaveCount(2);
-    
+
     $exclusiveTaxEntry = $lineItem->taxes->where('tax_id', $this->exclusiveTax->id)->first();
     $inclusiveTaxEntry = $lineItem->taxes->where('tax_id', $this->inclusiveTax->id)->first();
-    
+
     expect((bool) $exclusiveTaxEntry->inclusive)->toBeFalse();
     expect((bool) $inclusiveTaxEntry->inclusive)->toBeTrue();
-    
+
     // Verify tax_amount and base_tax_amount are stored
     expect($exclusiveTaxEntry->tax_amount)->not->toBeNull();
     expect($exclusiveTaxEntry->base_tax_amount)->not->toBeNull();

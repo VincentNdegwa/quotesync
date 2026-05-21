@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 class DispatchInvoiceReminders extends Command
 {
     protected $signature = 'invoices:dispatch-reminders';
+
     protected $description = 'Dispatch due invoice reminders';
 
     public function handle(): int

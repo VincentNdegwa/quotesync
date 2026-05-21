@@ -2,8 +2,11 @@
 
 namespace App\Jobs;
 
+use App\Enums\Feature;
 use App\Models\Client;
 use App\Models\ImportHistory;
+use App\Models\Workspace;
+use App\Services\UsageLimitService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -36,6 +39,21 @@ class ImportClientsJob implements ShouldQueue
                 'started_at' => now(),
                 'total_rows' => count($this->rows),
             ]);
+        }
+
+        $workspace = Workspace::find($this->workspaceId);
+        $usageLimitService = app(UsageLimitService::class);
+        $limit = $usageLimitService->getLimit($workspace, Feature::MAX_CLIENTS);
+        $currentUsage = $usageLimitService->getCurrentUsage($workspace, Feature::MAX_CLIENTS);
+        $canImport = $limit !== null ? ($limit - $currentUsage) : null;
+
+        if ($canImport !== null && count($this->rows) > $canImport) {
+            $skippedDueToLimit = count($this->rows) - $canImport;
+            $this->rows = array_slice($this->rows, 0, $canImport);
+            
+            if ($importHistory) {
+                $importHistory->update(['skipped_due_to_limit' => $skippedDueToLimit]);
+            }
         }
 
         $existingEmails = Client::query()

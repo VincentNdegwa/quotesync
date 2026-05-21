@@ -610,7 +610,9 @@ const _creditNotesFields = computed(() =>
                     </h4>
                     <div class="grid gap-4 md:grid-cols-3">
                         <div class="space-y-2">
-                            <Label for="credit_note_prefix">Credit Note Prefix</Label>
+                            <Label for="credit_note_prefix"
+                                >Credit Note Prefix</Label
+                            >
                             <Input
                                 id="credit_note_prefix"
                                 name="settings[credit_note_prefix]"
@@ -633,7 +635,9 @@ const _creditNotesFields = computed(() =>
                             />
                             <InputError
                                 :message="
-                                    errors['settings.credit_note_number_sequence']
+                                    errors[
+                                        'settings.credit_note_number_sequence'
+                                    ]
                                 "
                             />
                         </div>

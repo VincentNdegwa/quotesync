@@ -1,20 +1,19 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
 import {
-    AlertTriangle,
     CheckCircle2,
-    ChevronRight,
     Clock,
     Plus,
     Settings2,
     Shield,
-    Trash2,
     XCircle,
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import { getApprovalColumns } from '@/components/approvals/approval-columns';
+import ApprovalDataTable from '@/components/approvals/ApprovalDataTable.vue';
+import { getRuleColumns } from '@/components/approvals/rule-columns';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Heading from '@/components/Heading.vue';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -33,9 +32,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useFormat } from '@/composables/useFormat';
+
+defineOptions({
+    layout: {
+        breadcrumbs: [{ title: 'Approvals', href: '/approvals' }],
+    },
+});
 
 type Approval = {
     id: number;
@@ -98,46 +102,13 @@ const pendingCount = computed(() => props.pendingApprovals.length);
 
 const { formatCurrency: fmt } = useFormat(props.currency);
 
-const daysAgo = (val: string): string => {
-    const diff = Math.floor((Date.now() - new Date(val).getTime()) / 86400000);
+const approvalColumns = computed(() =>
+    getApprovalColumns(props.currency, openApprove, openReject),
+);
 
-    if (diff === 0) {
-        return 'today';
-    }
-
-    if (diff === 1) {
-        return 'yesterday';
-    }
-
-    return `${diff} days ago`;
-};
-
-type RuleLabelContext = Pick<
-    Rule,
-    'trigger_type' | 'threshold_value' | 'client'
-> & {
-    trigger_type: string;
-};
-
-const triggerLabel = (rule: RuleLabelContext): string => {
-    if (rule.trigger_type === 'value_above') {
-        return `Quote value above ${fmt(rule.threshold_value ?? 0)}`;
-    }
-
-    if (rule.trigger_type === 'value_below') {
-        return `Quote value below ${fmt(rule.threshold_value ?? 0)}`;
-    }
-
-    if (rule.trigger_type === 'client') {
-        return `Client: ${rule.client?.company_name ?? '—'}`;
-    }
-
-    if (rule.trigger_type === 'all_quotes') {
-        return 'All quotes';
-    }
-
-    return rule.trigger_type;
-};
+const ruleColumns = computed(() =>
+    getRuleColumns(props.currency, toggleRule, deleteRule),
+);
 
 const thresholdRequired = computed(() =>
     ['value_above', 'value_below'].includes(newRuleForm.trigger_type),
@@ -282,8 +253,13 @@ const executeDeleteRule = (): void => {
 
         <!-- ── PENDING APPROVALS ──────────────────────────────────────────── -->
         <template v-if="activeTab === 'pending'">
+            <ApprovalDataTable
+                v-if="pendingApprovals.length > 0"
+                :data="pendingApprovals"
+                :columns="approvalColumns"
+            />
             <div
-                v-if="pendingApprovals.length === 0"
+                v-else
                 class="rounded-xl border border-dashed py-16 text-center"
             >
                 <Shield
@@ -294,131 +270,17 @@ const executeDeleteRule = (): void => {
                     Quotes requiring your approval will appear here.
                 </p>
             </div>
-
-            <div v-else class="space-y-3">
-                <div
-                    v-for="approval in pendingApprovals"
-                    :key="approval.id"
-                    class="group rounded-xl border bg-card transition-shadow hover:shadow-sm"
-                >
-                    <div class="flex items-start gap-4 p-5">
-                        <!-- Left: urgency indicator -->
-                        <div
-                            class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600 ring-1 ring-amber-200"
-                        >
-                            <AlertTriangle class="h-4 w-4" />
-                        </div>
-
-                        <!-- Center: quote info -->
-                        <div class="min-w-0 flex-1">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <span class="font-semibold text-foreground">{{
-                                    approval.quote.title
-                                }}</span>
-                                <span
-                                    class="font-mono text-xs text-muted-foreground"
-                                >
-                                    {{
-                                        approval.quote.number ??
-                                        `#${approval.quote.id}`
-                                    }}
-                                </span>
-                                <Badge variant="secondary" class="text-xs"
-                                    >Awaiting approval</Badge
-                                >
-                            </div>
-
-                            <div
-                                class="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-muted-foreground"
-                            >
-                                <span v-if="approval.quote.client">
-                                    Client:
-                                    <span class="text-foreground">{{
-                                        approval.quote.client.company_name
-                                    }}</span>
-                                </span>
-                                <span v-if="approval.quote.created_by_name">
-                                    Requested by:
-                                    <span class="text-foreground">{{
-                                        approval.quote.created_by_name
-                                    }}</span>
-                                </span>
-                                <span>
-                                    Submitted {{ daysAgo(approval.created_at) }}
-                                </span>
-                            </div>
-
-                            <div v-if="approval.approval_rule" class="mt-2">
-                                <span
-                                    class="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground"
-                                >
-                                    Rule:
-                                    {{
-                                        triggerLabel({
-                                            trigger_type:
-                                                approval.approval_rule
-                                                    .trigger_type,
-                                            threshold_value:
-                                                approval.approval_rule
-                                                    .threshold_value,
-                                            client: null,
-                                        })
-                                    }}
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Right: amount + actions -->
-                        <div class="flex shrink-0 flex-col items-end gap-3">
-                            <span
-                                class="text-xl font-bold text-foreground tabular-nums"
-                            >
-                                {{
-                                    fmt(
-                                        approval.quote.total,
-                                        approval.quote.currency,
-                                    )
-                                }}
-                            </span>
-
-                            <div class="flex items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    class="gap-1.5 text-destructive hover:border-destructive hover:bg-destructive/5 hover:text-destructive"
-                                    @click="openReject(approval)"
-                                >
-                                    <XCircle class="h-3.5 w-3.5" />
-                                    Reject
-                                </Button>
-
-                                <Button
-                                    size="sm"
-                                    class="gap-1.5"
-                                    @click="openApprove(approval)"
-                                >
-                                    <CheckCircle2 class="h-3.5 w-3.5" />
-                                    Approve
-                                </Button>
-                            </div>
-
-                            <a
-                                :href="`/quotes/${approval.quote.id}`"
-                                class="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-                            >
-                                View quote
-                                <ChevronRight class="h-3 w-3" />
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </template>
 
         <!-- ── RULES ─────────────────────────────────────────────────────── -->
         <template v-if="activeTab === 'rules'">
+            <ApprovalDataTable
+                v-if="rules.length > 0"
+                :data="rules"
+                :columns="ruleColumns"
+            />
             <div
-                v-if="rules.length === 0"
+                v-else
                 class="rounded-xl border border-dashed py-16 text-center"
             >
                 <Settings2
@@ -437,72 +299,6 @@ const executeDeleteRule = (): void => {
                     <Plus class="h-4 w-4" />
                     Add first rule
                 </Button>
-            </div>
-
-            <div v-else class="space-y-3">
-                <div
-                    v-for="rule in rules"
-                    :key="rule.id"
-                    class="flex items-center gap-4 rounded-xl border bg-card p-4 transition-opacity"
-                    :class="rule.is_active ? '' : 'opacity-60'"
-                >
-                    <!-- Dot indicator -->
-                    <div
-                        class="h-2.5 w-2.5 shrink-0 rounded-full"
-                        :class="
-                            rule.is_active
-                                ? 'bg-emerald-500'
-                                : 'bg-muted-foreground/30'
-                        "
-                    />
-
-                    <!-- Rule description -->
-                    <div class="min-w-0 flex-1">
-                        <p class="text-sm font-medium text-foreground">
-                            {{ triggerLabel(rule) }}
-                        </p>
-                        <p class="mt-0.5 text-xs text-muted-foreground">
-                            Requires approval from
-                            <span class="font-medium text-foreground">{{
-                                rule.approver.name
-                            }}</span>
-                        </p>
-                    </div>
-
-                    <!-- Active toggle -->
-                    <div class="flex items-center gap-1.5">
-                        <span class="text-xs text-muted-foreground">
-                            {{ rule.is_active ? 'Active' : 'Paused' }}
-                        </span>
-                        <Switch
-                            :model-value="rule.is_active"
-                            @update:model-value="(v) => toggleRule(rule, v)"
-                        />
-                    </div>
-
-                    <!-- Delete -->
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        class="h-8 w-8 shrink-0 text-muted-foreground/50 hover:text-destructive"
-                        @click="deleteRule(rule)"
-                    >
-                        <Trash2 class="h-3.5 w-3.5" />
-                    </Button>
-                </div>
-
-                <!-- Explanation card -->
-                <div
-                    class="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground"
-                >
-                    <span class="font-medium text-foreground"
-                        >How rules work:</span
-                    >
-                    When a rep tries to send a quote, all active rules are
-                    checked. If any rule matches, the quote is held for approval
-                    before being sent to the client. Multiple matching rules all
-                    require separate approval.
-                </div>
             </div>
         </template>
     </div>

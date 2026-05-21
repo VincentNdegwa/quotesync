@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\QuoteApprovalStatus;
 use App\Enums\QuoteStatus;
 use App\Models\Quote;
+use App\Models\QuoteActivity;
 use App\Models\QuoteApproval;
 use App\Models\Workspace;
 use App\Services\ApprovalService;
@@ -87,12 +88,12 @@ class QuoteSendController extends Controller
             $quote->scheduled_at = $scheduledAt;
             $quote->save();
 
-            \App\Models\QuoteActivity::query()->create([
+            QuoteActivity::query()->create([
                 'quote_id' => $quote->id,
                 'workspace_id' => $quote->workspace_id,
                 'user_id' => $request->user()?->id,
                 'type' => 'scheduled',
-                'description' => 'Quote scheduled to be sent at ' . $scheduledAt,
+                'description' => 'Quote scheduled to be sent at '.$scheduledAt,
                 'metadata' => ['scheduled_at' => $scheduledAt],
             ]);
 
@@ -123,7 +124,7 @@ class QuoteSendController extends Controller
             'sent_at' => $sendAt,
         ])->save();
 
-        \App\Models\QuoteActivity::query()->create([
+        QuoteActivity::query()->create([
             'quote_id' => $quote->id,
             'workspace_id' => $quote->workspace_id,
             'user_id' => $request->user()?->id,

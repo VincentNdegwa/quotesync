@@ -15,8 +15,8 @@ use App\Models\InvoicePayment;
 use App\Models\Quote;
 use App\Models\User;
 use App\Models\Workspace;
-use App\Services\Invoices\InvoiceNumberingService;
 use App\Services\BuilderLookupService;
+use App\Services\Invoices\InvoiceNumberingService;
 use App\Services\Invoices\InvoiceService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\JsonResponse;
@@ -29,7 +29,7 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class InvoiceController extends Controller
 {
-    public function index(Request $request): Response | JsonResponse
+    public function index(Request $request): Response|JsonResponse
     {
         $workspace = $request->user()?->currentWorkspace;
         abort_unless($workspace instanceof Workspace, 404);
@@ -93,7 +93,7 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function kanban(Request $request): \Illuminate\Http\JsonResponse
+    public function kanban(Request $request): JsonResponse
     {
         $workspace = $request->user()?->currentWorkspace;
         abort_unless($workspace instanceof Workspace, 404);
@@ -163,12 +163,13 @@ class InvoiceController extends Controller
 
             return back();
         } catch (\Exception $e) {
-            Log::error('Error updating invoice: ' . $e->getMessage(), [
+            Log::error('Error updating invoice: '.$e->getMessage(), [
                 'exception' => $e,
                 'invoice_id' => $invoice->id,
                 'request' => $request->all(),
             ]);
-            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to update invoice: ' . $e->getMessage())]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to update invoice: '.$e->getMessage())]);
+
             return back()->withInput();
         }
     }
@@ -198,7 +199,7 @@ class InvoiceController extends Controller
             $message = trans_choice(':count invoice processed.|:count invoices processed.', $processed, ['count' => $processed]);
 
             if ($skipped > 0) {
-                $message .= ' ' . trans_choice(':count invoice skipped due to status restrictions.|:count invoices skipped due to status restrictions.', $skipped, ['count' => $skipped]);
+                $message .= ' '.trans_choice(':count invoice skipped due to status restrictions.|:count invoices skipped due to status restrictions.', $skipped, ['count' => $skipped]);
             }
         } elseif ($skipped > 0) {
             $message = trans_choice('All selected invoices were skipped (:count affected).|All selected invoices were skipped (:count affected).', $skipped, ['count' => $skipped]);
@@ -229,6 +230,7 @@ class InvoiceController extends Controller
                     'type' => 'error',
                     'message' => __("Invalid status transition from {$currentStatus->value} to {$newStatus->value}."),
                 ]);
+
                 return back();
             }
 
@@ -259,12 +261,13 @@ class InvoiceController extends Controller
 
             return back();
         } catch (\Exception $e) {
-            Log::error('Error updating invoice status: ' . $e->getMessage(), [
+            Log::error('Error updating invoice status: '.$e->getMessage(), [
                 'exception' => $e,
                 'invoice_id' => $invoice->id,
                 'request' => $request->all(),
             ]);
-            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to update invoice status: ' . $e->getMessage())]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to update invoice status: '.$e->getMessage())]);
+
             return back()->withInput();
         }
     }
@@ -322,15 +325,16 @@ class InvoiceController extends Controller
                 'user_agent' => $request->userAgent(),
             ]);
 
-            Inertia::flash('toast', ['type'=> 'success', 'message'=> __("Invoice created successfully")]);
+            Inertia::flash('toast', ['type' => 'success', 'message' => __('Invoice created successfully')]);
 
             return redirect()->route('invoices.show', $invoice);
         } catch (\Exception $e) {
-            Log::error('Error creating invoice: ' . $e->getMessage(), [
+            Log::error('Error creating invoice: '.$e->getMessage(), [
                 'exception' => $e,
                 'request' => $request->all(),
             ]);
-            Inertia::flash('toast', ['type'=> 'error', 'message'=> __("Failed to create invoice: " . $e->getMessage())]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to create invoice: '.$e->getMessage())]);
+
             return back()->withInput();
         }
     }
@@ -353,8 +357,8 @@ class InvoiceController extends Controller
                 throw $e;
             }
 
-        
-            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to convert quote to invoice: ' . $e->getMessage())]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to convert quote to invoice: '.$e->getMessage())]);
+
             return back()->withInput();
         }
     }
@@ -382,12 +386,13 @@ class InvoiceController extends Controller
 
             return redirect()->route('invoices.edit', $newInvoice);
         } catch (\Exception $e) {
-            Log::error('Error duplicating invoice: ' . $e->getMessage(), [
+            Log::error('Error duplicating invoice: '.$e->getMessage(), [
                 'exception' => $e,
                 'invoice_id' => $invoice->id,
                 'request' => $request->all(),
             ]);
-            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to duplicate invoice: ' . $e->getMessage())]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to duplicate invoice: '.$e->getMessage())]);
+
             return back()->withInput();
         }
     }
@@ -414,12 +419,13 @@ class InvoiceController extends Controller
 
             return redirect()->route('invoices.index');
         } catch (\Exception $e) {
-            Log::error('Error archiving invoice: ' . $e->getMessage(), [
+            Log::error('Error archiving invoice: '.$e->getMessage(), [
                 'exception' => $e,
                 'invoice_id' => $invoice->id,
                 'request' => $request->all(),
             ]);
-            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to archive invoice: ' . $e->getMessage())]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to archive invoice: '.$e->getMessage())]);
+
             return back()->withInput();
         }
     }
@@ -436,12 +442,13 @@ class InvoiceController extends Controller
 
             return redirect()->route('invoices.index');
         } catch (\Exception $e) {
-            Log::error('Error deleting invoice: ' . $e->getMessage(), [
+            Log::error('Error deleting invoice: '.$e->getMessage(), [
                 'exception' => $e,
                 'invoice_id' => $invoice->id,
                 'request' => $request->all(),
             ]);
-            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to delete invoice: ' . $e->getMessage())]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to delete invoice: '.$e->getMessage())]);
+
             return back()->withInput();
         }
     }
@@ -486,7 +493,7 @@ class InvoiceController extends Controller
                     'workspace_id' => $workspace->id,
                     'user_id' => $request->user()?->id,
                     'type' => InvoiceActivityType::Paid->value,
-                    'description' => 'Payment recorded: ' . number_format($validated['amount'], 2),
+                    'description' => 'Payment recorded: '.number_format($validated['amount'], 2),
                     'metadata' => ['payment_id' => $payment->id, 'amount' => $validated['amount']],
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
@@ -497,12 +504,13 @@ class InvoiceController extends Controller
 
             return back();
         } catch (\Exception $e) {
-            Log::error('Error recording payment: ' . $e->getMessage(), [
+            Log::error('Error recording payment: '.$e->getMessage(), [
                 'exception' => $e,
                 'invoice_id' => $invoice->id,
                 'request' => $request->all(),
             ]);
-            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to record payment: ' . $e->getMessage())]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to record payment: '.$e->getMessage())]);
+
             return back()->withInput();
         }
     }
@@ -538,12 +546,13 @@ class InvoiceController extends Controller
 
             return back();
         } catch (\Exception $e) {
-            Log::error('Error refunding payment: ' . $e->getMessage(), [
+            Log::error('Error refunding payment: '.$e->getMessage(), [
                 'exception' => $e,
                 'payment_id' => $payment->id,
                 'request' => $request->all(),
             ]);
-            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to refund payment: ' . $e->getMessage())]);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Failed to refund payment: '.$e->getMessage())]);
+
             return back()->withInput();
         }
     }

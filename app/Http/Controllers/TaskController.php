@@ -42,7 +42,7 @@ class TaskController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
@@ -272,7 +272,7 @@ class TaskController extends Controller
         // Check if task is being marked as done
         if (isset($validated['task_status_id'])) {
             $taskStatus = TaskStatus::find($validated['task_status_id']);
-            if ($taskStatus && $taskStatus->slug === 'done' && !$task->completed_at) {
+            if ($taskStatus && $taskStatus->slug === 'done' && ! $task->completed_at) {
                 $task->completed_at = now();
                 $task->save();
             }

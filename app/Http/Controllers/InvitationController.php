@@ -2,19 +2,32 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Feature;
+use App\Exceptions\LimitExceededException;
 use App\Http\Requests\Invitations\CreateInvitationRequest;
 use App\Models\Invitation;
 use App\Models\User;
 use App\Services\Invitations\InvitationService;
+use App\Services\UsageLimitService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class InvitationController extends Controller
 {
+    public function __construct(
+        private UsageLimitService $usageLimitService,
+    ) {}
+
     public function store(CreateInvitationRequest $request, InvitationService $invitationService): RedirectResponse
     {
         $workspace = $request->user()->currentWorkspace;
+        
+        if (!$this->usageLimitService->canPerformOperation($workspace, Feature::MAX_USERS)) {
+            throw new LimitExceededException($this->usageLimitService->getLimitReachedMessage(Feature::MAX_USERS));
+        }
+
         $validated = $request->validated();
 
         $invitationService->create(
@@ -42,7 +55,7 @@ class InvitationController extends Controller
 
         try {
             $invitationService->cancel($invitation, $request->user());
-        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+        } catch (AuthorizationException $e) {
             abort(403);
         }
 

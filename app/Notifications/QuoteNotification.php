@@ -18,7 +18,6 @@ abstract class QuoteNotification extends Notification
     /**
      * Get notification channels based on workspace settings.
      *
-     * @param  object  $notifiable
      * @param  string  $notificationKey  The key for the notification setting (e.g., 'notify_quote_viewed')
      * @param  string  $channelKey  The key for the channel setting (e.g., 'notify_quote_viewed_channel')
      * @return array<int, string>

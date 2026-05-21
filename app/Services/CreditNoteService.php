@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\CreditNoteStatus;
 use App\Models\Client;
 use App\Models\CreditNote;
 use App\Models\CreditNoteLineItem;
@@ -38,7 +39,7 @@ class CreditNoteService
 
         $totals = $this->calculateTotals($data['type'], $data, $invoice, $invoiceLineItems, $fxRate);
 
-        return DB::transaction(function () use ($data, $workspace, $invoice, $client, $creditNoteNumber, $userId, $currency, $baseCurrency, $fxRate, $totals, $invoiceLineItems) {
+        return DB::transaction(function () use ($data, $workspace, $creditNoteNumber, $userId, $currency, $baseCurrency, $fxRate, $totals, $invoiceLineItems) {
             $creditNote = CreditNote::create([
                 'workspace_id' => $workspace->id,
                 'invoice_id' => $data['invoice_id'],
@@ -123,7 +124,9 @@ class CreditNoteService
         } elseif ($type === 'line_items' && isset($data['line_items'])) {
             foreach ($data['line_items'] as $itemData) {
                 $invoiceLineItem = $invoiceLineItems->get($itemData['id']);
-                if (!$invoiceLineItem) continue;
+                if (! $invoiceLineItem) {
+                    continue;
+                }
 
                 $itemTotals = $this->calculateLineItemTotals(
                     $itemData['unit_price'],
@@ -186,7 +189,7 @@ class CreditNoteService
 
         $totals = $this->calculateTotals($data['type'], $data, $invoice, $invoiceLineItems, $fxRate);
 
-        DB::transaction(function () use ($creditNote, $data, $fxRate, $totals, $invoiceLineItems, $invoice) {
+        DB::transaction(function () use ($creditNote, $data, $fxRate, $totals, $invoiceLineItems) {
             $creditNote->update([
                 'title' => $data['title'],
                 'type' => $data['type'],
@@ -297,9 +300,9 @@ class CreditNoteService
         $skipped = [];
 
         foreach ($creditNotes as $creditNote) {
-            $status = $creditNote->status instanceof \App\Enums\CreditNoteStatus
+            $status = $creditNote->status instanceof CreditNoteStatus
                 ? $creditNote->status
-                : \App\Enums\CreditNoteStatus::from($creditNote->status);
+                : CreditNoteStatus::from($creditNote->status);
 
             $canProceed = match ($action) {
                 'delete' => in_array('delete', $status->availableActions()),

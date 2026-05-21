@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Marquee } from '@/components/ui/marquee';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { Marquee } from '@/components/ui/marquee';
 
 const testimonials = [
     {
@@ -34,12 +34,18 @@ const testimonials = [
 <template>
     <section class="relative mx-auto max-w-7xl px-6 py-32">
         <div class="mb-16 text-center">
-            <Badge variant="outline" class="mb-6 border-primary/20 bg-primary/5 text-primary">
+            <Badge
+                variant="outline"
+                class="mb-6 border-primary/20 bg-primary/5 text-primary"
+            >
                 Testimonials
             </Badge>
             <h2
                 class="mb-6 text-4xl font-bold tracking-tight text-foreground md:text-6xl"
-                style="font-family: var(--font-display); letter-spacing: -0.04em"
+                style="
+                    font-family: var(--font-display);
+                    letter-spacing: -0.04em;
+                "
             >
                 Loved by teams worldwide
             </h2>

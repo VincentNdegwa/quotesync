@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('task_statuses', function (Blueprint $table) {
-            if (!Schema::hasColumn('task_statuses', 'is_system')) {
+            if (! Schema::hasColumn('task_statuses', 'is_system')) {
                 $table->boolean('is_system')->default(false)->after('is_default');
             }
         });

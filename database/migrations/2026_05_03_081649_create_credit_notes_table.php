@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasTable('credit_notes')) {
+        if (! Schema::hasTable('credit_notes')) {
             Schema::create('credit_notes', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('workspace_id')->constrained()->onDelete('cascade');
@@ -25,7 +25,7 @@ return new class extends Migration
                 $table->timestamp('applied_at')->nullable();
                 $table->string('pdf_url')->nullable();
                 $table->timestamps();
-                
+
                 $table->unique(['workspace_id', 'number']);
                 $table->index(['workspace_id', 'status']);
                 $table->index(['invoice_id']);

@@ -23,9 +23,9 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useFormat } from '@/composables/useFormat';
-import type { ClientRecord, ClientStats } from '@/types';
-import ClientActions from './components/ClientActions.vue';
-import ContactDialog from './components/ContactDialog.vue';
+import type { ClientRecord, ClientStats } from '@/pages/clients/types';
+import ClientActions from './datatable/ClientActions.vue';
+import ContactDialog from './datatable/ContactDialog.vue';
 
 const props = defineProps<{
     client: ClientRecord;

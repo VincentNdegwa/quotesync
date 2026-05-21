@@ -4,6 +4,7 @@ use App\Models\CatalogCategory;
 use App\Models\CatalogItem;
 use App\Models\Client;
 use App\Models\ConfigurationTag;
+use App\Models\ConfigurationUnit;
 use App\Models\Tax;
 use App\Models\User;
 
@@ -54,7 +55,7 @@ test('catalog items can sync multiple taxes via pivot table', function () {
         'created_by' => $user->id,
     ]);
 
-    $unit = \App\Models\ConfigurationUnit::factory()->create([
+    $unit = ConfigurationUnit::factory()->create([
         'workspace_id' => $workspace?->id,
         'created_by' => $user->id,
     ]);

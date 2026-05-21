@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Feature;
+use App\Exceptions\LimitExceededException;
 use App\Http\Requests\Clients\ClientImportPreviewRequest;
 use App\Http\Requests\Clients\ClientImportStoreRequest;
 use App\Jobs\ImportClientsJob;
@@ -9,6 +11,7 @@ use App\Models\Client;
 use App\Models\ImportHistory;
 use App\Models\Workspace;
 use App\Services\Import\ClientImportValidator;
+use App\Services\UsageLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Cache;
@@ -125,6 +128,24 @@ class ClientImportController extends Controller
             });
         }
 
+        $workspace->loadCount('clients');
+        $usageLimitService = app(UsageLimitService::class);
+        $limit = $usageLimitService->getLimit($workspace, Feature::MAX_CLIENTS);
+        $currentUsage = $usageLimitService->getCurrentUsage($workspace, Feature::MAX_CLIENTS);
+
+        $canImport = $limit !== null ? ($limit - $currentUsage) : null;
+
+        if ($canImport !== null && $canImport <= 0) {
+            throw new LimitExceededException('You have reached your Clients limit. Please upgrade your plan to import more clients.');
+        }
+
+        if ($canImport !== null && $rows->count() > $canImport) {
+            $skippedDueToLimit = $rows->count() - $canImport;
+            $rows = $rows->take($canImport);
+        } else {
+            $skippedDueToLimit = 0;
+        }
+
         if ($rows->count() > 100) {
             $importHistory = ImportHistory::create([
                 'workspace_id' => $workspace->id,
@@ -132,11 +153,16 @@ class ClientImportController extends Controller
                 'type' => 'clients',
                 'status' => 'pending',
                 'total_rows' => $rows->count(),
+                'skipped_due_to_limit' => $skippedDueToLimit,
             ]);
 
             ImportClientsJob::dispatch($workspace->id, $request->user()?->id, $rows->all(), $importHistory->id);
 
-            Inertia::flash('toast', ['type' => 'success', 'message' => __('Client import queued.')]);
+            $message = $skippedDueToLimit > 0 
+                ? __('Client import queued. :skipped items skipped due to limit.', ['skipped' => $skippedDueToLimit])
+                : __('Client import queued.');
+
+            Inertia::flash('toast', ['type' => $skippedDueToLimit > 0 ? 'warning' : 'success', 'message' => $message]);
 
             return to_route('clients.index');
         }
@@ -173,12 +199,18 @@ class ClientImportController extends Controller
             $imported++;
         }
 
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Import complete. :imported imported, :skipped skipped.', [
+        $totalSkipped = $skipped + $skippedDueToLimit;
+        $message = $totalSkipped > 0 
+            ? __('Import complete. :imported imported, :skipped skipped (including :limit due to limit).', [
                 'imported' => $imported,
-                'skipped' => $skipped,
-            ]),
+                'skipped' => $totalSkipped,
+                'limit' => $skippedDueToLimit,
+            ])
+            : __('Import complete. :imported imported.', ['imported' => $imported]);
+
+        Inertia::flash('toast', [
+            'type' => $totalSkipped > 0 ? 'warning' : 'success',
+            'message' => $message,
         ]);
 
         return to_route('clients.index');

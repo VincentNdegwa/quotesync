@@ -7,7 +7,6 @@ use App\Models\InvoiceReminderStep;
 use App\Models\Workspace;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -141,6 +140,7 @@ class InvoiceReminderSequenceController extends Controller
 
         if ($sequence->is_default) {
             Inertia::flash('toast', ['type' => 'error', 'message' => __('Cannot delete the default reminder sequence.')]);
+
             return back();
         }
 

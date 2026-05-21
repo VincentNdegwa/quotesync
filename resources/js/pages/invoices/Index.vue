@@ -243,7 +243,6 @@ watch(
 
             <InvoiceHeaderActions
                 :view-mode="viewMode"
-                @open-create-invoice="() => router.visit('/invoices/create')"
                 @toggle-view="toggleView"
             />
         </div>

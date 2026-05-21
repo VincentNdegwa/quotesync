@@ -2,7 +2,13 @@
 import { Head } from '@inertiajs/vue3';
 import { usePage } from '@inertiajs/vue3';
 import { CurveType } from '@unovis/ts';
-import { VisAxis, VisLine, VisXYContainer, VisGroupedBar } from '@unovis/vue';
+import {
+    VisArea,
+    VisAxis,
+    VisLine,
+    VisXYContainer,
+    VisGroupedBar,
+} from '@unovis/vue';
 import {
     BarChart3,
     CalendarClock,
@@ -72,6 +78,7 @@ const props = defineProps<{
             count: number;
             total_value: number;
             range?: string;
+            win_rate?: number;
         }>;
         by_discount: Array<{
             label: string;
@@ -81,15 +88,6 @@ const props = defineProps<{
             win_rate?: number;
         }>;
     };
-    client_performance: Array<{
-        client_id: number;
-        client_name: string;
-        quotes_count: number;
-        won_count: number;
-        avg_response_days: number;
-        total_won: number;
-        win_rate?: number;
-    }>;
     client_intelligence: Array<{
         client_id: number;
         client_name: string;
@@ -262,7 +260,7 @@ const timeToWinAxisValues = computed(() =>
 
 const timeToWinLabelByOrder = computed<Record<number, string>>(() =>
     Object.fromEntries(
-        timeToWinChartData.value.map((item) => [item.order, item.range]),
+        timeToWinChartData.value.map((item) => [item.order, item.range ?? '']),
     ),
 );
 

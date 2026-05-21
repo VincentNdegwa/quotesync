@@ -1,10 +1,9 @@
-import { router } from '@inertiajs/vue3';
 import type { ColumnDef } from '@tanstack/vue-table';
 import { ArrowUpDown } from 'lucide-vue-next';
-import { h, type VNode } from 'vue';
+import { h } from 'vue';
+import type { VNode } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import type { PendingInvitation } from '@/types';
 import InvitationRowActions from './InvitationRowActions.vue';
 

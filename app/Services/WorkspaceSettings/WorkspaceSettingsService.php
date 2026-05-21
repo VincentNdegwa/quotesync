@@ -7,12 +7,12 @@ use App\Models\WorkspaceSetting;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 
 class WorkspaceSettingsService
 {
     private const CACHE_TTL = 3600; // 1 hour
+
     private const CACHE_VERSION = 'v1'; // Increment this when cache format changes
 
     /**
@@ -61,11 +61,12 @@ class WorkspaceSettingsService
 
     /**
      * Get all settings for a workspace, cached
+     *
      * @return array<string, array<string, mixed>>
      */
     private function getWorkspaceSettings(Workspace $workspace)
     {
-        $cacheKey = "workspace_settings:{$workspace->id}:" . self::CACHE_VERSION;
+        $cacheKey = "workspace_settings:{$workspace->id}:".self::CACHE_VERSION;
 
         return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($workspace) {
             return $workspace->settings()
@@ -208,13 +209,13 @@ class WorkspaceSettingsService
 
             foreach ($subsections as $subsectionKey => $subsection) {
                 $subsectionFields = $subsection['fields'] ?? [];
-                
+
                 // Filter settings for this subsection from the cached all settings
                 $subsectionSettings = $allSettings->filter(fn ($setting) => $setting['group'] === $subsectionKey)
                     ->keyBy('key');
 
                 $fieldPayload = collect($subsectionFields)
-                    ->map(function (array $field, string $key) use ($subsectionSettings, $subsectionFields): array {
+                    ->map(function (array $field, string $key) use ($subsectionSettings): array {
                         /** @var array<string, mixed>|null $stored */
                         $stored = $subsectionSettings->get($key);
                         $cast = $this->castForField($field);
@@ -349,10 +350,11 @@ class WorkspaceSettingsService
         if (isset($definition['subsections'])) {
             $subsections = $definition['subsections'];
             foreach ($subsections as $subsectionKey => $subsection) {
-                if (!$this->isSubsectionComplete($workspace, $subsectionKey, $subsection)) {
+                if (! $this->isSubsectionComplete($workspace, $subsectionKey, $subsection)) {
                     return false;
                 }
             }
+
             return true;
         }
 
@@ -459,6 +461,7 @@ class WorkspaceSettingsService
 
     /**
      * Get all workspace settings needed for the builder/frontend
+     *
      * @return array<string, mixed>
      */
     public function builderSettings(Workspace $workspace): array

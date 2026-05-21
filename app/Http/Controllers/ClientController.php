@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Feature;
+use App\Exceptions\LimitExceededException;
 use App\Http\Requests\Clients\BulkDestroyClientsRequest;
 use App\Http\Requests\Clients\StoreClientRequest;
 use App\Http\Requests\Clients\UpdateClientRequest;
@@ -9,6 +11,7 @@ use App\Models\Client;
 use App\Models\ConfigurationTag;
 use App\Models\Workspace;
 use App\Services\Clients\ClientService;
+use App\Services\UsageLimitService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
@@ -18,6 +21,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ClientController extends Controller
 {
+    public function __construct(
+        private UsageLimitService $usageLimitService,
+    ) {}
+
     public function index(Request $request, ClientService $clientService): InertiaResponse
     {
         $workspace = $request->user()?->currentWorkspace;
@@ -64,6 +71,10 @@ class ClientController extends Controller
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace, 404);
+
+        if (!$this->usageLimitService->canPerformOperation($workspace, Feature::MAX_CLIENTS)) {
+            throw new LimitExceededException($this->usageLimitService->getLimitReachedMessage(Feature::MAX_CLIENTS));
+        }
 
         $payload = $request->validated();
         $payload['created_by'] = $request->user()?->id;

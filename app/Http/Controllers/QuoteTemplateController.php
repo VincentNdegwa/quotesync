@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Feature;
+use App\Exceptions\LimitExceededException;
 use App\Http\Requests\QuoteTemplates\StoreQuoteTemplateRequest;
 use App\Http\Requests\QuoteTemplates\UpdateQuoteTemplateRequest;
 use App\Models\QuoteTemplate;
 use App\Models\Workspace;
 use App\Services\BuilderLookupService;
 use App\Services\Quotes\QuoteTemplateService;
+use App\Services\UsageLimitService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -17,6 +20,10 @@ use Inertia\Response;
 
 class QuoteTemplateController extends Controller
 {
+    public function __construct(
+        private UsageLimitService $usageLimitService,
+    ) {}
+
     /**
      * Display a listing of the resource.
      */
@@ -79,6 +86,10 @@ class QuoteTemplateController extends Controller
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace, 404);
+
+        if (!$this->usageLimitService->canPerformOperation($workspace, Feature::MAX_TEMPLATES)) {
+            throw new LimitExceededException($this->usageLimitService->getLimitReachedMessage(Feature::MAX_TEMPLATES));
+        }
 
         $payload = $request->validated();
         $payload['created_by'] = $request->user()?->id;

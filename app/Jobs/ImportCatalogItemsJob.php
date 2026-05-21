@@ -2,9 +2,12 @@
 
 namespace App\Jobs;
 
+use App\Enums\Feature;
 use App\Models\CatalogItem;
 use App\Models\ConfigurationUnit;
 use App\Models\ImportHistory;
+use App\Models\Workspace;
+use App\Services\UsageLimitService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -42,7 +45,21 @@ class ImportCatalogItemsJob implements ShouldQueue
             ]);
         }
 
-        // Get the first active unit from the workspace
+        $workspace = Workspace::find($this->workspaceId);
+        $usageLimitService = app(UsageLimitService::class);
+        $limit = $usageLimitService->getLimit($workspace, Feature::MAX_CATALOG_ITEMS);
+        $currentUsage = $usageLimitService->getCurrentUsage($workspace, Feature::MAX_CATALOG_ITEMS);
+        $canImport = $limit !== null ? ($limit - $currentUsage) : null;
+
+        if ($canImport !== null && count($this->rows) > $canImport) {
+            $skippedDueToLimit = count($this->rows) - $canImport;
+            $this->rows = array_slice($this->rows, 0, $canImport);
+            
+            if ($importHistory) {
+                $importHistory->update(['skipped_due_to_limit' => $skippedDueToLimit]);
+            }
+        }
+
         $defaultUnit = ConfigurationUnit::query()
             ->where('workspace_id', $this->workspaceId)
             ->where('is_active', true)

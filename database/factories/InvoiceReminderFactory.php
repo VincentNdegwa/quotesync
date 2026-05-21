@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\InvoiceReminder;
 use App\Models\Invoice;
+use App\Models\InvoiceReminder;
 use App\Models\Workspace;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, ref, watch, nextTick } from 'vue';
 import { marked } from 'marked';
+import { computed, ref, watch, nextTick } from 'vue';
+import AiWritingAssistant from '@/components/AiWritingAssistant.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import AiWritingAssistant from '@/components/AiWritingAssistant.vue';
 import TiptapEditor from '@/components/ui/tiptap-editor/TiptapEditor.vue';
 
 const props = withDefaults(
@@ -37,7 +37,10 @@ const emit = defineEmits<{
 const isEditing = ref(false);
 const draft = ref('');
 const inputElRef = ref<HTMLInputElement | null>(null);
-const tiptapEditorRef = ref<{ editor: any; insertText: (text: string) => void } | null>(null);
+const tiptapEditorRef = ref<{
+    editor: any;
+    insertText: (text: string) => void;
+} | null>(null);
 
 const hasValue = computed(
     () => String(props.modelValue ?? '').trim().length > 0,
@@ -100,10 +103,14 @@ const cancel = (): void => {
 
 const handleAiUpdate = (newContent: string): void => {
     draft.value = newContent;
+
     if (props.multiline && tiptapEditorRef.value) {
         const htmlContent = marked(newContent || '');
-        tiptapEditorRef.value.editor?.commands.setContent(htmlContent || '<p></p>');
+        tiptapEditorRef.value.editor?.commands.setContent(
+            htmlContent || '<p></p>',
+        );
     }
+
     emit('update:modelValue', newContent || null);
 };
 
@@ -156,7 +163,7 @@ const onKeydown = (event: KeyboardEvent): void => {
                         :placeholder="placeholder"
                         :show-toolbar="false"
                         class="w-full"
-                        @update:model-value="(value) => draft = value"
+                        @update:model-value="(value) => (draft = value)"
                         @keydown="onKeydown"
                     />
                     <Input

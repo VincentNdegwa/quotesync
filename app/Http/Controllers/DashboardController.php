@@ -35,6 +35,13 @@ class DashboardController extends Controller
 
         abort_unless($workspace instanceof Workspace, 404);
 
+        if ($request->has('checkout_success')) {
+            \Inertia\Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => __('Subscription created successfully! Welcome to your new plan.'),
+            ]);
+        }
+
         $this->workspace = $workspace;
 
         return Inertia::render('Dashboard', [
@@ -134,7 +141,7 @@ class DashboardController extends Controller
             ->whereNotNull('won_at')
             ->get()
             ->avg(fn (Quote $quote) => $quote->sent_at && $quote->won_at
-                ? $quote->won_at->diffInDays($quote->sent_at)
+                ? $quote->sent_at->diffInDays($quote->won_at)
                 : 0
             );
 
@@ -145,7 +152,7 @@ class DashboardController extends Controller
             ->whereNotNull('won_at')
             ->get()
             ->avg(fn (Quote $quote) => $quote->sent_at && $quote->won_at
-                ? $quote->won_at->diffInDays($quote->sent_at)
+                ? $quote->sent_at->diffInDays($quote->won_at)
                 : 0
             );
 
@@ -375,7 +382,7 @@ class DashboardController extends Controller
         $userId = $request->user()?->id;
         $isOwner = $this->workspace->owner_id === $userId;
 
-        if (!$isOwner && !$userId) {
+        if (! $isOwner && ! $userId) {
             return null;
         }
 
@@ -390,7 +397,7 @@ class DashboardController extends Controller
             ->whereBetween('sent_at', [$start, $end]);
 
         // If not owner, only show current user's stats
-        if (!$isOwner) {
+        if (! $isOwner) {
             $query->where('created_by', $userId);
         }
 

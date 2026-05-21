@@ -109,7 +109,7 @@ return [
 
     'generate_zod' => false,
     'zod_output_path' => null,
-    'generate_zod_index' => true,
+    'generate_zod_index' => false,
 
     /*
     |--------------------------------------------------------------------------

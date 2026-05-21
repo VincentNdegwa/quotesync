@@ -5,7 +5,6 @@ namespace App\Observers;
 use App\Models\Invoice;
 use App\Models\InvoiceReminder;
 use App\Models\InvoiceReminderSequence;
-use App\Models\InvoiceReminderStep;
 
 class InvoiceReminderObserver
 {
@@ -27,25 +26,25 @@ class InvoiceReminderObserver
     protected function scheduleReminders(Invoice $invoice): void
     {
         $workspace = $invoice->workspace;
-        
+
         // Get the default reminder sequence for the workspace
         $sequence = InvoiceReminderSequence::where('workspace_id', $workspace->id)
             ->where('is_default', true)
             ->first();
 
-        if (!$sequence) {
+        if (! $sequence) {
             return;
         }
 
         // Get the due date from the invoice
         $dueDate = $invoice->due_date;
-        if (!$dueDate) {
+        if (! $dueDate) {
             return;
         }
 
         // Create reminder records for each step
         foreach ($sequence->steps as $step) {
-            if (!$step->send_automatically) {
+            if (! $step->send_automatically) {
                 continue;
             }
 

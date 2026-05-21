@@ -2,16 +2,18 @@
 
 namespace App\Services\Invoices;
 
+use App\Enums\InvoiceActivityType;
+use App\Enums\InvoiceStatus;
 use App\Models\Invoice;
 use App\Models\InvoiceActivity;
 use App\Models\InvoiceLineItemTax;
 use App\Models\Quote;
 use App\Models\Workspace;
 use App\Services\ExchangeRateService;
-use App\Services\Invoices\InvoiceNumberingService;
 use App\Services\Quotes\TaxCalculator as QuotesTaxCalculator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class InvoiceService
 {
@@ -85,7 +87,7 @@ class InvoiceService
 
                     // Create new invoice line item taxes
                     foreach ($lineItem->taxes as $tax) {
-                        $invoiceLineItemTax = new InvoiceLineItemTax();
+                        $invoiceLineItemTax = new InvoiceLineItemTax;
                         $invoiceLineItemTax->invoice_line_item_id = $invoiceLineItem->id;
                         $invoiceLineItemTax->tax_id = $tax->tax_id;
                         $invoiceLineItemTax->tax_label = $tax->tax_label;
@@ -111,14 +113,14 @@ class InvoiceService
 
             $newInvoice = $invoice->replicate();
             $newInvoice->invoice_number = $this->invoiceNumberingService->generateNextNumber($workspace);
-            $newInvoice->title = $invoice->title . ' ' . $suffix;
+            $newInvoice->title = $invoice->title.' '.$suffix;
             $newInvoice->status = 'draft';
             $newInvoice->issue_date = now();
             $newInvoice->due_date = now()->addDays(30);
             $newInvoice->paid_amount = 0;
             $newInvoice->sent_at = null;
             $newInvoice->paid_date = null;
-            $newInvoice->invoice_uuid = (string) \Illuminate\Support\Str::uuid();
+            $newInvoice->invoice_uuid = (string) Str::uuid();
             $newInvoice->save();
 
             foreach ($invoice->sections as $section) {
@@ -403,9 +405,9 @@ class InvoiceService
         $skipped = [];
 
         foreach ($invoices as $invoice) {
-            $status = $invoice->status instanceof \App\Enums\InvoiceStatus
+            $status = $invoice->status instanceof InvoiceStatus
                 ? $invoice->status
-                : \App\Enums\InvoiceStatus::from($invoice->status);
+                : InvoiceStatus::from($invoice->status);
 
             $canProceed = match ($action) {
                 'delete' => $status->canBeDeleted(),
@@ -439,7 +441,7 @@ class InvoiceService
                         'invoice_id' => $invoiceId,
                         'workspace_id' => $workspace->id,
                         'user_id' => $userId,
-                        'type' => \App\Enums\InvoiceActivityType::Voided->value,
+                        'type' => InvoiceActivityType::Voided->value,
                         'description' => 'Invoice archived',
                         'metadata' => null,
                         'created_at' => $now,

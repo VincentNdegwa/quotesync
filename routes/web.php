@@ -14,11 +14,12 @@ use App\Http\Controllers\ClientExportController;
 use App\Http\Controllers\ClientImportController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ConfigIndustryController;
-use App\Http\Controllers\ContactController;
 use App\Http\Controllers\Configuration\FollowUpSequenceController as ConfigFollowUpSequenceController;
 use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\ConfigurationTagController;
 use App\Http\Controllers\ConfigurationUnitController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\CreditNoteController;
 use App\Http\Controllers\CustomDomainController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvitationController;
@@ -27,21 +28,20 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoicePdfController;
 use App\Http\Controllers\InvoiceReminderSequenceController;
 use App\Http\Controllers\InvoiceSendController;
-use App\Http\Controllers\CreditNoteController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PortalInvitationController;
-use App\Http\Controllers\PublicQuoteController;
 use App\Http\Controllers\PublicInvoiceController;
+use App\Http\Controllers\PublicQuoteController;
 use App\Http\Controllers\QuoteBulkExportController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\QuoteMessageController;
 use App\Http\Controllers\QuotePdfController;
 use App\Http\Controllers\QuoteSendController;
-use App\Http\Controllers\TaskController;
-use App\Http\Controllers\TaskStatusController;
 use App\Http\Controllers\QuoteTemplateController;
 use App\Http\Controllers\QuoteTrackingController;
 use App\Http\Controllers\Settings\MembersController;
+use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TaskStatusController;
 use App\Http\Controllers\TaxController;
 use App\Http\Controllers\WorkspaceSwitchController;
 use App\Http\Middleware\EnsureWorkspaceSettingsOnboarded;
@@ -256,3 +256,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 require __DIR__.'/settings.php';
+require __DIR__.'/billing.php';
+
+Route::post('paddle/webhook', \App\Http\Controllers\Webhook\PaddleWebhookController::class)->name('cashier.webhook');
+

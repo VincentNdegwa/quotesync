@@ -2,12 +2,12 @@
 import { Sparkles, Loader2, PenLine, ChevronDown } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
-import { Input } from '@/components/ui/input';
 
 type Mode = 'improve' | 'write';
 
@@ -70,6 +70,7 @@ const improveText = async (action: string): Promise<void> => {
         }
 
         const data = JSON.parse(event.data);
+
         if (data.delta) {
             newText += data.delta;
             props.onUpdate(newText);
@@ -103,7 +104,9 @@ const writeText = async (): Promise<void> => {
         params.append('existing_text', props.content);
     }
 
-    eventSource.value = new EventSource(`/ai/writing/write?${params.toString()}`);
+    eventSource.value = new EventSource(
+        `/ai/writing/write?${params.toString()}`,
+    );
 
     eventSource.value.onmessage = (event: MessageEvent): void => {
         if (event.data === '[DONE]') {
@@ -116,6 +119,7 @@ const writeText = async (): Promise<void> => {
         }
 
         const data = JSON.parse(event.data);
+
         if (data.delta) {
             newText += data.delta;
             props.onUpdate(newText);
@@ -134,15 +138,8 @@ const stopStreaming = (): void => {
     eventSource.value?.close();
     isStreaming.value = false;
     selectedAction.value = null;
-};
-
-const close = (): void => {
-    isOpen.value = false;
-    isStreaming.value = false;
-    selectedAction.value = null;
     customPrompt.value = '';
     error.value = null;
-    eventSource.value?.close();
 };
 
 defineExpose({
@@ -238,11 +235,7 @@ defineExpose({
                             AI is writing...
                         </p>
                     </div>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        @click="stopStreaming"
-                    >
+                    <Button variant="outline" size="sm" @click="stopStreaming">
                         Stop
                     </Button>
                 </div>

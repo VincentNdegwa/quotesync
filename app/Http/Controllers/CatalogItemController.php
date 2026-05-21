@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Feature;
+use App\Exceptions\LimitExceededException;
 use App\Http\Requests\Catalog\CatalogItemBulkActionRequest;
 use App\Http\Requests\Catalog\CatalogItemPriceTierRequest;
 use App\Http\Requests\Catalog\CatalogItemVariantRequest;
@@ -9,13 +11,14 @@ use App\Http\Requests\Catalog\StoreCatalogItemRequest;
 use App\Http\Requests\Catalog\UpdateCatalogItemRequest;
 use App\Models\CatalogCategory;
 use App\Models\CatalogItem;
-use App\Models\CatalogItemVariant;
 use App\Models\CatalogItemPriceTier;
+use App\Models\CatalogItemVariant;
 use App\Models\ConfigurationUnit;
 use App\Models\Tax;
 use App\Models\Workspace;
 use App\Services\Catalog\CatalogItemService;
 use App\Services\FileStorageService;
+use App\Services\UsageLimitService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -23,6 +26,10 @@ use Inertia\Response;
 
 class CatalogItemController extends Controller
 {
+    public function __construct(
+        private UsageLimitService $usageLimitService,
+    ) {}
+
     public function index(Request $request, CatalogItemService $catalogItemService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
@@ -64,13 +71,17 @@ class CatalogItemController extends Controller
 
         abort_unless($workspace instanceof Workspace, 404);
 
+        if (!$this->usageLimitService->canPerformOperation($workspace, Feature::MAX_CATALOG_ITEMS)) {
+            throw new LimitExceededException($this->usageLimitService->getLimitReachedMessage(Feature::MAX_CATALOG_ITEMS));
+        }
+
         $payload = $request->validated();
         $payload['is_active'] = (bool) ($payload['is_active'] ?? true);
         $payload['created_by'] = $request->user()?->id;
 
         if ($request->hasFile('image')) {
             $result = $fileStorageService->store($request->file('image'), "workspaces/{$workspace->id}/catalog");
-            if (!$result['error']) {
+            if (! $result['error']) {
                 $payload['image_url'] = $result['url'];
             }
         }
@@ -122,7 +133,7 @@ class CatalogItemController extends Controller
 
         if ($request->hasFile('image')) {
             $result = $fileStorageService->store($request->file('image'), "workspaces/{$workspace->id}/catalog");
-            if (!$result['error']) {
+            if (! $result['error']) {
                 $payload['image_url'] = $result['url'];
             }
         }

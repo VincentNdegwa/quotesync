@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\Quote;
-use App\Services\Quotes\TaxCalculator;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -26,19 +25,19 @@ class BackfillTaxAmounts extends Command
                 // Recalculate tax amounts for each line item tax
                 foreach ($quote->sections as $section) {
                     foreach ($section->lineItems as $lineItem) {
-                        $baseAmount = $lineItem->quantity * $lineItem->unit_price * 
+                        $baseAmount = $lineItem->quantity * $lineItem->unit_price *
                                        (1 - $lineItem->discount_percent / 100);
-                        
+
                         foreach ($lineItem->taxes as $tax) {
                             $rate = $tax->tax_rate;
                             $isInclusive = $tax->inclusive;
-                            
+
                             if ($isInclusive) {
                                 $taxAmount = $baseAmount * $rate / (100 + $rate);
                             } else {
                                 $taxAmount = $baseAmount * $rate / 100;
                             }
-                            
+
                             $tax->update([
                                 'tax_amount' => round($taxAmount, 2),
                                 'base_tax_amount' => round($taxAmount, 2), // Same as tax_amount (base currency)
@@ -46,7 +45,7 @@ class BackfillTaxAmounts extends Command
                         }
                     }
                 }
-                
+
                 // Recalculate quote totals
                 $quote->refresh();
                 $this->recalculateQuoteTotals($quote);

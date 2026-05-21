@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { WorkspaceRoleOption } from '@/types';
 
-const props = defineProps<{
+defineProps<{
     availableRoles: WorkspaceRoleOption[];
 }>();
 

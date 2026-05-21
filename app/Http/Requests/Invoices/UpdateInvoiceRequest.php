@@ -39,7 +39,6 @@ class UpdateInvoiceRequest extends FormRequest
         $workspace = $this->user()?->currentWorkspace;
         $user = $this->user();
 
-
         return [
             'invoice_number' => ['nullable', 'string', 'max:60'],
             'title' => ['required', 'string', 'max:255'],
@@ -114,7 +113,7 @@ class UpdateInvoiceRequest extends FormRequest
 
                 $sections = $this->input('sections', []);
                 foreach ($sections as $sectionIndex => $section) {
-                    if (!isset($section['line_items'])) {
+                    if (! isset($section['line_items'])) {
                         continue;
                     }
 

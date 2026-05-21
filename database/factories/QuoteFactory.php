@@ -9,7 +9,7 @@ use App\Models\Workspace;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<Quote>
+ * @extends Factory<Quote>
  */
 class QuoteFactory extends Factory
 {

@@ -101,7 +101,6 @@ class TaxCalculator
      * @param  float  $taxRate  Tax rate
      * @param  bool  $isInclusive  Whether tax is inclusive
      * @param  float  $inclusiveTaxAmount  Deprecated/Ignored (kept for signature compatibility)
-     * @return float
      */
     public static function calculateIndividualTaxAmount(
         float $baseAmount,

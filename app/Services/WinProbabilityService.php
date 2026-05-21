@@ -5,15 +5,14 @@ namespace App\Services;
 use App\Enums\SignalDirection;
 use App\Enums\WinProbabilityConfidence;
 use App\Models\Quote;
-use App\Models\QuoteWinProbability;
-use App\Models\QuoteWinProbabilitySignal;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class WinProbabilityService
 {
     private const MIN_SAMPLE_SIZE = 5;
-    private const DEFAULT_RATE    = 0.50;
+
+    private const DEFAULT_RATE = 0.50;
 
     public function calculate(Quote $quote): array
     {
@@ -21,14 +20,15 @@ class WinProbabilityService
 
         if ($signals->isEmpty()) {
             $this->saveWinProbability($quote, null, WinProbabilityConfidence::None, false, collect());
+
             return $this->noDataResult();
         }
 
-        $weightedSum   = $signals->sum(fn ($s) => $s['probability'] * $s['weight']);
-        $totalWeight   = $signals->sum(fn ($s) => $s['weight']);
-        $probability   = $totalWeight > 0 ? $weightedSum / $totalWeight : self::DEFAULT_RATE;
+        $weightedSum = $signals->sum(fn ($s) => $s['probability'] * $s['weight']);
+        $totalWeight = $signals->sum(fn ($s) => $s['weight']);
+        $probability = $totalWeight > 0 ? $weightedSum / $totalWeight : self::DEFAULT_RATE;
 
-        $probability   = min(0.92, max(0.05, $probability));
+        $probability = min(0.92, max(0.05, $probability));
 
         $confidenceString = $this->confidence($signals);
         $confidenceEnum = WinProbabilityConfidence::from($confidenceString);
@@ -36,10 +36,10 @@ class WinProbabilityService
         $this->saveWinProbability($quote, round($probability * 100), $confidenceEnum, true, $signals);
 
         return [
-            'probability'   => round($probability * 100),
-            'confidence'    => $confidenceString,
-            'signals'       => $signals->toArray(),
-            'has_data'      => true,
+            'probability' => round($probability * 100),
+            'confidence' => $confidenceString,
+            'signals' => $signals->toArray(),
+            'has_data' => true,
         ];
     }
 
@@ -80,12 +80,12 @@ class WinProbabilityService
         $workspaceRate = $this->workspaceWinRate($quote->workspace_id);
         if ($workspaceRate !== null) {
             $signals->push([
-                'key'         => 'workspace_baseline',
-                'label'       => 'Your overall win rate',
+                'key' => 'workspace_baseline',
+                'label' => 'Your overall win rate',
                 'probability' => $workspaceRate['rate'],
-                'weight'      => min(3.0, $workspaceRate['count'] / 20),
+                'weight' => min(3.0, $workspaceRate['count'] / 20),
                 'sample_size' => $workspaceRate['count'],
-                'direction'   => $workspaceRate['rate'] >= 0.5 ? 'positive' : 'negative',
+                'direction' => $workspaceRate['rate'] >= 0.5 ? 'positive' : 'negative',
             ]);
         }
 
@@ -94,12 +94,12 @@ class WinProbabilityService
         $clientRate = $this->clientWinRate($quote->client_id, $quote->workspace_id);
         if ($clientRate !== null) {
             $signals->push([
-                'key'         => 'client_history',
-                'label'       => 'Win rate with this client',
+                'key' => 'client_history',
+                'label' => 'Win rate with this client',
                 'probability' => $clientRate['rate'],
-                'weight'      => min(4.0, $clientRate['count'] / 3),
+                'weight' => min(4.0, $clientRate['count'] / 3),
                 'sample_size' => $clientRate['count'],
-                'direction'   => $clientRate['rate'] >= 0.5 ? 'positive' : 'negative',
+                'direction' => $clientRate['rate'] >= 0.5 ? 'positive' : 'negative',
             ]);
         }
 
@@ -144,7 +144,7 @@ class WinProbabilityService
             ->count();
 
         return [
-            'rate'  => $won / $resolved,
+            'rate' => $won / $resolved,
             'count' => $resolved,
         ];
     }
@@ -170,7 +170,7 @@ class WinProbabilityService
             ->count();
 
         return [
-            'rate'  => $won / $resolved,
+            'rate' => $won / $resolved,
             'count' => $resolved,
         ];
     }
@@ -198,23 +198,23 @@ class WinProbabilityService
         // Position this quote's views between the lost average and won average
         // 0 views against won avg of 3 → below average → lower probability
         if ($avgViewsOnWon > $avgViewsOnLost) {
-            $range    = $avgViewsOnWon - $avgViewsOnLost;
+            $range = $avgViewsOnWon - $avgViewsOnLost;
             $position = min(1.0, max(0.0, ($viewCount - $avgViewsOnLost) / $range));
         } else {
             $position = $viewCount > 0 ? 0.6 : 0.4;
         }
 
         return [
-            'key'         => 'engagement',
-            'label'       => 'Client engagement (views)',
+            'key' => 'engagement',
+            'label' => 'Client engagement (views)',
             'probability' => $position,
-            'weight'      => 1.5,
+            'weight' => 1.5,
             'sample_size' => $totalResolved,
-            'direction'   => $position >= 0.5 ? 'positive' : 'negative',
-            'meta'        => [
-                'view_count'       => $viewCount,
-                'avg_views_won'    => round($avgViewsOnWon, 1),
-                'avg_views_lost'   => round($avgViewsOnLost, 1),
+            'direction' => $position >= 0.5 ? 'positive' : 'negative',
+            'meta' => [
+                'view_count' => $viewCount,
+                'avg_views_won' => round($avgViewsOnWon, 1),
+                'avg_views_lost' => round($avgViewsOnLost, 1),
             ],
         ];
     }
@@ -267,15 +267,15 @@ class WinProbabilityService
         $probability = $daysSinceSent <= $avgDaysToClose ? $fastRate : $slowRate;
 
         return [
-            'key'         => 'time_decay',
-            'label'       => 'Time since sent',
+            'key' => 'time_decay',
+            'label' => 'Time since sent',
             'probability' => $probability,
-            'weight'      => 1.0,
+            'weight' => 1.0,
             'sample_size' => $totalResolved,
-            'direction'   => $probability >= 0.5 ? 'positive' : 'negative',
-            'meta'        => [
-                'days_since_sent'    => $daysSinceSent,
-                'avg_days_to_close'  => round($avgDaysToClose, 1),
+            'direction' => $probability >= 0.5 ? 'positive' : 'negative',
+            'meta' => [
+                'days_since_sent' => $daysSinceSent,
+                'avg_days_to_close' => round($avgDaysToClose, 1),
             ],
         ];
     }
@@ -312,16 +312,16 @@ class WinProbabilityService
         }
 
         return [
-            'key'         => 'value_ratio',
-            'label'       => 'Quote value vs client average',
+            'key' => 'value_ratio',
+            'label' => 'Quote value vs client average',
             'probability' => $probability,
-            'weight'      => 0.8,
+            'weight' => 0.8,
             'sample_size' => 1,
-            'direction'   => $probability >= 0.5 ? 'positive' : 'negative',
-            'meta'        => [
-                'quote_value'     => $quote->base_total,
-                'client_average'  => round($avgWonValue, 2),
-                'ratio'           => round($ratio, 2),
+            'direction' => $probability >= 0.5 ? 'positive' : 'negative',
+            'meta' => [
+                'quote_value' => $quote->base_total,
+                'client_average' => round($avgWonValue, 2),
+                'ratio' => round($ratio, 2),
             ],
         ];
     }
@@ -346,9 +346,9 @@ class WinProbabilityService
     {
         return [
             'probability' => null,
-            'confidence'  => 'none',
-            'signals'     => [],
-            'has_data'    => false,
+            'confidence' => 'none',
+            'signals' => [],
+            'has_data' => false,
         ];
     }
 

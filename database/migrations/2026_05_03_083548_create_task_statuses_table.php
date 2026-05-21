@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasTable('task_statuses')) {
+        if (! Schema::hasTable('task_statuses')) {
             Schema::create('task_statuses', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('workspace_id')->constrained()->onDelete('cascade');
@@ -19,7 +19,7 @@ return new class extends Migration
                 $table->boolean('is_default')->default(false);
                 $table->boolean('is_system')->default(false);
                 $table->timestamps();
-                
+
                 $table->unique(['workspace_id', 'slug']);
                 $table->index(['workspace_id', 'sort_order']);
             });

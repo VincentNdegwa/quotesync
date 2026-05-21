@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Task;
 use App\Models\Quote;
+use App\Models\Task;
 use App\Models\TaskStatus;
 use App\Models\User;
 use App\Models\Workspace;
@@ -96,7 +96,7 @@ it('sets completed_at when status is done via controller', function () {
 
     // Simulate controller logic
     $task->update(['task_status_id' => $taskStatus->id]);
-    if ($taskStatus->slug === 'done' && !$task->completed_at) {
+    if ($taskStatus->slug === 'done' && ! $task->completed_at) {
         $task->completed_at = now();
         $task->save();
     }

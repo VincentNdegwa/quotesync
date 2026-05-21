@@ -1,18 +1,23 @@
+import type {
+    Client,
+    ConfigurationUnit,
+    CatalogCategory,
+    Tax,
+    CatalogItem,
+} from '@/eloquent-types/models';
 import type { QuoteModel } from './models';
 
-export type ClientRecord = {
-    id: number;
-    company_name: string;
-    contact_name: string | null;
-    email: string | null;
-    phone: string | null;
-    whatsapp: string | null;
-    address: string | null;
-    city: string | null;
-    country: string | null;
-    currency: string | null;
-    language: string | null;
-    tax_number: string | null;
+// ClientRecord extends the eloquent Client type with additional computed fields
+export type ClientRecord = Omit<
+    Client,
+    | 'workspace'
+    | 'creator'
+    | 'tags'
+    | 'notes'
+    | 'contacts'
+    | 'quotes'
+    | 'primaryContact'
+> & {
     tags: string[] | null;
     tag_ids?: number[];
     contacts?: Array<{
@@ -23,7 +28,6 @@ export type ClientRecord = {
         position: string | null;
         is_primary: boolean;
     }>;
-    created_at: string;
     quotes_sent_count?: number;
     total_value_won?: number;
 };
@@ -37,39 +41,22 @@ export type ClientStats = {
     quote_history: QuoteModel[];
 };
 
-export type ConfigurationUnitRecord = {
-    id: number;
-    name: string;
-    symbol: string | null;
-    is_active: boolean;
-    created_at: string;
-};
+export type ConfigurationUnitRecord = Omit<
+    ConfigurationUnit,
+    'workspace' | 'createdBy'
+>;
 
-export type CatalogCategoryRecord = {
-    id: number;
-    name: string;
-    is_active: boolean;
-};
+export type CatalogCategoryRecord = Omit<
+    CatalogCategory,
+    'workspace' | 'createdBy'
+>;
 
-export type TaxRecord = {
-    id: number;
-    name: string;
-    rate: number | string;
-    is_default: boolean;
-    is_active: boolean;
-};
+export type TaxRecord = Omit<Tax, 'workspace' | 'createdBy'>;
 
-export type CatalogItemRecord = {
-    id: number;
-    name: string;
-    description: string | null;
-    sku: string | null;
-    unit_id: number | null;
-    unit_price: number | string;
-    cost_price: number | string;
-    is_active: boolean;
-    usage_count: number;
-    image_url: string | null;
+export type CatalogItemRecord = Omit<
+    CatalogItem,
+    'workspace' | 'createdBy' | 'configurationUnit' | 'catalogCategory'
+> & {
     category?: { id: number; name: string } | null;
     configuration_unit?: { id: number; name: string; symbol: string } | null;
     taxes?: Array<{ id: number; name: string; rate: number | string }>;
@@ -91,7 +78,6 @@ export type CatalogItemRecord = {
         unit_price: number;
         discount_percent: number;
     }>;
-    created_at: string;
 };
 
 export type Paginator<T> = {

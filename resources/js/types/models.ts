@@ -1,53 +1,30 @@
-export type UserModel = {
-    id: number;
-    name: string;
-    email: string;
-    current_workspace_id: number | null;
-    email_verified_at: string | null;
-    created_at: string | null;
-    updated_at: string | null;
-};
+// Re-export auto-generated eloquent types
+export type {
+    Client,
+    CreateClientPayload,
+    UpdateClientPayload,
+} from '@/eloquent-types/models';
+export type {
+    User,
+    CreateUserPayload,
+    UpdateUserPayload,
+} from '@/eloquent-types/models';
+export type {
+    Workspace,
+    CreateWorkspacePayload,
+    UpdateWorkspacePayload,
+} from '@/eloquent-types/models';
 
-export type IndustryModel = {
-    id: number;
-    name: string;
-    description: string | null;
-    icon: string | null;
-    color: string | null;
-    is_active: boolean;
-    created_at: string | null;
-    updated_at: string | null;
-};
+// Legacy type aliases for backward compatibility
+import type {
+    Client as EloquentClient,
+    User as EloquentUser,
+    Workspace as EloquentWorkspace,
+} from '@/eloquent-types/models';
 
-export type WorkspaceModel = {
-    id: number;
-    name: string;
-    display_name: string;
-    owner_id: number;
-    industry_id: number | null;
-    created_at: string | null;
-    updated_at: string | null;
-};
-
-export type ClientModel = {
-    id: number;
-    workspace_id: number;
-    company_name: string;
-    contact_name: string | null;
-    email: string | null;
-    phone: string | null;
-    whatsapp: string | null;
-    address: string | null;
-    city: string | null;
-    country: string | null;
-    currency: string | null;
-    language: string | null;
-    tax_number: string | null;
-    created_by: number | null;
-    created_at: string | null;
-    updated_at: string | null;
-    deleted_at: string | null;
-};
+export type UserModel = EloquentUser;
+export type WorkspaceModel = EloquentWorkspace;
+export type ClientModel = EloquentClient;
 
 export type ConfigurationUnitRecord = {
     id: number;
@@ -360,10 +337,7 @@ export type InvoiceModel = {
     updated_at: string | null;
     deleted_at: string | null;
     client: ClientModel | null;
-    workspace: Pick<
-        WorkspaceModel,
-        'id' | 'name' | 'display_name' | 'owner_id'
-    > | null;
+    workspace: Pick<WorkspaceModel, 'id' | 'name' | 'owner_id'> | null;
     assignee: Pick<UserModel, 'id' | 'name' | 'email'> | null;
     creator: Pick<UserModel, 'id' | 'name' | 'email'> | null;
     quote: Pick<QuoteModel, 'id' | 'number' | 'title'> | null;

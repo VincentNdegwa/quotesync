@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Task;
 use App\Models\TaskStatus;
 use App\Models\Workspace;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -48,7 +49,7 @@ it('belongs to a workspace', function () {
 
 it('has many tasks', function () {
     $taskStatus = TaskStatus::factory()->create();
-    $tasks = \App\Models\Task::factory()->count(3)->create([
+    $tasks = Task::factory()->count(3)->create([
         'task_status_id' => $taskStatus->id,
     ]);
 

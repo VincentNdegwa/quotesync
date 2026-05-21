@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\Task;
@@ -43,7 +44,7 @@ it('can create a task via controller', function () {
 it('can create a task for an invoice via controller', function () {
     $user = User::factory()->create();
     $workspace = $user->currentWorkspace;
-    $client = \App\Models\Client::factory()->create(['workspace_id' => $workspace->id]);
+    $client = Client::factory()->create(['workspace_id' => $workspace->id]);
     $invoice = Invoice::create([
         'workspace_id' => $workspace->id,
         'client_id' => $client->id,
@@ -208,7 +209,7 @@ it('can update task assignment via controller', function () {
 it('can update taskable association via controller', function () {
     $user = User::factory()->create();
     $workspace = $user->currentWorkspace;
-    $client = \App\Models\Client::factory()->create(['workspace_id' => $workspace->id]);
+    $client = Client::factory()->create(['workspace_id' => $workspace->id]);
     $quote = Quote::factory()->create(['workspace_id' => $workspace->id]);
     $invoice = Invoice::create([
         'workspace_id' => $workspace->id,

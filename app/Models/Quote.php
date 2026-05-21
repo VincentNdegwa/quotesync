@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\QuoteStatus;
+use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Database\Factories\QuoteFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -210,11 +211,11 @@ class Quote extends Model
     {
         $workspace = $this->workspace;
 
-        if (!$workspace) {
+        if (! $workspace) {
             return false;
         }
 
-        $settingsService = app(\App\Services\WorkspaceSettings\WorkspaceSettingsService::class);
+        $settingsService = app(WorkspaceSettingsService::class);
         $settings = $settingsService->groupForFrontend($workspace, 'notifications')['fields'] ?? [];
 
         $hotLeadThreshold = $settings['hot_lead_threshold']['value'] ?? 3;

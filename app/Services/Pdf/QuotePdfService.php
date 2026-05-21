@@ -3,6 +3,7 @@
 namespace App\Services\Pdf;
 
 use App\Models\Quote;
+use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use App\Support\Quotes\QuoteLayout;
 use App\Support\WorkspaceBranding;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -24,9 +25,9 @@ class QuotePdfService
 
         $layout = QuoteLayout::normalize($quote->layout_snapshot);
         $branding = $this->workspaceBranding->forWorkspace($quote->workspace);
-        
+
         // Get workspace settings for quotes (not quotes_invoices group)
-        $settingsService = app(\App\Services\WorkspaceSettings\WorkspaceSettingsService::class);
+        $settingsService = app(WorkspaceSettingsService::class);
         $quoteSettings = collect($settingsService->groupForFrontend($quote->workspace, 'quotes')['fields'] ?? [])
             ->keyBy('key')
             ->map(fn ($field) => $field['value'] ?? $field['default'] ?? null)
@@ -61,13 +62,14 @@ class QuotePdfService
             return null;
         }
 
-        if (!str_starts_with($signatureUrl, 'http')) {
+        if (! str_starts_with($signatureUrl, 'http')) {
             return null;
         }
 
         $relativePath = str_replace(Storage::url(''), '', $signatureUrl);
         if (Storage::disk('public')->exists($relativePath)) {
             $mime = mime_content_type(Storage::disk('public')->path($relativePath)) ?: 'image/png';
+
             return 'data:'.$mime.';base64,'.base64_encode(Storage::disk('public')->get($relativePath));
         }
 

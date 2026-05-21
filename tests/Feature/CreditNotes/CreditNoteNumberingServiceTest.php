@@ -5,7 +5,6 @@ use App\Models\CreditNote;
 use App\Models\User;
 use App\Models\WorkspaceSetting;
 use App\Services\CreditNotes\CreditNoteNumberingService;
-use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -19,7 +18,6 @@ it('generates the first credit note number with default settings', function () {
 
     expect($number)->toBe('CN-'.now()->year.'-001');
 });
-
 
 it('resets sequence yearly when enabled', function () {
     $user = User::factory()->create();
@@ -100,7 +98,7 @@ it('does not reset sequence yearly when disabled', function () {
     $service = app(CreditNoteNumberingService::class);
     $number = $service->generateNextNumber($workspace);
 
-    // Since yearly reset is disabled and there's a credit note in current year, 
+    // Since yearly reset is disabled and there's a credit note in current year,
     // it should continue from the current sequence
     expect($number)->toBe('CN-'.now()->year.'-005');
 });
@@ -170,7 +168,7 @@ it('increments sequence correctly', function () {
     $workspace = $user->currentWorkspace;
 
     $service = app(CreditNoteNumberingService::class);
-    
+
     // Generate first number
     $firstNumber = $service->generateNextNumber($workspace);
     expect($firstNumber)->toBe('CN-'.now()->year.'-001');
@@ -193,4 +191,3 @@ it('formats number with leading zeros', function () {
 
     expect($number)->toBe('CN-'.now()->year.'-001');
 });
-

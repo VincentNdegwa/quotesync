@@ -75,6 +75,7 @@ class CreateNewUser implements CreatesNewUsers
                 }
             }
             WorkspaceCreated::dispatch($workspace);
+
             return $user;
         });
     }

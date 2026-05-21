@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\QuoteStatus;
 use App\Models\Quote;
 use App\Models\User;
 use App\Notifications\QuoteExpiredNotification;
@@ -60,9 +61,9 @@ test('quotes past their validity date are marked expired and notified', function
 
     $this->artisan('quotes:expire')->assertSuccessful();
 
-    expect($expiredSentQuote->refresh()->status)->toBe(\App\Enums\QuoteStatus::Expired);
-    expect($expiredViewedQuote->refresh()->status)->toBe(\App\Enums\QuoteStatus::Expired);
-    expect($draftQuote->refresh()->status)->toBe(\App\Enums\QuoteStatus::Draft);
+    expect($expiredSentQuote->refresh()->status)->toBe(QuoteStatus::Expired);
+    expect($expiredViewedQuote->refresh()->status)->toBe(QuoteStatus::Expired);
+    expect($draftQuote->refresh()->status)->toBe(QuoteStatus::Draft);
 
     expect(
         DatabaseNotification::query()

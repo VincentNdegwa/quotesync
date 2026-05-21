@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Contacts\ContactRequest;
 use App\Models\Client;
 use App\Models\Contact;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 

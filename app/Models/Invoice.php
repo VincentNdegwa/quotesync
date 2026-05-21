@@ -137,7 +137,6 @@ class Invoice extends Model
         ];
     }
 
-
     public function getBalanceDueAttribute(): float
     {
         $baseCredited = $this->creditNotes()

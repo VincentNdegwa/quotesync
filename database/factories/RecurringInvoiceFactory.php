@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\RecurringInvoice;
 use App\Models\Client;
+use App\Models\RecurringInvoice;
 use App\Models\Workspace;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

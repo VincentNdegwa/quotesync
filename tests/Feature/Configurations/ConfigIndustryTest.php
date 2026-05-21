@@ -85,5 +85,3 @@ test('industry validation requires name', function () {
 
     $response->assertSessionHasErrors(['name']);
 });
-
-

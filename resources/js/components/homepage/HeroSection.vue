@@ -1,39 +1,15 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { login, register } from '@/routes';
+import { ArrowRight, Check } from 'lucide-vue-next';
 import GradientText from '@/components/ui/gradient-text.vue';
 import Safari from '@/components/ui/safari.vue';
-import {
-    ArrowRight,
-    BarChart3,
-    Bell,
-    Check,
-    CheckCircle2,
-    ChevronRight,
-    Circle,
-    ClipboardList,
-    Clock,
-    Eye,
-    FileText,
-    LayoutGrid,
-    LayoutDashboard,
-    MessageSquare,
-    MoreHorizontal,
-    RefreshCw,
-    SendHorizonal,
-    Settings,
-    Shield,
-    Tag,
-    Users,
-    XCircle,
-    Zap,
-} from 'lucide-vue-next';
+import { login, register } from '@/routes';
 
 interface Props {
     canRegister: boolean;
 }
 
-const props = defineProps<Props>();
+defineProps<Props>();
 </script>
 
 <template>
@@ -166,14 +142,26 @@ const props = defineProps<Props>();
                 <img
                     src="/home/screenshot1.png"
                     alt="QuoteSync Quote Interface"
-                    class="w-full h-full rounded-sm dark:hidden"
-                    style="mask-image: linear-gradient(to bottom, transparent 0%, black 100%)"
+                    class="h-full w-full rounded-sm dark:hidden"
+                    style="
+                        mask-image: linear-gradient(
+                            to bottom,
+                            transparent 0%,
+                            black 100%
+                        );
+                    "
                 />
                 <img
                     src="/home/dark-screenshot1.png"
                     alt="QuoteSync Quote Interface"
-                    class="w-full h-full rounded-sm hidden dark:block"
-                    style="mask-image: linear-gradient(to bottom, transparent 0%, black 100%)"
+                    class="hidden h-full w-full rounded-sm dark:block"
+                    style="
+                        mask-image: linear-gradient(
+                            to bottom,
+                            transparent 0%,
+                            black 100%
+                        );
+                    "
                 />
             </Safari>
         </div>

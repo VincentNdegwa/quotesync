@@ -1,8 +1,8 @@
 <?php
 
 use App\Enums\QuoteStatus;
-use App\Http\Middleware\EnsureWorkspaceSettingsOnboarded;
 use App\Http\Middleware\EnsureEmailIsVerified;
+use App\Http\Middleware\EnsureWorkspaceSettingsOnboarded;
 use App\Models\Client;
 use App\Models\Quote;
 use App\Models\User;
@@ -14,24 +14,24 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     $this->user = User::factory()->create();
     $this->workspace = Workspace::factory()->create(['owner_id' => $this->user->id]);
-    
+
     // Add user to workspace via role_user table
-    $adminRoleId = \DB::table('roles')->where('name', 'admin')->value('id') ?? 
-                   \DB::table('roles')->insertGetId([
+    $adminRoleId = DB::table('roles')->where('name', 'admin')->value('id') ??
+                   DB::table('roles')->insertGetId([
                        'name' => 'admin',
                        'display_name' => 'Admin',
                        'description' => 'Default administrator role.',
                        'created_at' => now(),
                        'updated_at' => now(),
                    ]);
-    
-    \DB::table('role_user')->insertOrIgnore([
+
+    DB::table('role_user')->insertOrIgnore([
         'role_id' => $adminRoleId,
         'user_id' => $this->user->id,
         'user_type' => get_class($this->user),
         'workspace_id' => $this->workspace->id,
     ]);
-    
+
     $this->user->forceFill(['current_workspace_id' => $this->workspace->id])->save();
     $this->user->refresh();
     $this->client = Client::factory()->create(['workspace_id' => $this->workspace->id]);
@@ -47,33 +47,33 @@ test('cannot edit non-draft quote', function () {
     $response = $this->actingAs($this->user)
         ->withoutMiddleware([EnsureWorkspaceSettingsOnboarded::class, EnsureEmailIsVerified::class])
         ->patch(route('quotes.update', $quote), [
-        'title' => 'Updated Title',
-        'client_id' => $this->client->id,
-        'status' => 'sent',
-        'currency' => 'USD',
-        'sections' => [
-            [
-                'title' => 'Services',
-                'line_items' => [
-                    [
-                        'catalog_item_id' => null,
-                        'name' => 'Service',
-                        'description' => null,
-                        'quantity' => 1,
-                        'unit' => null,
-                        'unit_price' => 100,
-                        'discount_percent' => 0,
-                        'subtotal' => 100,
-                        'tax_amount' => 0,
-                        'total' => 100,
-                        'is_optional' => false,
-                        'notes' => null,
-                        'taxes' => [],
+            'title' => 'Updated Title',
+            'client_id' => $this->client->id,
+            'status' => 'sent',
+            'currency' => 'USD',
+            'sections' => [
+                [
+                    'title' => 'Services',
+                    'line_items' => [
+                        [
+                            'catalog_item_id' => null,
+                            'name' => 'Service',
+                            'description' => null,
+                            'quantity' => 1,
+                            'unit' => null,
+                            'unit_price' => 100,
+                            'discount_percent' => 0,
+                            'subtotal' => 100,
+                            'tax_amount' => 0,
+                            'total' => 100,
+                            'is_optional' => false,
+                            'notes' => null,
+                            'taxes' => [],
+                        ],
                     ],
                 ],
             ],
-        ],
-    ]);
+        ]);
 
     $response->assertStatus(403);
     $response->assertSee('Only draft quotes can be edited');
@@ -90,33 +90,33 @@ test('can edit draft quote', function () {
     $response = $this->actingAs($this->user)
         ->withoutMiddleware([EnsureWorkspaceSettingsOnboarded::class, EnsureEmailIsVerified::class])
         ->patch(route('quotes.update', $quote), [
-        'title' => 'Updated Title',
-        'client_id' => $this->client->id,
-        'status' => 'draft',
-        'currency' => 'USD',
-        'sections' => [
-            [
-                'title' => 'Services',
-                'line_items' => [
-                    [
-                        'catalog_item_id' => null,
-                        'name' => 'Service',
-                        'description' => null,
-                        'quantity' => 1,
-                        'unit' => null,
-                        'unit_price' => 100,
-                        'discount_percent' => 0,
-                        'subtotal' => 100,
-                        'tax_amount' => 0,
-                        'total' => 100,
-                        'is_optional' => false,
-                        'notes' => null,
-                        'taxes' => [],
+            'title' => 'Updated Title',
+            'client_id' => $this->client->id,
+            'status' => 'draft',
+            'currency' => 'USD',
+            'sections' => [
+                [
+                    'title' => 'Services',
+                    'line_items' => [
+                        [
+                            'catalog_item_id' => null,
+                            'name' => 'Service',
+                            'description' => null,
+                            'quantity' => 1,
+                            'unit' => null,
+                            'unit_price' => 100,
+                            'discount_percent' => 0,
+                            'subtotal' => 100,
+                            'tax_amount' => 0,
+                            'total' => 100,
+                            'is_optional' => false,
+                            'notes' => null,
+                            'taxes' => [],
+                        ],
                     ],
                 ],
             ],
-        ],
-    ]);
+        ]);
 
     $response->assertRedirect();
     $quote->refresh();
@@ -133,8 +133,8 @@ test('cannot mark as won from invalid status', function () {
     $response = $this->actingAs($this->user)
         ->withoutMiddleware([EnsureWorkspaceSettingsOnboarded::class, EnsureEmailIsVerified::class])
         ->patch(route('quotes.status', $quote), [
-        'status' => 'won',
-    ]);
+            'status' => 'won',
+        ]);
 
     $response->assertStatus(403);
     $response->assertSee('Invalid status transition');
@@ -150,8 +150,8 @@ test('can mark sent quote as won', function () {
     $response = $this->actingAs($this->user)
         ->withoutMiddleware([EnsureWorkspaceSettingsOnboarded::class, EnsureEmailIsVerified::class])
         ->patch(route('quotes.status', $quote), [
-        'status' => 'won',
-    ]);
+            'status' => 'won',
+        ]);
 
     $response->assertRedirect();
     $quote->refresh();
@@ -168,8 +168,8 @@ test('can mark viewed quote as won', function () {
     $response = $this->actingAs($this->user)
         ->withoutMiddleware([EnsureWorkspaceSettingsOnboarded::class, EnsureEmailIsVerified::class])
         ->patch(route('quotes.status', $quote), [
-        'status' => 'won',
-    ]);
+            'status' => 'won',
+        ]);
 
     $response->assertRedirect();
     $quote->refresh();
@@ -186,8 +186,8 @@ test('can mark accepted quote as won', function () {
     $response = $this->actingAs($this->user)
         ->withoutMiddleware([EnsureWorkspaceSettingsOnboarded::class, EnsureEmailIsVerified::class])
         ->patch(route('quotes.status', $quote), [
-        'status' => 'won',
-    ]);
+            'status' => 'won',
+        ]);
 
     $response->assertRedirect();
     $quote->refresh();
@@ -204,8 +204,8 @@ test('cannot mark won quote as won again', function () {
     $response = $this->actingAs($this->user)
         ->withoutMiddleware([EnsureWorkspaceSettingsOnboarded::class, EnsureEmailIsVerified::class])
         ->patch(route('quotes.status', $quote), [
-        'status' => 'won',
-    ]);
+            'status' => 'won',
+        ]);
 
     $response->assertStatus(403);
 });
@@ -220,8 +220,8 @@ test('can mark sent quote as lost', function () {
     $response = $this->actingAs($this->user)
         ->withoutMiddleware([EnsureWorkspaceSettingsOnboarded::class, EnsureEmailIsVerified::class])
         ->patch(route('quotes.status', $quote), [
-        'status' => 'lost',
-    ]);
+            'status' => 'lost',
+        ]);
 
     $response->assertRedirect();
     $quote->refresh();
@@ -238,8 +238,8 @@ test('can mark declined quote as lost', function () {
     $response = $this->actingAs($this->user)
         ->withoutMiddleware([EnsureWorkspaceSettingsOnboarded::class, EnsureEmailIsVerified::class])
         ->patch(route('quotes.status', $quote), [
-        'status' => 'lost',
-    ]);
+            'status' => 'lost',
+        ]);
 
     $response->assertRedirect();
     $quote->refresh();
