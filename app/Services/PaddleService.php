@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\Http;
 
 class PaddleService
 {
-    protected string $apiKey;
+    protected ?string $apiKey;
+
     protected string $baseUrl;
 
     public function __construct()
@@ -23,7 +24,7 @@ class PaddleService
         $this->deleteExistingProducts($plan->name);
         $productId = $this->createProduct($plan);
 
-        if (!$productId) {
+        if (! $productId) {
             return false;
         }
 
@@ -79,10 +80,10 @@ class PaddleService
         $response = $this->request('post', '/prices', [
             'product_id' => $productId,
             'unit_price' => [
-                'amount' => (string)($amount * 100),
+                'amount' => (string) ($amount * 100),
                 'currency_code' => 'USD',
             ],
-            'description' => "{$planName} - " . ucfirst($interval),
+            'description' => "{$planName} - ".ucfirst($interval),
             'billing_cycle' => [
                 'interval' => $interval,
                 'frequency' => 1,
@@ -99,7 +100,7 @@ class PaddleService
     protected function request(string $method, string $endpoint, array $data = [])
     {
         return Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->apiKey,
-        ])->{$method}($this->baseUrl . $endpoint, $data);
+            'Authorization' => 'Bearer '.$this->apiKey,
+        ])->{$method}($this->baseUrl.$endpoint, $data);
     }
 }
