@@ -2,7 +2,7 @@
 import KpiSparkline from '@/components/charts/KpiSparkline.vue';
 import { Card, CardContent } from '@/components/ui/card';
 
-const props = withDefaults(
+withDefaults(
     defineProps<{
         title: string;
         value: string;

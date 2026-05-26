@@ -14,7 +14,6 @@ import { computed } from 'vue';
 import type { Component } from 'vue';
 import AreaChart from '@/components/charts/AreaChart.vue';
 import BarChart from '@/components/charts/BarChart.vue';
-import KpiSparkline from '@/components/charts/KpiSparkline.vue';
 import StatCard from '@/components/dashboard/StatCard.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -110,8 +109,6 @@ const { formatCurrency, formatNumber, formatRelativeTime } = useFormat(
 );
 
 const formatPercent = (value: number): string => `${formatNumber(value, 0)}%`;
-const formatTrendValue = (value: number): string =>
-    formatNumber(value, Math.abs(value) < 10 ? 1 : 0);
 
 type StatCard = {
     key: string;
@@ -195,12 +192,12 @@ const revenueSeries = computed(() => [
 const revenueChartOptions = computed(() => ({
     yaxis: {
         labels: {
-            formatter: (value: number) => formatCurrency(value),
+            formatter: (value: number): string => formatCurrency(value),
         },
     },
     tooltip: {
         y: {
-            formatter: (value: number) => formatCurrency(value),
+            formatter: (value: number): string => formatCurrency(value),
         },
     },
 }));
@@ -221,12 +218,12 @@ const winRateChartOptions = computed(() => ({
         min: 0,
         max: 100,
         labels: {
-            formatter: (value: number) => `${formatNumber(value, 0)}%`,
+            formatter: (value: number): string => `${formatNumber(value, 0)}%`,
         },
     },
     tooltip: {
         y: {
-            formatter: (value: number) => `${formatNumber(value, 0)}%`,
+            formatter: (value: number): string => `${formatNumber(value, 0)}%`,
         },
     },
 }));
@@ -269,8 +266,8 @@ const quoteStatusColorMap = computed<Record<string, string>>(() =>
 );
 
 const teamPerformanceColors = computed(() => [
-    quoteStatusColorMap.value.sent ?? 'var(--chart-2)',
-    quoteStatusColorMap.value.won ?? 'var(--chart-1)',
+    quoteStatusColorMap.value.sent,
+    quoteStatusColorMap.value.won,
 ]);
 
 const quoteActivityChartOptions = computed(() => ({
@@ -280,7 +277,7 @@ const quoteActivityChartOptions = computed(() => ({
     },
     yaxis: {
         labels: {
-            formatter: (value: number) => formatNumber(value, 0),
+            formatter: (value: number): string => formatNumber(value, 0),
         },
     },
 }));
@@ -322,10 +319,6 @@ const timelineEvents = computed<TimelineItem[]>(() =>
             icon,
         };
     }),
-);
-
-const generatedAtRelative = computed(() =>
-    formatRelativeTime(props.generated_at),
 );
 
 const teamPerformance = computed(() => props.team_performance ?? []);
@@ -377,7 +370,7 @@ defineOptions({
             />
         </section>
 
-        <section class="grid lg:grid-cols-2 grid-cols-1 gap-4">
+        <section class="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Card class="h-full border border-sidebar-border/70">
                 <CardHeader class="pb-0">
                     <div class="flex items-start justify-between">
@@ -440,7 +433,7 @@ defineOptions({
             </Card>
         </section>
 
-        <section class="grid lg:grid-cols-2 grid-cols-1 gap-4">
+        <section class="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Card class="h-full border border-sidebar-border/70">
                 <CardHeader class="pb-0">
                     <div class="flex items-start justify-between gap-3">

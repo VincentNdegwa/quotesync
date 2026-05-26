@@ -86,35 +86,35 @@ const mergedOptions = computed<ApexOptions>(() => ({
     ...props.options,
     chart: {
         ...baseOptions.value.chart,
-        ...props.options?.chart,
+        ...(props.options.chart ?? {}),
     },
     xaxis: {
         ...baseOptions.value.xaxis,
-        ...props.options?.xaxis,
+        ...(props.options.xaxis ?? {}),
     },
     yaxis: {
         ...(baseOptions.value.yaxis ?? {}),
-        ...(props.options?.yaxis ?? {}),
+        ...(props.options.yaxis ?? {}),
     },
     grid: {
         ...(baseOptions.value.grid ?? {}),
-        ...(props.options?.grid ?? {}),
+        ...(props.options.grid ?? {}),
     },
     legend: {
         ...(baseOptions.value.legend ?? {}),
-        ...(props.options?.legend ?? {}),
+        ...(props.options.legend ?? {}),
     },
     tooltip: {
         ...(baseOptions.value.tooltip ?? {}),
-        ...(props.options?.tooltip ?? {}),
+        ...(props.options.tooltip ?? {}),
     },
     plotOptions: {
         ...(baseOptions.value.plotOptions ?? {}),
-        ...(props.options?.plotOptions ?? {}),
+        ...(props.options.plotOptions ?? {}),
     },
     dataLabels: {
         ...(baseOptions.value.dataLabels ?? {}),
-        ...(props.options?.dataLabels ?? {}),
+        ...(props.options.dataLabels ?? {}),
     },
 }));
 </script>

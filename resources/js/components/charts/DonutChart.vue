@@ -57,7 +57,7 @@ const baseOptions = computed<ApexOptions>(() => ({
     },
     tooltip: {
         y: {
-            formatter: (value: number) => value.toFixed(0),
+            formatter: (value: number): string => value.toFixed(0),
         },
     },
 }));
@@ -67,23 +67,23 @@ const mergedOptions = computed<ApexOptions>(() => ({
     ...props.options,
     chart: {
         ...baseOptions.value.chart,
-        ...props.options?.chart,
+        ...(props.options.chart ?? {}),
     },
     legend: {
         ...(baseOptions.value.legend ?? {}),
-        ...(props.options?.legend ?? {}),
+        ...(props.options.legend ?? {}),
     },
     plotOptions: {
         ...(baseOptions.value.plotOptions ?? {}),
-        ...(props.options?.plotOptions ?? {}),
+        ...(props.options.plotOptions ?? {}),
     },
     tooltip: {
         ...(baseOptions.value.tooltip ?? {}),
-        ...(props.options?.tooltip ?? {}),
+        ...(props.options.tooltip ?? {}),
     },
     dataLabels: {
         ...(baseOptions.value.dataLabels ?? {}),
-        ...(props.options?.dataLabels ?? {}),
+        ...(props.options.dataLabels ?? {}),
     },
 }));
 </script>

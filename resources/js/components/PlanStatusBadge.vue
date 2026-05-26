@@ -10,21 +10,25 @@ const workspace = computed(() => page.props.auth.currentWorkspace);
 
 const planName = computed(() => workspace.value?.plan?.name || 'Free');
 const planSlug = computed(() => workspace.value?.plan?.slug || 'free');
-const isActive = computed(() => workspace.value?.subscription?.is_active ?? true);
+const isActive = computed(
+    () => workspace.value?.subscription?.is_active ?? true,
+);
 
 const badgeVariant = computed(() => {
     if (planSlug.value === 'free') {
-return 'secondary';
-}
+        return 'secondary';
+    }
 
     if (planSlug.value === 'growth') {
-return 'default';
-}
+        return 'default';
+    }
 
     return 'outline';
 });
 
-const showUpgradePrompt = computed(() => planSlug.value === 'free' && !isActive.value);
+const showUpgradePrompt = computed(
+    () => planSlug.value === 'free' && !isActive.value,
+);
 </script>
 
 <template>

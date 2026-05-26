@@ -28,10 +28,10 @@ const mergedOptions = computed<ApexOptions>(() => ({
     ...props.options,
     chart: {
         background: 'transparent',
-        ...(props.options?.chart ?? {}),
+        ...(props.options.chart ?? {}),
     },
     theme: {
-        ...(props.options?.theme ?? {}),
+        ...(props.options.theme ?? {}),
         mode: resolvedAppearance.value,
     },
 }));

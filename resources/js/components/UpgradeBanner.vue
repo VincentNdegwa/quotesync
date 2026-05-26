@@ -9,7 +9,9 @@ const page = usePage();
 const workspace = computed(() => page.props.auth.currentWorkspace);
 
 const planSlug = computed(() => workspace.value?.plan?.slug || 'free');
-const isActive = computed(() => workspace.value?.subscription?.is_active ?? true);
+const isActive = computed(
+    () => workspace.value?.subscription?.is_active ?? true,
+);
 
 const showBanner = computed(() => {
     return planSlug.value === 'free' && !isActive.value;
@@ -34,15 +36,14 @@ const emit = defineEmits<{
                     Upgrade to unlock more features
                 </p>
                 <p class="text-sm text-amber-700 dark:text-amber-300">
-                    Get unlimited quotes, invoices, templates, and more with our Growth plan.
+                    Get unlimited quotes, invoices, templates, and more with our
+                    Growth plan.
                 </p>
             </div>
         </div>
         <div class="flex items-center gap-2">
             <Link href="/billing">
-                <Button size="sm" variant="default">
-                    View Plans
-                </Button>
+                <Button size="sm" variant="default"> View Plans </Button>
             </Link>
             <Button
                 size="icon"

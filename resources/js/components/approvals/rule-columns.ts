@@ -31,7 +31,8 @@ export const getRuleColumns = (
                 return h(
                     Badge,
                     { variant: 'secondary' },
-                    () => `Value above ${new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(rule.threshold_value ?? 0)}`,
+                    () =>
+                        `Value above ${new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(rule.threshold_value ?? 0)}`,
                 );
             }
 
@@ -39,7 +40,8 @@ export const getRuleColumns = (
                 return h(
                     Badge,
                     { variant: 'secondary' },
-                    () => `Value below ${new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(rule.threshold_value ?? 0)}`,
+                    () =>
+                        `Value below ${new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(rule.threshold_value ?? 0)}`,
                 );
             }
 
