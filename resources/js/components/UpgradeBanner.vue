@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
-import { X, Zap } from 'lucide-vue-next';
 import { usePage } from '@inertiajs/vue3';
+import { X, Zap } from 'lucide-vue-next';
+import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 
 const page = usePage();

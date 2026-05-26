@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
-import PlanStatusBadge from '@/components/PlanStatusBadge.vue';
 import NotificationBell from '@/components/Layout/NotificationBell.vue';
+import PlanStatusBadge from '@/components/PlanStatusBadge.vue';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import type { BreadcrumbItem } from '@/types';
 

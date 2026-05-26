@@ -36,9 +36,9 @@ enum QuoteStatus: string
             self::Sent => 'outline',
             self::Viewed => 'outline',
             self::Accepted => 'outline',
-            self::Declined => 'dafault',
+            self::Declined => 'default',
             self::Won => 'default',
-            self::Lost => 'dafult',
+            self::Lost => 'default',
             self::Expired => 'secondary',
             self::PendingApproval => 'outline',
         };
@@ -56,6 +56,21 @@ enum QuoteStatus: string
             self::Lost => 'border-orange-500 text-orange-600',
             self::Expired => 'border-amber-400 text-amber-700',
             self::PendingApproval => 'border-amber-500 text-amber-600',
+        };
+    }
+
+    public function chartColor(): string
+    {
+        return match ($this) {
+            self::Draft => '#94a3b8',
+            self::Sent => '#3b82f6',
+            self::Viewed => '#06b6d4',
+            self::Accepted => '#10b981',
+            self::Won => '#10b981',
+            self::Declined => '#f43f5e',
+            self::Lost => '#f97316',
+            self::Expired => '#fbbf24',
+            self::PendingApproval => '#f59e0b',
         };
     }
 

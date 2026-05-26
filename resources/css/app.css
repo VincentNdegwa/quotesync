@@ -229,6 +229,10 @@
     opacity: 0;
 }
 
+.apexcharts-canvas {
+    background: transparent !important;
+}
+
 /* Fade in scale animation */
 @keyframes fadeInScale {
     from {

@@ -1,14 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { usePage } from '@inertiajs/vue3';
-import { CurveType } from '@unovis/ts';
-import {
-    VisArea,
-    VisAxis,
-    VisGroupedBar,
-    VisLine,
-    VisXYContainer,
-} from '@unovis/vue';
 import {
     AlertTriangle,
     CheckCircle,
@@ -17,11 +9,13 @@ import {
     Flame,
     Mail,
     Send,
-    TrendingDown,
-    TrendingUp,
 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import type { Component } from 'vue';
+import AreaChart from '@/components/charts/AreaChart.vue';
+import BarChart from '@/components/charts/BarChart.vue';
+import KpiSparkline from '@/components/charts/KpiSparkline.vue';
+import StatCard from '@/components/dashboard/StatCard.vue';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -31,15 +25,6 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import type { ChartConfig } from '@/components/ui/chart';
-import {
-    ChartContainer,
-    ChartCrosshair,
-    ChartLegendContent,
-    ChartTooltip,
-    ChartTooltipContent,
-    componentToString,
-} from '@/components/ui/chart';
 import UpgradeBanner from '@/components/UpgradeBanner.vue';
 import { useFormat } from '@/composables/useFormat';
 import { dashboard } from '@/routes';
@@ -50,7 +35,6 @@ const props = defineProps<{
         pipeline_trend: number;
         won_this_month: number;
         won_trend: number | null;
-        quotes_expiring: number;
         win: {
             rate: number;
             win_count: number;
@@ -59,8 +43,6 @@ const props = defineProps<{
         };
         average_deal_size: number;
         average_deal_size_trend: number | null;
-        average_time_to_close: number;
-        average_time_to_close_trend: number | null;
     };
     revenue_trend: Array<{
         month: string;
@@ -139,6 +121,11 @@ type StatCard = {
     trendText: string;
     note?: string;
     valueText?: string;
+    sparkline?: {
+        data: number[];
+        categories?: string[];
+        color?: string;
+    } | null;
 };
 
 const statCards = computed<StatCard[]>(() => [
@@ -149,6 +136,11 @@ const statCards = computed<StatCard[]>(() => [
         trend: props.stats.win.trend || 0,
         trendText: 'vs last month',
         valueText: `${props.stats.win.win_count} / ${props.stats.win.sent_count} quotes`,
+        sparkline: {
+            data: props.win_rate_trend.map((entry) => entry.win_rate),
+            categories: props.win_rate_trend.map((entry) => entry.month),
+            color: 'var(--chart-3)',
+        },
     },
     {
         key: 'revenue_captured',
@@ -157,6 +149,11 @@ const statCards = computed<StatCard[]>(() => [
         trend: props.stats.won_trend || 0,
         trendText: 'vs last month',
         note: 'of total sent value',
+        sparkline: {
+            data: props.revenue_trend.map((entry) => entry.won),
+            categories: props.revenue_trend.map((entry) => entry.month),
+            color: 'var(--chart-1)',
+        },
     },
     {
         key: 'pipeline',
@@ -164,6 +161,11 @@ const statCards = computed<StatCard[]>(() => [
         value: formatCurrency(props.stats.pipeline_value),
         trend: props.stats.pipeline_trend || 0,
         trendText: 'vs last month',
+        sparkline: {
+            data: props.revenue_trend.map((entry) => entry.pipeline),
+            categories: props.revenue_trend.map((entry) => entry.month),
+            color: 'var(--chart-2)',
+        },
     },
     {
         key: 'average_deal_size',
@@ -171,123 +173,117 @@ const statCards = computed<StatCard[]>(() => [
         value: formatCurrency(props.stats.average_deal_size),
         trend: props.stats.average_deal_size_trend || 0,
         trendText: 'vs last month',
-    },
-    {
-        key: 'average_time_to_close',
-        title: 'Avg Time to Close',
-        value: `${formatNumber(props.stats.average_time_to_close)} days`,
-        trend: props.stats.average_time_to_close_trend || 0,
-        trendText: 'vs last month',
-    },
-    {
-        key: 'expiring',
-        title: 'Quotes Expiring',
-        value: formatNumber(props.stats.quotes_expiring),
-        trend: null,
-        trendText: '',
-        note: 'in next 7 days',
+        sparkline: null,
     },
 ]);
 
-const revenueChartData = computed(() =>
-    props.revenue_trend.map((entry, index) => ({
-        ...entry,
-        order: index,
-    })),
-);
-type RevenueData = (typeof revenueChartData.value)[number];
-const revenueTickValues = computed(() =>
-    revenueChartData.value.map((point) => point.order),
+const revenueCategories = computed(() =>
+    props.revenue_trend.map((entry) => entry.month),
 );
 
-const formatRevenueTick = (value: number): string => {
-    const match = revenueChartData.value.find((point) => point.order === value);
-
-    return match?.month ?? '';
-};
-
-const revenueChartConfig: ChartConfig = {
-    won: {
-        label: 'Won Revenue',
-        color: 'var(--chart-1)',
-        icon: TrendingUp,
+const revenueSeries = computed(() => [
+    {
+        name: 'Won Revenue',
+        data: props.revenue_trend.map((entry) => entry.won),
     },
-    pipeline: {
-        label: 'Pipeline (Unresolved)',
-        color: 'var(--chart-2)',
-        icon: TrendingDown,
+    {
+        name: 'Pipeline (Unresolved)',
+        data: props.revenue_trend.map((entry) => entry.pipeline),
     },
-};
+]);
 
-const revenueSvgDefs = `
-  <linearGradient id="fillWon" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="5%" stop-color="var(--color-won)" stop-opacity="0.8" />
-    <stop offset="95%" stop-color="var(--color-won)" stop-opacity="0.1" />
-  </linearGradient>
-  <linearGradient id="fillPipeline" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="5%" stop-color="var(--color-pipeline)" stop-opacity="0.8" />
-    <stop offset="95%" stop-color="var(--color-pipeline)" stop-opacity="0.1" />
-  </linearGradient>
-`;
+const revenueChartOptions = computed(() => ({
+    yaxis: {
+        labels: {
+            formatter: (value: number) => formatCurrency(value),
+        },
+    },
+    tooltip: {
+        y: {
+            formatter: (value: number) => formatCurrency(value),
+        },
+    },
+}));
 
-const winRateChartData = computed(() =>
-    props.win_rate_trend.map((entry, index) => ({
-        ...entry,
-        order: index,
-    })),
-);
-type WinRateData = (typeof winRateChartData.value)[number];
-const winRateTickValues = computed(() =>
-    winRateChartData.value.map((point) => point.order),
+const winRateCategories = computed(() =>
+    props.win_rate_trend.map((entry) => entry.month),
 );
 
-const formatWinRateTick = (value: number): string => {
-    const match = winRateChartData.value.find((point) => point.order === value);
-
-    return match?.month ?? '';
-};
-
-const winRateChartConfig: ChartConfig = {
-    win_rate: {
-        label: 'Win Rate',
-        color: 'var(--chart-3)',
+const winRateSeries = computed(() => [
+    {
+        name: 'Win Rate',
+        data: props.win_rate_trend.map((entry) => entry.win_rate),
     },
-};
+]);
 
-const winRateSvgDefs = `
-  <linearGradient id="fillWinRate" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="5%" stop-color="var(--color-win_rate)" stop-opacity="0.8" />
-    <stop offset="95%" stop-color="var(--color-win_rate)" stop-opacity="0.1" />
-  </linearGradient>
-`;
+const winRateChartOptions = computed(() => ({
+    yaxis: {
+        min: 0,
+        max: 100,
+        labels: {
+            formatter: (value: number) => `${formatNumber(value, 0)}%`,
+        },
+    },
+    tooltip: {
+        y: {
+            formatter: (value: number) => `${formatNumber(value, 0)}%`,
+        },
+    },
+}));
 
 type QuoteActivityDatum = {
-    order: number;
     status: string;
     label: string;
     count: number;
+    color: string;
 };
 
-const quoteActivityData = computed<QuoteActivityDatum[]>(
-    () => props.quote_activity,
+const quoteActivityData = computed<QuoteActivityDatum[]>(() =>
+    props.quote_activity.map((entry) => ({
+        status: entry.status,
+        label: entry.label,
+        count: entry.count,
+        color: entry.color,
+    })),
 );
 
-const quoteActivityChartConfig: ChartConfig = {
-    count: {
-        label: 'Quotes',
-        color: 'var(--chart-1)',
+const quoteActivityCategories = computed(() =>
+    quoteActivityData.value.map((entry) => entry.label),
+);
+
+const quoteActivitySeries = computed(() => [
+    {
+        name: 'Quotes',
+        data: quoteActivityData.value.map((entry) => entry.count),
     },
-};
+]);
 
-const quoteActivityAxisValues = computed(() =>
-    quoteActivityData.value.map((item) => item.order),
+const quoteActivityColors = computed(() =>
+    quoteActivityData.value.map((entry) => entry.color),
 );
 
-const quoteActivityLabelByOrder = computed<Record<number, string>>(() =>
+const quoteStatusColorMap = computed<Record<string, string>>(() =>
     Object.fromEntries(
-        quoteActivityData.value.map((item) => [item.order, item.label]),
+        quoteActivityData.value.map((entry) => [entry.status, entry.color]),
     ),
 );
+
+const teamPerformanceColors = computed(() => [
+    quoteStatusColorMap.value.sent ?? 'var(--chart-2)',
+    quoteStatusColorMap.value.won ?? 'var(--chart-1)',
+]);
+
+const quoteActivityChartOptions = computed(() => ({
+    tooltip: {
+        shared: false,
+        intersect: true,
+    },
+    yaxis: {
+        labels: {
+            formatter: (value: number) => formatNumber(value, 0),
+        },
+    },
+}));
 
 const activityIconMap: Record<string, Component> = {
     view: Eye,
@@ -334,6 +330,21 @@ const generatedAtRelative = computed(() =>
 
 const teamPerformance = computed(() => props.team_performance ?? []);
 
+const teamPerformanceCategories = computed(() =>
+    teamPerformance.value.map((member) => member.user_name),
+);
+
+const teamPerformanceSeries = computed(() => [
+    {
+        name: 'Sent',
+        data: teamPerformance.value.map((member) => member.sent_count),
+    },
+    {
+        name: 'Won',
+        data: teamPerformance.value.map((member) => member.won_count),
+    },
+]);
+
 defineOptions({
     layout: () => ({
         breadcrumbs: [
@@ -352,74 +363,18 @@ defineOptions({
     <div class="space-y-6">
         <UpgradeBanner />
 
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-                <h1 class="text-2xl font-semibold tracking-tight">Dashboard</h1>
-                <p class="text-sm text-muted-foreground">
-                    Updated {{ generatedAtRelative }}
-                </p>
-            </div>
-            <Link
-                href="/analytics"
-                class="text-sm font-medium text-primary hover:underline"
-                >Open full analytics →</Link
-            >
-        </div>
-
-        <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <Card
+        <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <StatCard
                 v-for="stat in statCards"
                 :key="stat.key"
-                class="border border-sidebar-border/70"
-            >
-                <CardHeader class="space-y-2 pb-2">
-                    <CardDescription
-                        class="text-xs tracking-wide text-muted-foreground uppercase"
-                        >{{ stat.title }}</CardDescription
-                    >
-                    <div class="flex items-end justify-between gap-4">
-                        <CardTitle
-                            class="text-3xl font-semibold tracking-tight"
-                            >{{ stat.value }}</CardTitle
-                        >
-                        <div
-                            v-if="stat.trend !== null"
-                            class="flex items-center gap-1 text-xs"
-                        >
-                            <span
-                                :class="
-                                    stat.trend >= 0
-                                        ? 'text-emerald-600'
-                                        : 'text-rose-600'
-                                "
-                                class="flex items-center gap-1 font-semibold"
-                            >
-                                <span>{{ stat.trend >= 0 ? '↑' : '↓' }}</span>
-                                <span>{{ formatTrendValue(stat.trend) }}%</span>
-                            </span>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardFooter
-                    v-if="stat.trend !== null || stat.note || stat.valueText"
-                    class="flex flex-col items-start pt-0"
-                >
-                    <span
-                        v-if="stat.valueText"
-                        class="text-xs text-muted-foreground"
-                        >{{ stat.valueText }}</span
-                    >
-
-                    <div
-                        class="flex items-center gap-2 text-sm text-muted-foreground"
-                    >
-                        <span v-if="stat.trend !== null">{{
-                            stat.trendText
-                        }}</span>
-                        <span v-if="stat.note">{{ stat.note }}</span>
-                    </div>
-                </CardFooter>
-            </Card>
+                :title="stat.title"
+                :value="stat.value"
+                :trend="stat.trend"
+                :trend-text="stat.trendText"
+                :note="stat.note"
+                :value-text="stat.valueText"
+                :sparkline="stat.sparkline"
+            />
         </section>
 
         <section class="grid lg:grid-cols-2 grid-cols-1 gap-4">
@@ -438,83 +393,13 @@ defineOptions({
                     </div>
                 </CardHeader>
                 <CardContent class="h-[320px]">
-                    <ChartContainer
-                        :config="revenueChartConfig"
-                        cursor
-                        class="h-full"
-                    >
-                        <VisXYContainer
-                            :data="revenueChartData"
-                            :svg-defs="revenueSvgDefs"
-                            :margin="{
-                                left: 28,
-                                right: 12,
-                                top: 12,
-                                bottom: 32,
-                            }"
-                        >
-                            <VisArea
-                                :x="(d: RevenueData) => d.order"
-                                :y="(d: RevenueData) => d.pipeline"
-                                :color="'url(#fillPipeline)'"
-                                :opacity="0.4"
-                                :curve-type="CurveType.MonotoneX"
-                            />
-                            <VisArea
-                                :x="(d: RevenueData) => d.order"
-                                :y="(d: RevenueData) => d.won"
-                                :color="'url(#fillWon)'"
-                                :opacity="0.4"
-                                :curve-type="CurveType.MonotoneX"
-                            />
-                            <VisLine
-                                :x="(d: RevenueData) => d.order"
-                                :y="(d: RevenueData) => d.pipeline"
-                                :color="revenueChartConfig.pipeline.color"
-                                :curve-type="CurveType.MonotoneX"
-                                :line-width="1"
-                            />
-                            <VisLine
-                                :x="(d: RevenueData) => d.order"
-                                :y="(d: RevenueData) => d.won"
-                                :color="revenueChartConfig.won.color"
-                                :curve-type="CurveType.MonotoneX"
-                                :line-width="1"
-                            />
-                            <VisAxis
-                                type="x"
-                                :x="(d: RevenueData) => d.order"
-                                :tick-values="revenueTickValues"
-                                :tick-format="formatRevenueTick"
-                                :tick-line="false"
-                                :domain-line="false"
-                                :grid-line="false"
-                                :num-ticks="6"
-                            />
-                            <VisAxis
-                                type="y"
-                                :num-ticks="4"
-                                :tick-line="false"
-                                :domain-line="false"
-                                :tick-format="(d: number) => formatCurrency(d)"
-                            />
-                            <ChartTooltip />
-                            <ChartCrosshair
-                                :template="
-                                    componentToString(
-                                        revenueChartConfig,
-                                        ChartTooltipContent,
-                                        { labelKey: 'month' },
-                                    )
-                                "
-                                :color="[
-                                    revenueChartConfig.pipeline.color,
-                                    revenueChartConfig.won.color,
-                                ]"
-                            />
-                        </VisXYContainer>
-                        <ChartLegendContent class="mt-4 justify-start" />
-                    </ChartContainer>
+                    <AreaChart
+                        :height="320"
+                        :series="revenueSeries"
+                        :categories="revenueCategories"
+                        :colors="['var(--chart-1)', 'var(--chart-2)']"
+                        :options="revenueChartOptions"
+                    />
                 </CardContent>
                 <CardFooter
                     class="justify-between text-xs text-muted-foreground"
@@ -538,67 +423,13 @@ defineOptions({
                     </div>
                 </CardHeader>
                 <CardContent class="h-[320px]">
-                    <ChartContainer
-                        :config="winRateChartConfig"
-                        cursor
-                        class="h-full"
-                    >
-                        <VisXYContainer
-                            :data="winRateChartData"
-                            :svg-defs="winRateSvgDefs"
-                            :margin="{
-                                left: 28,
-                                right: 12,
-                                top: 12,
-                                bottom: 32,
-                            }"
-                        >
-                            <VisArea
-                                :x="(d: WinRateData) => d.order"
-                                :y="(d: WinRateData) => d.win_rate"
-                                :color="'url(#fillWinRate)'"
-                                :opacity="0.4"
-                                :curve-type="CurveType.MonotoneX"
-                            />
-                            <VisLine
-                                :x="(d: WinRateData) => d.order"
-                                :y="(d: WinRateData) => d.win_rate"
-                                :color="winRateChartConfig.win_rate.color"
-                                :curve-type="CurveType.MonotoneX"
-                                :line-width="1"
-                            />
-                            <VisAxis
-                                type="x"
-                                :x="(d: WinRateData) => d.order"
-                                :tick-values="winRateTickValues"
-                                :tick-format="formatWinRateTick"
-                                :tick-line="false"
-                                :domain-line="false"
-                                :grid-line="false"
-                                :num-ticks="6"
-                            />
-                            <VisAxis
-                                type="y"
-                                :num-ticks="4"
-                                :tick-line="false"
-                                :domain-line="false"
-                                :tick-format="
-                                    (d: number) => formatNumber(d) + '%'
-                                "
-                            />
-                            <ChartTooltip />
-                            <ChartCrosshair
-                                :template="
-                                    componentToString(
-                                        winRateChartConfig,
-                                        ChartTooltipContent,
-                                        { labelKey: 'month' },
-                                    )
-                                "
-                                :color="[winRateChartConfig.win_rate.color]"
-                            />
-                        </VisXYContainer>
-                    </ChartContainer>
+                    <AreaChart
+                        :height="320"
+                        :series="winRateSeries"
+                        :categories="winRateCategories"
+                        :colors="['var(--chart-3)']"
+                        :options="winRateChartOptions"
+                    />
                 </CardContent>
                 <CardFooter
                     class="justify-between text-xs text-muted-foreground"
@@ -630,47 +461,15 @@ defineOptions({
                     >
                         No quote activity yet.
                     </div>
-                    <ChartContainer
+                    <BarChart
                         v-else
-                        :config="quoteActivityChartConfig"
-                        cursor
-                        class="h-full"
-                    >
-                        <VisXYContainer :data="quoteActivityData">
-                            <VisGroupedBar
-                                :x="(d: QuoteActivityDatum) => d.order"
-                                :y="(d: QuoteActivityDatum) => d.count"
-                                :color="quoteActivityChartConfig.count.color"
-                                :rounded-corners="5"
-                            />
-                            <VisAxis
-                                type="x"
-                                :tick-line="false"
-                                :domain-line="false"
-                                :grid-line="false"
-                                :num-ticks="quoteActivityData.length"
-                                :tick-values="quoteActivityAxisValues"
-                                :tick-format="
-                                    (value: number) =>
-                                        quoteActivityLabelByOrder[value] ?? ''
-                                "
-                            />
-                            <ChartTooltip />
-                            <ChartCrosshair
-                                :template="
-                                    componentToString(
-                                        quoteActivityChartConfig,
-                                        ChartTooltipContent,
-                                        {
-                                            labelKey: 'label',
-                                            indicator: 'line',
-                                        },
-                                    )
-                                "
-                                :color="[quoteActivityChartConfig.count.color]"
-                            />
-                        </VisXYContainer>
-                    </ChartContainer>
+                        :height="320"
+                        :series="quoteActivitySeries"
+                        :categories="quoteActivityCategories"
+                        :colors="quoteActivityColors"
+                        distributed
+                        :options="quoteActivityChartOptions"
+                    />
                 </CardContent>
             </Card>
         </section>
@@ -894,44 +693,15 @@ defineOptions({
                     >
                         No team performance data.
                     </div>
-                    <div v-else class="space-y-4">
-                        <div
-                            v-for="member in teamPerformance"
-                            :key="member.user_id"
-                            class="space-y-2"
-                        >
-                            <div
-                                class="flex items-center justify-between text-sm"
-                            >
-                                <span class="font-medium">{{
-                                    member.user_name
-                                }}</span>
-                                <div
-                                    class="flex items-center gap-3 text-xs text-muted-foreground"
-                                >
-                                    <span>{{ member.sent_count }} sent</span>
-                                    <span>{{ member.won_count }} won</span>
-                                    <span
-                                        :class="
-                                            member.win_rate >= 50
-                                                ? 'text-emerald-600'
-                                                : member.win_rate >= 30
-                                                  ? 'text-amber-500'
-                                                  : 'text-rose-500'
-                                        "
-                                        >{{ member.win_rate.toFixed(0) }}%</span
-                                    >
-                                </div>
-                            </div>
-                            <div class="h-2 w-full rounded-full bg-muted">
-                                <div
-                                    class="h-2 rounded-full bg-primary"
-                                    :style="{
-                                        width: `${Math.min(member.win_rate, 100)}%`,
-                                    }"
-                                />
-                            </div>
-                        </div>
+                    <div v-else class="h-[320px]">
+                        <BarChart
+                            :height="320"
+                            :series="teamPerformanceSeries"
+                            :categories="teamPerformanceCategories"
+                            :colors="teamPerformanceColors"
+                            horizontal
+                            stacked
+                        />
                     </div>
                 </CardContent>
             </Card>

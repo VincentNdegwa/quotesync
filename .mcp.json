@@ -2,10 +2,11 @@
     "mcpServers": {
         "laravel-boost": {
             "command": "php",
-            "args": [
-                "artisan",
-                "boost:mcp"
-            ]
+            "args": ["artisan", "boost:mcp"]
+        },
+        "apexcharts": {
+            "command": "npx",
+            "args": ["-y", "apexcharts-mcp"]
         }
     }
 }

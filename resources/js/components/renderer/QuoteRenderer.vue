@@ -206,6 +206,26 @@ const handleDragEnd = (): void => {
     draggedBlockId.value = null;
 };
 
+const handleQuickAddLineItem = (
+    blockId: string,
+    payload: { sectionIndex: number; catalogItem: BuilderCatalogItem | null },
+): void => {
+    emit('quick-add-line-item', {
+        ...payload,
+        blockId,
+    });
+};
+
+const handleEditLineItem = (
+    blockId: string,
+    payload: { sectionIndex: number; lineItemIndex: number },
+): void => {
+    emit('edit-line-item', {
+        ...payload,
+        blockId,
+    });
+};
+
 const handleUpdateCoverMessage = (
     blockId: string,
     value: string | null,
@@ -300,25 +320,9 @@ const handleUpdateSignatureContent = (
                     @remove-section="emit('remove-section', $event)"
                     @add-line-item="emit('add-line-item', $event)"
                     @quick-add-line-item="
-                        (payload: {
-                            sectionIndex: number;
-                            catalogItem: BuilderCatalogItem | null;
-                        }) =>
-                            emit('quick-add-line-item', {
-                                ...payload,
-                                blockId: block.id,
-                            })
+                        handleQuickAddLineItem(block.id, $event)
                     "
-                    @edit-line-item="
-                        (payload: {
-                            sectionIndex: number;
-                            lineItemIndex: number;
-                        }) =>
-                            emit('edit-line-item', {
-                                ...payload,
-                                blockId: block.id,
-                            })
-                    "
+                    @edit-line-item="handleEditLineItem(block.id, $event)"
                     @update-line-item="emit('update-line-item', $event)"
                     @remove-line-item="emit('remove-line-item', $event)"
                     @select-catalog-item="emit('select-catalog-item', $event)"

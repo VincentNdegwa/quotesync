@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
-import { Crown, Sparkles } from 'lucide-vue-next';
 import { usePage } from '@inertiajs/vue3';
+import { Crown, Sparkles } from 'lucide-vue-next';
+import { computed } from 'vue';
 import { Badge } from '@/components/ui/badge';
 
 const page = usePage();
@@ -13,8 +13,14 @@ const planSlug = computed(() => workspace.value?.plan?.slug || 'free');
 const isActive = computed(() => workspace.value?.subscription?.is_active ?? true);
 
 const badgeVariant = computed(() => {
-    if (planSlug.value === 'free') return 'secondary';
-    if (planSlug.value === 'growth') return 'default';
+    if (planSlug.value === 'free') {
+return 'secondary';
+}
+
+    if (planSlug.value === 'growth') {
+return 'default';
+}
+
     return 'outline';
 });
 

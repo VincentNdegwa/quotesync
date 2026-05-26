@@ -36,7 +36,7 @@ class DashboardController extends Controller
         abort_unless($workspace instanceof Workspace, 404);
 
         if ($request->has('checkout_success')) {
-            \Inertia\Inertia::flash('toast', [
+            Inertia::flash('toast', [
                 'type' => 'success',
                 'message' => __('Subscription created successfully! Welcome to your new plan.'),
             ]);
@@ -115,15 +115,6 @@ class DashboardController extends Controller
             ? round(($wonLastMonthCount / $sentLastMonthCount) * 100, 1)
             : 0.0;
 
-        $quotesExpiring = (int) $this->baseQuery()
-            ->whereIn('status', $this->pipelineStatuses)
-            ->whereNotNull('valid_until')
-            ->whereBetween('valid_until', [
-                $now->copy()->startOfDay(),
-                $now->copy()->addDays(7)->endOfDay(),
-            ])
-            ->count();
-
         // Average deal size (this month)
         $averageDealSizeThisMonth = $wonThisMonthCount > 0
             ? round($wonThisMonth / $wonThisMonthCount, 2)
@@ -132,29 +123,6 @@ class DashboardController extends Controller
         $averageDealSizeLastMonth = $wonLastMonthCount > 0
             ? round($wonLastMonth / $wonLastMonthCount, 2)
             : 0.0;
-
-        // Average time to close (this month)
-        $averageTimeToCloseThisMonth = $this->baseQuery()
-            ->whereIn('status', $this->wonStatuses)
-            ->whereBetween('won_at', $thisMonth)
-            ->whereNotNull('sent_at')
-            ->whereNotNull('won_at')
-            ->get()
-            ->avg(fn (Quote $quote) => $quote->sent_at && $quote->won_at
-                ? $quote->sent_at->diffInDays($quote->won_at)
-                : 0
-            );
-
-        $averageTimeToCloseLastMonth = $this->baseQuery()
-            ->whereIn('status', $this->wonStatuses)
-            ->whereBetween('won_at', [$lastMonthStart, $lastMonthEnd])
-            ->whereNotNull('sent_at')
-            ->whereNotNull('won_at')
-            ->get()
-            ->avg(fn (Quote $quote) => $quote->sent_at && $quote->won_at
-                ? $quote->sent_at->diffInDays($quote->won_at)
-                : 0
-            );
 
         return [
             'pipeline_value' => $pipelineValueThisMonth,
@@ -167,14 +135,8 @@ class DashboardController extends Controller
                 'sent_count' => $sentThisMonthCount,
                 'trend' => $this->percentageTrend($winRateThisMonth, $winRateLastMonth),
             ],
-            'quotes_expiring' => $quotesExpiring,
             'average_deal_size' => $averageDealSizeThisMonth,
             'average_deal_size_trend' => $this->percentageTrend($averageDealSizeThisMonth, $averageDealSizeLastMonth),
-            'average_time_to_close' => round($averageTimeToCloseThisMonth ?: 0, 1),
-            'average_time_to_close_trend' => $this->percentageTrend(
-                $averageTimeToCloseThisMonth ?: 0,
-                $averageTimeToCloseLastMonth ?: 0
-            ),
         ];
     }
 
@@ -249,6 +211,7 @@ class DashboardController extends Controller
                 'status' => $status->value,
                 'label' => $status->label(),
                 'count' => $counts[$status->value] ?? 0,
+                'color' => $status->chartColor(),
             ])
             ->values()
             ->all();
