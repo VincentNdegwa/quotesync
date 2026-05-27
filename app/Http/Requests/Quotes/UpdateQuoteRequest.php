@@ -95,13 +95,18 @@ class UpdateQuoteRequest extends FormRequest
             'sections.*.line_items.*.unit' => ['nullable', 'string', 'max:30'],
             'sections.*.line_items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'sections.*.line_items.*.cost_price' => ['nullable', 'numeric', 'min:0'],
-            'sections.*.line_items.*.discount_percent' => [
+            'sections.*.line_items.*.discount_type' => ['nullable', 'string', 'in:percent,fixed'],
+            'sections.*.line_items.*.discount_value' => [
                 'nullable',
                 'numeric',
                 'min:0',
-                'max:100',
                 function ($attribute, $value, $fail) use ($maxDiscount) {
-                    if ($maxDiscount !== null && $value > $maxDiscount) {
+                    // Only validate percentage discounts against max discount limit
+                    $attributeParts = explode('.', $attribute);
+                    $lineItemIndex = $attributeParts[3] ?? null;
+                    $discountType = request()->input("sections.{$attributeParts[1]}.line_items.{$lineItemIndex}.discount_type");
+                    
+                    if ($maxDiscount !== null && $discountType === 'percent' && $value > $maxDiscount) {
                         $fail("Discount cannot exceed {$maxDiscount}%.");
                     }
                 },

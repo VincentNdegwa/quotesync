@@ -1,380 +1,66 @@
-export type {
-    ApprovalRuleBase,
-    ApprovalRule,
-    CreateApprovalRulePayload,
-    UpdateApprovalRulePayload,
-} from './approval-rule';
-export type {
-    CatalogCategoryBase,
-    CatalogCategory,
-    CreateCatalogCategoryPayload,
-    UpdateCatalogCategoryPayload,
-} from './catalog-category';
-export type {
-    CatalogItemBase,
-    CatalogItem,
-    CreateCatalogItemPayload,
-    UpdateCatalogItemPayload,
-} from './catalog-item';
-export type {
-    CatalogItemPriceTierBase,
-    CatalogItemPriceTier,
-    CreateCatalogItemPriceTierPayload,
-    UpdateCatalogItemPriceTierPayload,
-} from './catalog-item-price-tier';
-export type {
-    CatalogItemVariantBase,
-    CatalogItemVariant,
-    CreateCatalogItemVariantPayload,
-    UpdateCatalogItemVariantPayload,
-} from './catalog-item-variant';
-export type {
-    ClientBase,
-    Client,
-    CreateClientPayload,
-    UpdateClientPayload,
-} from './client';
-export type {
-    CommentBase,
-    Comment,
-    CreateCommentPayload,
-    UpdateCommentPayload,
-} from './comment';
-export type {
-    ConfigIndustryBase,
-    ConfigIndustry,
-    CreateConfigIndustryPayload,
-    UpdateConfigIndustryPayload,
-} from './config-industry';
-export type {
-    ConfigurationTagBase,
-    ConfigurationTag,
-    CreateConfigurationTagPayload,
-    UpdateConfigurationTagPayload,
-} from './configuration-tag';
-export type {
-    ConfigurationUnitBase,
-    ConfigurationUnit,
-    CreateConfigurationUnitPayload,
-    UpdateConfigurationUnitPayload,
-} from './configuration-unit';
-export type {
-    ContactBase,
-    Contact,
-    CreateContactPayload,
-    UpdateContactPayload,
-} from './contact';
-export type {
-    CreditNoteBase,
-    CreditNote,
-    CreateCreditNotePayload,
-    UpdateCreditNotePayload,
-} from './credit-note';
-export type {
-    CreditNoteLineItemBase,
-    CreditNoteLineItem,
-    CreateCreditNoteLineItemPayload,
-    UpdateCreditNoteLineItemPayload,
-} from './credit-note-line-item';
-export type {
-    CustomDomainBase,
-    CustomDomain,
-    CreateCustomDomainPayload,
-    UpdateCustomDomainPayload,
-} from './custom-domain';
-export type {
-    FollowUpSequenceBase,
-    FollowUpSequence,
-    CreateFollowUpSequencePayload,
-    UpdateFollowUpSequencePayload,
-} from './follow-up-sequence';
-export type {
-    FollowUpStepBase,
-    FollowUpStep,
-    CreateFollowUpStepPayload,
-    UpdateFollowUpStepPayload,
-} from './follow-up-step';
-export type {
-    ImportHistoryBase,
-    ImportHistory,
-    CreateImportHistoryPayload,
-    UpdateImportHistoryPayload,
-} from './import-history';
-export type {
-    IndustryBase,
-    Industry,
-    CreateIndustryPayload,
-    UpdateIndustryPayload,
-} from './industry';
-export type {
-    InvitationBase,
-    Invitation,
-    CreateInvitationPayload,
-    UpdateInvitationPayload,
-} from './invitation';
-export type {
-    InvoiceBase,
-    Invoice,
-    CreateInvoicePayload,
-    UpdateInvoicePayload,
-} from './invoice';
-export type {
-    InvoiceActivityBase,
-    InvoiceActivity,
-    CreateInvoiceActivityPayload,
-    UpdateInvoiceActivityPayload,
-} from './invoice-activity';
-export type {
-    InvoiceLineItemBase,
-    InvoiceLineItem,
-    CreateInvoiceLineItemPayload,
-    UpdateInvoiceLineItemPayload,
-} from './invoice-line-item';
-export type {
-    InvoiceLineItemTaxBase,
-    InvoiceLineItemTax,
-    CreateInvoiceLineItemTaxPayload,
-    UpdateInvoiceLineItemTaxPayload,
-} from './invoice-line-item-tax';
-export type {
-    InvoicePaymentBase,
-    InvoicePayment,
-    CreateInvoicePaymentPayload,
-    UpdateInvoicePaymentPayload,
-} from './invoice-payment';
-export type {
-    InvoiceReminderBase,
-    InvoiceReminder,
-    CreateInvoiceReminderPayload,
-    UpdateInvoiceReminderPayload,
-} from './invoice-reminder';
-export type {
-    InvoiceReminderSequenceBase,
-    InvoiceReminderSequence,
-    CreateInvoiceReminderSequencePayload,
-    UpdateInvoiceReminderSequencePayload,
-} from './invoice-reminder-sequence';
-export type {
-    InvoiceReminderStepBase,
-    InvoiceReminderStep,
-    CreateInvoiceReminderStepPayload,
-    UpdateInvoiceReminderStepPayload,
-} from './invoice-reminder-step';
-export type {
-    InvoiceSectionBase,
-    InvoiceSection,
-    CreateInvoiceSectionPayload,
-    UpdateInvoiceSectionPayload,
-} from './invoice-section';
-export type {
-    NoteBase,
-    Note,
-    CreateNotePayload,
-    UpdateNotePayload,
-} from './note';
-export type {
-    PermissionBase,
-    Permission,
-    CreatePermissionPayload,
-    UpdatePermissionPayload,
-} from './permission';
-export type {
-    PlanBase,
-    Plan,
-    CreatePlanPayload,
-    UpdatePlanPayload,
-} from './plan';
-export type {
-    PortalInvitationBase,
-    PortalInvitation,
-    CreatePortalInvitationPayload,
-    UpdatePortalInvitationPayload,
-} from './portal-invitation';
-export type {
-    PortalMagicLinkBase,
-    PortalMagicLink,
-    CreatePortalMagicLinkPayload,
-    UpdatePortalMagicLinkPayload,
-} from './portal-magic-link';
-export type {
-    PortalUserBase,
-    PortalUser,
-    CreatePortalUserPayload,
-    UpdatePortalUserPayload,
-} from './portal-user';
-export type {
-    QuoteBase,
-    Quote,
-    CreateQuotePayload,
-    UpdateQuotePayload,
-} from './quote';
-export type {
-    QuoteActivityBase,
-    QuoteActivity,
-    CreateQuoteActivityPayload,
-    UpdateQuoteActivityPayload,
-} from './quote-activity';
-export type {
-    QuoteApprovalBase,
-    QuoteApproval,
-    CreateQuoteApprovalPayload,
-    UpdateQuoteApprovalPayload,
-} from './quote-approval';
-export type {
-    QuoteFollowUpBase,
-    QuoteFollowUp,
-    CreateQuoteFollowUpPayload,
-    UpdateQuoteFollowUpPayload,
-} from './quote-follow-up';
-export type {
-    QuoteLineItemBase,
-    QuoteLineItem,
-    CreateQuoteLineItemPayload,
-    UpdateQuoteLineItemPayload,
-} from './quote-line-item';
-export type {
-    QuoteLineItemTaxBase,
-    QuoteLineItemTax,
-    CreateQuoteLineItemTaxPayload,
-    UpdateQuoteLineItemTaxPayload,
-} from './quote-line-item-tax';
-export type {
-    QuoteMessageBase,
-    QuoteMessage,
-    CreateQuoteMessagePayload,
-    UpdateQuoteMessagePayload,
-} from './quote-message';
-export type {
-    QuoteSectionBase,
-    QuoteSection,
-    CreateQuoteSectionPayload,
-    UpdateQuoteSectionPayload,
-} from './quote-section';
-export type {
-    QuoteShortCodeBase,
-    QuoteShortCode,
-    CreateQuoteShortCodePayload,
-    UpdateQuoteShortCodePayload,
-} from './quote-short-code';
-export type {
-    QuoteTemplateBase,
-    QuoteTemplate,
-    CreateQuoteTemplatePayload,
-    UpdateQuoteTemplatePayload,
-} from './quote-template';
-export type {
-    QuoteTemplateLineItemBase,
-    QuoteTemplateLineItem,
-    CreateQuoteTemplateLineItemPayload,
-    UpdateQuoteTemplateLineItemPayload,
-} from './quote-template-line-item';
-export type {
-    QuoteTemplateLineItemTaxBase,
-    QuoteTemplateLineItemTax,
-    CreateQuoteTemplateLineItemTaxPayload,
-    UpdateQuoteTemplateLineItemTaxPayload,
-} from './quote-template-line-item-tax';
-export type {
-    QuoteTemplateSectionBase,
-    QuoteTemplateSection,
-    CreateQuoteTemplateSectionPayload,
-    UpdateQuoteTemplateSectionPayload,
-} from './quote-template-section';
-export type {
-    QuoteTrackingEventBase,
-    QuoteTrackingEvent,
-    CreateQuoteTrackingEventPayload,
-    UpdateQuoteTrackingEventPayload,
-} from './quote-tracking-event';
-export type {
-    QuoteWinProbabilityBase,
-    QuoteWinProbability,
-    CreateQuoteWinProbabilityPayload,
-    UpdateQuoteWinProbabilityPayload,
-} from './quote-win-probability';
-export type {
-    QuoteWinProbabilitySignalBase,
-    QuoteWinProbabilitySignal,
-    CreateQuoteWinProbabilitySignalPayload,
-    UpdateQuoteWinProbabilitySignalPayload,
-} from './quote-win-probability-signal';
-export type {
-    RecurringInvoiceBase,
-    RecurringInvoice,
-    CreateRecurringInvoicePayload,
-    UpdateRecurringInvoicePayload,
-} from './recurring-invoice';
-export type {
-    RoleBase,
-    Role,
-    CreateRolePayload,
-    UpdateRolePayload,
-} from './role';
-export type {
-    TaskBase,
-    Task,
-    CreateTaskPayload,
-    UpdateTaskPayload,
-} from './task';
-export type {
-    TaskStatusBase,
-    TaskStatus,
-    CreateTaskStatusPayload,
-    UpdateTaskStatusPayload,
-} from './task-status';
+export type { ApprovalRuleBase, ApprovalRule, CreateApprovalRulePayload, UpdateApprovalRulePayload } from './approval-rule';
+export type { CatalogCategoryBase, CatalogCategory, CreateCatalogCategoryPayload, UpdateCatalogCategoryPayload } from './catalog-category';
+export type { CatalogItemBase, CatalogItem, CreateCatalogItemPayload, UpdateCatalogItemPayload } from './catalog-item';
+export type { CatalogItemPriceTierBase, CatalogItemPriceTier, CreateCatalogItemPriceTierPayload, UpdateCatalogItemPriceTierPayload } from './catalog-item-price-tier';
+export type { CatalogItemVariantBase, CatalogItemVariant, CreateCatalogItemVariantPayload, UpdateCatalogItemVariantPayload } from './catalog-item-variant';
+export type { ClientBase, Client, CreateClientPayload, UpdateClientPayload } from './client';
+export type { CommentBase, Comment, CreateCommentPayload, UpdateCommentPayload } from './comment';
+export type { ConfigIndustryBase, ConfigIndustry, CreateConfigIndustryPayload, UpdateConfigIndustryPayload } from './config-industry';
+export type { ConfigurationTagBase, ConfigurationTag, CreateConfigurationTagPayload, UpdateConfigurationTagPayload } from './configuration-tag';
+export type { ConfigurationUnitBase, ConfigurationUnit, CreateConfigurationUnitPayload, UpdateConfigurationUnitPayload } from './configuration-unit';
+export type { ContactBase, Contact, CreateContactPayload, UpdateContactPayload } from './contact';
+export type { CreditNoteBase, CreditNote, CreateCreditNotePayload, UpdateCreditNotePayload } from './credit-note';
+export type { CreditNoteLineItemBase, CreditNoteLineItem, CreateCreditNoteLineItemPayload, UpdateCreditNoteLineItemPayload } from './credit-note-line-item';
+export type { CustomDomainBase, CustomDomain, CreateCustomDomainPayload, UpdateCustomDomainPayload } from './custom-domain';
+export type { FollowUpSequenceBase, FollowUpSequence, CreateFollowUpSequencePayload, UpdateFollowUpSequencePayload } from './follow-up-sequence';
+export type { FollowUpStepBase, FollowUpStep, CreateFollowUpStepPayload, UpdateFollowUpStepPayload } from './follow-up-step';
+export type { ImportHistoryBase, ImportHistory, CreateImportHistoryPayload, UpdateImportHistoryPayload } from './import-history';
+export type { IndustryBase, Industry, CreateIndustryPayload, UpdateIndustryPayload } from './industry';
+export type { InvitationBase, Invitation, CreateInvitationPayload, UpdateInvitationPayload } from './invitation';
+export type { InvoiceBase, Invoice, CreateInvoicePayload, UpdateInvoicePayload } from './invoice';
+export type { InvoiceActivityBase, InvoiceActivity, CreateInvoiceActivityPayload, UpdateInvoiceActivityPayload } from './invoice-activity';
+export type { InvoiceLineItemBase, InvoiceLineItem, CreateInvoiceLineItemPayload, UpdateInvoiceLineItemPayload } from './invoice-line-item';
+export type { InvoiceLineItemTaxBase, InvoiceLineItemTax, CreateInvoiceLineItemTaxPayload, UpdateInvoiceLineItemTaxPayload } from './invoice-line-item-tax';
+export type { InvoicePaymentBase, InvoicePayment, CreateInvoicePaymentPayload, UpdateInvoicePaymentPayload } from './invoice-payment';
+export type { InvoiceReminderBase, InvoiceReminder, CreateInvoiceReminderPayload, UpdateInvoiceReminderPayload } from './invoice-reminder';
+export type { InvoiceReminderSequenceBase, InvoiceReminderSequence, CreateInvoiceReminderSequencePayload, UpdateInvoiceReminderSequencePayload } from './invoice-reminder-sequence';
+export type { InvoiceReminderStepBase, InvoiceReminderStep, CreateInvoiceReminderStepPayload, UpdateInvoiceReminderStepPayload } from './invoice-reminder-step';
+export type { InvoiceSectionBase, InvoiceSection, CreateInvoiceSectionPayload, UpdateInvoiceSectionPayload } from './invoice-section';
+export type { NoteBase, Note, CreateNotePayload, UpdateNotePayload } from './note';
+export type { PermissionBase, Permission, CreatePermissionPayload, UpdatePermissionPayload } from './permission';
+export type { PlanBase, Plan, CreatePlanPayload, UpdatePlanPayload } from './plan';
+export type { PortalInvitationBase, PortalInvitation, CreatePortalInvitationPayload, UpdatePortalInvitationPayload } from './portal-invitation';
+export type { PortalMagicLinkBase, PortalMagicLink, CreatePortalMagicLinkPayload, UpdatePortalMagicLinkPayload } from './portal-magic-link';
+export type { PortalUserBase, PortalUser, CreatePortalUserPayload, UpdatePortalUserPayload } from './portal-user';
+export type { PriceTierBase, PriceTier, CreatePriceTierPayload, UpdatePriceTierPayload } from './price-tier';
+export type { QuoteBase, Quote, CreateQuotePayload, UpdateQuotePayload } from './quote';
+export type { QuoteActivityBase, QuoteActivity, CreateQuoteActivityPayload, UpdateQuoteActivityPayload } from './quote-activity';
+export type { QuoteApprovalBase, QuoteApproval, CreateQuoteApprovalPayload, UpdateQuoteApprovalPayload } from './quote-approval';
+export type { QuoteFollowUpBase, QuoteFollowUp, CreateQuoteFollowUpPayload, UpdateQuoteFollowUpPayload } from './quote-follow-up';
+export type { QuoteLineItemBase, QuoteLineItem, CreateQuoteLineItemPayload, UpdateQuoteLineItemPayload } from './quote-line-item';
+export type { QuoteLineItemTaxBase, QuoteLineItemTax, CreateQuoteLineItemTaxPayload, UpdateQuoteLineItemTaxPayload } from './quote-line-item-tax';
+export type { QuoteMessageBase, QuoteMessage, CreateQuoteMessagePayload, UpdateQuoteMessagePayload } from './quote-message';
+export type { QuoteSectionBase, QuoteSection, CreateQuoteSectionPayload, UpdateQuoteSectionPayload } from './quote-section';
+export type { QuoteShortCodeBase, QuoteShortCode, CreateQuoteShortCodePayload, UpdateQuoteShortCodePayload } from './quote-short-code';
+export type { QuoteTemplateBase, QuoteTemplate, CreateQuoteTemplatePayload, UpdateQuoteTemplatePayload } from './quote-template';
+export type { QuoteTemplateLineItemBase, QuoteTemplateLineItem, CreateQuoteTemplateLineItemPayload, UpdateQuoteTemplateLineItemPayload } from './quote-template-line-item';
+export type { QuoteTemplateLineItemTaxBase, QuoteTemplateLineItemTax, CreateQuoteTemplateLineItemTaxPayload, UpdateQuoteTemplateLineItemTaxPayload } from './quote-template-line-item-tax';
+export type { QuoteTemplateSectionBase, QuoteTemplateSection, CreateQuoteTemplateSectionPayload, UpdateQuoteTemplateSectionPayload } from './quote-template-section';
+export type { QuoteTrackingEventBase, QuoteTrackingEvent, CreateQuoteTrackingEventPayload, UpdateQuoteTrackingEventPayload } from './quote-tracking-event';
+export type { QuoteWinProbabilityBase, QuoteWinProbability, CreateQuoteWinProbabilityPayload, UpdateQuoteWinProbabilityPayload } from './quote-win-probability';
+export type { QuoteWinProbabilitySignalBase, QuoteWinProbabilitySignal, CreateQuoteWinProbabilitySignalPayload, UpdateQuoteWinProbabilitySignalPayload } from './quote-win-probability-signal';
+export type { RecurringInvoiceBase, RecurringInvoice, CreateRecurringInvoicePayload, UpdateRecurringInvoicePayload } from './recurring-invoice';
+export type { RoleBase, Role, CreateRolePayload, UpdateRolePayload } from './role';
+export type { TaskBase, Task, CreateTaskPayload, UpdateTaskPayload } from './task';
+export type { TaskStatusBase, TaskStatus, CreateTaskStatusPayload, UpdateTaskStatusPayload } from './task-status';
 export type { TaxBase, Tax, CreateTaxPayload, UpdateTaxPayload } from './tax';
-export type {
-    UserBase,
-    User,
-    CreateUserPayload,
-    UpdateUserPayload,
-} from './user';
-export type {
-    WorkspaceBase,
-    Workspace,
-    CreateWorkspacePayload,
-    UpdateWorkspacePayload,
-} from './workspace';
-export type {
-    WorkspaceSettingBase,
-    WorkspaceSetting,
-    CreateWorkspaceSettingPayload,
-    UpdateWorkspaceSettingPayload,
-} from './workspace-setting';
-export type {
-    WorkspaceUsageBase,
-    WorkspaceUsage,
-    CreateWorkspaceUsagePayload,
-    UpdateWorkspaceUsagePayload,
-} from './workspace-usage';
-export type {
-    DatabaseNotificationBase,
-    DatabaseNotification,
-    CreateDatabaseNotificationPayload,
-    UpdateDatabaseNotificationPayload,
-} from './database-notification';
-export type {
-    CustomerBase,
-    Customer,
-    CreateCustomerPayload,
-    UpdateCustomerPayload,
-} from './customer';
-export type {
-    SubscriptionBase,
-    Subscription,
-    CreateSubscriptionPayload,
-    UpdateSubscriptionPayload,
-} from './subscription';
-export type {
-    TransactionBase,
-    Transaction,
-    CreateTransactionPayload,
-    UpdateTransactionPayload,
-} from './transaction';
-export type {
-    SubscriptionItemBase,
-    SubscriptionItem,
-    CreateSubscriptionItemPayload,
-    UpdateSubscriptionItemPayload,
-} from './subscription-item';
+export type { UserBase, User, CreateUserPayload, UpdateUserPayload } from './user';
+export type { WorkspaceBase, Workspace, CreateWorkspacePayload, UpdateWorkspacePayload } from './workspace';
+export type { WorkspaceSettingBase, WorkspaceSetting, CreateWorkspaceSettingPayload, UpdateWorkspaceSettingPayload } from './workspace-setting';
+export type { WorkspaceUsageBase, WorkspaceUsage, CreateWorkspaceUsagePayload, UpdateWorkspaceUsagePayload } from './workspace-usage';
+export type { DatabaseNotificationBase, DatabaseNotification, CreateDatabaseNotificationPayload, UpdateDatabaseNotificationPayload } from './database-notification';
+export type { CustomerBase, Customer, CreateCustomerPayload, UpdateCustomerPayload } from './customer';
+export type { SubscriptionBase, Subscription, CreateSubscriptionPayload, UpdateSubscriptionPayload } from './subscription';
+export type { TransactionBase, Transaction, CreateTransactionPayload, UpdateTransactionPayload } from './transaction';
+export type { SubscriptionItemBase, SubscriptionItem, CreateSubscriptionItemPayload, UpdateSubscriptionItemPayload } from './subscription-item';
 export type { Nullable, ModelId, Paginated, ApiError } from './model-helpers';

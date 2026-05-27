@@ -20,8 +20,7 @@ const props = defineProps<{
         min_quantity: number;
         max_quantity: number | null;
         pricing_type: string;
-        unit_price: number;
-        discount_percent: number;
+        value: number;
     } | null;
 }>();
 
@@ -34,8 +33,7 @@ const priceTierForm = useForm({
     pricing_type: 'fixed_price' as 'fixed_price' | 'discount_percent',
     min_quantity: 1,
     max_quantity: null as number | null,
-    unit_price: 0,
-    discount_percent: 0,
+    value: 0,
 });
 
 watch(
@@ -47,10 +45,7 @@ watch(
                 | 'discount_percent';
             priceTierForm.min_quantity = props.priceTier.min_quantity;
             priceTierForm.max_quantity = props.priceTier.max_quantity;
-            priceTierForm.unit_price = Number(props.priceTier.unit_price);
-            priceTierForm.discount_percent = Number(
-                props.priceTier.discount_percent,
-            );
+            priceTierForm.value = Number(props.priceTier.value);
         } else if (isOpen) {
             priceTierForm.reset();
             priceTierForm.pricing_type = 'fixed_price';
@@ -146,10 +141,10 @@ const savePriceTier = (): void => {
                     v-if="priceTierForm.pricing_type === 'fixed_price'"
                     class="space-y-2"
                 >
-                    <Label for="unit_price">Unit Price *</Label>
+                    <Label for="value">Price *</Label>
                     <Input
-                        id="unit_price"
-                        v-model="priceTierForm.unit_price"
+                        id="value"
+                        v-model="priceTierForm.value"
                         type="number"
                         min="0"
                         step="0.01"
@@ -161,10 +156,10 @@ const savePriceTier = (): void => {
                     v-if="priceTierForm.pricing_type === 'discount_percent'"
                     class="space-y-2"
                 >
-                    <Label for="discount_percent">Discount Percent *</Label>
+                    <Label for="value">Discount Percent *</Label>
                     <Input
-                        id="discount_percent"
-                        v-model="priceTierForm.discount_percent"
+                        id="value"
+                        v-model="priceTierForm.value"
                         type="number"
                         min="0"
                         max="100"

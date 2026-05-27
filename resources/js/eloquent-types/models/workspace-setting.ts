@@ -19,9 +19,5 @@ export interface WorkspaceSetting extends WorkspaceSettingBase {
     workspace?: Workspace;
 }
 
-export type CreateWorkspaceSettingPayload = Omit<
-    WorkspaceSettingBase,
-    'id' | 'created_at' | 'updated_at'
->;
-export type UpdateWorkspaceSettingPayload =
-    Partial<CreateWorkspaceSettingPayload>;
+export type CreateWorkspaceSettingPayload = Omit<WorkspaceSettingBase, 'id' | 'created_at' | 'updated_at'>;
+export type UpdateWorkspaceSettingPayload = Partial<CreateWorkspaceSettingPayload>;

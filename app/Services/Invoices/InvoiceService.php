@@ -77,7 +77,8 @@ class InvoiceService
                         'unit_price' => $lineItem->unit_price,
                         'base_unit_price' => $lineItem->base_unit_price,
                         'tax_rate' => $lineItem->tax_rate,
-                        'discount_percent' => $lineItem->discount_percent,
+                        'discount_type' => $lineItem->discount_type?->value,
+                        'discount_value' => $lineItem->discount_value,
                         'subtotal' => $lineItem->subtotal,
                         'base_subtotal' => $lineItem->base_subtotal,
                         'tax_amount' => $lineItem->tax_amount,
@@ -166,6 +167,7 @@ class InvoiceService
     {
         $invoice->loadMissing([
             'sections.lineItems.taxes',
+            'sections.lineItems.priceTiers',
             'client',
         ]);
 
@@ -216,7 +218,10 @@ class InvoiceService
                             'quantity' => (float) $lineItem->quantity,
                             'unit' => $lineItem->unit,
                             'unit_price' => (float) $lineItem->base_unit_price,
-                            'discount_percent' => (float) $lineItem->discount_percent,
+                            'discount_type' => $lineItem->discount_type?->value,
+                            'discount_value' => (float) $lineItem->discount_value,
+                            'price_tier_applied' => (bool) $lineItem->price_tier_applied,
+                            'applied_price_tiers' => $lineItem->priceTiers->pluck('catalog_price_tier_id')->filter()->values()->all(),
                             'subtotal' => (float) $lineItem->base_subtotal,
                             'tax_amount' => (float) $lineItem->base_tax_amount,
                             'total' => (float) $lineItem->base_total,
@@ -310,7 +315,8 @@ class InvoiceService
                 $calculatedTotals = QuotesTaxCalculator::calculateLineItemTotals(
                     (float) Arr::get($lineItemData, 'quantity', 1),
                     (float) Arr::get($lineItemData, 'unit_price', 0),
-                    (float) Arr::get($lineItemData, 'discount_percent', 0),
+                    Arr::get($lineItemData, 'discount_type'),
+                    (float) Arr::get($lineItemData, 'discount_value', 0),
                     $taxesArray,
                 );
 
@@ -321,8 +327,16 @@ class InvoiceService
 
                 $quantity = (float) Arr::get($lineItemData, 'quantity', 1);
                 $unitPrice = (float) Arr::get($lineItemData, 'unit_price', 0);
-                $discountPercent = (float) Arr::get($lineItemData, 'discount_percent', 0);
-                $lineBaseDiscount = ($quantity * $unitPrice) * ($discountPercent / 100);
+                $discountType = Arr::get($lineItemData, 'discount_type');
+                $discountValue = (float) Arr::get($lineItemData, 'discount_value', 0);
+                
+                // Calculate discount based on type
+                $lineBaseDiscount = 0;
+                if ($discountType === 'percent') {
+                    $lineBaseDiscount = ($quantity * $unitPrice) * ($discountValue / 100);
+                } elseif ($discountType === 'fixed') {
+                    $lineBaseDiscount = $discountValue;
+                }
 
                 $invoiceLineItem = $section->lineItems()->create([
                     'invoice_id' => $invoice->id,
@@ -335,7 +349,9 @@ class InvoiceService
                     'unit_price' => (float) Arr::get($lineItemData, 'unit_price', 0) * $fxRate,
                     'base_unit_price' => (float) Arr::get($lineItemData, 'unit_price', 0),
                     'tax_rate' => (float) Arr::get($lineItemData, 'tax_rate', 0),
-                    'discount_percent' => (float) Arr::get($lineItemData, 'discount_percent', 0),
+                    'discount_type' => Arr::get($lineItemData, 'discount_type'),
+                    'discount_value' => (float) Arr::get($lineItemData, 'discount_value', 0),
+                    'price_tier_applied' => (bool) Arr::get($lineItemData, 'price_tier_applied', false),
                     'subtotal' => $lineBaseSubtotal * $fxRate,
                     'base_subtotal' => $lineBaseSubtotal,
                     'tax_amount' => $lineBaseTax * $fxRate,
@@ -345,6 +361,24 @@ class InvoiceService
                     'sort_order' => (int) Arr::get($lineItemData, 'sort_order', $lineItemIndex),
                     'notes' => Arr::get($lineItemData, 'notes'),
                 ]);
+
+                $appliedPriceTierIds = Arr::get($lineItemData, 'applied_price_tiers', []);
+                if (is_array($appliedPriceTierIds) && !empty($appliedPriceTierIds)) {
+                    $catalogItemPriceTiers = \App\Models\CatalogItemPriceTier::query()
+                        ->whereIn('id', $appliedPriceTierIds)
+                        ->get();
+
+                    foreach ($catalogItemPriceTiers as $catalogTier) {
+                        $invoiceLineItem->priceTiers()->create([
+                            'catalog_price_tier_id' => $catalogTier->id,
+                            'variant_id' => $catalogTier->variant_id,
+                            'min_quantity' => $catalogTier->min_quantity,
+                            'max_quantity' => $catalogTier->max_quantity,
+                            'pricing_type' => $catalogTier->pricing_type->value,
+                            'value' => $catalogTier->value,
+                        ]);
+                    }
+                }
 
                 foreach ($taxes as $index => $taxData) {
                     $inclusiveValue = Arr::get($taxData, 'inclusive') ?? Arr::get($taxData, 'tax_inclusive', false);

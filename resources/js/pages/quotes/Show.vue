@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, setLayoutProps } from '@inertiajs/vue3';
 import { router } from '@inertiajs/vue3';
-import { computed, ref, watchEffect } from 'vue';
+import { computed, ref, watchEffect, onMounted } from 'vue';
 import Heading from '@/components/Heading.vue';
 import QuoteActivityFeed from '@/components/quotes/QuoteActivityFeed.vue';
 import QuoteChat from '@/components/quotes/QuoteChat.vue';
@@ -9,7 +9,9 @@ import QuoteFollowUps from '@/components/quotes/QuoteFollowUps.vue';
 import QuoteInvoicesPanel from '@/components/quotes/QuoteInvoicesPanel.vue';
 import QuoteStatsPanel from '@/components/quotes/QuoteStatsPanel.vue';
 import QuoteVersionHistory from '@/components/quotes/QuoteVersionHistory.vue';
-import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
+import BuilderCanvas from '@/components/builder/canvas/BuilderCanvas.vue';
+import { useBuilderStore } from '@/stores/builder';
+import { useBuilderData } from '@/composables/useBuilderData';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -17,19 +19,27 @@ import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
 import type {
     WorkspaceSettings,
-    QuoteData,
+    QuoteBuilderState,
     QuoteStatusEnum,
     QuoteInvoicesPayload,
 } from '@/types';
 import QuoteActions from './components/QuoteActions.vue';
 
 const props = defineProps<{
-    quote: QuoteData;
+    quote: QuoteBuilderState;
     settings: WorkspaceSettings;
     quoteStatuses: QuoteStatusEnum[];
     teamMembers: Array<{ id: number; name: string; email: string }>;
     quoteInvoices: QuoteInvoicesPayload;
 }>();
+
+const builderStore = useBuilderStore();
+const { fetchAll } = useBuilderData();
+
+onMounted(async () => {
+    await fetchAll();
+    builderStore.setState(props.quote);
+});
 
 const breadcrumbs = computed(() => [
     { title: 'Quotes', href: '/quotes' },
@@ -223,16 +233,13 @@ const handleCommentDeleted = (): void => {
                 </div>
 
                 <div
-                    class="overflow-hidden rounded-xl border bg-white shadow-sm"
+                    class="overflow-hidden rounded-xl border shadow-sm"
                 >
-                    <QuoteRenderer
-                        v-if="quote.layout_snapshot && settings"
-                        :data="{ ...quote, documentType: 'quote' }"
-                        :layout="quote.layout_snapshot"
+                    <BuilderCanvas
+                        v-if="builderStore.layout && settings"
+                        :state="builderStore.$state"
                         :settings="settings"
                         :preview-mode="true"
-                        :edit-mode="false"
-                        :is-internal-view="true"
                     />
 
                     <template v-else>

@@ -20,21 +20,31 @@ class TaxCalculator
      *
      * @param  float  $quantity  Item quantity
      * @param  float  $unitPrice  Item unit price
-     * @param  float  $discountPercent  Discount percentage (0-100)
+     * @param  string|null  $discountType  Discount type: 'percent' or 'fixed'
+     * @param  float  $discountValue  Discount value (percentage or fixed amount)
      * @param  array<array{tax_rate: float, inclusive: bool}>  $taxes  Array of tax items
      * @return array{subtotal: float, taxAmount: float, total: float, taxBreakdown: array}
      */
     public static function calculateLineItemTotals(
         float $quantity,
         float $unitPrice,
-        float $discountPercent,
+        ?string $discountType,
+        float $discountValue,
         array $taxes,
     ): array {
         $qty = max($quantity, 0);
         $price = max($unitPrice, 0);
-        $discount = min(max($discountPercent, 0), 100);
 
-        $baseAmount = $qty * $price * (1 - $discount / 100);
+        // Calculate discount amount based on type
+        $discountAmount = 0;
+        if ($discountType === 'percent') {
+            $discount = min(max($discountValue, 0), 100);
+            $discountAmount = $qty * $price * $discount / 100;
+        } elseif ($discountType === 'fixed') {
+            $discountAmount = min(max($discountValue, 0), $qty * $price);
+        }
+
+        $baseAmount = $qty * $price - $discountAmount;
 
         // 1. Calculate inclusive taxes (extracted from the baseAmount)
         $inclusiveTaxAmount = collect($taxes)

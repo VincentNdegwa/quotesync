@@ -17,8 +17,5 @@ export interface WorkspaceUsage extends WorkspaceUsageBase {
     workspace?: Workspace;
 }
 
-export type CreateWorkspaceUsagePayload = Omit<
-    WorkspaceUsageBase,
-    'id' | 'created_at' | 'updated_at'
->;
+export type CreateWorkspaceUsagePayload = Omit<WorkspaceUsageBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateWorkspaceUsagePayload = Partial<CreateWorkspaceUsagePayload>;

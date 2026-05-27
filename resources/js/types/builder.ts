@@ -848,8 +848,7 @@ export type BuilderCatalogItemPriceTier = {
     min_quantity: number;
     max_quantity: number | null;
     pricing_type: 'fixed_price' | 'discount_percent';
-    unit_price: number;
-    discount_percent: number;
+    value: number;
 };
 
 export type BuilderClientOption = {
@@ -938,8 +937,10 @@ export type QuoteBuilderLineItem = {
     unit_id: number | null;
     unit_price: number;
     cost_price: number | null;
-    discount_percent: number;
+    discount_type: 'percent' | 'fixed' | null;
+    discount_value: number;
     price_tier_applied: boolean;
+    applied_price_tiers: number[];
     subtotal: number;
     tax_amount: number;
     total: number;
@@ -988,6 +989,13 @@ export type QuoteBuilderState = {
     scheduled_at: string | null;
     delivered_at: string | null;
     bounced_at: string | null;
+    sent_at?: string | null;
+    accepted_at?: string | null;
+
+    // Signature
+    signature_url?: string | null;
+    signer_name?: string | null;
+    signer_ip?: string | null;
 
     // Content
     cover_message: string;
@@ -1009,4 +1017,6 @@ export type QuoteBuilderState = {
     description: string | null;
     industry: string | null;
     is_active: boolean;
+    is_system?: boolean;
+    quote_uuid?: string | null;
 };

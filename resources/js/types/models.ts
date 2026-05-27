@@ -82,7 +82,8 @@ export type QuoteLineItemModel = {
     unit: string | null;
     unit_price: number | string;
     cost_price: number | string;
-    discount_percent: number | string;
+    discount_type: 'percent' | 'fixed' | null;
+    discount_value: number | string;
     price_tier_applied: boolean;
     subtotal: number | string;
     tax_amount: number | string;
@@ -260,7 +261,8 @@ export type InvoiceLineItemModel = {
     unit_price: number | string;
     base_unit_price: number | string;
     tax_rate: number | string;
-    discount_percent: number | string;
+    discount_type: 'percent' | 'fixed' | null;
+    discount_value: number | string;
     subtotal: number | string;
     base_subtotal: number | string;
     tax_amount: number | string;

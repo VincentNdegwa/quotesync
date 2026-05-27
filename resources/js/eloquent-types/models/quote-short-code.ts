@@ -14,8 +14,5 @@ export interface QuoteShortCode extends QuoteShortCodeBase {
     quote?: Quote;
 }
 
-export type CreateQuoteShortCodePayload = Omit<
-    QuoteShortCodeBase,
-    'id' | 'created_at' | 'updated_at'
->;
+export type CreateQuoteShortCodePayload = Omit<QuoteShortCodeBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateQuoteShortCodePayload = Partial<CreateQuoteShortCodePayload>;

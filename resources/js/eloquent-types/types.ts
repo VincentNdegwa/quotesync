@@ -4,7 +4,7 @@
 export * from './models';
 
 // Resources
-// export * from './resources';
+export * from './resources';
 
 // Requests
-// export * from './requests';
+export * from './requests';

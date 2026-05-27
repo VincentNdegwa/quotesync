@@ -38,9 +38,21 @@ const builderStore = useBuilderStore();
 const { selectedBlockId, selectedBlock, blocks, sections } = storeToRefs(builderStore);
 const { fetchAll } = useBuilderData();
 
-onMounted(() => {
-    fetchAll();
+onMounted(async () => {
+    await fetchAll();
     builderStore.setState(props.modelValue);
+
+    const { catalogItems } = useBuilderData();
+    builderStore.sections.forEach(section => {
+        section.line_items.forEach(lineItem => {
+            if (lineItem.catalog_item_id && lineItem.price_tier_applied && (!lineItem.applied_price_tiers || lineItem.applied_price_tiers.length === 0)) {
+                const catalogItem = catalogItems.value.find(c => c.id === lineItem.catalog_item_id);
+                if (catalogItem) {
+                    builderStore.applyPriceTier(lineItem, catalogItem);
+                }
+            }
+        });
+    });
 });
 
 watch(
@@ -63,12 +75,9 @@ watch(
     { deep: true }
 );
 
-const documentData = computed(() => {
-    return {
-        ...builderStore.$state,
-        documentType: props.mode === 'invoice' ? 'invoice' : 'quote',
-    } as any;
-});
+const handleUpdateState = (newState: QuoteBuilderState): void => {
+    builderStore.setState(newState);
+};
 
 const handleSave = (): void => {
     emit('save', { ...builderStore.$state });
@@ -116,7 +125,7 @@ const addableTypes = computed(() => {
             :state="builderStore.$state"
             :settings="settings"
             :system-locked="systemLocked"
-            @update:state="builderStore.setState"
+            @update:state="handleUpdateState"
             @save="handleSave"
         />
 

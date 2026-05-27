@@ -1,28 +1,54 @@
 <script setup lang="ts">
 import { Head, setLayoutProps, router, Link } from '@inertiajs/vue3';
-import { computed, watchEffect } from 'vue';
+import { computed, watchEffect, onMounted } from 'vue';
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import CreditNotesHistory from '@/components/CreditNotesHistory.vue';
 import Heading from '@/components/Heading.vue';
 import PaymentHistory from '@/components/PaymentHistory.vue';
 import QuoteActivityFeed from '@/components/quotes/QuoteActivityFeed.vue';
-import InvoiceRenderer from '@/components/renderer/InvoiceRenderer.vue';
+import BuilderCanvas from '@/components/builder/canvas/BuilderCanvas.vue';
+import { useBuilderStore } from '@/stores/builder';
+import { useBuilderData } from '@/composables/useBuilderData';
 import { Badge } from '@/components/ui/badge';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
 import type {
     WorkspaceSettings,
-    InvoiceData,
+    QuoteBuilderState,
     InvoiceStatusEnum,
 } from '@/types';
 import InvoiceActions from './components/InvoiceActions.vue';
 
 const props = defineProps<{
-    invoice: InvoiceData;
+    invoice: QuoteBuilderState;
+    invoiceDetails: {
+        id: number;
+        invoice_number: string | null;
+        due_date: string | null;
+        sent_at: string | null;
+        paid_amount: number;
+        balance_due: number;
+        created_at: string | null;
+        assignee: { id: number; name: string } | null;
+        quote: { id: number; number: string | null; title: string } | null;
+        activities: any[];
+        payments: any[];
+        credit_notes: any[];
+        comments: any[];
+        created_by: any;
+    };
     settings: WorkspaceSettings;
     invoiceStatuses: InvoiceStatusEnum[];
     teamMembers?: Array<{ id: number; name: string; email: string }>;
 }>();
+
+const builderStore = useBuilderStore();
+const { fetchAll } = useBuilderData();
+
+onMounted(async () => {
+    await fetchAll();
+    builderStore.setState(props.invoice);
+});
 
 const breadcrumbs = computed(() => [
     { title: 'Invoices', href: '/invoices' },
@@ -41,7 +67,7 @@ const { formatCurrency: fmt, formatDate: fmtDate } = useFormat(
 );
 
 const quoteLink = computed(() => {
-    const relatedQuote = props.invoice.quote;
+    const relatedQuote = props.invoiceDetails.quote;
 
     if (!relatedQuote?.id) {
         return null;
@@ -74,8 +100,8 @@ const handleCommentDeleted = (): void => {
                 <Heading
                     :title="invoice.title"
                     :description="
-                        invoice.invoice_number
-                            ? `${invoice.invoice_number}`
+                        invoiceDetails.invoice_number
+                            ? `${invoiceDetails.invoice_number}`
                             : 'Invoice details'
                     "
                 />
@@ -103,7 +129,7 @@ const handleCommentDeleted = (): void => {
                 </Badge>
 
                 <InvoiceActions
-                    :invoice="invoice"
+                    :invoice="{ ...invoice, ...invoiceDetails } as any"
                     :invoice-statuses="invoiceStatuses"
                     :task-users="teamMembers"
                     variant="buttons"
@@ -134,25 +160,25 @@ const handleCommentDeleted = (): void => {
                             >Due Date&ensp;</span
                         >
                         <span class="font-semibold">{{
-                            fmtDate(invoice.due_date)
+                            fmtDate(invoiceDetails.due_date)
                         }}</span>
                     </div>
-                    <div v-if="invoice.sent_at">
+                    <div v-if="invoiceDetails.sent_at">
                         <span class="text-muted-foreground">Sent&ensp;</span>
                         <span class="font-semibold">{{
-                            fmtDate(invoice.sent_at)
+                            fmtDate(invoiceDetails.sent_at)
                         }}</span>
                     </div>
-                    <div v-if="invoice.paid_amount > 0">
+                    <div v-if="invoiceDetails.paid_amount > 0">
                         <span class="text-muted-foreground">Paid&ensp;</span>
                         <span class="font-semibold">{{
-                            fmt(invoice.paid_amount)
+                            fmt(invoiceDetails.paid_amount)
                         }}</span>
                     </div>
-                    <div v-if="invoice.balance_due > 0">
+                    <div v-if="invoiceDetails.balance_due > 0">
                         <span class="text-muted-foreground">Balance&ensp;</span>
                         <span class="font-semibold">{{
-                            fmt(invoice.balance_due)
+                            fmt(invoiceDetails.balance_due)
                         }}</span>
                     </div>
                 </div>
@@ -160,14 +186,11 @@ const handleCommentDeleted = (): void => {
                 <div
                     class="overflow-hidden rounded-xl border bg-white shadow-sm"
                 >
-                    <InvoiceRenderer
+                    <BuilderCanvas
                         v-if="invoice.layout_snapshot && settings"
-                        :data="{ ...invoice, documentType: 'invoice' }"
-                        :layout="invoice.layout_snapshot"
+                        :state="invoice"
                         :settings="settings"
                         :preview-mode="true"
-                        :edit-mode="false"
-                        :is-internal-view="true"
                     />
 
                     <template v-else>
@@ -195,8 +218,8 @@ const handleCommentDeleted = (): void => {
 
                                             <div class="space-y-1">
                                                 <div
-                                                    v-for="item in section.line_items"
-                                                    :key="item.id"
+                                                    v-for="(item, index) in section.line_items"
+                                                    :key="item.id ?? index"
                                                     class="grid grid-cols-[1fr_auto_auto] items-start gap-4 rounded-lg px-3 py-2.5 hover:bg-muted/30"
                                                 >
                                                     <div class="min-w-0">
@@ -331,9 +354,9 @@ const handleCommentDeleted = (): void => {
                 </div>
 
                 <QuoteActivityFeed
-                    :activities="invoice.activities ?? []"
-                    :comments="(invoice as any).comments ?? []"
-                    :commentable-id="invoice.id"
+                    :activities="invoiceDetails.activities ?? []"
+                    :comments="invoiceDetails.comments ?? []"
+                    :commentable-id="invoiceDetails.id"
                     commentable-type="invoice"
                     :team-members="teamMembers"
                     @comment-created="handleCommentCreated"
@@ -343,20 +366,20 @@ const handleCommentDeleted = (): void => {
 
             <div class="space-y-4">
                 <PaymentHistory
-                    v-if="(invoice as any).payments"
-                    :payments="(invoice as any).payments"
-                    :invoice-id="invoice.id"
+                    v-if="invoiceDetails.payments"
+                    :payments="invoiceDetails.payments"
+                    :invoice-id="invoiceDetails.id"
                     :currency="invoice.currency || 'USD'"
                     :total="Number(invoice.total)"
-                    :balance-due="Number(invoice.balance_due)"
+                    :balance-due="invoiceDetails.balance_due"
                 />
                 <CreditNotesHistory
-                    v-if="(invoice as any).credit_notes"
-                    :credit-notes="(invoice as any).credit_notes"
-                    :invoice-id="invoice.id"
+                    v-if="invoiceDetails.credit_notes"
+                    :credit-notes="invoiceDetails.credit_notes"
+                    :invoice-id="invoiceDetails.id"
                     :currency="invoice.currency || 'USD'"
                     :total="Number(invoice.total)"
-                    :balance-due="Number(invoice.balance_due)"
+                    :balance-due="invoiceDetails.balance_due"
                 />
             </div>
         </div>

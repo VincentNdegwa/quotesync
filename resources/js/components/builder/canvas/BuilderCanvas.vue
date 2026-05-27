@@ -72,32 +72,49 @@ const handleDuplicateBlock = (blockId: string): void => {
             No blocks in layout. Add blocks to get started.
         </div>
         <div v-else class="space-y-4">
-            <EditableBlock
-                v-for="(block, index) in blocks"
-                :key="block.id"
-                :block="block"
-                :editability="getEditability(block.type)"
-                :is-selected="selectedBlockId === block.id"
-                :is-first="index === 0"
-                :is-last="index === blocks.length - 1"
-                :index="index"
-                @select="emit('select-block', block.id)"
-                @move-up="handleMoveBlockUp(block.id)"
-                @move-down="handleMoveBlockDown(block.id)"
-                @insert-up="(type) => handleInsertBlockUp({ blockId: block.id, type })"
-                @insert-down="(type) => handleInsertBlockDown({ blockId: block.id, type })"
-                @duplicate="handleDuplicateBlock(block.id)"
-                @toggle-visible="builderStore.toggleBlockVisibility(block.id)"
-                @delete="builderStore.removeBlock(block.id)"
-            >
-                <component
-                    :is="getBlockRenderer(block.type)"
-                    :config="block.config"
-                    :settings="settings"
-                    :preview-mode="previewMode ?? false"
-                    :edit-mode="!previewMode"
-                />
-            </EditableBlock>
+            <template v-if="previewMode">
+                <div
+                    v-for="block in blocks"
+                    :key="block.id"
+                    v-show="block.visible"
+                >
+                    <component
+                        :is="getBlockRenderer(block.type)"
+                        :config="block.config"
+                        :settings="settings"
+                        :preview-mode="true"
+                        :edit-mode="false"
+                    />
+                </div>
+            </template>
+            <template v-else>
+                <EditableBlock
+                    v-for="(block, index) in blocks"
+                    :key="block.id"
+                    :block="block"
+                    :editability="getEditability(block.type)"
+                    :is-selected="selectedBlockId === block.id"
+                    :is-first="index === 0"
+                    :is-last="index === blocks.length - 1"
+                    :index="index"
+                    @select="emit('select-block', block.id)"
+                    @move-up="handleMoveBlockUp(block.id)"
+                    @move-down="handleMoveBlockDown(block.id)"
+                    @insert-up="(type) => handleInsertBlockUp({ blockId: block.id, type })"
+                    @insert-down="(type) => handleInsertBlockDown({ blockId: block.id, type })"
+                    @duplicate="handleDuplicateBlock(block.id)"
+                    @toggle-visible="builderStore.toggleBlockVisibility(block.id)"
+                    @delete="builderStore.removeBlock(block.id)"
+                >
+                    <component
+                        :is="getBlockRenderer(block.type)"
+                        :config="block.config"
+                        :settings="settings"
+                        :preview-mode="false"
+                        :edit-mode="true"
+                    />
+                </EditableBlock>
+            </template>
         </div>
     </div>
 </template>

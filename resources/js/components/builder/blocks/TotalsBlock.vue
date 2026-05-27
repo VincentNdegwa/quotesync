@@ -74,12 +74,18 @@ const taxLines = computed(() => {
                             // Calculate locally for this specific tax
                             const unitPrice = Number(item.unit_price || 0);
                             const quantity = Number(item.quantity || 0);
-                            const discountPercent = Number(
-                                item.discount_percent || 0,
-                            );
+                            const discountType = item.discount_type || null;
+                            const discountValue = Number(item.discount_value || 0);
+                            
+                            let discountAmount = 0;
+                            if (discountType === 'percent') {
+                                discountAmount = unitPrice * quantity * (discountValue / 100);
+                            } else if (discountType === 'fixed') {
+                                discountAmount = Math.min(discountValue, unitPrice * quantity);
+                            }
+                            
                             const beforeDiscount = unitPrice * quantity;
-                            const subtotal =
-                                beforeDiscount * (1 - discountPercent / 100);
+                            const subtotal = beforeDiscount - discountAmount;
                             const rate = Number(tax.tax_rate || 0);
 
                             if (tax.inclusive) {
@@ -123,7 +129,8 @@ const calculatedSubtotal = computed(() => {
                 const { subtotal } = calculateLineItemTotals(
                     Number(item.quantity || 0),
                     Number(item.unit_price || 0),
-                    Number(item.discount_percent || 0),
+                    item.discount_type || null,
+                    Number(item.discount_value || 0),
                     item.taxes?.map((tax: any) => ({
                         tax_rate: Number(tax.tax_rate || 0),
                         inclusive: tax.inclusive || false,
@@ -159,10 +166,15 @@ const calculatedDiscountAmount = computed(() => {
 
                 const unitPrice = Number(item.unit_price || 0);
                 const quantity = Number(item.quantity || 0);
-                const discountPercent = Number(item.discount_percent || 0);
+                const discountType = item.discount_type || null;
+                const discountValue = Number(item.discount_value || 0);
 
-                const beforeDiscount = unitPrice * quantity;
-                const discountAmount = beforeDiscount * (discountPercent / 100);
+                let discountAmount = 0;
+                if (discountType === 'percent') {
+                    discountAmount = unitPrice * quantity * (discountValue / 100);
+                } else if (discountType === 'fixed') {
+                    discountAmount = Math.min(discountValue, unitPrice * quantity);
+                }
 
                 return sectionSum + discountAmount;
             }, 0)
@@ -186,7 +198,8 @@ const calculatedTotal = computed(() => {
                 const { total } = calculateLineItemTotals(
                     Number(item.quantity || 0),
                     Number(item.unit_price || 0),
-                    Number(item.discount_percent || 0),
+                    item.discount_type || null,
+                    Number(item.discount_value || 0),
                     item.taxes?.map((tax: any) => ({
                         tax_rate: Number(tax.tax_rate || 0),
                         inclusive: tax.inclusive || false,

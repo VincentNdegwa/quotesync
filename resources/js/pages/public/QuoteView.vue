@@ -4,7 +4,9 @@ import { CheckCircle2, AlertCircle } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref, provide } from 'vue';
 import { toast } from 'vue-sonner';
 import PublicQuoteController from '@/actions/App/Http/Controllers/PublicQuoteController';
-import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
+import BuilderCanvas from '@/components/builder/canvas/BuilderCanvas.vue';
+import { useBuilderStore } from '@/stores/builder';
+import { useBuilderData } from '@/composables/useBuilderData';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,19 +21,23 @@ import { Label } from '@/components/ui/label';
 import SignaturePad from '@/components/ui/SignaturePad.vue';
 import { Textarea } from '@/components/ui/textarea';
 import { useQuoteTracking } from '@/composables/useQuoteTracking';
-import { ensureTemplateLayout } from '@/types';
-import type { WorkspaceSettings, QuoteData, TemplateLayout } from '@/types';
+import type { WorkspaceSettings, QuoteBuilderState } from '@/types';
 
 const props = defineProps<{
-    quote: QuoteData;
+    quote: QuoteBuilderState;
     quote_uuid: string;
-    layout: TemplateLayout | null;
     settings: WorkspaceSettings;
     clientState: 'open' | 'accepted' | 'closed';
     isWorkspaceMember: boolean;
 }>();
 
-const renderedLayout = computed(() => ensureTemplateLayout(props.layout));
+const builderStore = useBuilderStore();
+const { fetchAll } = useBuilderData();
+
+onMounted(async () => {
+    await fetchAll();
+    builderStore.setState(props.quote);
+});
 
 const tracking = props.isWorkspaceMember
     ? null
@@ -152,14 +158,11 @@ onUnmounted(() => {
                 </p>
             </div>
 
-            <QuoteRenderer
+            <BuilderCanvas
                 v-else
+                :state="builderStore.$state"
                 :settings="settings"
-                :layout="renderedLayout"
-                :data="{ ...quote, documentType: 'quote' }"
-                :preview-mode="false"
-                :edit-mode="false"
-                :is-internal-view="false"
+                :preview-mode="true"
                 class="shadow-lg ring-1 ring-border"
             />
         </div>

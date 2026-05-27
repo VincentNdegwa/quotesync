@@ -13,9 +13,5 @@ export interface SubscriptionItem extends SubscriptionItemBase {
     subscription?: Subscription;
 }
 
-export type CreateSubscriptionItemPayload = Omit<
-    SubscriptionItemBase,
-    'id' | 'created_at' | 'updated_at'
->;
-export type UpdateSubscriptionItemPayload =
-    Partial<CreateSubscriptionItemPayload>;
+export type CreateSubscriptionItemPayload = Omit<SubscriptionItemBase, 'id' | 'created_at' | 'updated_at'>;
+export type UpdateSubscriptionItemPayload = Partial<CreateSubscriptionItemPayload>;

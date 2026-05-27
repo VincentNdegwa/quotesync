@@ -11,10 +11,8 @@ export interface PermissionBase {
     updated_at: string;
 }
 
-export type Permission = PermissionBase;
+export interface Permission extends PermissionBase {
+}
 
-export type CreatePermissionPayload = Omit<
-    PermissionBase,
-    'id' | 'created_at' | 'updated_at'
->;
+export type CreatePermissionPayload = Omit<PermissionBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdatePermissionPayload = Partial<CreatePermissionPayload>;

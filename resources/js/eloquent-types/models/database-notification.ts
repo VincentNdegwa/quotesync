@@ -13,9 +13,5 @@ export interface DatabaseNotification extends DatabaseNotificationBase {
     notifiable?: unknown;
 }
 
-export type CreateDatabaseNotificationPayload = Omit<
-    DatabaseNotificationBase,
-    'id' | 'created_at' | 'updated_at'
->;
-export type UpdateDatabaseNotificationPayload =
-    Partial<CreateDatabaseNotificationPayload>;
+export type CreateDatabaseNotificationPayload = Omit<DatabaseNotificationBase, 'id' | 'created_at' | 'updated_at'>;
+export type UpdateDatabaseNotificationPayload = Partial<CreateDatabaseNotificationPayload>;

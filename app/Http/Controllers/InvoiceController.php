@@ -15,7 +15,6 @@ use App\Models\InvoicePayment;
 use App\Models\Quote;
 use App\Models\User;
 use App\Models\Workspace;
-use App\Services\BuilderLookupService;
 use App\Services\Invoices\InvoiceNumberingService;
 use App\Services\Invoices\InvoiceService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
@@ -106,7 +105,7 @@ class InvoiceController extends Controller
         return response()->json($invoices);
     }
 
-    public function show(Request $request, Invoice $invoice, WorkspaceSettingsService $workspaceSettingsService): Response
+    public function show(Request $request, Invoice $invoice, InvoiceService $invoiceService, WorkspaceSettingsService $workspaceSettingsService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
         abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
@@ -129,14 +128,37 @@ class InvoiceController extends Controller
         })->select('id', 'name', 'email')->get();
 
         return Inertia::render('invoices/Show', [
-            'invoice' => $invoice,
+            'invoice' => $invoiceService->toBuilderPayload($invoice),
+            'invoiceDetails' => [
+                'id' => $invoice->id,
+                'invoice_number' => $invoice->invoice_number,
+                'due_date' => $invoice->due_date?->toDateString(),
+                'sent_at' => $invoice->sent_at?->toDateString(),
+                'paid_amount' => $invoice->paid_amount,
+                'balance_due' => $invoice->balance_due,
+                'created_at' => $invoice->created_at?->toDateString(),
+                'assignee' => $invoice->assignee ? [
+                    'id' => $invoice->assignee->id,
+                    'name' => $invoice->assignee->name,
+                ] : null,
+                'quote' => $invoice->quote ? [
+                    'id' => $invoice->quote->id,
+                    'number' => $invoice->quote->number,
+                    'title' => $invoice->quote->title,
+                ] : null,
+                'activities' => $invoice->activities,
+                'payments' => $invoice->payments,
+                'credit_notes' => $invoice->creditNotes,
+                'comments' => $invoice->comments,
+                'created_by' => $invoice->createdBy,
+            ],
             'invoiceStatuses' => InvoiceStatus::all(),
             'settings' => $workspaceSettingsService->builderSettings($workspace),
             'teamMembers' => $teamMembers,
         ]);
     }
 
-    public function edit(Request $request, Invoice $invoice, InvoiceService $invoiceService, WorkspaceSettingsService $workspaceSettingsService, BuilderLookupService $builderLookupService): Response
+    public function edit(Request $request, Invoice $invoice, InvoiceService $invoiceService, WorkspaceSettingsService $workspaceSettingsService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
         abort_unless($workspace instanceof Workspace && $invoice->workspace_id === $workspace->id, 404);
@@ -144,7 +166,6 @@ class InvoiceController extends Controller
         return Inertia::render('invoices/Edit', [
             'initialState' => $invoiceService->toBuilderPayload($invoice),
             'settings' => $workspaceSettingsService->builderSettings($workspace),
-            ...$builderLookupService->getBasicLookups($workspace),
             'invoice' => $invoice,
         ]);
     }

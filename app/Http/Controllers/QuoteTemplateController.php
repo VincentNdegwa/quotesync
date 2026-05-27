@@ -8,7 +8,6 @@ use App\Http\Requests\QuoteTemplates\StoreQuoteTemplateRequest;
 use App\Http\Requests\QuoteTemplates\UpdateQuoteTemplateRequest;
 use App\Models\QuoteTemplate;
 use App\Models\Workspace;
-use App\Services\BuilderLookupService;
 use App\Services\Quotes\QuoteTemplateService;
 use App\Services\UsageLimitService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
@@ -47,7 +46,7 @@ class QuoteTemplateController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(Request $request, WorkspaceSettingsService $workspaceSettingsService, BuilderLookupService $builderLookupService): Response
+    public function create(Request $request, WorkspaceSettingsService $workspaceSettingsService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -58,6 +57,7 @@ class QuoteTemplateController extends Controller
         return Inertia::render('configuration/templates/Create', [
             'initialState' => [
                 'id' => null,
+                'title' => '',
                 'description' => '',
                 'industry' => '',
                 'tax_amount' => 0,
@@ -74,7 +74,6 @@ class QuoteTemplateController extends Controller
                 ],
             ],
             'settings' => $settings,
-            ...$builderLookupService->getTemplateLookups($workspace),
         ]);
     }
 
@@ -118,7 +117,7 @@ class QuoteTemplateController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Request $request, QuoteTemplate $quoteTemplate, WorkspaceSettingsService $workspaceSettingsService, BuilderLookupService $builderLookupService, QuoteTemplateService $quoteTemplateService): Response
+    public function edit(Request $request, QuoteTemplate $quoteTemplate, WorkspaceSettingsService $workspaceSettingsService, QuoteTemplateService $quoteTemplateService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -128,7 +127,6 @@ class QuoteTemplateController extends Controller
             'templateId' => $quoteTemplate->id,
             'initialState' => $quoteTemplateService->toBuilderPayload($quoteTemplate),
             'settings' => $workspaceSettingsService->builderSettings($workspace),
-            ...$builderLookupService->getTemplateLookups($workspace),
         ]);
     }
 

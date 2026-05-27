@@ -3,12 +3,7 @@
 import type { Nullable } from './model-helpers';
 import type { Quote } from './quote';
 
-export type TrackingEventType =
-    | 'view'
-    | 'section_visible'
-    | 'scroll_depth'
-    | 'time_spent'
-    | 'link_click';
+export type TrackingEventType = 'view' | 'section_visible' | 'scroll_depth' | 'time_spent' | 'link_click';
 
 export interface QuoteTrackingEventBase {
     id: number;
@@ -27,9 +22,5 @@ export interface QuoteTrackingEvent extends QuoteTrackingEventBase {
     quote?: Quote;
 }
 
-export type CreateQuoteTrackingEventPayload = Omit<
-    QuoteTrackingEventBase,
-    'id' | 'created_at' | 'updated_at'
->;
-export type UpdateQuoteTrackingEventPayload =
-    Partial<CreateQuoteTrackingEventPayload>;
+export type CreateQuoteTrackingEventPayload = Omit<QuoteTrackingEventBase, 'id' | 'created_at' | 'updated_at'>;
+export type UpdateQuoteTrackingEventPayload = Partial<CreateQuoteTrackingEventPayload>;

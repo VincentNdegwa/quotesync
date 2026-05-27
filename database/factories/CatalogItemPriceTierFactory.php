@@ -24,8 +24,8 @@ class CatalogItemPriceTierFactory extends Factory
             'catalog_item_id' => CatalogItem::factory(),
             'min_quantity' => fake()->numberBetween(1, 10),
             'max_quantity' => fake()->optional()->numberBetween(11, 100),
-            'unit_price' => fake()->randomFloat(2, 10, 1000),
-            'discount_percent' => fake()->randomFloat(2, 0, 20),
+            'pricing_type' => fake()->randomElement(['fixed_price', 'discount_percent']),
+            'value' => fake()->randomFloat(2, 0, 1000),
         ];
     }
 }

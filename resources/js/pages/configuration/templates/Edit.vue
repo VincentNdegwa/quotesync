@@ -2,15 +2,12 @@
 import { Head, setLayoutProps, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { watchEffect } from 'vue';
-import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
+import BuilderShell from '@/components/builder/BuilderShell.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import quoteTemplates from '@/routes/quote-templates';
 import { useBuilderStore } from '@/stores/builder';
 import { useBuilderData } from '@/composables/useBuilderData';
 import type {
-    BuilderCatalogItem,
-    BuilderConfigurationUnit,
-    BuilderTaxOption,
     QuoteBuilderState,
     WorkspaceSettings,
 } from '@/types';
@@ -18,9 +15,6 @@ import type {
 const props = defineProps<{
     templateId: number;
     initialState: QuoteBuilderState;
-    catalogItems: BuilderCatalogItem[];
-    taxes: BuilderTaxOption[];
-    units: BuilderConfigurationUnit[];
     settings: WorkspaceSettings;
 }>();
 
@@ -28,6 +22,10 @@ const breadcrumbs = computed(() => [
     {
         title: 'Templates',
         href: quoteTemplates.index().url,
+    },
+    {
+        title: props.initialState.title || 'Unnamed Template',
+        href: quoteTemplates.show(props.templateId).url,
     },
     {
         title: 'Edit',
@@ -51,8 +49,16 @@ const form = useForm<QuoteBuilderState>(
 
 const { uploadLogo } = useBuilderData();
 
-const save = async (): Promise<void> => {
+const save = async (updatedState?: QuoteBuilderState): Promise<void> => {
     const builderStore = useBuilderStore();
+
+    if (updatedState) {
+        Object.keys(updatedState).forEach((key) => {
+            if (key in form) {
+                (form as any)[key] = (updatedState as any)[key];
+            }
+        });
+    }
 
     if (builderStore.pendingLogoFile) {
         try {
@@ -82,15 +88,11 @@ const save = async (): Promise<void> => {
 <template>
     <Head :title="`Edit template #${templateId}`" />
 
-    <QuoteBuilder
+    <BuilderShell
         v-model="form"
         mode="template"
-        :catalog-items="catalogItems"
-        :taxes="taxes"
-        :units="units"
         :settings="settings"
         :processing="form.processing"
-        :system-locked="Boolean(form.data.is_system)"
         @save="save"
     />
 </template>

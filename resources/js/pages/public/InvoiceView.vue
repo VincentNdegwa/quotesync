@@ -1,29 +1,25 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { computed, onMounted, onUnmounted } from 'vue';
-import InvoiceRenderer from '@/components/renderer/InvoiceRenderer.vue';
+import { onMounted } from 'vue';
+import BuilderCanvas from '@/components/builder/canvas/BuilderCanvas.vue';
+import { useBuilderStore } from '@/stores/builder';
+import { useBuilderData } from '@/composables/useBuilderData';
 import { Badge } from '@/components/ui/badge';
-import { ensureTemplateLayout } from '@/types';
-import type { WorkspaceSettings, InvoiceData, TemplateLayout } from '@/types';
+import type { WorkspaceSettings, QuoteBuilderState } from '@/types';
 
 const props = defineProps<{
-    invoice: InvoiceData;
+    invoice: QuoteBuilderState;
     invoice_uuid: string;
-    layout: TemplateLayout | null;
     settings: WorkspaceSettings;
     clientState: 'open' | 'paid' | 'closed';
 }>();
 
-const renderedLayout = computed(() => ensureTemplateLayout(props.layout));
+const builderStore = useBuilderStore();
+const { fetchAll } = useBuilderData();
 
-const scrollHandler: (() => void) | null = null;
-
-onMounted(() => {
-    // Invoice tracking could be added here similar to quotes if needed
-});
-
-onUnmounted(() => {
-    window.removeEventListener('scroll', scrollHandler);
+onMounted(async () => {
+    await fetchAll();
+    builderStore.setState(props.invoice);
 });
 </script>
 
@@ -60,14 +56,11 @@ onUnmounted(() => {
                 </p>
             </div>
 
-            <InvoiceRenderer
+            <BuilderCanvas
                 v-else
+                :state="builderStore.$state"
                 :settings="settings"
-                :layout="renderedLayout"
-                :data="{ ...invoice, documentType: 'invoice' }"
-                :preview-mode="false"
-                :edit-mode="false"
-                :is-internal-view="false"
+                :preview-mode="true"
                 class="shadow-lg ring-1 ring-border"
             />
         </div>

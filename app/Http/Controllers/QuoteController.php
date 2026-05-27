@@ -14,7 +14,6 @@ use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\QuoteFollowUp;
 use App\Models\QuoteTemplate;
-use App\Models\TaskStatus;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\BuilderLookupService;
@@ -89,6 +88,11 @@ class QuoteController extends Controller
             'fx_rate' => null,
             'base_total' => null,
             'valid_until' => now()->addDays($validityDays)->toDateString(),
+            'sent_at' => null,
+            'accepted_at' => null,
+            'signature_url' => null,
+            'signer_name' => null,
+            'signer_ip' => null,
             'cover_message' => '',
             'terms' => '',
             'notes' => '',
@@ -143,41 +147,11 @@ class QuoteController extends Controller
         return to_route('quotes.edit', $quote);
     }
 
-    public function show(Request $request, Quote $quote, WorkspaceSettingsService $workspaceSettingsService): Response
+    public function show(Request $request, Quote $quote, QuoteService $quoteService, WorkspaceSettingsService $workspaceSettingsService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
 
         abort_unless($workspace instanceof Workspace && $quote->workspace_id === $workspace->id, 404);
-
-        $quote->load([
-            'client',
-            'assignee:id,name',
-            'workspace',
-            'sections.lineItems.taxes',
-            'activities.user',
-            'comments.user:id,name',
-            'versions:id,version,number,created_at',
-            'tasks.assignedTo:id,name',
-            'tasks.assignedBy:id,name',
-            'tasks.status',
-        ]);
-
-        $taskStatuses = TaskStatus::where('workspace_id', $workspace->id)
-            ->orderBy('sort_order')
-            ->get(['id', 'name', 'slug', 'color', 'sort_order']);
-
-        $quote->setRelation('task_statuses', $taskStatuses);
-
-        $quote->setRelation('versions', $quote->versions()->withoutGlobalScopes()->get(['id', 'version', 'number', 'created_at']));
-
-        $quote->loadMissing([
-            'template:id,name,layout',
-            'creator:id,name,email',
-            'quoteFollowUps.step:id,follow_up_sequence_id,channel,subject,message_template,day_offset',
-            'winProbability.signals',
-        ]);
-
-        $quote = $this->transformQuote($quote);
 
         $invoicesQuery = $quote->invoices()->withoutGlobalScopes()->orderByDesc('created_at');
 
@@ -204,7 +178,7 @@ class QuoteController extends Controller
         })->select('id', 'name', 'email')->get();
 
         return Inertia::render('quotes/Show', [
-            'quote' => $quote,
+            'quote' => $quoteService->toBuilderPayload($quote),
             'quoteInvoices' => $quoteInvoices,
             'settings' => $workspaceSettingsService->builderSettings($workspace),
             'quoteStatuses' => QuoteStatus::all(),

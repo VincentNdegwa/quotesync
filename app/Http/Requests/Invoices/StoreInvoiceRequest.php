@@ -37,7 +37,8 @@ class StoreInvoiceRequest extends FormRequest
             'line_items.*.quantity' => ['required', 'numeric', 'min:0'],
             'line_items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'line_items.*.tax_rate' => ['required', 'numeric', 'min:0'],
-            'line_items.*.discount_percent' => ['required', 'numeric', 'min:0'],
+            'line_items.*.discount_type' => ['nullable', 'string', 'in:percent,fixed'],
+            'line_items.*.discount_value' => ['nullable', 'numeric', 'min:0'],
             'line_items.*.total' => ['required', 'numeric', 'min:0'],
             'line_items.*.sort_order' => ['required', 'integer', 'min:0'],
         ];

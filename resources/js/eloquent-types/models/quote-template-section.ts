@@ -17,9 +17,5 @@ export interface QuoteTemplateSection extends QuoteTemplateSectionBase {
     lineItems?: QuoteTemplateLineItem[];
 }
 
-export type CreateQuoteTemplateSectionPayload = Omit<
-    QuoteTemplateSectionBase,
-    'id' | 'created_at' | 'updated_at'
->;
-export type UpdateQuoteTemplateSectionPayload =
-    Partial<CreateQuoteTemplateSectionPayload>;
+export type CreateQuoteTemplateSectionPayload = Omit<QuoteTemplateSectionBase, 'id' | 'created_at' | 'updated_at'>;
+export type UpdateQuoteTemplateSectionPayload = Partial<CreateQuoteTemplateSectionPayload>;

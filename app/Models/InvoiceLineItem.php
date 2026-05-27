@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DiscountType;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,7 +20,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'unit_price',
     'base_unit_price',
     'tax_rate',
-    'discount_percent',
+    'discount_type',
+    'discount_value',
     'subtotal',
     'base_subtotal',
     'tax_amount',
@@ -56,6 +58,14 @@ class InvoiceLineItem extends Model
     }
 
     /**
+     * @return HasMany<PriceTier, $this>
+     */
+    public function priceTiers(): HasMany
+    {
+        return $this->hasMany(PriceTier::class, 'priceable_id')->where('priceable_type', 'invoice_line_item');
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -65,7 +75,8 @@ class InvoiceLineItem extends Model
             'unit_price' => 'decimal:2',
             'base_unit_price' => 'decimal:2',
             'tax_rate' => 'decimal:2',
-            'discount_percent' => 'decimal:2',
+            'discount_type' => DiscountType::class,
+            'discount_value' => 'decimal:2',
             'subtotal' => 'decimal:2',
             'base_subtotal' => 'decimal:2',
             'tax_amount' => 'decimal:2',

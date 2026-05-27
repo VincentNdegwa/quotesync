@@ -34,8 +34,10 @@ export type QuoteBuilderLineItem = {
     unit_id: number | null;
     unit_price: number;
     cost_price: number | null;
-    discount_percent: number;
+    discount_type: 'percent' | 'fixed' | null;
+    discount_value: number;
     price_tier_applied: boolean;
+    applied_price_tiers: number[];
     subtotal: number;
     tax_amount: number;
     total: number;
@@ -50,42 +52,6 @@ export type QuoteBuilderSection = {
     title: string;
     sort_order: number;
     line_items: QuoteBuilderLineItem[];
-};
-
-export type QuoteBuilderState = {
-    id: number | null;
-    quote_uuid?: string | null;
-    number: string | null;
-    title: string;
-    status: string;
-    client_id: number | null;
-    assigned_to: number | null;
-    currency: string | null;
-    valid_until: string | null;
-    scheduled_at: string | null;
-    delivered_at: string | null;
-    bounced_at: string | null;
-    cover_message: string | null;
-    terms: string | null;
-    notes: string | null;
-    template_id: number | null;
-    requires_deposit: boolean;
-    deposit_amount: number | null;
-    deposit_percent: number | null;
-    is_locked: boolean;
-    cc_recipients: string[] | null;
-    bcc_recipients: string[] | null;
-    subtotal: number;
-    discount_amount: number;
-    tax_amount: number;
-    total: number;
-    layout?: TemplateLayout | null;
-    layout_snapshot?: TemplateLayout | null;
-    description?: string | null;
-    industry?: string | null;
-    is_active?: boolean;
-    is_system?: boolean;
-    sections: QuoteBuilderSection[];
 };
 
 export type BuilderClientOption = {
@@ -220,6 +186,9 @@ export type Quote = {
     accepted_at: string | null;
     declined_at: string | null;
     decline_reason: string | null;
+    signature_url: string | null;
+    signer_name: string | null;
+    signer_ip: string | null;
     created_at: string | null;
     updated_at: string | null;
     client: { id: number; company_name: string } | null;

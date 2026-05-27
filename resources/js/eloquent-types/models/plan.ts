@@ -23,8 +23,5 @@ export interface Plan extends PlanBase {
     workspaces?: Workspace[];
 }
 
-export type CreatePlanPayload = Omit<
-    PlanBase,
-    'id' | 'created_at' | 'updated_at'
->;
+export type CreatePlanPayload = Omit<PlanBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdatePlanPayload = Partial<CreatePlanPayload>;

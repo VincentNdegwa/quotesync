@@ -361,6 +361,14 @@ class QuoteService
                         $newTax->quote_line_item_id = $newLineItem->id;
                         $newTax->save();
                     }
+
+                    // Replicate price tiers
+                    foreach ($lineItem->priceTiers as $priceTier) {
+                        $newPriceTier = $priceTier->replicate();
+                        $newPriceTier->priceable_id = $newLineItem->id;
+                        $newPriceTier->priceable_type = 'quote_line_item';
+                        $newPriceTier->save();
+                    }
                 }
             }
 
@@ -523,7 +531,12 @@ class QuoteService
     {
         $quote->loadMissing([
             'sections.lineItems.taxes',
+            'sections.lineItems.priceTiers',
             'client',
+            'assignee:id,name',
+            'quoteFollowUps.step:id,follow_up_sequence_id,channel,subject,message_template,day_offset',
+            'winProbability.signals',
+            'activities.user',
         ]);
 
         $payload = [
@@ -547,6 +560,11 @@ class QuoteService
             'fx_rate' => $quote->fx_rate,
             'base_total' => $quote->base_total,
             'valid_until' => $quote->valid_until?->toDateString(),
+            'sent_at' => $quote->sent_at?->toDateString(),
+            'accepted_at' => $quote->accepted_at?->toDateString(),
+            'signature_url' => $quote->signature_url,
+            'signer_name' => $quote->signer_name,
+            'signer_ip' => $quote->signer_ip,
             'cover_message' => $quote->cover_message ?? '',
             'terms' => $quote->terms ?? '',
             'notes' => $quote->notes ?? '',
@@ -578,7 +596,10 @@ class QuoteService
                             'unit' => $lineItem->unit,
                             'unit_price' => (float) $lineItem->base_unit_price,
                             'cost_price' => $lineItem->cost_price,
-                            'discount_percent' => (float) $lineItem->discount_percent,
+                            'discount_type' => $lineItem->discount_type?->value,
+                            'discount_value' => (float) $lineItem->discount_value,
+                            'price_tier_applied' => (bool) $lineItem->price_tier_applied,
+                            'applied_price_tiers' => $lineItem->priceTiers->pluck('catalog_price_tier_id')->filter()->values()->all(),
                             'subtotal' => (float) $lineItem->base_subtotal,
                             'tax_amount' => (float) $lineItem->base_tax_amount,
                             'total' => (float) $lineItem->base_total,
@@ -596,6 +617,11 @@ class QuoteService
                     })->values()->all(),
                 ];
             })->values()->all(),
+            // Show page specific fields
+            'quote_follow_ups' => $quote->quoteFollowUps,
+            'win_probability' => $quote->win_probability,
+            'activities' => $quote->activities,
+            'pending_approval' => $quote->pending_approval,
         ];
 
         return $payload;
@@ -701,7 +727,8 @@ class QuoteService
                 $calculatedTotals = TaxCalculator::calculateLineItemTotals(
                     (float) Arr::get($lineItemData, 'quantity', 1),
                     (float) Arr::get($lineItemData, 'unit_price', 0),
-                    (float) Arr::get($lineItemData, 'discount_percent', 0),
+                    Arr::get($lineItemData, 'discount_type'),
+                    (float) Arr::get($lineItemData, 'discount_value', 0),
                     $taxesArray,
                 );
 
@@ -715,13 +742,33 @@ class QuoteService
                     'unit' => Arr::get($lineItemData, 'unit'),
                     'unit_price' => (float) Arr::get($lineItemData, 'unit_price', 0),
                     'cost_price' => Arr::get($lineItemData, 'cost_price'),
-                    'discount_percent' => (float) Arr::get($lineItemData, 'discount_percent', 0),
+                    'discount_type' => Arr::get($lineItemData, 'discount_type'),
+                    'discount_value' => (float) Arr::get($lineItemData, 'discount_value', 0),
+                    'price_tier_applied' => (bool) Arr::get($lineItemData, 'price_tier_applied', false),
                     'subtotal' => $calculatedTotals['subtotal'],
                     'total' => $calculatedTotals['total'],
                     'is_optional' => (bool) Arr::get($lineItemData, 'is_optional', false),
                     'notes' => Arr::get($lineItemData, 'notes'),
                     'sort_order' => (int) Arr::get($lineItemData, 'sort_order', $lineItemIndex),
                 ]);
+
+                $appliedPriceTierIds = Arr::get($lineItemData, 'applied_price_tiers', []);
+                if (is_array($appliedPriceTierIds) && !empty($appliedPriceTierIds)) {
+                    $catalogItemPriceTiers = \App\Models\CatalogItemPriceTier::query()
+                        ->whereIn('id', $appliedPriceTierIds)
+                        ->get();
+
+                    foreach ($catalogItemPriceTiers as $catalogTier) {
+                        $lineItem->priceTiers()->create([
+                            'catalog_price_tier_id' => $catalogTier->id,
+                            'variant_id' => $catalogTier->variant_id,
+                            'min_quantity' => $catalogTier->min_quantity,
+                            'max_quantity' => $catalogTier->max_quantity,
+                            'pricing_type' => $catalogTier->pricing_type->value,
+                            'value' => $catalogTier->value,
+                        ]);
+                    }
+                }
 
                 $baseUnitPrice = (float) Arr::get($lineItemData, 'unit_price', 0);
                 $baseSubtotal = $calculatedTotals['subtotal'];
@@ -775,7 +822,14 @@ class QuoteService
                 }
 
                 $baseSubtotal += $lineItem->base_subtotal;
-                $baseDiscountAmount += ($lineItem->quantity * $lineItem->base_unit_price * $lineItem->discount_percent / 100);
+
+                // Calculate discount based on type
+                if ($lineItem->discount_type === 'percent') {
+                    $baseDiscountAmount += ($lineItem->quantity * $lineItem->base_unit_price * $lineItem->discount_value / 100);
+                } elseif ($lineItem->discount_type === 'fixed') {
+                    $baseDiscountAmount += $lineItem->discount_value;
+                }
+
                 $baseTaxAmount += $lineItem->base_tax_amount;
             }
         }

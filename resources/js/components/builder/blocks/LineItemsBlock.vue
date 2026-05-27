@@ -156,8 +156,12 @@ const itemMeta = (item: QuoteBuilderLineItem): string => {
         parts.push(itemUnitPrice(item).toString());
     }
 
-    if (props.config.showDiscount && Number(item.discount_percent || 0) > 0) {
-        parts.push(`${item.discount_percent}% disc`);
+    if (props.config.showDiscount && item.discount_value && Number(item.discount_value) > 0) {
+        if (item.discount_type === 'percent') {
+            parts.push(`${item.discount_value}% disc`);
+        } else if (item.discount_type === 'fixed') {
+            parts.push(`${item.discount_value} off`);
+        }
     }
 
     if (showTax.value) {
@@ -530,9 +534,11 @@ const stripeClass = (index: number): string => {
                                         }"
                                     >
                                         <span>{{
-                                            item.discount_percent
-                                                ? `${item.discount_percent}%`
-                                                : '—'
+                                            item.discount_value && item.discount_type === 'percent'
+                                                ? `${item.discount_value}%`
+                                                : item.discount_value && item.discount_type === 'fixed'
+                                                    ? `${item.discount_value}`
+                                                    : '—'
                                         }}</span>
                                     </TableCell>
                                     <TableCell

@@ -17,8 +17,7 @@ use Illuminate\Support\Facades\Auth;
     'min_quantity',
     'max_quantity',
     'pricing_type',
-    'unit_price',
-    'discount_percent',
+    'value',
 ])]
 class CatalogItemPriceTier extends Model
 {

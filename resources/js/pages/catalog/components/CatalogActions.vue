@@ -60,8 +60,7 @@ const editingPriceTier = ref<{
     min_quantity: number;
     max_quantity: number | null;
     pricing_type: string;
-    unit_price: number;
-    discount_percent: number;
+    value: number;
 } | null>(null);
 
 const deleteVariantDialogOpen = ref(false);
@@ -194,8 +193,7 @@ const openPriceTierDialog = (
         min_quantity: number;
         max_quantity: number | null;
         pricing_type: string;
-        unit_price: number;
-        discount_percent: number;
+        value: number;
     } | null = null,
 ): void => {
     editingPriceTier.value = priceTier;

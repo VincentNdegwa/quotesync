@@ -225,12 +225,12 @@ const depositPercentValue = computed<string | number | undefined>({
         </div>
 
         <div v-if="expanded" class="border-t p-4">
-            <div v-if="mode === 'template'" class="grid gap-4 lg:grid-cols-3">
-                <div class="space-y-2 lg:col-span-2">
-                    <Label>Description</Label>
+            <div v-if="mode === 'template'" class="grid gap-4 lg:grid-cols-5">
+                <div class="space-y-2">
+                    <Label>Title</Label>
                     <Input
-                        v-model="descriptionValue"
-                        placeholder="Template description"
+                        v-model="titleValue"
+                        placeholder="Template name"
                         :disabled="systemLocked"
                     />
                 </div>
@@ -244,8 +244,17 @@ const depositPercentValue = computed<string | number | undefined>({
                     />
                 </div>
 
+                <div class="space-y-2">
+                    <Label>Description</Label>
+                    <Input
+                        v-model="descriptionValue"
+                        placeholder="Template description"
+                        :disabled="systemLocked"
+                    />
+                </div>
+
                 <div
-                    class="flex items-center justify-between rounded-md border px-3 py-2 lg:col-span-3"
+                    class="flex items-center justify-between rounded-md border px-3 py-2 "
                 >
                     <span class="text-sm">Active template</span>
                     <Switch
@@ -266,11 +275,11 @@ const depositPercentValue = computed<string | number | undefined>({
                 v-else-if="mode === 'invoice'"
                 class="grid gap-4 lg:grid-cols-2"
             >
-                <div v-if="state.description" class="space-y-2">
-                    <Label>Description</Label>
+                <div class="space-y-2">
+                    <Label>Title</Label>
                     <Input
-                        v-model="state.description"
-                        placeholder="Invoice description"
+                        v-model="titleValue"
+                        placeholder="Invoice title"
                         :disabled="systemLocked"
                     />
                 </div>
@@ -280,6 +289,15 @@ const depositPercentValue = computed<string | number | undefined>({
                     <Input
                         v-model="validUntilValue"
                         type="date"
+                        :disabled="systemLocked"
+                    />
+                </div>
+
+                <div v-if="state.description" class="space-y-2 lg:col-span-2">
+                    <Label>Description</Label>
+                    <Input
+                        v-model="state.description"
+                        placeholder="Invoice description"
                         :disabled="systemLocked"
                     />
                 </div>

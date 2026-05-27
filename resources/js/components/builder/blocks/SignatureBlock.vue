@@ -29,6 +29,15 @@ const openDeclineModal = inject('openDeclineModal', () => {});
 
 const { formatDateTime } = useFormat();
 
+const isAccepted = computed(() => 
+    builderStore.$state.status === 'accepted' || builderStore.$state.status === 'won'
+);
+
+const isDeclined = computed(() => 
+    builderStore.$state.status === 'declined' || builderStore.$state.status === 'lost'
+);
+
+
 const updateAcceptText = (value: string | null): void => {
     const block = builderStore.layout?.blocks.find(b => b.type === 'signature');
     if (block) {
@@ -115,6 +124,38 @@ const updateContextText = (value: string | null): void => {
                     />
                 </div>
             </div>
+        </template>
+
+        <template v-else-if="isAccepted">
+            <div class="flex flex-col items-start gap-6">
+                <div class="flex flex-col">
+                    <img
+                        v-if="builderStore.$state.signature_url"
+                        :src="builderStore.$state.signature_url"
+                        alt="Signature"
+                        class="h-20 w-auto object-contain"
+                    />
+                    <span
+                        v-if="builderStore.$state.signer_name"
+                        class="mt-1 text-sm"
+                        style="
+                            font-family: 'Dancing Script', cursive;
+                            font-size: 1.25rem;
+                            line-height: 1;
+                        "
+                        >{{ builderStore.$state.signer_name }}</span
+                    >
+                </div>
+                <div class="text-sm text-muted-foreground">
+                    <p>Signed on {{ formatDateTime(builderStore.$state.accepted_at) }}</p>
+                </div>
+            </div>
+        </template>
+
+        <template v-else-if="isDeclined">
+            <p class="text-sm text-muted-foreground">
+                This quote was declined.
+            </p>
         </template>
 
         <template v-else>

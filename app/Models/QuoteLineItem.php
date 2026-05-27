@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DiscountType;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -19,7 +20,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'unit',
     'unit_price',
     'cost_price',
-    'discount_percent',
+    'discount_type',
+    'discount_value',
     'price_tier_applied',
     'subtotal',
     'base_unit_price',
@@ -75,6 +77,14 @@ class QuoteLineItem extends Model
     }
 
     /**
+     * @return HasMany<PriceTier, $this>
+     */
+    public function priceTiers(): HasMany
+    {
+        return $this->hasMany(PriceTier::class, 'priceable_id')->where('priceable_type', 'quote_line_item');
+    }
+
+    /**
      * Get the computed tax amount as sum of all taxes (in quote currency)
      */
     protected function taxAmount(): Attribute
@@ -103,7 +113,8 @@ class QuoteLineItem extends Model
             'quantity' => 'decimal:2',
             'unit_price' => 'decimal:2',
             'cost_price' => 'decimal:2',
-            'discount_percent' => 'decimal:2',
+            'discount_type' => DiscountType::class,
+            'discount_value' => 'decimal:2',
             'subtotal' => 'decimal:2',
             'total' => 'decimal:2',
             'is_optional' => 'boolean',

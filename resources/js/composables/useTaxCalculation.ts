@@ -6,7 +6,8 @@ export type TaxItem = {
 export const calculateLineItemTotals = (
     quantity: number,
     unitPrice: number,
-    discountPercent: number,
+    discountType: 'percent' | 'fixed' | null,
+    discountValue: number,
     taxes: TaxItem[],
 ): {
     subtotal: number;
@@ -15,10 +16,18 @@ export const calculateLineItemTotals = (
 } => {
     const qty = Math.max(quantity, 0);
     const price = Math.max(unitPrice, 0);
-    const discount = Math.min(Math.max(discountPercent, 0), 100);
+
+    // Calculate discount amount based on type
+    let discountAmount = 0;
+    if (discountType === 'percent') {
+        const discount = Math.min(Math.max(discountValue, 0), 100);
+        discountAmount = qty * price * (discount / 100);
+    } else if (discountType === 'fixed') {
+        discountAmount = Math.min(Math.max(discountValue, 0), qty * price);
+    }
 
     // This is the 'Stated Price' (e.g., 200)
-    const baseAmount = qty * price * (1 - discount / 100);
+    const baseAmount = qty * price - discountAmount;
 
     // 1. Calculate Inclusive Taxes (Extracted from the baseAmount)
     const inclusiveTaxAmount = taxes

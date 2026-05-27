@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
+use App\Services\Invoices\InvoiceService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -14,23 +15,15 @@ class PublicInvoiceController extends Controller
         string $invoiceUuid,
         Request $request,
         WorkspaceSettingsService $workspaceSettingsService,
+        InvoiceService $invoiceService,
     ): Response {
         $invoice = Invoice::query()
-            ->with([
-                'client',
-                'workspace',
-                'lineItems',
-                'createdBy:id,name,email',
-            ])
             ->where('invoice_uuid', $invoiceUuid)
             ->firstOrFail();
 
-        $invoice->loadMissing(['client:id,company_name,contact_name,email', 'workspace:id,name,display_name']);
-
         return Inertia::render('public/InvoiceView', [
-            'invoice' => $invoice,
+            'invoice' => $invoiceService->toBuilderPayload($invoice),
             'invoice_uuid' => $invoice->invoice_uuid,
-            'layout' => $invoice->layout_snapshot,
             'settings' => $workspaceSettingsService->builderSettings($invoice->workspace),
             'clientState' => $invoice->status === 'paid' ? 'paid' : ($invoice->status === 'void' ? 'closed' : 'open'),
             'isWorkspaceMember' => $request->user()?->currentWorkspace?->id === $invoice->workspace_id,

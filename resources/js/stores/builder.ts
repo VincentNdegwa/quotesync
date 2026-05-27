@@ -6,7 +6,7 @@ import { calculateLineItemTotals } from '@/composables/useTaxCalculation';
 import { useBuilderData } from '@/composables/useBuilderData';
 
 export const useBuilderStore = defineStore('builder', {
-    state: (): QuoteBuilderState & { selectedBlockId: string | null; pendingLogoFile: File | null; pendingLogoBase64: string | null; editingLineItemId: string | null } => ({
+    state: (): (QuoteBuilderState & { selectedBlockId: string | null; pendingLogoFile: File | null; pendingLogoBase64: string | null; editingLineItemId: string | null }) => ({
         id: null,
         number: null,
         title: '',
@@ -31,6 +31,11 @@ export const useBuilderStore = defineStore('builder', {
         scheduled_at: null,
         delivered_at: null,
         bounced_at: null,
+        sent_at: null,
+        accepted_at: null,
+        signature_url: null,
+        signer_name: null,
+        signer_ip: null,
         cover_message: '',
         terms: '',
         notes: '',
@@ -225,8 +230,10 @@ export const useBuilderStore = defineStore('builder', {
                     unit_id: null,
                     unit_price: 0,
                     cost_price: null,
-                    discount_percent: 0,
+                    discount_type: 'percent',
+                    discount_value: 0,
                     price_tier_applied: false,
+                    applied_price_tiers: [],
                     subtotal: 0,
                     tax_amount: 0,
                     total: 0,
@@ -272,8 +279,10 @@ export const useBuilderStore = defineStore('builder', {
                     unit_id: catalogItem.unit_id || null,
                     unit_price: catalogItem.unit_price || 0,
                     cost_price: catalogItem.cost_price || null,
-                    discount_percent: 0,
+                    discount_type: 'percent',
+                    discount_value: 0,
                     price_tier_applied: false,
+                    applied_price_tiers: [],
                     subtotal: 0,
                     tax_amount: 0,
                     total: 0,
@@ -312,13 +321,54 @@ export const useBuilderStore = defineStore('builder', {
             const { subtotal, taxAmount, total } = calculateLineItemTotals(
                 Number(lineItem.quantity || 0),
                 Number(lineItem.unit_price || 0),
-                Number(lineItem.discount_percent || 0),
+                lineItem.discount_type || null,
+                Number(lineItem.discount_value || 0),
                 taxes
             );
 
             lineItem.subtotal = subtotal;
             lineItem.tax_amount = taxAmount;
             lineItem.total = total;
+        },
+
+        applyPriceTier(lineItem: QuoteBuilderLineItem, catalogItem: any): void {
+            if (!catalogItem || !catalogItem.priceTiers || catalogItem.priceTiers.length === 0) {
+                return;
+            }
+
+            const quantity = Number(lineItem.quantity || 0);
+            const variantId = lineItem.catalog_item_variant_id;
+
+            // Find matching price tier
+            const matchingTier = catalogItem.priceTiers.find((tier: any) => {
+                // Check variant match (null variant_id means applies to all variants)
+                if (tier.variant_id !== null && tier.variant_id !== variantId) {
+                    return false;
+                }
+
+                // Check quantity range
+                const minQty = Number(tier.min_quantity || 0);
+                const maxQty = tier.max_quantity !== null ? Number(tier.max_quantity) : Infinity;
+
+                return quantity >= minQty && quantity <= maxQty;
+            });
+
+            if (matchingTier) {
+                // Apply price tier based on pricing type
+                if (matchingTier.pricing_type === 'fixed_price') {
+                    lineItem.discount_type = 'fixed';
+                    lineItem.discount_value = Number(matchingTier.value);
+                } else if (matchingTier.pricing_type === 'discount_percent') {
+                    lineItem.discount_type = 'percent';
+                    lineItem.discount_value = Number(matchingTier.value);
+                }
+                lineItem.price_tier_applied = true;
+                lineItem.applied_price_tiers = [matchingTier.id];
+            } else {
+                // No matching tier, reset flag and applied tiers
+                lineItem.price_tier_applied = false;
+                lineItem.applied_price_tiers = [];
+            }
         },
 
     },

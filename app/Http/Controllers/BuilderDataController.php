@@ -102,6 +102,7 @@ class BuilderDataController extends Controller
                     'id' => $tax->id,
                     'name' => $tax->name,
                     'rate' => $tax->rate,
+                    'inclusive' => $tax->inclusive,
                 ]),
                 'variants' => $item->variants->map(fn ($variant) => [
                     'id' => $variant->id,
@@ -118,8 +119,7 @@ class BuilderDataController extends Controller
                     'min_quantity' => $tier->min_quantity,
                     'max_quantity' => $tier->max_quantity,
                     'pricing_type' => $tier->pricing_type->value,
-                    'unit_price' => $tier->unit_price,
-                    'discount_percent' => $tier->discount_percent,
+                    'value' => $tier->value,
                 ]),
             ]),
         ]);

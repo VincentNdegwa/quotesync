@@ -75,8 +75,7 @@ export type CatalogItemRecord = Omit<
         min_quantity: number;
         max_quantity: number | null;
         pricing_type: string;
-        unit_price: number;
-        discount_percent: number;
+        value: number;
     }>;
 };
 

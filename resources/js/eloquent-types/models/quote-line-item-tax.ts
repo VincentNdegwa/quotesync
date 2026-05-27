@@ -22,9 +22,5 @@ export interface QuoteLineItemTax extends QuoteLineItemTaxBase {
     tax?: Tax;
 }
 
-export type CreateQuoteLineItemTaxPayload = Omit<
-    QuoteLineItemTaxBase,
-    'id' | 'created_at' | 'updated_at'
->;
-export type UpdateQuoteLineItemTaxPayload =
-    Partial<CreateQuoteLineItemTaxPayload>;
+export type CreateQuoteLineItemTaxPayload = Omit<QuoteLineItemTaxBase, 'id' | 'created_at' | 'updated_at'>;
+export type UpdateQuoteLineItemTaxPayload = Partial<CreateQuoteLineItemTaxPayload>;

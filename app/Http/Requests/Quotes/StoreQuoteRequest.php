@@ -98,11 +98,11 @@ class StoreQuoteRequest extends FormRequest
             'sections.*.line_items.*.unit' => ['nullable', 'string', 'max:30'],
             'sections.*.line_items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'sections.*.line_items.*.cost_price' => ['nullable', 'numeric', 'min:0'],
-            'sections.*.line_items.*.discount_percent' => [
+            'sections.*.line_items.*.discount_type' => ['nullable', 'string', 'in:percent,fixed'],
+            'sections.*.line_items.*.discount_value' => [
                 'nullable',
                 'numeric',
                 'min:0',
-                'max:100',
             ],
             'sections.*.line_items.*.price_tier_applied' => ['nullable', 'boolean'],
             'sections.*.line_items.*.subtotal' => ['nullable', 'numeric', 'min:0'],
@@ -153,10 +153,14 @@ class StoreQuoteRequest extends FormRequest
                             continue;
                         }
 
-                        // Only validate manual discounts against max discount limit
-                        if ($maxDiscount !== null && isset($lineItem['discount_percent']) && $lineItem['discount_percent'] > $maxDiscount) {
+                        // Only validate manual percentage discounts against max discount limit
+                        if ($maxDiscount !== null 
+                            && isset($lineItem['discount_type']) 
+                            && $lineItem['discount_type'] === 'percent'
+                            && isset($lineItem['discount_value']) 
+                            && $lineItem['discount_value'] > $maxDiscount) {
                             $validator->errors()->add(
-                                "sections.{$sectionIndex}.line_items.{$lineItemIndex}.discount_percent",
+                                "sections.{$sectionIndex}.line_items.{$lineItemIndex}.discount_value",
                                 "Discount cannot exceed {$maxDiscount}%."
                             );
                         }

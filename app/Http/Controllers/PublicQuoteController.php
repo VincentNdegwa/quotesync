@@ -12,6 +12,7 @@ use App\Notifications\QuoteAcceptedNotification;
 use App\Notifications\QuoteDeclinedNotification;
 use App\Notifications\QuoteViewedNotification;
 use App\Services\FileStorageService;
+use App\Services\Quotes\QuoteService;
 use App\Services\Quotes\QuoteShortCodeService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use App\Traits\ResolvesClientState;
@@ -33,6 +34,7 @@ class PublicQuoteController extends Controller
         Request $request,
         WorkspaceSettingsService $workspaceSettingsService,
         QuoteShortCodeService $quoteShortCodeService,
+        QuoteService $quoteService,
     ): Response {
         $resolvedQuote = $quoteShortCodeService->resolveQuoteByIdentifier($quoteUuid);
 
@@ -41,19 +43,8 @@ class PublicQuoteController extends Controller
         $quoteId = $resolvedQuote->active_version_id ?? $resolvedQuote->id;
 
         $quote = Quote::query()
-            ->with([
-                'client',
-                'workspace',
-                'template',
-                'creator:id,name,email',
-                'assignee:id,name,email',
-                'sections.lineItems.catalogItem',
-                'sections.lineItems.taxes',
-            ])
             ->whereKey($quoteId)
             ->firstOrFail();
-
-        $quote->loadMissing(['client:id,company_name,contact_name,email', 'workspace:id,name,display_name']);
 
         $currentUser = $request->user();
         $isWorkspaceMember = false;
@@ -99,9 +90,8 @@ class PublicQuoteController extends Controller
         }
 
         return Inertia::render('public/QuoteView', [
-            'quote' => $quote->makeHidden(['internal_notes', 'profit_margin', 'deleted_at']),
+            'quote' => $quoteService->toBuilderPayload($quote),
             'quote_uuid' => $quote->quote_uuid,
-            'layout' => $this->quoteLayoutPayload($quote),
             'settings' => $workspaceSettingsService->builderSettings($quote->workspace),
             'localization' => $workspaceSettingsService->groupForFrontend($quote->workspace, 'localization')['fields'] ?? [],
             'clientState' => $this->resolveClientState($quote),
@@ -109,15 +99,6 @@ class PublicQuoteController extends Controller
         ]);
     }
 
-    /**
-     * @return array<string, mixed>|null
-     */
-    private function quoteLayoutPayload(Quote $quote): ?array
-    {
-        return $quote->layout_snapshot
-            ?? $quote->template?->layout
-            ?? null;
-    }
 
     /**
      * @return Collection<int, User>

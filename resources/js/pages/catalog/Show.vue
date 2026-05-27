@@ -451,8 +451,7 @@ const catalogActionsRef = ref<{
                                     <TableHead>Min qty</TableHead>
                                     <TableHead>Max qty</TableHead>
                                     <TableHead>Pricing type</TableHead>
-                                    <TableHead>Unit price</TableHead>
-                                    <TableHead>Discount %</TableHead>
+                                    <TableHead>Value</TableHead>
                                     <TableHead>Variant</TableHead>
                                     <TableHead class="text-right"
                                         >Actions</TableHead
@@ -476,11 +475,13 @@ const catalogActionsRef = ref<{
                                         }}
                                     </TableCell>
                                     <TableCell>
-                                        {{ formatCurrency(tier.unit_price) }}
+                                        <span v-if="tier.pricing_type === 'fixed_price'">
+                                            {{ formatCurrency(tier.value) }}
+                                        </span>
+                                        <span v-else>
+                                            {{ tier.value }}%
+                                        </span>
                                     </TableCell>
-                                    <TableCell
-                                        >{{ tier.discount_percent }}%</TableCell
-                                    >
                                     <TableCell>
                                         {{
                                             tier.variant_id

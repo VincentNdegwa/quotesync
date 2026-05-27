@@ -17,8 +17,5 @@ export interface InvoiceSection extends InvoiceSectionBase {
     lineItems?: InvoiceLineItem[];
 }
 
-export type CreateInvoiceSectionPayload = Omit<
-    InvoiceSectionBase,
-    'id' | 'created_at' | 'updated_at'
->;
+export type CreateInvoiceSectionPayload = Omit<InvoiceSectionBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateInvoiceSectionPayload = Partial<CreateInvoiceSectionPayload>;

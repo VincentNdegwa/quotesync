@@ -14,8 +14,5 @@ export interface Transaction extends TransactionBase {
     subscription?: Subscription;
 }
 
-export type CreateTransactionPayload = Omit<
-    TransactionBase,
-    'id' | 'created_at' | 'updated_at'
->;
+export type CreateTransactionPayload = Omit<TransactionBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateTransactionPayload = Partial<CreateTransactionPayload>;
