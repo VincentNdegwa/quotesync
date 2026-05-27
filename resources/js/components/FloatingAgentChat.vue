@@ -1,31 +1,26 @@
 <script setup lang="ts">
-import { Bot, X, Minimize2, Maximize2, Expand } from 'lucide-vue-next';
+import { Bot } from 'lucide-vue-next';
 import { ref } from 'vue';
 import AgentChat from '@/components/AgentChat.vue';
 import { Button } from '@/components/ui/button';
 
 const isOpen = ref(false);
-const isMinimized = ref(false);
 const isExpanded = ref(false);
+const isMinimized = ref(false);
 
 const toggleOpen = (): void => {
   isOpen.value = !isOpen.value;
+};
 
-  if (isOpen.value) {
+const toggleExpand = (): void => {
+  isExpanded.value = !isExpanded.value;
+  if (isExpanded.value) {
     isMinimized.value = false;
   }
 };
 
 const toggleMinimize = (): void => {
   isMinimized.value = !isMinimized.value;
-};
-
-const toggleExpand = (): void => {
-  isExpanded.value = !isExpanded.value;
-
-  if (isExpanded.value) {
-    isMinimized.value = false;
-  }
 };
 </script>
 
@@ -46,44 +41,14 @@ const toggleExpand = (): void => {
           isMinimized ? 'w-80 h-12' : isExpanded ? 'fixed inset-4 right-4 top-16 bottom-4' : 'w-[400px] h-[600px]'
         ]"
       >
-        <div class="flex items-center justify-between p-3 border-b bg-muted/50">
-          <div class="flex items-center gap-2">
-            <Bot class="h-4 w-4" />
-            <span class="font-semibold text-sm">Quote Assistant</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              class="h-6 w-6"
-              @click="toggleExpand"
-            >
-              <Expand v-if="!isExpanded" class="h-3 w-3" />
-              <Minimize2 v-else class="h-3 w-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              class="h-6 w-6"
-              @click="toggleMinimize"
-            >
-              <Minimize2 v-if="!isMinimized" class="h-3 w-3" />
-              <Maximize2 v-else class="h-3 w-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              class="h-6 w-6"
-              @click="toggleOpen"
-            >
-              <X class="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
-
-        <div v-if="!isMinimized" class="h-[calc(100%-48px)]">
-          <AgentChat />
-        </div>
+        <AgentChat 
+          :show-header="true" 
+          :is-expanded="isExpanded"
+          :is-minimized="isMinimized"
+          @close="toggleOpen"
+          @toggle-expand="toggleExpand"
+          @toggle-minimize="toggleMinimize"
+        />
       </div>
     </Transition>
 

@@ -3,6 +3,9 @@ import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import NotificationBell from '@/components/Layout/NotificationBell.vue';
 import PlanStatusBadge from '@/components/PlanStatusBadge.vue';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { Sun, Moon } from 'lucide-vue-next';
+import { useAppearance } from '@/composables/useAppearance';
 import type { BreadcrumbItem } from '@/types';
 
 withDefaults(
@@ -13,6 +16,13 @@ withDefaults(
         breadcrumbs: () => [],
     },
 );
+
+const { appearance, resolvedAppearance, updateAppearance } = useAppearance();
+
+const toggleTheme = (): void => {
+  const newTheme = appearance.value === 'dark' ? 'light' : appearance.value === 'light' ? 'system' : 'dark';
+  updateAppearance(newTheme);
+};
 </script>
 
 <template>
@@ -26,6 +36,15 @@ withDefaults(
             </template>
         </div>
         <div class="flex items-center gap-3">
+            <Button
+                variant="ghost"
+                size="icon"
+                @click="toggleTheme"
+                title="Toggle theme"
+            >
+                <Sun v-if="resolvedAppearance === 'light'" class="h-4 w-4" />
+                <Moon v-else class="h-4 w-4" />
+            </Button>
             <PlanStatusBadge />
             <NotificationBell />
         </div>

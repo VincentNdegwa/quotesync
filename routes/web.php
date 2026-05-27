@@ -112,6 +112,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('ai/writing/improve', [AiWritingController::class, 'improve'])->name('ai.writing.improve');
         Route::get('ai/writing/write', [AiWritingController::class, 'write'])->name('ai.writing.write');
         Route::get('agent/stream', [AgentController::class, 'stream'])->name('agent.stream');
+        Route::get('agent/conversations', [AgentController::class, 'conversations'])->name('agent.conversations');
+        Route::post('agent/new-conversation', [AgentController::class, 'newConversation'])->name('agent.new-conversation');
+        Route::get('agent/conversations/{id}/messages', [AgentController::class, 'conversationMessages'])->name('agent.conversation.messages');
 
         Route::prefix('builder')->group(function () {
             Route::get('clients', [BuilderDataController::class, 'clients'])->name('builder.clients');

@@ -113,12 +113,12 @@ class QuoteAssistant implements Agent, Conversational, HasTools
     public function tools(): iterable
     {
         return [
-            new QuoteAgent($this->user),
+            new QuoteAgent(quote: null, user: $this->user),
             new ClientAgent(client: null, user: $this->user),
-            new InvoiceAgent($this->user),
-            new FollowUpAgent($this->user),
-            new ApprovalAgent($this->user),
-            new TeamAgent($this->user),
+            new InvoiceAgent(invoice: null, user: $this->user),
+            new FollowUpAgent(sequence: null, user: $this->user),
+            new ApprovalAgent(quote: null, user: $this->user),
+            new TeamAgent(user: $this->user),
         ];
     }
 
