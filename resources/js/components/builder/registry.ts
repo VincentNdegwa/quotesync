@@ -1,20 +1,20 @@
 import type { Component } from 'vue';
 import type { BlockType, BlockConfig } from '@/types';
+import { DEFAULT_BLOCK_CONFIGS } from '@/types';
 import CoverMessageBlock from './blocks/CoverMessageBlock.vue';
-import HeaderBlock from './blocks/HeaderBlock.vue';
-import FromToBlock from './blocks/FromToBlock.vue';
-import LineItemsBlock from './blocks/LineItemsBlock.vue';
-import TotalsBlock from './blocks/TotalsBlock.vue';
-import PaymentTermsBlock from './blocks/PaymentTermsBlock.vue';
-import TermsBlock from './blocks/TermsBlock.vue';
-import SignatureBlock from './blocks/SignatureBlock.vue';
 import DividerBlock from './blocks/DividerBlock.vue';
-import SpacerBlock from './blocks/SpacerBlock.vue';
-import RichTextBlock from './blocks/RichTextBlock.vue';
+import FromToBlock from './blocks/FromToBlock.vue';
+import HeaderBlock from './blocks/HeaderBlock.vue';
 import ImageBlock from './blocks/ImageBlock.vue';
 import ImageRowBlock from './blocks/ImageRowBlock.vue';
+import LineItemsBlock from './blocks/LineItemsBlock.vue';
+import PaymentTermsBlock from './blocks/PaymentTermsBlock.vue';
+import RichTextBlock from './blocks/RichTextBlock.vue';
+import SignatureBlock from './blocks/SignatureBlock.vue';
+import SpacerBlock from './blocks/SpacerBlock.vue';
+import TermsBlock from './blocks/TermsBlock.vue';
 import TimelineBlock from './blocks/TimelineBlock.vue';
-import { DEFAULT_BLOCK_CONFIGS } from '@/types';
+import TotalsBlock from './blocks/TotalsBlock.vue';
 
 export type BlockRegistryEntry = {
     type: BlockType;
@@ -126,11 +126,7 @@ const BLOCK_REGISTRY: Record<BlockType, BlockRegistryEntry> = {
 };
 
 export function getBlockRegistryEntry(type: BlockType): BlockRegistryEntry {
-    const entry = BLOCK_REGISTRY[type];
-    if (!entry) {
-        throw new Error(`Unknown block type: ${type}`);
-    }
-    return entry;
+    return BLOCK_REGISTRY[type];
 }
 
 export function getBlockRenderer(type: BlockType): Component {

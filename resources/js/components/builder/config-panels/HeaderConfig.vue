@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import type { HeaderBlockConfig } from '@/types';
 
@@ -66,13 +66,14 @@ const handleLogoUrlChange = (value: string): void => {
 
 const handleLogoFileChange = (event: Event): void => {
     const target = event.target as HTMLInputElement;
-    if (target.files && target.files[0]) {
+
+    if (target.files?.[0]) {
         logoFile.value = target.files[0];
         config.value.logoUrl = undefined;
         logoUrlInput.value = '';
 
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = (e): void => {
             emit('logoFileSelected', logoFile.value, e.target?.result as string);
         };
         reader.readAsDataURL(logoFile.value);

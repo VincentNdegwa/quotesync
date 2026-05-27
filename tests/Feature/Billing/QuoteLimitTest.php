@@ -22,7 +22,7 @@ class QuoteLimitTest extends TestCase
             'features' => ['max_quotes_per_month' => 10],
         ]);
         $workspace = Workspace::factory()->create(['plan_id' => $plan->id]);
-        
+
         // Set usage for previous month
         WorkspaceUsage::create([
             'workspace_id' => $workspace->id,

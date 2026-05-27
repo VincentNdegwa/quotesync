@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
 import { ArrowLeft } from 'lucide-vue-next';
-import { Button } from '@/components/ui/button';
+import { computed, ref, watch } from 'vue';
 import BlockConfigPanel from '@/components/builder/BlockConfigPanel.vue';
 import ThemeConfigPanel from '@/components/builder/inspector/ThemeConfigPanel.vue';
 import LineItemDetailPanel from '@/components/builder/LineItemDetailPanel.vue';
-import type { Block, WorkspaceSettings } from '@/types';
+import { Button } from '@/components/ui/button';
 import { useBuilderData } from '@/composables/useBuilderData';
 import { useBuilderStore } from '@/stores/builder';
+import type { Block, WorkspaceSettings } from '@/types';
 
 type InspectorView = 'theme' | 'block' | 'line-item';
 

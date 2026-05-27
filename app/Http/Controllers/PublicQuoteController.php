@@ -99,7 +99,6 @@ class PublicQuoteController extends Controller
         ]);
     }
 
-
     /**
      * @return Collection<int, User>
      */

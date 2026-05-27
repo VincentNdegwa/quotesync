@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { QuoteBuilderState, WorkspaceSettings } from '@/types';
-import { getBlockRenderer } from '../registry';
-import EditableBlock from '../EditableBlock.vue';
-import { BLOCK_EDITABILITY } from '@/types';
-import { useBuilderStore } from '@/stores/builder';
 import { useThemeStyles } from '@/composables/useThemeStyles';
+import { useBuilderStore } from '@/stores/builder';
+import type { QuoteBuilderState, WorkspaceSettings } from '@/types';
+import { BLOCK_EDITABILITY } from '@/types';
+import EditableBlock from '../EditableBlock.vue';
+import { getBlockRenderer } from '../registry';
 
 const props = defineProps<{
     state: QuoteBuilderState;
@@ -24,11 +24,12 @@ const { themeStyles } = useThemeStyles(props.settings);
 const blocks = computed(() => props.state.layout?.blocks ?? []);
 
 const getEditability = (blockType: string): 'content' | 'auto' | 'mixed' => {
-    return BLOCK_EDITABILITY[blockType as keyof typeof BLOCK_EDITABILITY] || 'content';
+    return BLOCK_EDITABILITY[blockType as keyof typeof BLOCK_EDITABILITY];
 };
 
 const handleMoveBlockUp = (blockId: string): void => {
     const index = blocks.value.findIndex((b) => String(b.id) === blockId);
+
     if (index > 0) {
         builderStore.moveBlock(blockId, index - 1);
     }
@@ -36,6 +37,7 @@ const handleMoveBlockUp = (blockId: string): void => {
 
 const handleMoveBlockDown = (blockId: string): void => {
     const index = blocks.value.findIndex((b) => String(b.id) === blockId);
+
     if (index < blocks.value.length - 1) {
         builderStore.moveBlock(blockId, index + 1);
     }
@@ -53,6 +55,7 @@ const handleInsertBlockDown = (payload: { blockId: string; type: string }): void
 
 const handleDuplicateBlock = (blockId: string): void => {
     const index = blocks.value.findIndex((b) => String(b.id) === blockId);
+
     if (index !== -1) {
         const block = blocks.value[index];
         builderStore.addBlock(block.type, index + 1);

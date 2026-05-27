@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
 import { CheckCircle2, AlertCircle } from 'lucide-vue-next';
-import { computed, onMounted, onUnmounted, ref, provide } from 'vue';
+import { onMounted, onUnmounted, ref, provide } from 'vue';
 import { toast } from 'vue-sonner';
 import PublicQuoteController from '@/actions/App/Http/Controllers/PublicQuoteController';
 import BuilderCanvas from '@/components/builder/canvas/BuilderCanvas.vue';
-import { useBuilderStore } from '@/stores/builder';
-import { useBuilderData } from '@/composables/useBuilderData';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,7 +18,9 @@ import {
 import { Label } from '@/components/ui/label';
 import SignaturePad from '@/components/ui/SignaturePad.vue';
 import { Textarea } from '@/components/ui/textarea';
+import { useBuilderData } from '@/composables/useBuilderData';
 import { useQuoteTracking } from '@/composables/useQuoteTracking';
+import { useBuilderStore } from '@/stores/builder';
 import type { WorkspaceSettings, QuoteBuilderState } from '@/types';
 
 const props = defineProps<{

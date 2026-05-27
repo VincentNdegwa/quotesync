@@ -67,7 +67,8 @@ test('it correctly calculates quote with currency conversion, multiple taxes, an
                         'name' => 'Web design',
                         'quantity' => 1,
                         'unit_price' => 200, // in GBP (base currency)
-                        'discount_percent' => 10,
+                        'discount_type' => 'percent',
+                        'discount_value' => 10,
                         'is_optional' => false,
                         'taxes' => [
                             [
@@ -170,7 +171,8 @@ test('it correctly updates quote with currency conversion and taxes', function (
                         'name' => 'Web design',
                         'quantity' => 1,
                         'unit_price' => 100,
-                        'discount_percent' => 0,
+                        'discount_type' => 'percent',
+                        'discount_value' => 0,
                         'taxes' => [
                             [
                                 'tax_id' => $this->exclusiveTax->id,
@@ -199,7 +201,8 @@ test('it correctly updates quote with currency conversion and taxes', function (
                         'name' => 'Updated Web design',
                         'quantity' => 2,
                         'unit_price' => 200,
-                        'discount_percent' => 10,
+                        'discount_type' => 'percent',
+                        'discount_value' => 10,
                         'taxes' => [
                             [
                                 'tax_id' => $this->exclusiveTax->id,
@@ -286,7 +289,8 @@ test('it correctly handles quote without currency conversion (same currency)', f
                         'name' => 'Web design',
                         'quantity' => 1,
                         'unit_price' => 200,
-                        'discount_percent' => 10,
+                        'discount_type' => 'percent',
+                        'discount_value' => 10,
                         'taxes' => [
                             [
                                 'tax_id' => $this->exclusiveTax->id,
@@ -356,7 +360,8 @@ test('it correctly calculates base_tax_amount as sum of tax base_tax_amounts', f
                         'name' => 'Web design',
                         'quantity' => 1,
                         'unit_price' => 200,
-                        'discount_percent' => 10,
+                        'discount_type' => 'percent',
+                        'discount_value' => 10,
                         'taxes' => [
                             [
                                 'tax_id' => $this->exclusiveTax->id,
@@ -420,7 +425,8 @@ test('it correctly sets line item base_* fields with currency conversion', funct
                         'name' => 'Web design',
                         'quantity' => 1,
                         'unit_price' => 200, // in GBP (base currency)
-                        'discount_percent' => 10,
+                        'discount_type' => 'percent',
+                        'discount_value' => 10,
                         'is_optional' => false,
                         'taxes' => [
                             [

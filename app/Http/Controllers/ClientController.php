@@ -72,7 +72,7 @@ class ClientController extends Controller
 
         abort_unless($workspace instanceof Workspace, 404);
 
-        if (!$this->usageLimitService->canPerformOperation($workspace, Feature::MAX_CLIENTS)) {
+        if (! $this->usageLimitService->canPerformOperation($workspace, Feature::MAX_CLIENTS)) {
             throw new LimitExceededException($this->usageLimitService->getLimitReachedMessage(Feature::MAX_CLIENTS));
         }
 

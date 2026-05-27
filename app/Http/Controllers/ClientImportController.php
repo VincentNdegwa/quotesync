@@ -158,7 +158,7 @@ class ClientImportController extends Controller
 
             ImportClientsJob::dispatch($workspace->id, $request->user()?->id, $rows->all(), $importHistory->id);
 
-            $message = $skippedDueToLimit > 0 
+            $message = $skippedDueToLimit > 0
                 ? __('Client import queued. :skipped items skipped due to limit.', ['skipped' => $skippedDueToLimit])
                 : __('Client import queued.');
 
@@ -200,7 +200,7 @@ class ClientImportController extends Controller
         }
 
         $totalSkipped = $skipped + $skippedDueToLimit;
-        $message = $totalSkipped > 0 
+        $message = $totalSkipped > 0
             ? __('Import complete. :imported imported, :skipped skipped (including :limit due to limit).', [
                 'imported' => $imported,
                 'skipped' => $totalSkipped,

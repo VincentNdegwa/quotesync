@@ -4,6 +4,7 @@ namespace App\Services\Invoices;
 
 use App\Enums\InvoiceActivityType;
 use App\Enums\InvoiceStatus;
+use App\Models\CatalogItemPriceTier;
 use App\Models\Invoice;
 use App\Models\InvoiceActivity;
 use App\Models\InvoiceLineItemTax;
@@ -329,7 +330,7 @@ class InvoiceService
                 $unitPrice = (float) Arr::get($lineItemData, 'unit_price', 0);
                 $discountType = Arr::get($lineItemData, 'discount_type');
                 $discountValue = (float) Arr::get($lineItemData, 'discount_value', 0);
-                
+
                 // Calculate discount based on type
                 $lineBaseDiscount = 0;
                 if ($discountType === 'percent') {
@@ -363,8 +364,8 @@ class InvoiceService
                 ]);
 
                 $appliedPriceTierIds = Arr::get($lineItemData, 'applied_price_tiers', []);
-                if (is_array($appliedPriceTierIds) && !empty($appliedPriceTierIds)) {
-                    $catalogItemPriceTiers = \App\Models\CatalogItemPriceTier::query()
+                if (is_array($appliedPriceTierIds) && ! empty($appliedPriceTierIds)) {
+                    $catalogItemPriceTiers = CatalogItemPriceTier::query()
                         ->whereIn('id', $appliedPriceTierIds)
                         ->get();
 

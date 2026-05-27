@@ -5,8 +5,8 @@ import {
     blockContentStyle,
     blockFontSizeClass,
 } from '@/composables/useBlockStyles';
-import { useBuilderStore } from '@/stores/builder';
 import { useThemeStyles } from '@/composables/useThemeStyles';
+import { useBuilderStore } from '@/stores/builder';
 import type {
     TermsBlockConfig,
     WorkspaceSettings,
@@ -46,6 +46,7 @@ const quoteContext = computed(() => {
     }
 
     const allLineItems = builderStore.sections.flatMap(s => s.line_items);
+
     if (allLineItems.length > 0) {
         context.line_items = allLineItems
             .filter((item: any) => item.name)
@@ -56,12 +57,10 @@ const quoteContext = computed(() => {
             }));
     }
 
-    if (builderStore.total != null) {
-        context.total =
-            typeof builderStore.total === 'string'
-                ? parseFloat(builderStore.total)
-                : builderStore.total;
-    }
+    context.total =
+        typeof builderStore.total === 'string'
+            ? parseFloat(builderStore.total)
+            : builderStore.total;
 
     if (builderStore.currency) {
         context.currency = builderStore.currency;

@@ -2,6 +2,7 @@
 import { ChevronDown, Save } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 import CurrencyCombobox from '@/components/location/CurrencyCombobox.vue';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -12,7 +13,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
 import { useBuilderData } from '@/composables/useBuilderData';
 import type { QuoteBuilderState, WorkspaceSettings } from '@/types';
 
@@ -43,7 +43,7 @@ onMounted(() => {
 });
 
 const effectiveDefaultCurrency = computed(() => {
-    return props.settings.workspace.currency ?? 'USD';
+    return props.settings.workspace.currency || 'USD';
 });
 
 const applyClientCurrency = (clientId: string): void => {
@@ -54,6 +54,7 @@ const applyClientCurrency = (clientId: string): void => {
         newState.client = null;
         newState.currency = effectiveDefaultCurrency.value;
         emit('update:state', newState);
+
         return;
     }
 
@@ -124,7 +125,7 @@ const fxRateValue = computed({
 });
 
 const titleValue = computed({
-    get: () => props.state.title ?? '',
+    get: () => props.state.title || '',
     set: (value) => {
         const newState = { ...props.state };
         newState.title = value || '';
@@ -296,7 +297,7 @@ const depositPercentValue = computed<string | number | undefined>({
                 <div v-if="state.description" class="space-y-2 lg:col-span-2">
                     <Label>Description</Label>
                     <Input
-                        v-model="state.description"
+                        v-model="descriptionValue"
                         placeholder="Invoice description"
                         :disabled="systemLocked"
                     />

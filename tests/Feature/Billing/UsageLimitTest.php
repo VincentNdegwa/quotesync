@@ -77,14 +77,14 @@ class UsageLimitTest extends TestCase
 
         $service = app(UsageLimitService::class);
         $usage = $service->getCurrentUsage($workspace, Feature::MAX_CLIENTS);
-        
+
         $this->assertEquals(5, $usage);
     }
 
     public function test_unlimited_plan_allows_unlimited_operations()
     {
         $workspace = Workspace::factory()->create(['plan_id' => null]);
-        
+
         Client::factory()->count(1000)->for($workspace)->create();
         $workspace->loadCount('clients');
 

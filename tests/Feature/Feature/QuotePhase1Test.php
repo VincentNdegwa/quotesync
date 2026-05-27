@@ -101,14 +101,16 @@ test('catalog item can have price tiers', function () {
         'catalog_item_id' => $catalogItem->id,
         'min_quantity' => 1,
         'max_quantity' => 10,
-        'unit_price' => 100,
+        'pricing_type' => 'fixed_price',
+        'value' => 100,
     ]);
 
     CatalogItemPriceTier::factory()->create([
         'catalog_item_id' => $catalogItem->id,
         'min_quantity' => 11,
         'max_quantity' => null,
-        'unit_price' => 80,
+        'pricing_type' => 'fixed_price',
+        'value' => 80,
     ]);
 
     expect($catalogItem->priceTiers)->toHaveCount(2);

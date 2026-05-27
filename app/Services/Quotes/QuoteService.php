@@ -5,6 +5,7 @@ namespace App\Services\Quotes;
 use App\Enums\QuoteFollowUpStatus;
 use App\Enums\QuoteStatus;
 use App\Models\CatalogItem;
+use App\Models\CatalogItemPriceTier;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
 use App\Models\QuoteTemplate;
@@ -753,8 +754,8 @@ class QuoteService
                 ]);
 
                 $appliedPriceTierIds = Arr::get($lineItemData, 'applied_price_tiers', []);
-                if (is_array($appliedPriceTierIds) && !empty($appliedPriceTierIds)) {
-                    $catalogItemPriceTiers = \App\Models\CatalogItemPriceTier::query()
+                if (is_array($appliedPriceTierIds) && ! empty($appliedPriceTierIds)) {
+                    $catalogItemPriceTiers = CatalogItemPriceTier::query()
                         ->whereIn('id', $appliedPriceTierIds)
                         ->get();
 
@@ -774,16 +775,19 @@ class QuoteService
                 $baseSubtotal = $calculatedTotals['subtotal'];
                 $baseTaxAmount = $calculatedTotals['taxAmount'];
                 $baseTotal = $calculatedTotals['total'];
+                $baseDiscountAmount = $calculatedTotals['discountAmount'] ?? 0;
 
                 $fxRate = $quote->fx_rate ?? 1.0;
 
                 $lineItem->update([
                     'base_unit_price' => $baseUnitPrice,
                     'base_subtotal' => $baseSubtotal,
+                    'base_discount_amount' => $baseDiscountAmount,
                     'base_tax_amount' => $baseTaxAmount,
                     'base_total' => $baseTotal,
                     'unit_price' => $baseUnitPrice * $fxRate,
                     'subtotal' => $baseSubtotal * $fxRate,
+                    'discount_amount' => $baseDiscountAmount * $fxRate,
                     'total' => $baseTotal * $fxRate,
                 ]);
 
@@ -822,14 +826,7 @@ class QuoteService
                 }
 
                 $baseSubtotal += $lineItem->base_subtotal;
-
-                // Calculate discount based on type
-                if ($lineItem->discount_type === 'percent') {
-                    $baseDiscountAmount += ($lineItem->quantity * $lineItem->base_unit_price * $lineItem->discount_value / 100);
-                } elseif ($lineItem->discount_type === 'fixed') {
-                    $baseDiscountAmount += $lineItem->discount_value;
-                }
-
+                $baseDiscountAmount += $lineItem->base_discount_amount ?? 0;
                 $baseTaxAmount += $lineItem->base_tax_amount;
             }
         }

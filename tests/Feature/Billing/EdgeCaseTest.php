@@ -17,12 +17,12 @@ class EdgeCaseTest extends TestCase
     public function test_unlimited_plan_allows_unlimited_operations()
     {
         $workspace = Workspace::factory()->create(['plan_id' => null]);
-        
+
         Client::factory()->count(1000)->for($workspace)->create();
         $workspace->loadCount('clients');
 
         $service = app(UsageLimitService::class);
-        
+
         $this->assertTrue($service->canPerformOperation($workspace, Feature::MAX_CLIENTS));
         $this->assertNull($service->getLimit($workspace, Feature::MAX_CLIENTS));
     }
@@ -40,7 +40,7 @@ class EdgeCaseTest extends TestCase
         $workspace->loadCount('clients');
 
         $service = app(UsageLimitService::class);
-        
+
         $this->assertFalse($service->canPerformOperation($workspace, Feature::MAX_CLIENTS));
     }
 
@@ -58,16 +58,16 @@ class EdgeCaseTest extends TestCase
         $workspace->loadCount('clients');
 
         $service = app(UsageLimitService::class);
-        
+
         $this->assertTrue($service->canPerformOperation($workspace, Feature::MAX_CLIENTS));
     }
 
     public function test_workspace_without_plan_uses_defaults()
     {
         $workspace = Workspace::factory()->create(['plan_id' => null]);
-        
+
         $service = app(UsageLimitService::class);
-        
+
         $this->assertTrue($service->canPerformOperation($workspace, Feature::MAX_USERS));
     }
 
@@ -84,7 +84,7 @@ class EdgeCaseTest extends TestCase
         $workspace->loadCount('clients');
 
         $service = app(UsageLimitService::class);
-        
+
         $this->assertEquals(100.0, $service->getUsagePercentage($workspace, Feature::MAX_CLIENTS));
     }
 }

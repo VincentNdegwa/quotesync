@@ -86,7 +86,7 @@ class QuoteTemplateController extends Controller
 
         abort_unless($workspace instanceof Workspace, 404);
 
-        if (!$this->usageLimitService->canPerformOperation($workspace, Feature::MAX_TEMPLATES)) {
+        if (! $this->usageLimitService->canPerformOperation($workspace, Feature::MAX_TEMPLATES)) {
             throw new LimitExceededException($this->usageLimitService->getLimitReachedMessage(Feature::MAX_TEMPLATES));
         }
 

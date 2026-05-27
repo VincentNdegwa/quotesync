@@ -41,7 +41,7 @@ const textColorClass = computed(() => {
 
 const showBlock = computed(
     () =>
-        !!effectiveContextText.value?.trim() ||
+        !!effectiveContextText.value.trim() ||
         props.previewMode ||
         props.editMode,
 );
@@ -62,6 +62,7 @@ const quoteContext = computed(() => {
     }
 
     const allLineItems = builderStore.sections.flatMap(s => s.line_items);
+
     if (allLineItems.length > 0) {
         context.line_items = allLineItems
             .filter((item: any) => item.name)
@@ -72,12 +73,10 @@ const quoteContext = computed(() => {
             }));
     }
 
-    if (builderStore.total != null) {
-        context.total =
-            typeof builderStore.total === 'string'
-                ? parseFloat(builderStore.total)
-                : builderStore.total;
-    }
+    context.total =
+        typeof builderStore.total === 'string'
+            ? parseFloat(builderStore.total)
+            : builderStore.total;
 
     if (builderStore.currency) {
         context.currency = builderStore.currency;

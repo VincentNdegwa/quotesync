@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Client;
 use App\Models\CatalogItem;
+use App\Models\Client;
+use App\Models\ConfigurationUnit;
 use App\Models\QuoteTemplate;
 use App\Models\Tax;
-use App\Models\ConfigurationUnit;
 use App\Models\Workspace;
 use App\Services\Clients\ClientService;
 use App\Services\FileStorageService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class BuilderDataController extends Controller
 {

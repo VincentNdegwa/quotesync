@@ -24,7 +24,7 @@ class AiTemplateController extends Controller
 
             $limit = $this->usageLimitService->getLimit($workspace, Feature::AI_CREDITS_PER_MONTH);
             $currentUsage = $this->usageLimitService->getCurrentUsage($workspace, Feature::AI_CREDITS_PER_MONTH);
-            
+
             if ($limit !== null && $currentUsage >= $limit) {
                 throw new LimitExceededException('You have reached your AI credits limit. Please upgrade your plan to continue using AI features.');
             }

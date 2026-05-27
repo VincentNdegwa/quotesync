@@ -44,6 +44,7 @@ use App\Http\Controllers\Settings\MembersController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskStatusController;
 use App\Http\Controllers\TaxController;
+use App\Http\Controllers\Webhook\PaddleWebhookController;
 use App\Http\Controllers\WorkspaceSwitchController;
 use App\Http\Middleware\EnsureWorkspaceSettingsOnboarded;
 use Illuminate\Support\Facades\Route;
@@ -269,5 +270,4 @@ Route::middleware(['auth'])->group(function () {
 require __DIR__.'/settings.php';
 require __DIR__.'/billing.php';
 
-Route::post('paddle/webhook', \App\Http\Controllers\Webhook\PaddleWebhookController::class)->name('cashier.webhook');
-
+Route::post('paddle/webhook', PaddleWebhookController::class)->name('cashier.webhook');

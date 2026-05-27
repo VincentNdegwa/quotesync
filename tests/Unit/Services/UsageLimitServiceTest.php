@@ -28,7 +28,7 @@ class UsageLimitServiceTest extends TestCase
     {
         $user = User::factory()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id, 'plan_id' => null]);
-        
+
         $this->assertTrue($this->service->canPerformOperation($workspace, Feature::MAX_USERS));
     }
 
@@ -43,10 +43,10 @@ class UsageLimitServiceTest extends TestCase
             'features' => ['max_users' => 5],
         ]);
         $workspace = Workspace::factory()->create(['owner_id' => $user->id, 'plan_id' => $plan->id]);
-        
+
         // Create 3 members (owner + 2 more)
         $workspace->loadCount('members');
-        
+
         $this->assertTrue($this->service->canPerformOperation($workspace, Feature::MAX_USERS));
     }
 
@@ -61,7 +61,7 @@ class UsageLimitServiceTest extends TestCase
             'features' => ['max_clients' => 3],
         ]);
         $workspace = Workspace::factory()->create(['owner_id' => $user->id, 'plan_id' => $plan->id]);
-        
+
         Client::factory()->count(3)->for($workspace)->create();
         $workspace->loadCount('clients');
 
@@ -79,7 +79,7 @@ class UsageLimitServiceTest extends TestCase
             'features' => ['max_clients' => 3],
         ]);
         $workspace = Workspace::factory()->create(['owner_id' => $user->id, 'plan_id' => $plan->id]);
-        
+
         Client::factory()->count(5)->for($workspace)->create();
         $workspace->loadCount('clients');
 
@@ -104,7 +104,7 @@ class UsageLimitServiceTest extends TestCase
     {
         $user = User::factory()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id, 'plan_id' => null]);
-        
+
         $this->assertNull($this->service->getUsagePercentage($workspace, Feature::MAX_USERS));
     }
 
@@ -119,7 +119,7 @@ class UsageLimitServiceTest extends TestCase
             'features' => ['max_clients' => 10],
         ]);
         $workspace = Workspace::factory()->create(['owner_id' => $user->id, 'plan_id' => $plan->id]);
-        
+
         Client::factory()->count(5)->for($workspace)->create();
         $workspace->loadCount('clients');
 
@@ -137,7 +137,7 @@ class UsageLimitServiceTest extends TestCase
             'features' => ['max_clients' => 5],
         ]);
         $workspace = Workspace::factory()->create(['owner_id' => $user->id, 'plan_id' => $plan->id]);
-        
+
         Client::factory()->count(10)->for($workspace)->create();
         $workspace->loadCount('clients');
 
@@ -148,7 +148,7 @@ class UsageLimitServiceTest extends TestCase
     {
         $user = User::factory()->create();
         $workspace = Workspace::factory()->create(['owner_id' => $user->id, 'plan_id' => null]);
-        
+
         $this->assertNull($this->service->getLimit($workspace, Feature::MAX_USERS));
     }
 
@@ -163,7 +163,7 @@ class UsageLimitServiceTest extends TestCase
             'features' => ['max_clients' => '10'],
         ]);
         $workspace = Workspace::factory()->create(['owner_id' => $user->id, 'plan_id' => $plan->id]);
-        
+
         $this->assertEquals(10, $this->service->getLimit($workspace, Feature::MAX_CLIENTS));
     }
 }

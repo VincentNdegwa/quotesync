@@ -19,6 +19,7 @@ export const calculateLineItemTotals = (
 
     // Calculate discount amount based on type
     let discountAmount = 0;
+
     if (discountType === 'percent') {
         const discount = Math.min(Math.max(discountValue, 0), 100);
         discountAmount = qty * price * (discount / 100);

@@ -1,17 +1,16 @@
 <script setup lang="ts">
-import { computed, watch, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
+import { computed, watch, onMounted } from 'vue';
+import BlockList from '@/components/builder/BlockList.vue';
 import BuilderCanvas from '@/components/builder/canvas/BuilderCanvas.vue';
 import BuilderInspector from '@/components/builder/inspector/BuilderInspector.vue';
-import BuilderToolbar from '@/components/builder/toolbar/BuilderToolbar.vue';
-import BlockList from '@/components/builder/BlockList.vue';
-import { useBuilderStore } from '@/stores/builder';
-import { useBuilderData } from '@/composables/useBuilderData';
 import { getAllBlockTypes } from '@/components/builder/registry';
+import BuilderToolbar from '@/components/builder/toolbar/BuilderToolbar.vue';
+import { useBuilderData } from '@/composables/useBuilderData';
+import { useBuilderStore } from '@/stores/builder';
 import type {
     QuoteBuilderState,
     WorkspaceSettings,
-    DocumentData,
     Block,
 } from '@/types';
 
@@ -45,8 +44,9 @@ onMounted(async () => {
     const { catalogItems } = useBuilderData();
     builderStore.sections.forEach(section => {
         section.line_items.forEach(lineItem => {
-            if (lineItem.catalog_item_id && lineItem.price_tier_applied && (!lineItem.applied_price_tiers || lineItem.applied_price_tiers.length === 0)) {
+            if (lineItem.catalog_item_id && lineItem.price_tier_applied && !lineItem.applied_price_tiers.length) {
                 const catalogItem = catalogItems.value.find(c => c.id === lineItem.catalog_item_id);
+
                 if (catalogItem) {
                     builderStore.applyPriceTier(lineItem, catalogItem);
                 }
@@ -93,9 +93,8 @@ const handleCanvasSelectBlock = (blockId: string): void => {
 
 const handleMoveBlock = (payload: { fromIndex: number; toIndex: number }): void => {
     const block = blocks.value[payload.fromIndex];
-    if (block) {
-        builderStore.moveBlock(String(block.id), payload.toIndex);
-    }
+
+    builderStore.moveBlock(String(block.id), payload.toIndex);
 };
 
 const handleAddBlock = (type: string): void => {
@@ -114,6 +113,7 @@ const handleInspectorUpdateBlock = (updatedBlock: Block | null): void => {
 
 const addableTypes = computed(() => {
     const existingTypes = new Set(blocks.value.map((b) => b.type));
+
     return getAllBlockTypes().filter((type) => !existingTypes.has(type));
 });
 </script>

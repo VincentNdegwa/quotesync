@@ -2,6 +2,7 @@
 import { Head, setLayoutProps } from '@inertiajs/vue3';
 import { router } from '@inertiajs/vue3';
 import { computed, ref, watchEffect, onMounted } from 'vue';
+import BuilderCanvas from '@/components/builder/canvas/BuilderCanvas.vue';
 import Heading from '@/components/Heading.vue';
 import QuoteActivityFeed from '@/components/quotes/QuoteActivityFeed.vue';
 import QuoteChat from '@/components/quotes/QuoteChat.vue';
@@ -9,14 +10,13 @@ import QuoteFollowUps from '@/components/quotes/QuoteFollowUps.vue';
 import QuoteInvoicesPanel from '@/components/quotes/QuoteInvoicesPanel.vue';
 import QuoteStatsPanel from '@/components/quotes/QuoteStatsPanel.vue';
 import QuoteVersionHistory from '@/components/quotes/QuoteVersionHistory.vue';
-import BuilderCanvas from '@/components/builder/canvas/BuilderCanvas.vue';
-import { useBuilderStore } from '@/stores/builder';
-import { useBuilderData } from '@/composables/useBuilderData';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { useBuilderData } from '@/composables/useBuilderData';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
+import { useBuilderStore } from '@/stores/builder';
 import type {
     WorkspaceSettings,
     QuoteBuilderState,

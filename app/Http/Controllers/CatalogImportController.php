@@ -182,7 +182,7 @@ class CatalogImportController extends Controller
                 $unitMapping
             );
 
-            $message = $skippedDueToLimit > 0 
+            $message = $skippedDueToLimit > 0
                 ? "Catalog import queued. {$skippedDueToLimit} items skipped due to limit."
                 : 'Catalog import queued.';
 
@@ -244,7 +244,7 @@ class CatalogImportController extends Controller
         }
 
         $totalSkipped = $skipped + $skippedDueToLimit;
-        $message = $totalSkipped > 0 
+        $message = $totalSkipped > 0
             ? "Import complete. {$imported} imported, {$totalSkipped} skipped (including {$skippedDueToLimit} due to limit)."
             : "Import complete. {$imported} imported.";
 

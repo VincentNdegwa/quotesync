@@ -2,8 +2,8 @@
 
 import type { Nullable } from './model-helpers';
 import type { Quote } from './quote';
-import type { Workspace } from './workspace';
 import type { User } from './user';
+import type { Workspace } from './workspace';
 
 export interface QuoteActivityBase {
     id: number;

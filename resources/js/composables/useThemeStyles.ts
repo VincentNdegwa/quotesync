@@ -1,6 +1,12 @@
-import { computed } from 'vue';
+import { computed  } from 'vue';
+import type {ComputedRef} from 'vue';
 import { useBuilderStore } from '@/stores/builder';
 import type { ThemeConfig, WorkspaceSettings } from '@/types';
+
+type UseThemeStylesReturn = {
+    theme: ComputedRef<ThemeConfig>;
+    themeStyles: ComputedRef<Record<string, string>>;
+};
 
 const fontFamilyMap: Record<string, string> = {
     'inter': 'Inter, sans-serif',
@@ -12,23 +18,22 @@ const fontFamilyMap: Record<string, string> = {
     'source-sans': 'Source Sans 3, sans-serif',
 };
 
-export function useThemeStyles(settings?: WorkspaceSettings) {
+export function useThemeStyles(settings?: WorkspaceSettings): UseThemeStylesReturn {
     const builderStore = useBuilderStore();
 
     const theme = computed<ThemeConfig>(() => {
-        const existingTheme = builderStore.layout?.theme;
-        const workspacePrimaryColor = settings?.workspace?.primary_color ?? '#2563EB';
-        
-        if (existingTheme) {
+        const workspacePrimaryColor = settings?.workspace.primary_color || '#2563EB';
+
+        if (!builderStore.layout?.theme) {
             return {
-                primaryColor: existingTheme.primaryColor ?? workspacePrimaryColor,
-                fontFamily: existingTheme.fontFamily ?? 'inter',
+                primaryColor: workspacePrimaryColor,
+                fontFamily: 'inter',
             };
         }
-        
+
         return {
-            primaryColor: workspacePrimaryColor,
-            fontFamily: 'inter',
+            primaryColor: builderStore.layout.theme.primaryColor,
+            fontFamily: builderStore.layout.theme.fontFamily,
         };
     });
 

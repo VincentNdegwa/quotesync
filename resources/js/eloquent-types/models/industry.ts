@@ -13,8 +13,7 @@ export interface IndustryBase {
     updated_at: string;
 }
 
-export interface Industry extends IndustryBase {
-}
+export type Industry = IndustryBase;
 
 export type CreateIndustryPayload = Omit<IndustryBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateIndustryPayload = Partial<CreateIndustryPayload>;

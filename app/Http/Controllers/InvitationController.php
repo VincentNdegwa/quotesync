@@ -23,8 +23,8 @@ class InvitationController extends Controller
     public function store(CreateInvitationRequest $request, InvitationService $invitationService): RedirectResponse
     {
         $workspace = $request->user()->currentWorkspace;
-        
-        if (!$this->usageLimitService->canPerformOperation($workspace, Feature::MAX_USERS)) {
+
+        if (! $this->usageLimitService->canPerformOperation($workspace, Feature::MAX_USERS)) {
             throw new LimitExceededException($this->usageLimitService->getLimitReachedMessage(Feature::MAX_USERS));
         }
 

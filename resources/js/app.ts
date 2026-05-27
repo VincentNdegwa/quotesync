@@ -1,7 +1,7 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import { MotionPlugin } from '@vueuse/motion';
-import { createApp, h } from 'vue';
 import { createPinia } from 'pinia';
+import { createApp, h } from 'vue';
 import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';

@@ -5,13 +5,14 @@ use App\Services\Quotes\TaxCalculator;
 test('it calculates inclusive and exclusive taxes correctly from stated price', function () {
     $quantity = 1;
     $unitPrice = 200;
-    $discountPercent = 0;
+    $discountType = null;
+    $discountValue = 0;
     $taxes = [
         ['tax_rate' => 10, 'inclusive' => true],
         ['tax_rate' => 10, 'inclusive' => false],
     ];
 
-    $result = TaxCalculator::calculateLineItemTotals($quantity, $unitPrice, $discountPercent, $taxes);
+    $result = TaxCalculator::calculateLineItemTotals($quantity, $unitPrice, $discountType, $discountValue, $taxes);
 
     // Stated Price = 200
     // Inclusive Tax (10%) = 200 * 10 / 110 = 18.1818...
@@ -31,7 +32,7 @@ test('it calculates inclusive and exclusive taxes correctly from stated price', 
 });
 
 test('it handles only inclusive tax', function () {
-    $result = TaxCalculator::calculateLineItemTotals(1, 100, 0, [
+    $result = TaxCalculator::calculateLineItemTotals(1, 100, null, 0, [
         ['tax_rate' => 20, 'inclusive' => true],
     ]);
 
@@ -42,7 +43,7 @@ test('it handles only inclusive tax', function () {
 });
 
 test('it handles only exclusive tax', function () {
-    $result = TaxCalculator::calculateLineItemTotals(1, 100, 0, [
+    $result = TaxCalculator::calculateLineItemTotals(1, 100, null, 0, [
         ['tax_rate' => 20, 'inclusive' => false],
     ]);
 

@@ -13,7 +13,7 @@ class LoadWorkspaceUsageCounts
             $workspace->loadCount(['members', 'catalogItems', 'templates', 'clients', 'followUpSequences']);
             $workspace->load(['owner.workspaces', 'usage']);
         }
-        
+
         return $next($request);
     }
 }

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { watch } from 'vue';
-import InvoiceRenderer from '@/components/renderer/InvoiceRenderer.vue';
 import { createBlock, ensureTemplateLayout } from '@/types';
 import type {
     Block,
@@ -12,6 +11,7 @@ import type {
     InvoiceBuilderState,
     WorkspaceSettings,
 } from '@/types';
+import InvoiceRenderer from '@/components/renderer/InvoiceRenderer.vue';
 
 const model = defineModel<InvoiceBuilderState>({
     required: true,

@@ -25,6 +25,7 @@ const { theme } = useThemeStyles(props.settings);
 const effectiveBranding = computed(() => {
     // Use pending base64 for preview if available, otherwise use config URL or workspace logo
     const logoUrl = builderStore.pendingLogoBase64 ?? props.config.logoUrl ?? props.settings.workspace.logo_url;
+
     return {
         ...props.settings.workspace,
         logo_url: logoUrl,

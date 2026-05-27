@@ -101,6 +101,7 @@ class TaxCalculator
             'taxAmount' => $taxAmount,
             'total' => $total,
             'taxBreakdown' => $taxBreakdown,
+            'discountAmount' => $discountAmount,
         ];
     }
 

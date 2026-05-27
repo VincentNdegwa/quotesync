@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Cache;
 class WorkspacePlanCache
 {
     private const CACHE_PREFIX = 'workspace_plan:';
+
     private const CACHE_TTL = 86400;
 
     public function getPlan(Workspace $workspace): ?Plan
@@ -51,6 +52,7 @@ class WorkspacePlanCache
     public function getPlanFeature(Workspace $workspace, string $key, mixed $default = null): mixed
     {
         $features = $this->getPlanFeatures($workspace);
+
         return $features[$key] ?? $default;
     }
 

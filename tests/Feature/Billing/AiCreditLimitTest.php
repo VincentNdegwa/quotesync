@@ -22,7 +22,7 @@ class AiCreditLimitTest extends TestCase
             'features' => ['ai_credits_per_month' => 100],
         ]);
         $workspace = Workspace::factory()->create(['plan_id' => $plan->id]);
-        
+
         WorkspaceUsage::create([
             'workspace_id' => $workspace->id,
             'period' => now()->startOfMonth()->format('Y-m-d H:i:s'),
@@ -45,7 +45,7 @@ class AiCreditLimitTest extends TestCase
             'features' => ['ai_credits_per_month' => 100],
         ]);
         $workspace = Workspace::factory()->create(['plan_id' => $plan->id]);
-        
+
         WorkspaceUsage::create([
             'workspace_id' => $workspace->id,
             'period' => now()->startOfMonth()->format('Y-m-d H:i:s'),
@@ -68,7 +68,7 @@ class AiCreditLimitTest extends TestCase
             'features' => ['ai_credits_per_month' => 100],
         ]);
         $workspace = Workspace::factory()->create(['plan_id' => $plan->id]);
-        
+
         $usage = WorkspaceUsage::create([
             'workspace_id' => $workspace->id,
             'period' => now()->startOfMonth()->format('Y-m-d H:i:s'),
@@ -93,7 +93,7 @@ class AiCreditLimitTest extends TestCase
             'features' => ['ai_credits_per_month' => 10],
         ]);
         $workspace = Workspace::factory()->create(['plan_id' => $plan->id]);
-        
+
         WorkspaceUsage::create([
             'workspace_id' => $workspace->id,
             'period' => now()->startOfMonth()->format('Y-m-d H:i:s'),
@@ -101,7 +101,7 @@ class AiCreditLimitTest extends TestCase
         ]);
 
         $this->assertEquals(10, $workspace->plan->features['ai_credits_per_month']);
-        
+
         $usage = $workspace->currentUsage();
         $this->assertEquals(10, $usage->ai_credits_used);
     }
@@ -116,7 +116,7 @@ class AiCreditLimitTest extends TestCase
             'features' => ['ai_credits_per_month' => 10],
         ]);
         $workspace = Workspace::factory()->create(['plan_id' => $plan->id]);
-        
+
         WorkspaceUsage::create([
             'workspace_id' => $workspace->id,
             'period' => now()->startOfMonth()->format('Y-m-d H:i:s'),
@@ -124,7 +124,7 @@ class AiCreditLimitTest extends TestCase
         ]);
 
         $this->assertEquals(10, $workspace->plan->features['ai_credits_per_month']);
-        
+
         $usage = $workspace->currentUsage();
         $this->assertEquals(10, $usage->ai_credits_used);
     }
@@ -139,7 +139,7 @@ class AiCreditLimitTest extends TestCase
             'features' => ['ai_credits_per_month' => 10],
         ]);
         $workspace = Workspace::factory()->create(['plan_id' => $plan->id]);
-        
+
         WorkspaceUsage::create([
             'workspace_id' => $workspace->id,
             'period' => now()->startOfMonth()->format('Y-m-d H:i:s'),
@@ -147,7 +147,7 @@ class AiCreditLimitTest extends TestCase
         ]);
 
         $this->assertEquals(10, $workspace->plan->features['ai_credits_per_month']);
-        
+
         $usage = $workspace->currentUsage();
         $this->assertEquals(10, $usage->ai_credits_used);
     }

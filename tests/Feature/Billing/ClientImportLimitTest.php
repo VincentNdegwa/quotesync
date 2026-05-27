@@ -47,7 +47,7 @@ class ClientImportLimitTest extends TestCase
     public function test_unlimited_plan_allows_all_imports()
     {
         $workspace = Workspace::factory()->create(['plan_id' => null]);
-        
+
         $this->assertNull($workspace->plan_id);
     }
 }

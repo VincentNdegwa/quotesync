@@ -124,10 +124,10 @@ class UpdateInvoiceRequest extends FormRequest
                         }
 
                         // Only validate manual percentage discounts against max discount limit
-                        if ($maxDiscount !== null 
-                            && isset($lineItem['discount_type']) 
+                        if ($maxDiscount !== null
+                            && isset($lineItem['discount_type'])
                             && $lineItem['discount_type'] === 'percent'
-                            && isset($lineItem['discount_value']) 
+                            && isset($lineItem['discount_value'])
                             && $lineItem['discount_value'] > $maxDiscount) {
                             $validator->errors()->add(
                                 "sections.{$sectionIndex}.line_items.{$lineItemIndex}.discount_value",

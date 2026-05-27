@@ -16,7 +16,7 @@ class Plan extends Model
         static::updated(function (Plan $plan) {
             if ($plan->isDirty('features')) {
                 // Invalidate cache for workspaces with this plan
-                $workspaces = \App\Models\Workspace::where('plan_id', $plan->id)->get();
+                $workspaces = Workspace::where('plan_id', $plan->id)->get();
                 foreach ($workspaces as $workspace) {
                     app(WorkspacePlanCache::class)->invalidate($workspace);
                 }
@@ -25,7 +25,7 @@ class Plan extends Model
 
         static::deleted(function (Plan $plan) {
             // Invalidate cache for workspaces with this plan
-            $workspaces = \App\Models\Workspace::where('plan_id', $plan->id)->get();
+            $workspaces = Workspace::where('plan_id', $plan->id)->get();
             foreach ($workspaces as $workspace) {
                 app(WorkspacePlanCache::class)->invalidate($workspace);
             }

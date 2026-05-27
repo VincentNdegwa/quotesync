@@ -33,7 +33,7 @@ class QuoteSendingService
         array $ccRecipients = [],
         array $bccRecipients = [],
     ): void {
-        if (!$this->usageLimitService->canPerformOperation($workspace, Feature::MAX_QUOTES_PER_MONTH)) {
+        if (! $this->usageLimitService->canPerformOperation($workspace, Feature::MAX_QUOTES_PER_MONTH)) {
             throw new LimitExceededException($this->usageLimitService->getLimitReachedMessage(Feature::MAX_QUOTES_PER_MONTH));
         }
 

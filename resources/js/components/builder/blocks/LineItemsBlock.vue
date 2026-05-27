@@ -2,8 +2,8 @@
 import { Plus } from 'lucide-vue-next';
 import { computed, inject } from 'vue';
 import type { ComputedRef } from 'vue';
-import CatalogSearchPopover from '@/components/builder/shared/CatalogSearchPopover.vue';
 import InlineEditableText from '@/components/builder/blocks/InlineEditableText.vue';
+import CatalogSearchPopover from '@/components/builder/shared/CatalogSearchPopover.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -15,10 +15,10 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { blockBaseStyle } from '@/composables/useBlockStyles';
-import { useFormat } from '@/composables/useFormat';
-import { useBuilderStore } from '@/stores/builder';
 import { useBuilderData } from '@/composables/useBuilderData';
+import { useFormat } from '@/composables/useFormat';
 import { useThemeStyles } from '@/composables/useThemeStyles';
+import { useBuilderStore } from '@/stores/builder';
 import type {
     LineItemsBlockConfig,
     WorkspaceSettings,
@@ -55,11 +55,7 @@ const showTax = computed(() => props.config.showTax);
 const sections = computed(() => builderStore.sections);
 
 const fontSizeSetting = computed<'sm' | 'md' | 'lg'>(() => {
-    const configWithFont = props.config as LineItemsBlockConfig & {
-        fontSize?: 'sm' | 'md' | 'lg';
-    };
-
-    return configWithFont.fontSize ?? 'md';
+    return (props.config.fontSize as 'sm' | 'md' | 'lg' | undefined) ?? 'md';
 });
 
 const fontClass = computed(() => {
@@ -96,7 +92,7 @@ const cellPad = computed(() => {
 });
 
 const availableCatalogItems = computed<BuilderCatalogItem[]>(
-    () => catalogItems.value ?? [],
+    () => catalogItems.value,
 );
 const hasCatalogItems = computed(() => availableCatalogItems.value.length > 0);
 

@@ -71,7 +71,7 @@ class CatalogItemController extends Controller
 
         abort_unless($workspace instanceof Workspace, 404);
 
-        if (!$this->usageLimitService->canPerformOperation($workspace, Feature::MAX_CATALOG_ITEMS)) {
+        if (! $this->usageLimitService->canPerformOperation($workspace, Feature::MAX_CATALOG_ITEMS)) {
             throw new LimitExceededException($this->usageLimitService->getLimitReachedMessage(Feature::MAX_CATALOG_ITEMS));
         }
 

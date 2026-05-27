@@ -11,19 +11,18 @@ const props = defineProps<{
 const builderStore = useBuilderStore();
 
 const theme = computed<ThemeConfig>(() => {
-    const existingTheme = builderStore.layout?.theme;
-    const workspacePrimaryColor = props.settings?.workspace?.primary_color ?? '#2563EB';
-    
-    if (existingTheme) {
+    const workspacePrimaryColor = props.settings?.workspace.primary_color || '#2563EB';
+
+    if (!builderStore.layout?.theme) {
         return {
-            primaryColor: existingTheme.primaryColor ?? workspacePrimaryColor,
-            fontFamily: existingTheme.fontFamily ?? 'inter',
+            primaryColor: workspacePrimaryColor,
+            fontFamily: 'inter',
         };
     }
-    
+
     return {
-        primaryColor: workspacePrimaryColor,
-        fontFamily: 'inter',
+        primaryColor: builderStore.layout.theme.primaryColor,
+        fontFamily: builderStore.layout.theme.fontFamily,
     };
 });
 

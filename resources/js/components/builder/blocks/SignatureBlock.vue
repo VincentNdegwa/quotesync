@@ -40,6 +40,7 @@ const isDeclined = computed(() =>
 
 const updateAcceptText = (value: string | null): void => {
     const block = builderStore.layout?.blocks.find(b => b.type === 'signature');
+
     if (block) {
         builderStore.$patch({
             layout: {
@@ -56,6 +57,7 @@ const updateAcceptText = (value: string | null): void => {
 
 const updateDeclineText = (value: string | null): void => {
     const block = builderStore.layout?.blocks.find(b => b.type === 'signature');
+
     if (block) {
         builderStore.$patch({
             layout: {
@@ -72,6 +74,7 @@ const updateDeclineText = (value: string | null): void => {
 
 const updateContextText = (value: string | null): void => {
     const block = builderStore.layout?.blocks.find(b => b.type === 'signature');
+
     if (block) {
         builderStore.$patch({
             layout: {

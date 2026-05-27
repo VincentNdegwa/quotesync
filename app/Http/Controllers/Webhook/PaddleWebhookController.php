@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Webhook;
 
+use App\Models\Workspace;
 use Laravel\Paddle\Http\Controllers\WebhookController as CashierWebhookController;
 
 class PaddleWebhookController extends CashierWebhookController
@@ -10,8 +11,8 @@ class PaddleWebhookController extends CashierWebhookController
     {
         parent::handleSubscriptionCreated($payload);
 
-        \Log::info("Paddle Payload", [
-            'data' => $payload
+        \Log::info('Paddle Payload', [
+            'data' => $payload,
         ]);
 
         $customData = $payload['data']['custom_data'] ?? [];
@@ -19,7 +20,7 @@ class PaddleWebhookController extends CashierWebhookController
         $planId = $customData['plan_id'] ?? null;
 
         if ($workspaceId && $planId) {
-            \App\Models\Workspace::where('id', $workspaceId)
+            Workspace::where('id', $workspaceId)
                 ->update(['plan_id' => $planId]);
         }
     }
@@ -33,7 +34,7 @@ class PaddleWebhookController extends CashierWebhookController
         $planId = $customData['plan_id'] ?? null;
 
         if ($workspaceId && $planId) {
-            \App\Models\Workspace::where('id', $workspaceId)
+            Workspace::where('id', $workspaceId)
                 ->update(['plan_id' => $planId]);
         }
     }

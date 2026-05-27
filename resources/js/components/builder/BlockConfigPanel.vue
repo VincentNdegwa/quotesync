@@ -17,20 +17,16 @@ import TotalsConfig from '@/components/builder/config-panels/TotalsConfig.vue';
 import ContentConfigSection from '@/components/builder/ContentConfigSection.vue';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { useBuilderStore } from '@/stores/builder';
 import type {
     Block,
     BlockConfigMap,
     BlockType,
-    BuilderCatalogItem,
-    BuilderTaxOption,
     LayoutBlock,
 } from '@/types';
-import { useBuilderData } from '@/composables/useBuilderData';
-import { useBuilderStore } from '@/stores/builder';
 
 const block = defineModel<Block | null>('block');
 
-const { catalogItems, taxes } = useBuilderData();
 const builderStore = useBuilderStore();
 
 function blockAs<T extends BlockType>(b: Block): LayoutBlock<T> {

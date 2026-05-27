@@ -204,12 +204,7 @@ test('quote create persists layout_snapshot when request sends layout key', func
         'version' => 1,
         'theme' => [
             'primaryColor' => '#0EA5E9',
-            'accentColor' => '#14B8A6',
-            'backgroundColor' => '#FFFFFF',
             'fontFamily' => 'inter',
-            'fontSize' => 'md',
-            'borderRadius' => 'md',
-            'headerStyle' => 'bordered',
         ],
         'blocks' => [
             [

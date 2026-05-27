@@ -1,10 +1,10 @@
 <?php
 
+use App\Models\Client;
 use App\Models\Quote;
+use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Quotes\QuoteService;
-use App\Models\User;
-use App\Models\Client;
 
 test('toBuilderPayload normalizes text fields to strings', function () {
     $workspace = Workspace::factory()->create();

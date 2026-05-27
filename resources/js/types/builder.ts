@@ -157,6 +157,7 @@ export type LineItemsBlockConfig = BaseBlockConfig & {
         total: number;
     };
     labelText: string;
+    fontSize?: 'sm' | 'md' | 'lg';
 };
 
 // totals
@@ -552,6 +553,7 @@ export const DEFAULT_BLOCK_CONFIGS: BlockConfigMap = {
             total: 14,
         },
         labelText: 'Services',
+        fontSize: 'md',
     },
 
     totals: {
@@ -777,8 +779,8 @@ export const ensureTemplateLayout = (
 
     // Normalize theme to only include valid properties (primaryColor, fontFamily)
     const normalizedTheme: ThemeConfig = {
-        primaryColor: layout.theme?.primaryColor ?? defaultTheme().primaryColor,
-        fontFamily: layout.theme?.fontFamily ?? defaultTheme().fontFamily,
+        primaryColor: layout.theme.primaryColor,
+        fontFamily: layout.theme.fontFamily,
     };
 
     return {

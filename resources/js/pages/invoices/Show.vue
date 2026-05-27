@@ -2,16 +2,16 @@
 import { Head, setLayoutProps, router, Link } from '@inertiajs/vue3';
 import { computed, watchEffect, onMounted } from 'vue';
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
+import BuilderCanvas from '@/components/builder/canvas/BuilderCanvas.vue';
 import CreditNotesHistory from '@/components/CreditNotesHistory.vue';
 import Heading from '@/components/Heading.vue';
 import PaymentHistory from '@/components/PaymentHistory.vue';
 import QuoteActivityFeed from '@/components/quotes/QuoteActivityFeed.vue';
-import BuilderCanvas from '@/components/builder/canvas/BuilderCanvas.vue';
-import { useBuilderStore } from '@/stores/builder';
-import { useBuilderData } from '@/composables/useBuilderData';
 import { Badge } from '@/components/ui/badge';
+import { useBuilderData } from '@/composables/useBuilderData';
 import { useEnums } from '@/composables/useEnums';
 import { useFormat } from '@/composables/useFormat';
+import { useBuilderStore } from '@/stores/builder';
 import type {
     WorkspaceSettings,
     QuoteBuilderState,

@@ -3,10 +3,10 @@ import { Head, setLayoutProps, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { watchEffect } from 'vue';
 import BuilderShell from '@/components/builder/BuilderShell.vue';
+import { useBuilderData } from '@/composables/useBuilderData';
 import AppLayout from '@/layouts/AppLayout.vue';
 import quoteTemplates from '@/routes/quote-templates';
 import { useBuilderStore } from '@/stores/builder';
-import { useBuilderData } from '@/composables/useBuilderData';
 import type {
     QuoteBuilderState,
     WorkspaceSettings,
@@ -60,7 +60,8 @@ const save = async (updatedState?: QuoteBuilderState): Promise<void> => {
 
             if (form.layout?.blocks) {
                 const headerBlock = form.layout.blocks.find((b: any) => b.type === 'header');
-                if (headerBlock && headerBlock.config) {
+
+                if (headerBlock?.config) {
                     (headerBlock.config as any).logoUrl = logoUrl;
                 }
             }
@@ -69,6 +70,7 @@ const save = async (updatedState?: QuoteBuilderState): Promise<void> => {
             builderStore.pendingLogoBase64 = null;
         } catch (error) {
             console.error('Logo upload failed:', error);
+
             return;
         }
     }

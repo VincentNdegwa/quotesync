@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'subtotal',
     'base_unit_price',
     'base_subtotal',
+    'base_discount_amount',
     'tax_amount',
     'base_tax_amount',
     'total',

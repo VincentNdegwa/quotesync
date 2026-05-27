@@ -8,6 +8,7 @@ use App\Models\Plan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Laravel\Paddle\Exceptions\PaddleException;
 
 class SubscriptionController extends Controller
 {
@@ -33,8 +34,8 @@ class SubscriptionController extends Controller
 
         if ($planSlug === 'free') {
             $workspace->update(['plan_id' => $plan->id]);
-            
-            \Inertia\Inertia::flash('toast', [
+
+            Inertia::flash('toast', [
                 'type' => 'success',
                 'message' => __('Plan updated successfully.'),
             ]);
@@ -52,8 +53,8 @@ class SubscriptionController extends Controller
                 'checkout' => $checkout,
                 'features' => Feature::forFrontend(),
             ]);
-        } catch (\Laravel\Paddle\Exceptions\PaddleException $e) {
-            \Inertia\Inertia::flash('toast', [
+        } catch (PaddleException $e) {
+            Inertia::flash('toast', [
                 'type' => 'error',
                 'message' => __('Payment processing is not configured. Please contact support.'),
             ]);

@@ -11,19 +11,19 @@ class UsageLimitService
     public function hasReachedLimit(Workspace $workspace, Feature $feature): bool
     {
         $limit = $workspace->plan?->features[$feature->value] ?? null;
-        
+
         if ($limit === null || $limit === false) {
             return false;
         }
 
         $currentUsage = $this->getCurrentUsage($workspace, $feature);
-        
+
         return $currentUsage >= $limit;
     }
 
     public function canPerformOperation(Workspace $workspace, Feature $feature): bool
     {
-        return !$this->hasReachedLimit($workspace, $feature);
+        return ! $this->hasReachedLimit($workspace, $feature);
     }
 
     public function getCurrentUsage(Workspace $workspace, Feature $feature): int
@@ -48,7 +48,7 @@ class UsageLimitService
     public function getLimit(Workspace $workspace, Feature $feature): ?int
     {
         $limit = $workspace->plan?->features[$feature->value] ?? null;
-        
+
         if ($limit === null || $limit === false) {
             return null;
         }
@@ -59,13 +59,13 @@ class UsageLimitService
     public function getUsagePercentage(Workspace $workspace, Feature $feature): ?float
     {
         $limit = $this->getLimit($workspace, $feature);
-        
+
         if ($limit === null) {
             return null;
         }
 
         $currentUsage = $this->getCurrentUsage($workspace, $feature);
-        
+
         if ($limit === 0) {
             return 100;
         }

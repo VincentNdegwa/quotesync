@@ -105,7 +105,7 @@ class UpdateQuoteRequest extends FormRequest
                     $attributeParts = explode('.', $attribute);
                     $lineItemIndex = $attributeParts[3] ?? null;
                     $discountType = request()->input("sections.{$attributeParts[1]}.line_items.{$lineItemIndex}.discount_type");
-                    
+
                     if ($maxDiscount !== null && $discountType === 'percent' && $value > $maxDiscount) {
                         $fail("Discount cannot exceed {$maxDiscount}%.");
                     }

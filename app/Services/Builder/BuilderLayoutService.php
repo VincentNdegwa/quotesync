@@ -6,7 +6,6 @@ use Illuminate\Support\Arr;
 
 class BuilderLayoutService
 {
-
     public function normalizeLayoutForStorage(array $payload): ?array
     {
         $layoutSnapshot = Arr::pull($payload, 'layout_snapshot');
@@ -27,7 +26,6 @@ class BuilderLayoutService
 
         return $layoutSnapshot;
     }
-
 
     public function normalizeLayoutForRead(?array $layoutSnapshot): ?array
     {

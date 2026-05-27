@@ -8,6 +8,7 @@ use App\Models\CreditNote;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\QuoteActivity;
+use App\Services\Quotes\QuoteService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use App\Traits\ResolvesClientState;
 use Illuminate\Http\RedirectResponse;
@@ -114,7 +115,7 @@ class PortalDashboardController
         ])->withViewData('title', 'Quotes');
     }
 
-    public function show(Request $request, string $uuid, WorkspaceSettingsService $workspaceSettingsService): Response
+    public function show(Request $request, string $uuid, WorkspaceSettingsService $workspaceSettingsService, QuoteService $quoteService): Response
     {
         $portalUser = Auth::guard('portal')->user();
         abort_unless($portalUser, 401);
@@ -161,11 +162,8 @@ class PortalDashboardController
             'user_agent' => $request->userAgent(),
         ]);
 
-        $layout = $quote->layout_snapshot ?? $quote->template?->layout ?? null;
-
         return Inertia::render('portal/QuoteShow', [
-            'quote' => $quote->makeHidden(['internal_notes', 'profit_margin', 'deleted_at']),
-            'layout' => $layout,
+            'quote' => $quoteService->toBuilderPayload($quote),
             'settings' => $workspaceSettingsService->builderSettings($quote->workspace),
             'clientState' => $this->resolveClientState($quote),
         ])->withViewData('title', 'Quote Details');

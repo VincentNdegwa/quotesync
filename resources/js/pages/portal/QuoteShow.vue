@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ArrowLeft, AlertCircle } from 'lucide-vue-next';
+import BuilderCanvas from '@/components/builder/canvas/BuilderCanvas.vue';
 import QuoteChat from '@/components/quotes/QuoteChat.vue';
-import QuoteRenderer from '@/components/renderer/QuoteRenderer.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useFormat } from '@/composables/useFormat';
@@ -11,11 +11,10 @@ import {
     accept as acceptQuote,
     decline as declineQuote,
 } from '@/routes/public-quotes';
-import type { WorkspaceSettings, TemplateLayout } from '@/types';
+import type { WorkspaceSettings, QuoteBuilderState } from '@/types';
 
 const props = defineProps<{
-    quote: any;
-    layout: TemplateLayout | null;
+    quote: QuoteBuilderState;
     settings: WorkspaceSettings;
     clientState: 'open' | 'accepted' | 'closed';
     messages?: Array<{
@@ -37,11 +36,15 @@ const declineForm = useForm({
 });
 
 const accept = (): void => {
-    acceptForm.post(acceptQuote(props.quote.quote_uuid).url);
+    if (props.quote.quote_uuid) {
+        acceptForm.post(acceptQuote(props.quote.quote_uuid).url);
+    }
 };
 
 const decline = (): void => {
-    declineForm.post(declineQuote(props.quote.quote_uuid).url);
+    if (props.quote.quote_uuid) {
+        declineForm.post(declineQuote(props.quote.quote_uuid).url);
+    }
 };
 </script>
 
@@ -62,7 +65,7 @@ const decline = (): void => {
                         {{ quote.title || 'Quote Details' }}
                     </h1>
                     <p class="text-sm text-muted-foreground">
-                        {{ quote.quote_number || '—' }}
+                        {{ quote.number || '—' }}
                     </p>
                 </div>
             </div>
@@ -107,7 +110,7 @@ const decline = (): void => {
                             >Valid until&ensp;</span
                         >
                         <span class="font-semibold">{{
-                            formatDate(quote.valid_until)
+                            quote.valid_until ? formatDate(quote.valid_until) : '—'
                         }}</span>
                     </div>
                     <div v-if="quote.sent_at">
@@ -137,14 +140,10 @@ const decline = (): void => {
                 </div>
 
                 <div v-else class="overflow-hidden rounded-xl border shadow-sm">
-                    <QuoteRenderer
-                        v-if="layout && settings"
-                        :data="{ ...quote, documentType: 'quote' }"
-                        :layout="layout"
+                    <BuilderCanvas
+                        v-if="quote && settings"
+                        :state="quote"
                         :settings="settings"
-                        :preview-mode="true"
-                        :edit-mode="false"
-                        :is-internal-view="false"
                     />
                     <div v-else class="p-12 text-center text-muted-foreground">
                         Quote layout not available
@@ -155,6 +154,7 @@ const decline = (): void => {
 
         <!-- Floating Chat -->
         <QuoteChat
+            v-if="quote.quote_uuid"
             :quote-id="quote.quote_uuid"
             :messages="messages"
             :is-client="true"

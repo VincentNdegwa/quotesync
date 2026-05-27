@@ -1,4 +1,5 @@
-import { ref, computed } from 'vue';
+import { ref, computed   } from 'vue';
+import type {Ref, ComputedRef} from 'vue';
 import { toast } from 'vue-sonner';
 import type { BuilderClientOption, BuilderTemplateOption, BuilderCatalogItem, BuilderTaxOption, BuilderConfigurationUnit } from '@/types';
 
@@ -21,7 +22,25 @@ const anyLoading = computed(() => Object.values(loading.value).some((v) => v));
 
 let isInitialized = false;
 
-export function useBuilderData() {
+type UseBuilderDataReturn = {
+    clients: Ref<BuilderClientOption[]>;
+    templates: Ref<BuilderTemplateOption[]>;
+    catalogItems: Ref<BuilderCatalogItem[]>;
+    taxes: Ref<BuilderTaxOption[]>;
+    units: Ref<BuilderConfigurationUnit[]>;
+    loading: Ref<{ clients: boolean; templates: boolean; catalogItems: boolean; taxes: boolean; units: boolean }>;
+    anyLoading: ComputedRef<boolean>;
+    uploadLogo: (file: File) => Promise<string>;
+    fetchClients: (search?: string) => Promise<void>;
+    fetchTemplates: () => Promise<void>;
+    fetchCatalogItems: (search?: string) => Promise<void>;
+    fetchTaxes: () => Promise<void>;
+    fetchUnits: () => Promise<void>;
+    fetchAll: (force?: boolean) => Promise<void>;
+    invalidate: () => void;
+};
+
+export function useBuilderData(): UseBuilderDataReturn {
     
     async function uploadLogo(file: File): Promise<string> {
         const formData = new FormData();
@@ -45,26 +64,33 @@ export function useBuilderData() {
             
             try {
                 const json = JSON.parse(text);
+
                 if (json.errors?.file) {
                     const errorMessage = json.errors.file[0];
                     toast.error(`File upload failed: ${errorMessage}`);
+
                     throw new Error(errorMessage);
                 }
+
                 const errorMessage = json.message || 'File upload failed';
                 toast.error(`File upload failed: ${errorMessage}`);
+
                 throw new Error(errorMessage);
             } catch {
                 toast.error('File upload failed');
+
                 throw new Error('File upload failed');
             }
         }
 
         const data = await response.json();
+
         return data.url;
     }
 
     async function fetchClients(search?: string): Promise<void> {
         loading.value.clients = true;
+
         try {
             const url = search ? `/builder/clients?search=${encodeURIComponent(search)}` : '/builder/clients';
             const response = await fetch(url);
@@ -79,6 +105,7 @@ export function useBuilderData() {
 
     async function fetchTemplates(): Promise<void> {
         loading.value.templates = true;
+
         try {
             const response = await fetch('/builder/templates');
             const json = await response.json();
@@ -92,6 +119,7 @@ export function useBuilderData() {
 
     async function fetchCatalogItems(search?: string): Promise<void> {
         loading.value.catalogItems = true;
+
         try {
             const url = search ? `/builder/catalog-items?search=${encodeURIComponent(search)}` : '/builder/catalog-items';
             const response = await fetch(url);
@@ -106,6 +134,7 @@ export function useBuilderData() {
 
     async function fetchTaxes(): Promise<void> {
         loading.value.taxes = true;
+
         try {
             const response = await fetch('/builder/taxes');
             const json = await response.json();
@@ -119,6 +148,7 @@ export function useBuilderData() {
 
     async function fetchUnits(): Promise<void> {
         loading.value.units = true;
+
         try {
             const response = await fetch('/builder/units');
             const json = await response.json();

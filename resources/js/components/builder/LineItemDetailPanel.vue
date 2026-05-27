@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, Trash2, ChevronsUpDownIcon } from 'lucide-vue-next';
+import { Trash2, ChevronsUpDownIcon } from 'lucide-vue-next';
 import { computed } from 'vue';
 import CatalogSearchPopover from '@/components/builder/shared/CatalogSearchPopover.vue';
 import { Button } from '@/components/ui/button';
@@ -13,8 +13,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useFormat } from '@/composables/useFormat';
 import { useBuilderData } from '@/composables/useBuilderData';
+import { useFormat } from '@/composables/useFormat';
 import { useBuilderStore } from '@/stores/builder';
 import type {
     BuilderCatalogItem,
@@ -24,11 +24,6 @@ import type {
 
 const BASE_VARIANT_OPTION = '__base__';
 const NO_UNIT_OPTION = '__no_unit__';
-
-const emit = defineEmits<{
-    (e: 'close'): void;
-    (e: 'remove'): void;
-}>();
 
 const builderStore = useBuilderStore();
 const { catalogItems, taxes, units } = useBuilderData();
@@ -57,7 +52,6 @@ const currentCatalog = computed(() => {
 });
 
 const variants = computed(() => currentCatalog.value?.variants ?? []);
-const priceTiers = computed(() => currentCatalog.value?.priceTiers ?? []);
 
 const subtotal = computed(() => lineItem.value?.subtotal ?? 0);
 const taxAmount = computed(() => lineItem.value?.tax_amount ?? 0);
@@ -95,10 +89,12 @@ const selectedTaxIds = computed<string[]>({
         return lineItem.value.taxes.map((tax) => String(tax.tax_id));
     },
     set: (nextValues) => {
-        if (!lineItem.value) return;
+        if (!lineItem.value) {
+return;
+}
 
         const currentIds = new Set(
-            lineItem.value.taxes.map((tax) => String(tax.tax_id)) ?? [],
+            lineItem.value.taxes.map((tax) => String(tax.tax_id)),
         );
         const nextIds = new Set(nextValues);
 
@@ -133,6 +129,7 @@ const updateField = (field: keyof QuoteBuilderLineItem, value: unknown): void =>
         // Apply price tier when quantity changes
         if (field === 'quantity' && lineItem.value.catalog_item_id) {
             const catalogItem = catalogItems.value.find(c => c.id === lineItem.value?.catalog_item_id);
+
             if (catalogItem) {
                 builderStore.applyPriceTier(lineItem.value, catalogItem);
                 builderStore.recalculateLineItemTotals(lineItem.value);
@@ -184,6 +181,7 @@ const selectVariant = (value: any): void => {
         lineItem.value.catalog_item_variant_id = variantId;
         
         const variant = variants.value.find((v: BuilderCatalogItemVariant) => v.id === variantId);
+
         if (variant) {
             lineItem.value.unit_price = variant.unit_price;
             lineItem.value.name = `${currentCatalog.value?.name || ''} - ${variant.name}`;
@@ -201,22 +199,28 @@ const selectVariant = (value: any): void => {
 };
 
 const removeItem = (): void => {
-    if (!lineItem.value) return;
+    if (!lineItem.value) {
+return;
+}
 
     for (const section of builderStore.sections) {
         const index = section.line_items.findIndex(
             (item: QuoteBuilderLineItem) => String(item.id) === builderStore.editingLineItemId
         );
+
         if (index !== -1) {
             section.line_items.splice(index, 1);
             break;
         }
     }
+
     builderStore.editingLineItemId = null;
 };
 
 const isTierActive = (tier: any): boolean => {
-    if (!lineItem.value) return false;
+    if (!lineItem.value) {
+return false;
+}
     
     const quantity = Number(lineItem.value.quantity || 0);
     const variantId = lineItem.value.catalog_item_variant_id;

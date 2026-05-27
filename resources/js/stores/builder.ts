@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia';
+import { getBlockDefaultConfig } from '@/components/builder/registry';
+import { useBuilderData } from '@/composables/useBuilderData';
+import { calculateLineItemTotals } from '@/composables/useTaxCalculation';
 import type { QuoteBuilderState, Block, BlockType, BlockConfig, QuoteBuilderLineItem } from '@/types';
 import { createBlock, ensureTemplateLayout } from '@/types';
-import { getBlockDefaultConfig } from '@/components/builder/registry';
-import { calculateLineItemTotals } from '@/composables/useTaxCalculation';
-import { useBuilderData } from '@/composables/useBuilderData';
 
 export const useBuilderStore = defineStore('builder', {
     state: (): (QuoteBuilderState & { selectedBlockId: string | null; pendingLogoFile: File | null; pendingLogoBase64: string | null; editingLineItemId: string | null }) => ({
@@ -56,15 +56,25 @@ export const useBuilderStore = defineStore('builder', {
     getters: {
         blocks: (state) => state.layout?.blocks ?? [],
         selectedBlock: (state) => {
-            if (!state.selectedBlockId) return null;
+            if (!state.selectedBlockId) {
+return null;
+}
+
             return state.layout?.blocks.find((b: Block) => String(b.id) === state.selectedBlockId) ?? null;
         },
         editingLineItem: (state) => {
-            if (!state.editingLineItemId) return null;
+            if (!state.editingLineItemId) {
+return null;
+}
+
             for (const section of state.sections) {
                 const item = section.line_items.find((item: QuoteBuilderLineItem) => String(item.id) === state.editingLineItemId);
-                if (item) return item;
+
+                if (item) {
+return item;
+}
             }
+
             return null;
         },
     },
@@ -108,10 +118,13 @@ export const useBuilderStore = defineStore('builder', {
         },
 
         removeBlock(blockId: string): void {
-            if (!this.layout) return;
+            if (!this.layout) {
+return;
+}
 
             const currentBlocks = this.layout.blocks;
             const index = currentBlocks.findIndex((b: Block) => String(b.id) === blockId);
+
             if (index !== -1) {
                 const newBlocks = [...currentBlocks];
                 newBlocks.splice(index, 1);
@@ -122,11 +135,16 @@ export const useBuilderStore = defineStore('builder', {
         },
 
         moveBlock(blockId: string, newIndex: number): void {
-            if (!this.layout) return;
+            if (!this.layout) {
+return;
+}
 
             const currentBlocks = this.layout.blocks;
             const index = currentBlocks.findIndex((b: Block) => String(b.id) === blockId);
-            if (index === -1 || index === newIndex) return;
+
+            if (index === -1 || index === newIndex) {
+return;
+}
 
             const newBlocks = [...currentBlocks];
             const [block] = newBlocks.splice(index, 1);
@@ -137,10 +155,13 @@ export const useBuilderStore = defineStore('builder', {
         },
 
         updateBlockConfig(blockId: string, config: Partial<BlockConfig>): void {
-            if (!this.layout) return;
+            if (!this.layout) {
+return;
+}
 
             const currentBlocks = this.layout.blocks;
             const index = currentBlocks.findIndex((b: Block) => String(b.id) === blockId);
+
             if (index !== -1) {
                 const newBlocks = [...currentBlocks];
                 newBlocks[index] = {
@@ -154,10 +175,13 @@ export const useBuilderStore = defineStore('builder', {
         },
 
         resetBlockConfig(blockId: string): void {
-            if (!this.layout) return;
+            if (!this.layout) {
+return;
+}
 
             const currentBlocks = this.layout.blocks;
             const index = currentBlocks.findIndex((b: Block) => String(b.id) === blockId);
+
             if (index !== -1) {
                 const newBlocks = [...currentBlocks];
                 newBlocks[index] = {
@@ -171,10 +195,13 @@ export const useBuilderStore = defineStore('builder', {
         },
 
         toggleBlockVisibility(blockId: string): void {
-            if (!this.layout) return;
+            if (!this.layout) {
+return;
+}
 
             const currentBlocks = this.layout.blocks;
             const index = currentBlocks.findIndex((b: Block) => String(b.id) === blockId);
+
             if (index !== -1) {
                 const newBlocks = [...currentBlocks];
                 newBlocks[index] = {
@@ -204,6 +231,7 @@ export const useBuilderStore = defineStore('builder', {
 
         updateSectionTitle(sectionId: number, title: string): void {
             const section = this.sections.find((s: any) => s.id === sectionId);
+
             if (section) {
                 section.title = title;
             }
@@ -211,13 +239,15 @@ export const useBuilderStore = defineStore('builder', {
 
         removeSection(sectionId: number): void {
             const index = this.sections.findIndex((s: any) => s.id === sectionId);
+
             if (index !== -1) {
                 this.sections.splice(index, 1);
             }
         },
 
         addLineItem(sectionIndex: number): void {
-            const section = this.sections[sectionIndex];
+            const section = this.sections.at(sectionIndex);
+
             if (section) {
                 section.line_items.push({
                     id: null,
@@ -246,14 +276,16 @@ export const useBuilderStore = defineStore('builder', {
         },
 
         updateLineItem(sectionIndex: number, lineItemIndex: number, field: string, value: any): void {
-            const section = this.sections[sectionIndex];
+            const section = this.sections.at(sectionIndex);
+
             if (section && section.line_items[lineItemIndex]) {
                 (section.line_items[lineItemIndex] as any)[field] = value;
             }
         },
 
         quickAddLineItem(sectionIndex: number, catalogItem: any): void {
-            const section = this.sections[sectionIndex];
+            const section = this.sections.at(sectionIndex);
+
             if (section && catalogItem) {
                 const { units } = useBuilderData();
                 
@@ -304,19 +336,21 @@ export const useBuilderStore = defineStore('builder', {
                 const index = section.line_items.findIndex(
                     (item: QuoteBuilderLineItem) => String(item.id) === lineItemId
                 );
+
                 if (index !== -1) {
                     section.line_items.splice(index, 1);
                     break;
                 }
             }
+
             this.editingLineItemId = null;
         },
 
         recalculateLineItemTotals(lineItem: QuoteBuilderLineItem): void {
-            const taxes = lineItem.taxes?.map(tax => ({
+            const taxes = lineItem.taxes.map(tax => ({
                 tax_rate: tax.tax_rate,
                 inclusive: tax.inclusive,
-            })) || [];
+            }));
 
             const { subtotal, taxAmount, total } = calculateLineItemTotals(
                 Number(lineItem.quantity || 0),
@@ -362,6 +396,7 @@ export const useBuilderStore = defineStore('builder', {
                     lineItem.discount_type = 'percent';
                     lineItem.discount_value = Number(matchingTier.value);
                 }
+
                 lineItem.price_tier_applied = true;
                 lineItem.applied_price_tiers = [matchingTier.id];
             } else {

@@ -2,9 +2,9 @@
 import { Head } from '@inertiajs/vue3';
 import { onMounted } from 'vue';
 import BuilderCanvas from '@/components/builder/canvas/BuilderCanvas.vue';
-import { useBuilderStore } from '@/stores/builder';
-import { useBuilderData } from '@/composables/useBuilderData';
 import { Badge } from '@/components/ui/badge';
+import { useBuilderData } from '@/composables/useBuilderData';
+import { useBuilderStore } from '@/stores/builder';
 import type { WorkspaceSettings, QuoteBuilderState } from '@/types';
 
 const props = defineProps<{

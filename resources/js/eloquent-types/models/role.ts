@@ -11,8 +11,7 @@ export interface RoleBase {
     updated_at: string;
 }
 
-export interface Role extends RoleBase {
-}
+export type Role = RoleBase;
 
 export type CreateRolePayload = Omit<RoleBase, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateRolePayload = Partial<CreateRolePayload>;

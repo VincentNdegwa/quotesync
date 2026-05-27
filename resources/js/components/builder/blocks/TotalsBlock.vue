@@ -6,9 +6,9 @@ import {
     blockFontSizeClass,
 } from '@/composables/useBlockStyles';
 import { useFormat } from '@/composables/useFormat';
+import { calculateLineItemTotals } from '@/composables/useTaxCalculation';
 import { useThemeStyles } from '@/composables/useThemeStyles';
 import { useBuilderStore } from '@/stores/builder';
-import { calculateLineItemTotals } from '@/composables/useTaxCalculation';
 import type {
     TotalsBlockConfig,
     WorkspaceSettings,
@@ -78,6 +78,7 @@ const taxLines = computed(() => {
                             const discountValue = Number(item.discount_value || 0);
                             
                             let discountAmount = 0;
+
                             if (discountType === 'percent') {
                                 discountAmount = unitPrice * quantity * (discountValue / 100);
                             } else if (discountType === 'fixed') {
@@ -170,6 +171,7 @@ const calculatedDiscountAmount = computed(() => {
                 const discountValue = Number(item.discount_value || 0);
 
                 let discountAmount = 0;
+
                 if (discountType === 'percent') {
                     discountAmount = unitPrice * quantity * (discountValue / 100);
                 } else if (discountType === 'fixed') {

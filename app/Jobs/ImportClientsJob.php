@@ -50,7 +50,7 @@ class ImportClientsJob implements ShouldQueue
         if ($canImport !== null && count($this->rows) > $canImport) {
             $skippedDueToLimit = count($this->rows) - $canImport;
             $this->rows = array_slice($this->rows, 0, $canImport);
-            
+
             if ($importHistory) {
                 $importHistory->update(['skipped_due_to_limit' => $skippedDueToLimit]);
             }

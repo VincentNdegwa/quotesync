@@ -139,12 +139,12 @@ class Workspace extends LaratrustTeam
     public function currentUsage(): WorkspaceUsage
     {
         $period = now()->startOfMonth()->format('Y-m-d H:i:s');
-        
+
         $usage = WorkspaceUsage::where('workspace_id', $this->id)
             ->where('period', $period)
             ->first();
 
-        if (!$usage) {
+        if (! $usage) {
             $usage = WorkspaceUsage::create([
                 'workspace_id' => $this->id,
                 'period' => $period,
