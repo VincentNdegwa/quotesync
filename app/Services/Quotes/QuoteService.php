@@ -11,6 +11,7 @@ use App\Models\QuoteTemplate;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Models\WorkspaceSetting;
+use App\Services\Builder\BuilderLayoutService;
 use App\Services\WorkspaceSettings\WorkspaceSettingsService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -23,6 +24,7 @@ class QuoteService
     public function __construct(
         private WorkspaceSettingsService $workspaceSettingsService,
         private QuoteNumberService $quoteNumberService,
+        private BuilderLayoutService $builderLayoutService,
     ) {}
 
     /**
@@ -105,14 +107,9 @@ class QuoteService
             $this->workspaceSettingsService->syncDefaults($workspace);
 
             $sections = Arr::pull($payload, 'sections', []);
-            $layoutSnapshot = Arr::pull($payload, 'layout_snapshot');
-            $layout = Arr::pull($payload, 'layout');
+            $layoutSnapshot = $this->builderLayoutService->normalizeLayoutForStorage($payload);
             $templateId = Arr::get($payload, 'template_id');
             $quoteSettings = $this->quoteSettings($workspace);
-
-            if (! is_array($layoutSnapshot) && is_array($layout)) {
-                $layoutSnapshot = $layout;
-            }
 
             $number = trim((string) Arr::get($payload, 'number', ''));
 
@@ -195,12 +192,7 @@ class QuoteService
     {
         return DB::transaction(function () use ($quote, $payload): Quote {
             $sections = Arr::pull($payload, 'sections', []);
-            $layoutSnapshot = Arr::pull($payload, 'layout_snapshot');
-            $layout = Arr::pull($payload, 'layout');
-
-            if (! is_array($layoutSnapshot) && is_array($layout)) {
-                $layoutSnapshot = $layout;
-            }
+            $layoutSnapshot = $this->builderLayoutService->normalizeLayoutForStorage($payload);
 
             if (isset($payload['status'])) {
                 $newStatus = QuoteStatus::from($payload['status']);
@@ -224,7 +216,7 @@ class QuoteService
 
             $quote->fill([
                 ...$payload,
-                'layout_snapshot' => is_array($layoutSnapshot) ? $layoutSnapshot : null,
+                'layout_snapshot' => $layoutSnapshot,
             ])->save();
 
             $this->syncSections($quote, $sections);
@@ -531,6 +523,7 @@ class QuoteService
     {
         $quote->loadMissing([
             'sections.lineItems.taxes',
+            'client',
         ]);
 
         $payload = [
@@ -540,18 +533,26 @@ class QuoteService
             'title' => $quote->title,
             'status' => $quote->status,
             'client_id' => $quote->client_id,
+            'client' => $quote->client ? [
+                'id' => $quote->client->id,
+                'company_name' => $quote->client->company_name,
+                'email' => $quote->client->email,
+                'phone' => $quote->client->phone,
+                'address' => $quote->client->address,
+                'website' => $quote->client->website,
+            ] : null,
             'assigned_to' => $quote->assigned_to,
             'currency' => $quote->currency,
             'base_currency' => $quote->base_currency ?? $quote->currency,
             'fx_rate' => $quote->fx_rate,
             'base_total' => $quote->base_total,
             'valid_until' => $quote->valid_until?->toDateString(),
-            'cover_message' => $quote->cover_message,
-            'terms' => $quote->terms,
-            'notes' => $quote->notes,
+            'cover_message' => $quote->cover_message ?? '',
+            'terms' => $quote->terms ?? '',
+            'notes' => $quote->notes ?? '',
             'template_id' => $quote->template_id,
             'quote_uuid' => $quote->quote_uuid,
-            'layout_snapshot' => $quote->layout_snapshot,
+            'layout_snapshot' => $this->builderLayoutService->normalizeLayoutForRead($quote->layout_snapshot),
             'requires_deposit' => (bool) $quote->requires_deposit,
             'deposit_amount' => $quote->deposit_amount,
             'deposit_percent' => $quote->deposit_percent,
@@ -560,7 +561,7 @@ class QuoteService
             'discount_amount' => $quote->base_discount_amount,
             'tax_amount' => $quote->base_tax_amount,
             'total' => $quote->base_total,
-            'layout' => $quote->layout_snapshot,
+            'layout' => $this->builderLayoutService->normalizeLayoutForRead($quote->layout_snapshot),
             'sections' => $quote->sections->map(function ($section): array {
                 return [
                     'id' => $section->id,

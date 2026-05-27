@@ -1,8 +1,21 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import type { HeaderBlockConfig } from '@/types';
 
 const config = defineModel<HeaderBlockConfig>({ required: true });
+
+const emit = defineEmits<{
+    (e: 'logoFileSelected', file: File | null, base64: string | null): void;
+}>();
+
+const logoInputMode = ref<'url' | 'upload'>('url');
+const logoUrlInput = ref(config.value.logoUrl || '');
+const logoFile = ref<File | null>(null);
 
 const layoutOptions = [
     {
@@ -45,6 +58,36 @@ const toggleOptions: Array<{ key: HeaderToggleKey; label: string }> = [
 const updateToggle = (key: HeaderToggleKey, value: boolean): void => {
     config.value[key] = value;
 };
+
+const handleLogoUrlChange = (value: string): void => {
+    logoUrlInput.value = value;
+    config.value.logoUrl = value || undefined;
+};
+
+const handleLogoFileChange = (event: Event): void => {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files[0]) {
+        logoFile.value = target.files[0];
+        config.value.logoUrl = undefined;
+        logoUrlInput.value = '';
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            emit('logoFileSelected', logoFile.value, e.target?.result as string);
+        };
+        reader.readAsDataURL(logoFile.value);
+    } else {
+        logoFile.value = null;
+        emit('logoFileSelected', null, null);
+    }
+};
+
+const clearLogo = (): void => {
+    config.value.logoUrl = undefined;
+    logoUrlInput.value = '';
+    logoFile.value = null;
+    emit('logoFileSelected', null, null);
+};
 </script>
 
 <template>
@@ -71,6 +114,64 @@ const updateToggle = (key: HeaderToggleKey, value: boolean): void => {
                     />
                 </label>
             </div>
+        </div>
+
+        <div v-if="config.showLogo" class="border-b px-4 py-3">
+            <p
+                class="mb-2.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+            >
+                Logo
+            </p>
+            <Tabs v-model="logoInputMode" class="w-full">
+                <TabsList class="grid w-full grid-cols-2">
+                    <TabsTrigger value="url">URL</TabsTrigger>
+                    <TabsTrigger value="upload">Upload</TabsTrigger>
+                </TabsList>
+                <TabsContent value="url" class="mt-3">
+                    <div class="space-y-2">
+                        <Label for="logo-url">Logo URL</Label>
+                        <Input
+                            id="logo-url"
+                            v-model="logoUrlInput"
+                            type="url"
+                            placeholder="https://example.com/logo.png"
+                            @input="(e: Event) => handleLogoUrlChange((e.target as HTMLInputElement).value)"
+                        />
+                        <Button
+                            v-if="config.logoUrl"
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            @click="clearLogo"
+                        >
+                            Clear
+                        </Button>
+                    </div>
+                </TabsContent>
+                <TabsContent value="upload" class="mt-3">
+                    <div class="space-y-2">
+                        <Label for="logo-file">Upload logo</Label>
+                        <Input
+                            id="logo-file"
+                            type="file"
+                            accept="image/*"
+                            @change="handleLogoFileChange"
+                        />
+                        <p v-if="logoFile" class="text-xs text-muted-foreground">
+                            Selected: {{ logoFile.name }}
+                        </p>
+                        <Button
+                            v-if="config.logoUrl"
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            @click="clearLogo"
+                        >
+                            Clear
+                        </Button>
+                    </div>
+                </TabsContent>
+            </Tabs>
         </div>
 
         <div class="px-4 py-3">

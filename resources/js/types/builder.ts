@@ -28,12 +28,7 @@ export type Alignment = 'left' | 'center' | 'right';
 
 export type ThemeConfig = {
     primaryColor: string;
-    accentColor: string;
-    backgroundColor: string;
     fontFamily: FontFamily;
-    fontSize: FontSize;
-    borderRadius: BorderRadius;
-    headerStyle: 'bordered' | 'shadowed' | 'flat';
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -59,11 +54,11 @@ export type BlockBorder = {
 export type BaseBlockConfig = {
     padding: Spacing;
     background: string | null;
+    fontSize: FontSize | null;
     border: BlockBorder;
 };
 
 export type ContentBlockConfig = BaseBlockConfig & {
-    fontSize: FontSize | null;
     textColor: string | null;
 };
 
@@ -103,6 +98,7 @@ export type HeaderBlockConfig = BaseBlockConfig & {
         | 'centered'
         | 'minimal';
     showLogo: boolean;
+    logoUrl?: string;
     showQuoteNumber: boolean;
     showIssueDate: boolean;
     showValidUntil: boolean;
@@ -120,6 +116,7 @@ export type FromToBlockConfig = BaseBlockConfig & {
     showClientAddress: boolean;
     showClientEmail: boolean;
     showClientPhone: boolean;
+    showClientWebsite: boolean;
     showLabels: boolean;
 };
 
@@ -357,6 +354,14 @@ export type BrandingData = {
     company_tagline: string | null;
 };
 
+export type ClientData = {
+    id: number;
+    company_name: string;
+    email: string | null;
+    phone: string | null;
+    address: string | null;
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // BLOCK CLASSIFICATION CONSTANTS
 // Single source of truth for block behaviour rules.
@@ -443,12 +448,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
 
 export const defaultTheme = (): ThemeConfig => ({
     primaryColor: '#2563EB',
-    accentColor: '#F59E0B',
-    backgroundColor: '#FFFFFF',
     fontFamily: 'inter',
-    fontSize: 'md',
-    borderRadius: 'md',
-    headerStyle: 'bordered',
 });
 
 export const defaultBorder = (): BlockBorder => ({
@@ -462,12 +462,12 @@ export const defaultBorder = (): BlockBorder => ({
 export const defaultBaseConfig = (): BaseBlockConfig => ({
     padding: 'md',
     background: null,
+    fontSize: null,
     border: defaultBorder(),
 });
 
 export const defaultContentConfig = (): ContentBlockConfig => ({
     ...defaultBaseConfig(),
-    fontSize: null,
     textColor: null,
 });
 
@@ -493,7 +493,7 @@ const uid = (): string => {
 // no generic switch, no unsafe casts, no `as LayoutBlock<T>` leakage.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const DEFAULT_BLOCK_CONFIGS: BlockConfigMap = {
+export const DEFAULT_BLOCK_CONFIGS: BlockConfigMap = {
     header: {
         ...defaultBaseConfig(),
         border: { ...defaultBorder(), sides: 'bottom' },
@@ -514,6 +514,7 @@ const DEFAULT_BLOCK_CONFIGS: BlockConfigMap = {
         showClientAddress: true,
         showClientEmail: true,
         showClientPhone: false,
+        showClientWebsite: false,
         showLabels: true,
     },
 
@@ -774,9 +775,15 @@ export const ensureTemplateLayout = (
         }
     });
 
+    // Normalize theme to only include valid properties (primaryColor, fontFamily)
+    const normalizedTheme: ThemeConfig = {
+        primaryColor: layout.theme?.primaryColor ?? defaultTheme().primaryColor,
+        fontFamily: layout.theme?.fontFamily ?? defaultTheme().fontFamily,
+    };
+
     return {
         version: layout.version || 1,
-        theme: { ...defaultTheme(), ...layout.theme },
+        theme: normalizedTheme,
         blocks: normalizedBlocks.map((block) => ({
             ...block,
             // Required blocks are always locked and visible regardless of stored value
@@ -809,7 +816,7 @@ export type BuilderTaxOption = {
 export type BuilderConfigurationUnit = {
     id: number;
     name: string;
-    symbol: string;
+    symbol: string | null;
 };
 
 export type BuilderCatalogItem = {
@@ -850,6 +857,9 @@ export type BuilderClientOption = {
     company_name: string;
     contact_name: string | null;
     currency: string | null;
+    email: string | null;
+    phone: string | null;
+    address: string | null;
 };
 
 export type BuilderTemplateOption = {
@@ -955,6 +965,7 @@ export type QuoteBuilderState = {
 
     // Relations
     client_id: number | null;
+    client: ClientData | null;
     template_id: number | null;
     assigned_to: number | null;
 
@@ -979,9 +990,9 @@ export type QuoteBuilderState = {
     bounced_at: string | null;
 
     // Content
-    cover_message: string | null;
-    terms: string | null;
-    notes: string | null;
+    cover_message: string;
+    terms: string;
+    notes: string;
 
     // Sending
     cc_recipients: string[] | null;

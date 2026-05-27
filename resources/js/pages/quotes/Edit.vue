@@ -4,13 +4,10 @@ import { computed, ref, watchEffect } from 'vue';
 import QuoteController from '@/actions/App/Http/Controllers/QuoteController';
 import QuoteSendController from '@/actions/App/Http/Controllers/QuoteSendController';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
-import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
+import BuilderShell from '@/components/builder/BuilderShell.vue';
+import { useBuilderStore } from '@/stores/builder';
+import { useBuilderData } from '@/composables/useBuilderData';
 import type {
-    BuilderCatalogItem,
-    BuilderConfigurationUnit,
-    BuilderClientOption,
-    BuilderTaxOption,
-    BuilderTemplateOption,
     QuoteBuilderState,
     WorkspaceSettings,
 } from '@/types';
@@ -18,11 +15,6 @@ import type {
 const props = defineProps<{
     quoteId: number;
     initialState: QuoteBuilderState;
-    clients: BuilderClientOption[];
-    templates: BuilderTemplateOption[];
-    catalogItems: BuilderCatalogItem[];
-    taxes: BuilderTaxOption[];
-    units: BuilderConfigurationUnit[];
     settings: WorkspaceSettings;
 }>();
 
@@ -51,7 +43,11 @@ watchEffect(() => {
 
 const form = useForm<QuoteBuilderState>(props.initialState);
 
-const save = (updatedState?: QuoteBuilderState): void => {
+const { uploadLogo } = useBuilderData();
+
+const save = async (updatedState?: QuoteBuilderState): Promise<void> => {
+    const builderStore = useBuilderStore();
+
     if (updatedState) {
         Object.keys(updatedState).forEach((key) => {
             if (key in form) {
@@ -59,6 +55,25 @@ const save = (updatedState?: QuoteBuilderState): void => {
                     updatedState[key as keyof QuoteBuilderState];
             }
         });
+    }
+
+    if (builderStore.pendingLogoFile) {
+        try {
+            const logoUrl = await uploadLogo(builderStore.pendingLogoFile);
+
+            if (form.layout?.blocks) {
+                const headerBlock = form.layout.blocks.find((b: any) => b.type === 'header');
+                if (headerBlock && headerBlock.config) {
+                    (headerBlock.config as any).logoUrl = logoUrl;
+                }
+            }
+
+            builderStore.pendingLogoFile = null;
+            builderStore.pendingLogoBase64 = null;
+        } catch (error) {
+            console.error('Logo upload failed:', error);
+            return;
+        }
     }
 
     form.put(QuoteController.update(props.quoteId).url, {
@@ -85,14 +100,9 @@ const executeSend = (): void => {
 <template>
     <Head :title="`Edit quote #${quoteId}`" />
 
-    <QuoteBuilder
-        :model-value="form"
+    <BuilderShell
+        v-model="form"
         mode="quote"
-        :clients="clients"
-        :templates="templates"
-        :catalog-items="catalogItems"
-        :taxes="taxes"
-        :units="units"
         :settings="settings"
         :processing="form.processing"
         @save="save"

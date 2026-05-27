@@ -1,23 +1,15 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
-import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
+import BuilderShell from '@/components/builder/BuilderShell.vue';
+import { useBuilderStore } from '@/stores/builder';
+import { useBuilderData } from '@/composables/useBuilderData';
 import type {
-    BuilderCatalogItem,
-    BuilderConfigurationUnit,
-    BuilderClientOption,
-    BuilderTaxOption,
-    BuilderTemplateOption,
     QuoteBuilderState,
     WorkspaceSettings,
 } from '@/types';
 
 const props = defineProps<{
     initialState: QuoteBuilderState;
-    clients: BuilderClientOption[];
-    templates: BuilderTemplateOption[];
-    catalogItems: BuilderCatalogItem[];
-    taxes: BuilderTaxOption[];
-    units: BuilderConfigurationUnit[];
     settings: WorkspaceSettings;
 }>();
 
@@ -40,13 +32,36 @@ const form = useForm<QuoteBuilderState>(
     JSON.parse(JSON.stringify(props.initialState)) as QuoteBuilderState,
 );
 
-const save = (updatedState?: QuoteBuilderState): void => {
+const { uploadLogo } = useBuilderData();
+
+const save = async (updatedState?: QuoteBuilderState): Promise<void> => {
+    const builderStore = useBuilderStore();
+
     if (updatedState) {
         Object.keys(updatedState).forEach((key) => {
             if (key in form) {
-                form[key] = updatedState[key];
+                (form as any)[key] = (updatedState as any)[key];
             }
         });
+    }
+
+    if (builderStore.pendingLogoFile) {
+        try {
+            const logoUrl = await uploadLogo(builderStore.pendingLogoFile);
+
+            if (form.layout?.blocks) {
+                const headerBlock = form.layout.blocks.find((b: any) => b.type === 'header');
+                if (headerBlock && headerBlock.config) {
+                    (headerBlock.config as any).logoUrl = logoUrl;
+                }
+            }
+
+            builderStore.pendingLogoFile = null;
+            builderStore.pendingLogoBase64 = null;
+        } catch (error) {
+            console.error('Logo upload failed:', error);
+            return;
+        }
     }
 
     form.post('/quotes', {
@@ -58,14 +73,9 @@ const save = (updatedState?: QuoteBuilderState): void => {
 <template>
     <Head title="Create quote" />
 
-    <QuoteBuilder
-        :model-value="form"
+    <BuilderShell
+        v-model="form"
         mode="quote"
-        :clients="clients"
-        :templates="templates"
-        :catalog-items="catalogItems"
-        :taxes="taxes"
-        :units="units"
         :settings="settings"
         :processing="form.processing"
         @save="save"

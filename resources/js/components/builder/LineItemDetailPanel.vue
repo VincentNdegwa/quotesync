@@ -18,9 +18,8 @@ import { useBuilderData } from '@/composables/useBuilderData';
 import { useBuilderStore } from '@/stores/builder';
 import type {
     BuilderCatalogItem,
-    BuilderConfigurationUnit,
-    BuilderTaxOption,
     QuoteBuilderLineItem,
+    BuilderCatalogItemVariant,
 } from '@/types';
 
 const BASE_VARIANT_OPTION = '__base__';
@@ -58,6 +57,7 @@ const currentCatalog = computed(() => {
 });
 
 const variants = computed(() => currentCatalog.value?.variants ?? []);
+const priceTiers = computed(() => currentCatalog.value?.priceTiers ?? []);
 
 const subtotal = computed(() => lineItem.value?.subtotal ?? 0);
 const taxAmount = computed(() => lineItem.value?.tax_amount ?? 0);
@@ -135,10 +135,16 @@ const updateField = (field: keyof QuoteBuilderLineItem, value: unknown): void =>
 const selectCatalogItem = (catalogItem: BuilderCatalogItem): void => {
     if (lineItem.value) {
         lineItem.value.catalog_item_id = catalogItem.id;
+        lineItem.value.catalog_item_variant_id = null;
         lineItem.value.name = catalogItem.name;
         lineItem.value.description = catalogItem.description;
         lineItem.value.unit_price = catalogItem.unit_price;
         lineItem.value.cost_price = catalogItem.cost_price;
+        lineItem.value.unit_id = catalogItem.unit_id;
+        
+        const unit = units.value.find((u) => u.id === catalogItem.unit_id);
+        lineItem.value.unit = unit?.symbol || null;
+        
         lineItem.value.taxes = catalogItem.taxes.map(t => ({
             tax_id: t.id,
             tax_amount: 0,
@@ -163,9 +169,14 @@ const selectVariant = (value: any): void => {
     if (lineItem.value) {
         const variantId = value === BASE_VARIANT_OPTION ? null : Number(value);
         lineItem.value.catalog_item_variant_id = variantId;
-        const variant = variants.value.find(v => v.id === variantId);
+        
+        const variant = variants.value.find((v: BuilderCatalogItemVariant) => v.id === variantId);
         if (variant) {
             lineItem.value.unit_price = variant.unit_price;
+            lineItem.value.name = `${currentCatalog.value?.name || ''} - ${variant.name}`;
+        } else {
+            lineItem.value.unit_price = currentCatalog.value?.unit_price || 0;
+            lineItem.value.name = currentCatalog.value?.name || '';
         }
     }
 };
@@ -183,7 +194,6 @@ const removeItem = (): void => {
         }
     }
     builderStore.editingLineItemId = null;
-    emit('close');
 };
 </script>
 
@@ -196,17 +206,8 @@ const removeItem = (): void => {
             <Button
                 variant="ghost"
                 size="sm"
-                class="gap-2"
-                @click="emit('close')"
-            >
-                <ArrowLeft class="h-4 w-4" />
-                Back to block
-            </Button>
-            <Button
-                variant="ghost"
-                size="sm"
                 class="text-destructive hover:text-destructive"
-                @click="emit('remove')"
+                @click="removeItem"
             >
                 <Trash2 class="h-4 w-4" />
                 Remove item

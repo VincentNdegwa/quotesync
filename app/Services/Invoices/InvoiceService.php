@@ -9,6 +9,7 @@ use App\Models\InvoiceActivity;
 use App\Models\InvoiceLineItemTax;
 use App\Models\Quote;
 use App\Models\Workspace;
+use App\Services\Builder\BuilderLayoutService;
 use App\Services\ExchangeRateService;
 use App\Services\Quotes\TaxCalculator as QuotesTaxCalculator;
 use Illuminate\Support\Arr;
@@ -20,6 +21,7 @@ class InvoiceService
     public function __construct(
         private InvoiceNumberingService $invoiceNumberingService,
         private ExchangeRateService $exchangeRateService,
+        private BuilderLayoutService $builderLayoutService,
     ) {}
 
     public function convertFromQuote(Quote $quote, int $createdBy): Invoice
@@ -189,16 +191,16 @@ class InvoiceService
             'issue_date' => $invoice->issue_date?->toDateString(),
             'due_date' => $invoice->due_date?->toDateString(),
             'valid_until' => $invoice->due_date?->toDateString(),
-            'cover_message' => $invoice->cover_message,
-            'terms' => $invoice->terms,
-            'notes' => $invoice->notes,
+            'cover_message' => $invoice->cover_message ?? '',
+            'terms' => $invoice->terms ?? '',
+            'notes' => $invoice->notes ?? '',
             'quote_id' => $invoice->quote_id,
-            'layout_snapshot' => $invoice->layout_snapshot,
+            'layout_snapshot' => $this->builderLayoutService->normalizeLayoutForRead($invoice->layout_snapshot),
             'subtotal' => $invoice->base_subtotal,
             'discount_amount' => $invoice->base_discount_amount,
             'tax_amount' => $invoice->base_tax_amount,
             'total' => $invoice->base_total,
-            'layout' => $invoice->layout_snapshot,
+            'layout' => $this->builderLayoutService->normalizeLayoutForRead($invoice->layout_snapshot),
             'sections' => $invoice->sections->map(function ($section): array {
                 return [
                     'id' => $section->id,
@@ -241,12 +243,7 @@ class InvoiceService
             $baseCurrency = $workspace->currency ?? 'USD';
 
             $sections = Arr::pull($data, 'sections', []);
-            $layoutSnapshot = Arr::pull($data, 'layout_snapshot');
-            $layout = Arr::pull($data, 'layout');
-
-            if (! is_array($layoutSnapshot) && is_array($layout)) {
-                $layoutSnapshot = $layout;
-            }
+            $layoutSnapshot = $this->builderLayoutService->normalizeLayoutForStorage($data);
 
             // Handle currency conversion
             $currency = $data['currency'] ?? $invoice->currency;
@@ -267,7 +264,7 @@ class InvoiceService
                 'cover_message' => $data['cover_message'] ?? null,
                 'terms' => $data['terms'] ?? null,
                 'notes' => $data['notes'] ?? null,
-                'layout_snapshot' => is_array($layoutSnapshot) ? $layoutSnapshot : null,
+                'layout_snapshot' => $layoutSnapshot,
                 'issue_date' => $data['issue_date'] ?? $invoice->issue_date,
                 'due_date' => $data['valid_until'] ?? $data['due_date'] ?? $invoice->due_date,
                 'currency' => $currency,

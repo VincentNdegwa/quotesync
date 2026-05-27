@@ -4,6 +4,7 @@ namespace App\Services\Quotes;
 
 use App\Models\QuoteTemplate;
 use App\Models\Workspace;
+use App\Services\Builder\BuilderLayoutService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
@@ -11,6 +12,10 @@ use Illuminate\Support\Facades\DB;
 
 class QuoteTemplateService
 {
+    public function __construct(
+        private BuilderLayoutService $builderLayoutService,
+    ) {}
+
     /**
      * @param  array<string, mixed>  $filters
      */
@@ -109,9 +114,9 @@ class QuoteTemplateService
             'valid_until' => null,
             'description' => $template->description,
             'industry' => $template->industry,
-            'cover_message' => $template->cover_message,
-            'notes' => $template->notes,
-            'terms' => $template->terms,
+            'cover_message' => $template->cover_message ?? '',
+            'notes' => $template->notes ?? '',
+            'terms' => $template->terms ?? '',
             'template_id' => null,
             'requires_deposit' => false,
             'deposit_amount' => null,
@@ -119,7 +124,7 @@ class QuoteTemplateService
             'discount_amount' => 0,
             'tax_amount' => 0,
             'total' => 0,
-            'layout' => $template->layout,
+            'layout' => $this->builderLayoutService->normalizeLayoutForRead($template->layout),
             'is_active' => (bool) $template->is_active,
             'is_system' => (bool) $template->is_system,
             'sections' => $template->sections->map(fn ($section): array => [

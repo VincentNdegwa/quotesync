@@ -89,9 +89,9 @@ class QuoteController extends Controller
             'fx_rate' => null,
             'base_total' => null,
             'valid_until' => now()->addDays($validityDays)->toDateString(),
-            'cover_message' => $settings['quotes']['default_cover_message'],
-            'terms' => $settings['quotes']['default_terms'],
-            'notes' => $settings['quotes']['default_notes'],
+            'cover_message' => '',
+            'terms' => '',
+            'notes' => '',
             'template_id' => $template?->id,
             'layout' => null,
             'layout_snapshot' => null,
@@ -121,7 +121,6 @@ class QuoteController extends Controller
         return Inertia::render('quotes/Create', [
             'initialState' => $initialState,
             'settings' => $settings,
-            ...$builderLookupService->getFullLookups($workspace),
         ]);
     }
 
@@ -249,7 +248,7 @@ class QuoteController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Request $request, Quote $quote, QuoteService $quoteService, WorkspaceSettingsService $workspaceSettingsService, BuilderLookupService $builderLookupService): Response
+    public function edit(Request $request, Quote $quote, QuoteService $quoteService, WorkspaceSettingsService $workspaceSettingsService): Response
     {
         $workspace = $request->user()?->currentWorkspace;
 
@@ -258,7 +257,6 @@ class QuoteController extends Controller
         return Inertia::render('quotes/Edit', [
             'initialState' => $quoteService->toBuilderPayload($quote),
             'settings' => $workspaceSettingsService->builderSettings($workspace),
-            ...$builderLookupService->getFullLookups($workspace),
             'quoteId' => $quote->id,
         ]);
     }

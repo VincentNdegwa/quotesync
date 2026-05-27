@@ -5,6 +5,7 @@ use App\Http\Controllers\AiTemplateController;
 use App\Http\Controllers\AiWritingController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\ApprovalController;
+use App\Http\Controllers\BuilderDataController;
 use App\Http\Controllers\CatalogCategoryController;
 use App\Http\Controllers\CatalogExportController;
 use App\Http\Controllers\CatalogImportController;
@@ -108,6 +109,16 @@ Route::middleware(['auth'])->group(function () {
         Route::post('ai/template/generate', [AiTemplateController::class, 'generate'])->name('ai.template.generate');
         Route::post('ai/writing/improve', [AiWritingController::class, 'improve'])->name('ai.writing.improve');
         Route::get('ai/writing/write', [AiWritingController::class, 'write'])->name('ai.writing.write');
+
+        Route::prefix('builder')->group(function () {
+            Route::get('clients', [BuilderDataController::class, 'clients'])->name('builder.clients');
+            Route::get('templates', [BuilderDataController::class, 'templates'])->name('builder.templates');
+            Route::get('catalog-items', [BuilderDataController::class, 'catalogItems'])->name('builder.catalog-items');
+            Route::get('taxes', [BuilderDataController::class, 'taxes'])->name('builder.taxes');
+            Route::get('units', [BuilderDataController::class, 'units'])->name('builder.units');
+            Route::post('upload-logo', [BuilderDataController::class, 'uploadLogo'])->name('builder.upload-logo');
+        });
+
         Route::post('clients/bulk-delete', [ClientController::class, 'bulkDestroy'])->name('clients.bulk-delete');
         Route::get('clients/export/csv', [ClientController::class, 'exportCsv'])->name('clients.export.csv');
         Route::get('clients/export', [ClientExportController::class, 'export'])->name('clients.export');

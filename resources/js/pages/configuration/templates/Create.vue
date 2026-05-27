@@ -5,6 +5,8 @@ import { watchEffect } from 'vue';
 import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import quoteTemplates from '@/routes/quote-templates';
+import { useBuilderStore } from '@/stores/builder';
+import { useBuilderData } from '@/composables/useBuilderData';
 import type {
     BuilderCatalogItem,
     BuilderConfigurationUnit,
@@ -45,7 +47,30 @@ const form = useForm<QuoteBuilderState>(
     JSON.parse(JSON.stringify(props.initialState)) as QuoteBuilderState,
 );
 
-const save = (): void => {
+const { uploadLogo } = useBuilderData();
+
+const save = async (): Promise<void> => {
+    const builderStore = useBuilderStore();
+
+    if (builderStore.pendingLogoFile) {
+        try {
+            const logoUrl = await uploadLogo(builderStore.pendingLogoFile);
+
+            if (form.layout?.blocks) {
+                const headerBlock = form.layout.blocks.find((b: any) => b.type === 'header');
+                if (headerBlock && headerBlock.config) {
+                    (headerBlock.config as any).logoUrl = logoUrl;
+                }
+            }
+
+            builderStore.pendingLogoFile = null;
+            builderStore.pendingLogoBase64 = null;
+        } catch (error) {
+            console.error('Logo upload failed:', error);
+            return;
+        }
+    }
+
     form.post('/quote-templates', {
         preserveScroll: true,
     });

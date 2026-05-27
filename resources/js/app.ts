@@ -1,6 +1,7 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import { MotionPlugin } from '@vueuse/motion';
 import { createApp, h } from 'vue';
+import { createPinia } from 'pinia';
 import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
@@ -14,8 +15,11 @@ const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 createInertiaApp({
     setup({ el, App, props, plugin }) {
         const app = createApp({ render: () => h(App, props) });
+        const pinia = createPinia();
+        
         app.use(plugin);
         app.use(MotionPlugin);
+        app.use(pinia);
 
         if (el) {
             app.mount(el);

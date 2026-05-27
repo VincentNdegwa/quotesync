@@ -3,6 +3,8 @@ import { Head, setLayoutProps, useForm } from '@inertiajs/vue3';
 import { computed, watchEffect } from 'vue';
 import InvoiceController from '@/actions/App/Http/Controllers/InvoiceController';
 import QuoteBuilder from '@/components/quotes/builder/QuoteBuilder.vue';
+import { useBuilderStore } from '@/stores/builder';
+import { useBuilderData } from '@/composables/useBuilderData';
 import type {
     BuilderCatalogItem,
     BuilderConfigurationUnit,
@@ -38,7 +40,11 @@ watchEffect(() => {
 
 const form = useForm<QuoteBuilderState>(props.initialState);
 
-const save = (updatedState?: QuoteBuilderState): void => {
+const { uploadLogo } = useBuilderData();
+
+const save = async (updatedState?: QuoteBuilderState): Promise<void> => {
+    const builderStore = useBuilderStore();
+
     if (updatedState) {
         Object.keys(updatedState).forEach((key) => {
             if (key in form) {
@@ -46,6 +52,25 @@ const save = (updatedState?: QuoteBuilderState): void => {
                     updatedState[key as keyof QuoteBuilderState];
             }
         });
+    }
+
+    if (builderStore.pendingLogoFile) {
+        try {
+            const logoUrl = await uploadLogo(builderStore.pendingLogoFile);
+
+            if (form.layout?.blocks) {
+                const headerBlock = form.layout.blocks.find((b: any) => b.type === 'header');
+                if (headerBlock && headerBlock.config) {
+                    (headerBlock.config as any).logoUrl = logoUrl;
+                }
+            }
+
+            builderStore.pendingLogoFile = null;
+            builderStore.pendingLogoBase64 = null;
+        } catch (error) {
+            console.error('Logo upload failed:', error);
+            return;
+        }
     }
 
     form.put(InvoiceController.update(props.invoice).url, {

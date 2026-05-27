@@ -25,13 +25,13 @@ import type {
     BuilderTaxOption,
     LayoutBlock,
 } from '@/types';
+import { useBuilderData } from '@/composables/useBuilderData';
+import { useBuilderStore } from '@/stores/builder';
 
-const block = defineModel<Block | null>('block', { required: true });
+const block = defineModel<Block | null>('block');
 
-defineProps<{
-    catalogItems: BuilderCatalogItem[];
-    taxes: BuilderTaxOption[];
-}>();
+const { catalogItems, taxes } = useBuilderData();
+const builderStore = useBuilderStore();
 
 function blockAs<T extends BlockType>(b: Block): LayoutBlock<T> {
     return b as LayoutBlock<T>;
@@ -40,6 +40,11 @@ function blockAs<T extends BlockType>(b: Block): LayoutBlock<T> {
 function _configOf<T extends BlockType>(b: Block): BlockConfigMap[T] {
     return b.config as BlockConfigMap[T];
 }
+
+const handleLogoFileSelected = (file: File | null, base64: string | null): void => {
+    builderStore.pendingLogoFile = file;
+    builderStore.pendingLogoBase64 = base64;
+};
 </script>
 
 <template>
@@ -78,6 +83,7 @@ function _configOf<T extends BlockType>(b: Block): BlockConfigMap[T] {
                 <HeaderConfig
                     v-if="block.type === 'header'"
                     v-model="blockAs<'header'>(block).config"
+                    @logo-file-selected="handleLogoFileSelected"
                 />
                 <FromToConfig
                     v-else-if="block.type === 'from_to'"
