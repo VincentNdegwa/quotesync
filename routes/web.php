@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AgentController;
 use App\Http\Controllers\AiQuoteController;
 use App\Http\Controllers\AiTemplateController;
 use App\Http\Controllers\AiWritingController;
@@ -110,6 +111,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('ai/template/generate', [AiTemplateController::class, 'generate'])->name('ai.template.generate');
         Route::post('ai/writing/improve', [AiWritingController::class, 'improve'])->name('ai.writing.improve');
         Route::get('ai/writing/write', [AiWritingController::class, 'write'])->name('ai.writing.write');
+        Route::get('agent/stream', [AgentController::class, 'stream'])->name('agent.stream');
 
         Route::prefix('builder')->group(function () {
             Route::get('clients', [BuilderDataController::class, 'clients'])->name('builder.clients');

@@ -97,6 +97,14 @@ class Client extends Model
     }
 
     /**
+     * @return HasMany<Invoice, $this>
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    /**
      * @return BelongsTo<Contact, $this>
      */
     public function primaryContact(): BelongsTo

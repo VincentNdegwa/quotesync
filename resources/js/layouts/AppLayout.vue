@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FloatingAgentChat from '@/components/FloatingAgentChat.vue';
 import AppLayout from '@/layouts/app/AppSidebarLayout.vue';
 import type { BreadcrumbItem } from '@/types';
 
@@ -14,5 +15,6 @@ const { breadcrumbs = [] } = defineProps<{
         >
             <slot />
         </div>
+        <FloatingAgentChat />
     </AppLayout>
 </template>
