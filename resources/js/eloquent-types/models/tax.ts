@@ -25,5 +25,8 @@ export interface Tax extends TaxBase {
     catalogItems?: CatalogItem[];
 }
 
-export type CreateTaxPayload = Omit<TaxBase, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
+export type CreateTaxPayload = Omit<
+    TaxBase,
+    'id' | 'created_at' | 'updated_at' | 'deleted_at'
+>;
 export type UpdateTaxPayload = Partial<CreateTaxPayload>;

@@ -29,25 +29,31 @@ const handleBlockUpdate = (updatedBlock: Block | null | undefined): void => {
 
 const currentView = ref<InspectorView>('theme');
 
-watch(() => props.selectedBlock, (newBlock) => {
-    if (builderStore.editingLineItemId) {
-        currentView.value = 'line-item';
-    } else if (newBlock) {
-        currentView.value = 'block';
-    } else {
-        currentView.value = 'theme';
-    }
-});
+watch(
+    () => props.selectedBlock,
+    (newBlock) => {
+        if (builderStore.editingLineItemId) {
+            currentView.value = 'line-item';
+        } else if (newBlock) {
+            currentView.value = 'block';
+        } else {
+            currentView.value = 'theme';
+        }
+    },
+);
 
-watch(() => builderStore.editingLineItemId, (editingLineItemId) => {
-    if (editingLineItemId) {
-        currentView.value = 'line-item';
-    } else if (props.selectedBlock) {
-        currentView.value = 'block';
-    } else {
-        currentView.value = 'theme';
-    }
-});
+watch(
+    () => builderStore.editingLineItemId,
+    (editingLineItemId) => {
+        if (editingLineItemId) {
+            currentView.value = 'line-item';
+        } else if (props.selectedBlock) {
+            currentView.value = 'block';
+        } else {
+            currentView.value = 'theme';
+        }
+    },
+);
 
 const handleBack = (): void => {
     if (currentView.value === 'line-item') {
@@ -72,9 +78,9 @@ const viewTitle = computed(() => {
 </script>
 
 <template>
-    <div class="h-full min-h-0 rounded-lg border bg-card overflow-y-auto">
-        <div v-if="currentView !== 'theme'" class="flex flex-col h-full">
-            <div class="flex items-center gap-2 px-4 py-3 border-b">
+    <div class="h-full min-h-0 overflow-y-auto rounded-lg border bg-card">
+        <div v-if="currentView !== 'theme'" class="flex h-full flex-col">
+            <div class="flex items-center gap-2 border-b px-4 py-3">
                 <Button
                     type="button"
                     variant="ghost"

@@ -13,5 +13,8 @@ export interface RoleBase {
 
 export type Role = RoleBase;
 
-export type CreateRolePayload = Omit<RoleBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateRolePayload = Omit<
+    RoleBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateRolePayload = Partial<CreateRolePayload>;

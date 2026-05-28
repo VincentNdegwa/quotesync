@@ -22,5 +22,8 @@ export interface Note extends NoteBase {
     creator?: User;
 }
 
-export type CreateNotePayload = Omit<NoteBase, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
+export type CreateNotePayload = Omit<
+    NoteBase,
+    'id' | 'created_at' | 'updated_at' | 'deleted_at'
+>;
 export type UpdateNotePayload = Partial<CreateNotePayload>;

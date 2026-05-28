@@ -7,10 +7,7 @@ import { useBuilderData } from '@/composables/useBuilderData';
 import AppLayout from '@/layouts/AppLayout.vue';
 import quoteTemplates from '@/routes/quote-templates';
 import { useBuilderStore } from '@/stores/builder';
-import type {
-    QuoteBuilderState,
-    WorkspaceSettings,
-} from '@/types';
+import type { QuoteBuilderState, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     initialState: QuoteBuilderState;
@@ -59,7 +56,9 @@ const save = async (updatedState?: QuoteBuilderState): Promise<void> => {
             const logoUrl = await uploadLogo(builderStore.pendingLogoFile);
 
             if (form.layout?.blocks) {
-                const headerBlock = form.layout.blocks.find((b: any) => b.type === 'header');
+                const headerBlock = form.layout.blocks.find(
+                    (b: any) => b.type === 'header',
+                );
 
                 if (headerBlock?.config) {
                     (headerBlock.config as any).logoUrl = logoUrl;

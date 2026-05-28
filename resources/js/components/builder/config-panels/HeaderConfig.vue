@@ -74,7 +74,11 @@ const handleLogoFileChange = (event: Event): void => {
 
         const reader = new FileReader();
         reader.onload = (e): void => {
-            emit('logoFileSelected', logoFile.value, e.target?.result as string);
+            emit(
+                'logoFileSelected',
+                logoFile.value,
+                e.target?.result as string,
+            );
         };
         reader.readAsDataURL(logoFile.value);
     } else {
@@ -136,7 +140,12 @@ const clearLogo = (): void => {
                             v-model="logoUrlInput"
                             type="url"
                             placeholder="https://example.com/logo.png"
-                            @input="(e: Event) => handleLogoUrlChange((e.target as HTMLInputElement).value)"
+                            @input="
+                                (e: Event) =>
+                                    handleLogoUrlChange(
+                                        (e.target as HTMLInputElement).value,
+                                    )
+                            "
                         />
                         <Button
                             v-if="config.logoUrl"
@@ -158,7 +167,10 @@ const clearLogo = (): void => {
                             accept="image/*"
                             @change="handleLogoFileChange"
                         />
-                        <p v-if="logoFile" class="text-xs text-muted-foreground">
+                        <p
+                            v-if="logoFile"
+                            class="text-xs text-muted-foreground"
+                        >
                             Selected: {{ logoFile.name }}
                         </p>
                         <Button

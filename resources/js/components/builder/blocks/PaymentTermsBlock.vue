@@ -7,10 +7,7 @@ import {
 } from '@/composables/useBlockStyles';
 import { useThemeStyles } from '@/composables/useThemeStyles';
 import { useBuilderStore } from '@/stores/builder';
-import type {
-    PaymentTermsBlockConfig,
-    WorkspaceSettings,
-} from '@/types';
+import type { PaymentTermsBlockConfig, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     config: PaymentTermsBlockConfig;
@@ -45,7 +42,7 @@ const quoteContext = computed(() => {
         }
     }
 
-    const allLineItems = builderStore.sections.flatMap(s => s.line_items);
+    const allLineItems = builderStore.sections.flatMap((s) => s.line_items);
 
     if (allLineItems.length > 0) {
         context.line_items = allLineItems
@@ -89,18 +86,29 @@ const emitUpdate = (
     labelText: string | null,
     contextText: string | null,
 ): void => {
-    const block = builderStore.layout?.blocks.find(b => b.type === 'payment_terms');
+    const block = builderStore.layout?.blocks.find(
+        (b) => b.type === 'payment_terms',
+    );
 
     if (block) {
         builderStore.$patch({
             layout: {
                 ...builderStore.layout,
-                blocks: builderStore.layout!.blocks.map(b => 
-                    b.type === 'payment_terms' 
-                        ? { ...b, config: { ...b.config, labelText: (labelText ?? '').trim() || 'Payment Terms', contextText: contextText ?? '' } }
-                        : b
-                )
-            }
+                blocks: builderStore.layout!.blocks.map((b) =>
+                    b.type === 'payment_terms'
+                        ? {
+                              ...b,
+                              config: {
+                                  ...b.config,
+                                  labelText:
+                                      (labelText ?? '').trim() ||
+                                      'Payment Terms',
+                                  contextText: contextText ?? '',
+                              },
+                          }
+                        : b,
+                ),
+            },
         });
     }
 };

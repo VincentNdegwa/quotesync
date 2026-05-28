@@ -475,12 +475,15 @@ const catalogActionsRef = ref<{
                                         }}
                                     </TableCell>
                                     <TableCell>
-                                        <span v-if="tier.pricing_type === 'fixed_price'">
+                                        <span
+                                            v-if="
+                                                tier.pricing_type ===
+                                                'fixed_price'
+                                            "
+                                        >
                                             {{ formatCurrency(tier.value) }}
                                         </span>
-                                        <span v-else>
-                                            {{ tier.value }}%
-                                        </span>
+                                        <span v-else> {{ tier.value }}% </span>
                                     </TableCell>
                                     <TableCell>
                                         {{

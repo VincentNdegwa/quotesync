@@ -21,5 +21,9 @@ export interface QuoteWinProbability extends QuoteWinProbabilityBase {
     signals?: QuoteWinProbabilitySignal[];
 }
 
-export type CreateQuoteWinProbabilityPayload = Omit<QuoteWinProbabilityBase, 'id' | 'created_at' | 'updated_at'>;
-export type UpdateQuoteWinProbabilityPayload = Partial<CreateQuoteWinProbabilityPayload>;
+export type CreateQuoteWinProbabilityPayload = Omit<
+    QuoteWinProbabilityBase,
+    'id' | 'created_at' | 'updated_at'
+>;
+export type UpdateQuoteWinProbabilityPayload =
+    Partial<CreateQuoteWinProbabilityPayload>;

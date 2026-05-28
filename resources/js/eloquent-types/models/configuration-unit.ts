@@ -21,5 +21,9 @@ export interface ConfigurationUnit extends ConfigurationUnitBase {
     creator?: User;
 }
 
-export type CreateConfigurationUnitPayload = Omit<ConfigurationUnitBase, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
-export type UpdateConfigurationUnitPayload = Partial<CreateConfigurationUnitPayload>;
+export type CreateConfigurationUnitPayload = Omit<
+    ConfigurationUnitBase,
+    'id' | 'created_at' | 'updated_at' | 'deleted_at'
+>;
+export type UpdateConfigurationUnitPayload =
+    Partial<CreateConfigurationUnitPayload>;

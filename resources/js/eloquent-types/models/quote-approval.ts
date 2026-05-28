@@ -23,5 +23,8 @@ export interface QuoteApproval extends QuoteApprovalBase {
     approver?: User;
 }
 
-export type CreateQuoteApprovalPayload = Omit<QuoteApprovalBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateQuoteApprovalPayload = Omit<
+    QuoteApprovalBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateQuoteApprovalPayload = Partial<CreateQuoteApprovalPayload>;

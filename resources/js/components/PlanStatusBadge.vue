@@ -32,12 +32,8 @@ const showUpgradePrompt = computed(
 </script>
 
 <template>
-    <Link
-        v-if="showUpgradePrompt"
-        href="/billing"
-        class="inline-flex"
-    >
-        <Badge :variant="badgeVariant" class="gap-1 cursor-pointer">
+    <Link v-if="showUpgradePrompt" href="/billing" class="inline-flex">
+        <Badge :variant="badgeVariant" class="cursor-pointer gap-1">
             <Sparkles class="h-3 w-3" />
             {{ planName }}
         </Badge>

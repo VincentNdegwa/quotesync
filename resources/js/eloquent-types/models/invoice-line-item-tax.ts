@@ -22,5 +22,9 @@ export interface InvoiceLineItemTax extends InvoiceLineItemTaxBase {
     tax?: Tax;
 }
 
-export type CreateInvoiceLineItemTaxPayload = Omit<InvoiceLineItemTaxBase, 'id' | 'created_at' | 'updated_at'>;
-export type UpdateInvoiceLineItemTaxPayload = Partial<CreateInvoiceLineItemTaxPayload>;
+export type CreateInvoiceLineItemTaxPayload = Omit<
+    InvoiceLineItemTaxBase,
+    'id' | 'created_at' | 'updated_at'
+>;
+export type UpdateInvoiceLineItemTaxPayload =
+    Partial<CreateInvoiceLineItemTaxPayload>;

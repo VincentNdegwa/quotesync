@@ -9,10 +9,7 @@ import { useFormat } from '@/composables/useFormat';
 import { calculateLineItemTotals } from '@/composables/useTaxCalculation';
 import { useThemeStyles } from '@/composables/useThemeStyles';
 import { useBuilderStore } from '@/stores/builder';
-import type {
-    TotalsBlockConfig,
-    WorkspaceSettings,
-} from '@/types';
+import type { TotalsBlockConfig, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     config: TotalsBlockConfig;
@@ -75,16 +72,24 @@ const taxLines = computed(() => {
                             const unitPrice = Number(item.unit_price || 0);
                             const quantity = Number(item.quantity || 0);
                             const discountType = item.discount_type || null;
-                            const discountValue = Number(item.discount_value || 0);
-                            
+                            const discountValue = Number(
+                                item.discount_value || 0,
+                            );
+
                             let discountAmount = 0;
 
                             if (discountType === 'percent') {
-                                discountAmount = unitPrice * quantity * (discountValue / 100);
+                                discountAmount =
+                                    unitPrice *
+                                    quantity *
+                                    (discountValue / 100);
                             } else if (discountType === 'fixed') {
-                                discountAmount = Math.min(discountValue, unitPrice * quantity);
+                                discountAmount = Math.min(
+                                    discountValue,
+                                    unitPrice * quantity,
+                                );
                             }
-                            
+
                             const beforeDiscount = unitPrice * quantity;
                             const subtotal = beforeDiscount - discountAmount;
                             const rate = Number(tax.tax_rate || 0);
@@ -153,7 +158,10 @@ const calculatedTaxAmount = computed(() => {
 });
 
 const calculatedDiscountAmount = computed(() => {
-    if (builderStore.discount_amount && Number(builderStore.discount_amount) > 0) {
+    if (
+        builderStore.discount_amount &&
+        Number(builderStore.discount_amount) > 0
+    ) {
         return Number(builderStore.discount_amount);
     }
 
@@ -173,9 +181,13 @@ const calculatedDiscountAmount = computed(() => {
                 let discountAmount = 0;
 
                 if (discountType === 'percent') {
-                    discountAmount = unitPrice * quantity * (discountValue / 100);
+                    discountAmount =
+                        unitPrice * quantity * (discountValue / 100);
                 } else if (discountType === 'fixed') {
-                    discountAmount = Math.min(discountValue, unitPrice * quantity);
+                    discountAmount = Math.min(
+                        discountValue,
+                        unitPrice * quantity,
+                    );
                 }
 
                 return sectionSum + discountAmount;

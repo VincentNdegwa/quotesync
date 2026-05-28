@@ -26,5 +26,8 @@ export interface PortalUser extends PortalUserBase {
     unreadNotifications?: DatabaseNotification[];
 }
 
-export type CreatePortalUserPayload = Omit<PortalUserBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreatePortalUserPayload = Omit<
+    PortalUserBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdatePortalUserPayload = Partial<CreatePortalUserPayload>;

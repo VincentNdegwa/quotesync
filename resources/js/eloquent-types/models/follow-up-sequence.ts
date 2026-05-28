@@ -17,5 +17,9 @@ export interface FollowUpSequence extends FollowUpSequenceBase {
     steps?: FollowUpStep[];
 }
 
-export type CreateFollowUpSequencePayload = Omit<FollowUpSequenceBase, 'id' | 'created_at' | 'updated_at'>;
-export type UpdateFollowUpSequencePayload = Partial<CreateFollowUpSequencePayload>;
+export type CreateFollowUpSequencePayload = Omit<
+    FollowUpSequenceBase,
+    'id' | 'created_at' | 'updated_at'
+>;
+export type UpdateFollowUpSequencePayload =
+    Partial<CreateFollowUpSequencePayload>;

@@ -24,5 +24,9 @@ export interface CatalogItemPriceTier extends CatalogItemPriceTierBase {
     variant?: CatalogItemVariant;
 }
 
-export type CreateCatalogItemPriceTierPayload = Omit<CatalogItemPriceTierBase, 'id' | 'created_at' | 'updated_at'>;
-export type UpdateCatalogItemPriceTierPayload = Partial<CreateCatalogItemPriceTierPayload>;
+export type CreateCatalogItemPriceTierPayload = Omit<
+    CatalogItemPriceTierBase,
+    'id' | 'created_at' | 'updated_at'
+>;
+export type UpdateCatalogItemPriceTierPayload =
+    Partial<CreateCatalogItemPriceTierPayload>;

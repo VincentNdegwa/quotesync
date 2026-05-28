@@ -45,5 +45,9 @@ export interface InvoiceLineItem extends InvoiceLineItemBase {
     priceTiers?: PriceTier[];
 }
 
-export type CreateInvoiceLineItemPayload = Omit<InvoiceLineItemBase, 'id' | 'created_at' | 'updated_at'>;
-export type UpdateInvoiceLineItemPayload = Partial<CreateInvoiceLineItemPayload>;
+export type CreateInvoiceLineItemPayload = Omit<
+    InvoiceLineItemBase,
+    'id' | 'created_at' | 'updated_at'
+>;
+export type UpdateInvoiceLineItemPayload =
+    Partial<CreateInvoiceLineItemPayload>;

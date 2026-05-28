@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { Sun, Moon } from 'lucide-vue-next';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import NotificationBell from '@/components/Layout/NotificationBell.vue';
 import PlanStatusBadge from '@/components/PlanStatusBadge.vue';
-import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Sun, Moon } from 'lucide-vue-next';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAppearance } from '@/composables/useAppearance';
 import type { BreadcrumbItem } from '@/types';
 
@@ -20,8 +20,13 @@ withDefaults(
 const { appearance, resolvedAppearance, updateAppearance } = useAppearance();
 
 const toggleTheme = (): void => {
-  const newTheme = appearance.value === 'dark' ? 'light' : appearance.value === 'light' ? 'system' : 'dark';
-  updateAppearance(newTheme);
+    const newTheme =
+        appearance.value === 'dark'
+            ? 'light'
+            : appearance.value === 'light'
+              ? 'system'
+              : 'dark';
+    updateAppearance(newTheme);
 };
 </script>
 

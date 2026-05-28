@@ -7,10 +7,7 @@ import {
 } from '@/composables/useBlockStyles';
 import { useThemeStyles } from '@/composables/useThemeStyles';
 import { useBuilderStore } from '@/stores/builder';
-import type {
-    TermsBlockConfig,
-    WorkspaceSettings,
-} from '@/types';
+import type { TermsBlockConfig, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     config: TermsBlockConfig;
@@ -45,7 +42,7 @@ const quoteContext = computed(() => {
         }
     }
 
-    const allLineItems = builderStore.sections.flatMap(s => s.line_items);
+    const allLineItems = builderStore.sections.flatMap((s) => s.line_items);
 
     if (allLineItems.length > 0) {
         context.line_items = allLineItems
@@ -83,12 +80,16 @@ const quoteContext = computed(() => {
             empty-text="Terms"
             display-class="mb-2 font-semibold text-base"
             :style="{ color: theme.primaryColor }"
-            @update:model-value="(value) => {
-                const block = builderStore.layout?.blocks.find(b => b.type === 'terms');
-                if (block) {
-                    (block.config as any).labelText = value ?? '';
+            @update:model-value="
+                (value) => {
+                    const block = builderStore.layout?.blocks.find(
+                        (b) => b.type === 'terms',
+                    );
+                    if (block) {
+                        (block.config as any).labelText = value ?? '';
+                    }
                 }
-            }"
+            "
         />
 
         <div v-if="editMode" class="mb-2">
@@ -106,21 +107,33 @@ const quoteContext = computed(() => {
                 enable-ai-write
                 block-type="terms"
                 :quote-context="quoteContext"
-                @update:model-value="(value) => {
-                    const block = builderStore.layout?.blocks.find(b => b.type === 'terms');
-                    if (block) {
-                        builderStore.$patch({
-                            layout: {
-                                ...builderStore.layout,
-                                blocks: builderStore.layout!.blocks.map(b => 
-                                    b.type === 'terms' 
-                                        ? { ...b, config: { ...b.config, contextText: value ?? '' } }
-                                        : b
-                                )
-                            }
-                        });
+                @update:model-value="
+                    (value) => {
+                        const block = builderStore.layout?.blocks.find(
+                            (b) => b.type === 'terms',
+                        );
+                        if (block) {
+                            builderStore.$patch({
+                                layout: {
+                                    ...builderStore.layout,
+                                    blocks: builderStore.layout!.blocks.map(
+                                        (b) =>
+                                            b.type === 'terms'
+                                                ? {
+                                                      ...b,
+                                                      config: {
+                                                          ...b.config,
+                                                          contextText:
+                                                              value ?? '',
+                                                      },
+                                                  }
+                                                : b,
+                                    ),
+                                },
+                            });
+                        }
                     }
-                }"
+                "
             />
         </div>
 
@@ -136,21 +149,31 @@ const quoteContext = computed(() => {
                     : 'No terms provided.'
             "
             :display-class="`whitespace-pre-wrap ${textColorClass}`"
-            @update:model-value="(value) => {
-                const block = builderStore.layout?.blocks.find(b => b.type === 'terms');
-                if (block) {
-                    builderStore.$patch({
-                        layout: {
-                            ...builderStore.layout,
-                            blocks: builderStore.layout!.blocks.map(b => 
-                                b.type === 'terms' 
-                                    ? { ...b, config: { ...b.config, contextText: value ?? '' } }
-                                    : b
-                            )
-                        }
-                    });
+            @update:model-value="
+                (value) => {
+                    const block = builderStore.layout?.blocks.find(
+                        (b) => b.type === 'terms',
+                    );
+                    if (block) {
+                        builderStore.$patch({
+                            layout: {
+                                ...builderStore.layout,
+                                blocks: builderStore.layout!.blocks.map((b) =>
+                                    b.type === 'terms'
+                                        ? {
+                                              ...b,
+                                              config: {
+                                                  ...b.config,
+                                                  contextText: value ?? '',
+                                              },
+                                          }
+                                        : b,
+                                ),
+                            },
+                        });
+                    }
                 }
-            }"
+            "
         />
     </div>
 </template>

@@ -23,5 +23,8 @@ export interface FollowUpStep extends FollowUpStepBase {
     quoteFollowUps?: QuoteFollowUp[];
 }
 
-export type CreateFollowUpStepPayload = Omit<FollowUpStepBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateFollowUpStepPayload = Omit<
+    FollowUpStepBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateFollowUpStepPayload = Partial<CreateFollowUpStepPayload>;

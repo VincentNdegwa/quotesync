@@ -19,5 +19,8 @@ export interface Contact extends ContactBase {
     client?: Client;
 }
 
-export type CreateContactPayload = Omit<ContactBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateContactPayload = Omit<
+    ContactBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateContactPayload = Partial<CreateContactPayload>;

@@ -40,5 +40,8 @@ export interface Client extends ClientBase {
     primaryContact?: Contact;
 }
 
-export type CreateClientPayload = Omit<ClientBase, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
+export type CreateClientPayload = Omit<
+    ClientBase,
+    'id' | 'created_at' | 'updated_at' | 'deleted_at'
+>;
 export type UpdateClientPayload = Partial<CreateClientPayload>;

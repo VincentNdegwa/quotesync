@@ -110,7 +110,9 @@ const decline = (): void => {
                             >Valid until&ensp;</span
                         >
                         <span class="font-semibold">{{
-                            quote.valid_until ? formatDate(quote.valid_until) : '—'
+                            quote.valid_until
+                                ? formatDate(quote.valid_until)
+                                : '—'
                         }}</span>
                     </div>
                     <div v-if="quote.sent_at">

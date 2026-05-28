@@ -18,7 +18,16 @@ import type { Task } from './task';
 import type { User } from './user';
 import type { Workspace } from './workspace';
 
-export type QuoteStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'won' | 'lost' | 'expired' | 'pending_approval';
+export type QuoteStatus =
+    | 'draft'
+    | 'sent'
+    | 'viewed'
+    | 'accepted'
+    | 'declined'
+    | 'won'
+    | 'lost'
+    | 'expired'
+    | 'pending_approval';
 
 export interface QuoteBase {
     id: number;
@@ -102,5 +111,8 @@ export interface Quote extends QuoteBase {
     tasks?: Task[];
 }
 
-export type CreateQuotePayload = Omit<QuoteBase, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
+export type CreateQuotePayload = Omit<
+    QuoteBase,
+    'id' | 'created_at' | 'updated_at' | 'deleted_at'
+>;
 export type UpdateQuotePayload = Partial<CreateQuotePayload>;

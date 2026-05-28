@@ -18,12 +18,7 @@ import ContentConfigSection from '@/components/builder/ContentConfigSection.vue'
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useBuilderStore } from '@/stores/builder';
-import type {
-    Block,
-    BlockConfigMap,
-    BlockType,
-    LayoutBlock,
-} from '@/types';
+import type { Block, BlockConfigMap, BlockType, LayoutBlock } from '@/types';
 
 const block = defineModel<Block | null>('block');
 
@@ -37,7 +32,10 @@ function _configOf<T extends BlockType>(b: Block): BlockConfigMap[T] {
     return b.config as BlockConfigMap[T];
 }
 
-const handleLogoFileSelected = (file: File | null, base64: string | null): void => {
+const handleLogoFileSelected = (
+    file: File | null,
+    base64: string | null,
+): void => {
     builderStore.pendingLogoFile = file;
     builderStore.pendingLogoBase64 = base64;
 };

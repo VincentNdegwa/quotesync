@@ -23,5 +23,8 @@ export interface ConfigIndustry extends ConfigIndustryBase {
     creator?: User;
 }
 
-export type CreateConfigIndustryPayload = Omit<ConfigIndustryBase, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
+export type CreateConfigIndustryPayload = Omit<
+    ConfigIndustryBase,
+    'id' | 'created_at' | 'updated_at' | 'deleted_at'
+>;
 export type UpdateConfigIndustryPayload = Partial<CreateConfigIndustryPayload>;

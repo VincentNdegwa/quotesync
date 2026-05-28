@@ -63,5 +63,8 @@ export interface Workspace extends WorkspaceBase {
     transactions?: Transaction[];
 }
 
-export type CreateWorkspacePayload = Omit<WorkspaceBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateWorkspacePayload = Omit<
+    WorkspaceBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateWorkspacePayload = Partial<CreateWorkspacePayload>;

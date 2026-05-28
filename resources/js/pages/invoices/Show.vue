@@ -218,7 +218,9 @@ const handleCommentDeleted = (): void => {
 
                                             <div class="space-y-1">
                                                 <div
-                                                    v-for="(item, index) in section.line_items"
+                                                    v-for="(
+                                                        item, index
+                                                    ) in section.line_items"
                                                     :key="item.id ?? index"
                                                     class="grid grid-cols-[1fr_auto_auto] items-start gap-4 rounded-lg px-3 py-2.5 hover:bg-muted/30"
                                                 >

@@ -36,5 +36,9 @@ export interface RecurringInvoice extends RecurringInvoiceBase {
     invoices?: Invoice[];
 }
 
-export type CreateRecurringInvoicePayload = Omit<RecurringInvoiceBase, 'id' | 'created_at' | 'updated_at'>;
-export type UpdateRecurringInvoicePayload = Partial<CreateRecurringInvoicePayload>;
+export type CreateRecurringInvoicePayload = Omit<
+    RecurringInvoiceBase,
+    'id' | 'created_at' | 'updated_at'
+>;
+export type UpdateRecurringInvoicePayload =
+    Partial<CreateRecurringInvoicePayload>;

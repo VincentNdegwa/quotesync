@@ -6,10 +6,7 @@ import {
     blockFontSizeClass,
 } from '@/composables/useBlockStyles';
 import { useBuilderStore } from '@/stores/builder';
-import type {
-    CoverMessageBlockConfig,
-    WorkspaceSettings,
-} from '@/types';
+import type { CoverMessageBlockConfig, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     config: CoverMessageBlockConfig;
@@ -61,7 +58,7 @@ const quoteContext = computed(() => {
         }
     }
 
-    const allLineItems = builderStore.sections.flatMap(s => s.line_items);
+    const allLineItems = builderStore.sections.flatMap((s) => s.line_items);
 
     if (allLineItems.length > 0) {
         context.line_items = allLineItems
@@ -100,12 +97,16 @@ const quoteContext = computed(() => {
             placeholder="A note from us"
             empty-text="A note from us"
             display-class="mb-2 font-semibold text-base"
-            @update:model-value="(value) => {
-                const block = builderStore.layout?.blocks.find(b => b.type === 'cover_message');
-                if (block) {
-                    (block.config as any).labelText = value ?? '';
+            @update:model-value="
+                (value) => {
+                    const block = builderStore.layout?.blocks.find(
+                        (b) => b.type === 'cover_message',
+                    );
+                    if (block) {
+                        (block.config as any).labelText = value ?? '';
+                    }
                 }
-            }"
+            "
         />
 
         <div v-if="editMode" class="mb-2">
@@ -121,17 +122,27 @@ const quoteContext = computed(() => {
                 :quote-context="quoteContext"
                 @update:model-value="
                     (value) => {
-                        const block = builderStore.layout?.blocks.find(b => b.type === 'cover_message');
+                        const block = builderStore.layout?.blocks.find(
+                            (b) => b.type === 'cover_message',
+                        );
                         if (block) {
                             builderStore.$patch({
                                 layout: {
                                     ...builderStore.layout,
-                                    blocks: builderStore.layout!.blocks.map(b => 
-                                        b.type === 'cover_message' 
-                                            ? { ...b, config: { ...b.config, contextText: value ?? '' } }
-                                            : b
-                                    )
-                                }
+                                    blocks: builderStore.layout!.blocks.map(
+                                        (b) =>
+                                            b.type === 'cover_message'
+                                                ? {
+                                                      ...b,
+                                                      config: {
+                                                          ...b.config,
+                                                          contextText:
+                                                              value ?? '',
+                                                      },
+                                                  }
+                                                : b,
+                                    ),
+                                },
                             });
                         }
                     }
@@ -147,21 +158,31 @@ const quoteContext = computed(() => {
             placeholder="Write a personal intro message for your client..."
             empty-text="Write a personal intro message for your client..."
             :display-class="`whitespace-pre-wrap ${textColorClass} ${fontSizeClass}`"
-            @update:model-value="(value) => {
-                const block = builderStore.layout?.blocks.find(b => b.type === 'cover_message');
-                if (block) {
-                    builderStore.$patch({
-                        layout: {
-                            ...builderStore.layout,
-                            blocks: builderStore.layout!.blocks.map(b => 
-                                b.type === 'cover_message' 
-                                    ? { ...b, config: { ...b.config, contextText: value ?? '' } }
-                                    : b
-                            )
-                        }
-                    });
+            @update:model-value="
+                (value) => {
+                    const block = builderStore.layout?.blocks.find(
+                        (b) => b.type === 'cover_message',
+                    );
+                    if (block) {
+                        builderStore.$patch({
+                            layout: {
+                                ...builderStore.layout,
+                                blocks: builderStore.layout!.blocks.map((b) =>
+                                    b.type === 'cover_message'
+                                        ? {
+                                              ...b,
+                                              config: {
+                                                  ...b.config,
+                                                  contextText: value ?? '',
+                                              },
+                                          }
+                                        : b,
+                                ),
+                            },
+                        });
+                    }
                 }
-            }"
+            "
         />
     </div>
 </template>

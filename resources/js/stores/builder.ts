@@ -2,11 +2,22 @@ import { defineStore } from 'pinia';
 import { getBlockDefaultConfig } from '@/components/builder/registry';
 import { useBuilderData } from '@/composables/useBuilderData';
 import { calculateLineItemTotals } from '@/composables/useTaxCalculation';
-import type { QuoteBuilderState, Block, BlockType, BlockConfig, QuoteBuilderLineItem } from '@/types';
+import type {
+    QuoteBuilderState,
+    Block,
+    BlockType,
+    BlockConfig,
+    QuoteBuilderLineItem,
+} from '@/types';
 import { createBlock, ensureTemplateLayout } from '@/types';
 
 export const useBuilderStore = defineStore('builder', {
-    state: (): (QuoteBuilderState & { selectedBlockId: string | null; pendingLogoFile: File | null; pendingLogoBase64: string | null; editingLineItemId: string | null }) => ({
+    state: (): QuoteBuilderState & {
+        selectedBlockId: string | null;
+        pendingLogoFile: File | null;
+        pendingLogoBase64: string | null;
+        editingLineItemId: string | null;
+    } => ({
         id: null,
         number: null,
         title: '',
@@ -57,22 +68,29 @@ export const useBuilderStore = defineStore('builder', {
         blocks: (state) => state.layout?.blocks ?? [],
         selectedBlock: (state) => {
             if (!state.selectedBlockId) {
-return null;
-}
+                return null;
+            }
 
-            return state.layout?.blocks.find((b: Block) => String(b.id) === state.selectedBlockId) ?? null;
+            return (
+                state.layout?.blocks.find(
+                    (b: Block) => String(b.id) === state.selectedBlockId,
+                ) ?? null
+            );
         },
         editingLineItem: (state) => {
             if (!state.editingLineItemId) {
-return null;
-}
+                return null;
+            }
 
             for (const section of state.sections) {
-                const item = section.line_items.find((item: QuoteBuilderLineItem) => String(item.id) === state.editingLineItemId);
+                const item = section.line_items.find(
+                    (item: QuoteBuilderLineItem) =>
+                        String(item.id) === state.editingLineItemId,
+                );
 
                 if (item) {
-return item;
-}
+                    return item;
+                }
             }
 
             return null;
@@ -83,7 +101,9 @@ return item;
         setState(newState: QuoteBuilderState): void {
             this.$patch({
                 ...newState,
-                layout: newState.layout ? ensureTemplateLayout(newState.layout) : ensureTemplateLayout(null),
+                layout: newState.layout
+                    ? ensureTemplateLayout(newState.layout)
+                    : ensureTemplateLayout(null),
             });
         },
 
@@ -94,7 +114,9 @@ return item;
         resetState(initialState: QuoteBuilderState): void {
             this.$patch({
                 ...initialState,
-                layout: initialState.layout ? ensureTemplateLayout(initialState.layout) : ensureTemplateLayout(null),
+                layout: initialState.layout
+                    ? ensureTemplateLayout(initialState.layout)
+                    : ensureTemplateLayout(null),
             });
         },
 
@@ -104,7 +126,11 @@ return item;
             const currentLayout = this.layout || ensureTemplateLayout(null);
             const currentBlocks = currentLayout.blocks;
 
-            if (index !== undefined && index >= 0 && index <= currentBlocks.length) {
+            if (
+                index !== undefined &&
+                index >= 0 &&
+                index <= currentBlocks.length
+            ) {
                 const newBlocks = [...currentBlocks];
                 newBlocks.splice(index, 0, newBlock);
                 this.$patch({
@@ -112,18 +138,23 @@ return item;
                 });
             } else {
                 this.$patch({
-                    layout: { ...currentLayout, blocks: [...currentBlocks, newBlock] },
+                    layout: {
+                        ...currentLayout,
+                        blocks: [...currentBlocks, newBlock],
+                    },
                 });
             }
         },
 
         removeBlock(blockId: string): void {
             if (!this.layout) {
-return;
-}
+                return;
+            }
 
             const currentBlocks = this.layout.blocks;
-            const index = currentBlocks.findIndex((b: Block) => String(b.id) === blockId);
+            const index = currentBlocks.findIndex(
+                (b: Block) => String(b.id) === blockId,
+            );
 
             if (index !== -1) {
                 const newBlocks = [...currentBlocks];
@@ -136,15 +167,17 @@ return;
 
         moveBlock(blockId: string, newIndex: number): void {
             if (!this.layout) {
-return;
-}
+                return;
+            }
 
             const currentBlocks = this.layout.blocks;
-            const index = currentBlocks.findIndex((b: Block) => String(b.id) === blockId);
+            const index = currentBlocks.findIndex(
+                (b: Block) => String(b.id) === blockId,
+            );
 
             if (index === -1 || index === newIndex) {
-return;
-}
+                return;
+            }
 
             const newBlocks = [...currentBlocks];
             const [block] = newBlocks.splice(index, 1);
@@ -156,11 +189,13 @@ return;
 
         updateBlockConfig(blockId: string, config: Partial<BlockConfig>): void {
             if (!this.layout) {
-return;
-}
+                return;
+            }
 
             const currentBlocks = this.layout.blocks;
-            const index = currentBlocks.findIndex((b: Block) => String(b.id) === blockId);
+            const index = currentBlocks.findIndex(
+                (b: Block) => String(b.id) === blockId,
+            );
 
             if (index !== -1) {
                 const newBlocks = [...currentBlocks];
@@ -176,11 +211,13 @@ return;
 
         resetBlockConfig(blockId: string): void {
             if (!this.layout) {
-return;
-}
+                return;
+            }
 
             const currentBlocks = this.layout.blocks;
-            const index = currentBlocks.findIndex((b: Block) => String(b.id) === blockId);
+            const index = currentBlocks.findIndex(
+                (b: Block) => String(b.id) === blockId,
+            );
 
             if (index !== -1) {
                 const newBlocks = [...currentBlocks];
@@ -196,11 +233,13 @@ return;
 
         toggleBlockVisibility(blockId: string): void {
             if (!this.layout) {
-return;
-}
+                return;
+            }
 
             const currentBlocks = this.layout.blocks;
-            const index = currentBlocks.findIndex((b: Block) => String(b.id) === blockId);
+            const index = currentBlocks.findIndex(
+                (b: Block) => String(b.id) === blockId,
+            );
 
             if (index !== -1) {
                 const newBlocks = [...currentBlocks];
@@ -238,7 +277,9 @@ return;
         },
 
         removeSection(sectionId: number): void {
-            const index = this.sections.findIndex((s: any) => s.id === sectionId);
+            const index = this.sections.findIndex(
+                (s: any) => s.id === sectionId,
+            );
 
             if (index !== -1) {
                 this.sections.splice(index, 1);
@@ -275,7 +316,12 @@ return;
             }
         },
 
-        updateLineItem(sectionIndex: number, lineItemIndex: number, field: string, value: any): void {
+        updateLineItem(
+            sectionIndex: number,
+            lineItemIndex: number,
+            field: string,
+            value: any,
+        ): void {
             const section = this.sections.at(sectionIndex);
 
             if (section && section.line_items[lineItemIndex]) {
@@ -288,15 +334,18 @@ return;
 
             if (section && catalogItem) {
                 const { units } = useBuilderData();
-                
-                const unit = units.value.find((u) => u.id === catalogItem.unit_id);
-                
-                const resolvedTaxes = catalogItem.taxes?.map((tax: any) => ({
-                    tax_id: tax.id,
-                    tax_label: tax.name,
-                    tax_rate: Number(tax.rate),
-                    tax_inclusive: Boolean(tax.inclusive),
-                })) || [];
+
+                const unit = units.value.find(
+                    (u) => u.id === catalogItem.unit_id,
+                );
+
+                const resolvedTaxes =
+                    catalogItem.taxes?.map((tax: any) => ({
+                        tax_id: tax.id,
+                        tax_label: tax.name,
+                        tax_rate: Number(tax.rate),
+                        tax_inclusive: Boolean(tax.inclusive),
+                    })) || [];
 
                 const tempId = -Date.now();
 
@@ -326,7 +375,7 @@ return;
 
                 section.line_items.push(newItem);
                 this.editingLineItemId = String(tempId);
-                
+
                 this.recalculateLineItemTotals(newItem);
             }
         },
@@ -334,7 +383,8 @@ return;
         removeLineItem(lineItemId: string): void {
             for (const section of this.sections) {
                 const index = section.line_items.findIndex(
-                    (item: QuoteBuilderLineItem) => String(item.id) === lineItemId
+                    (item: QuoteBuilderLineItem) =>
+                        String(item.id) === lineItemId,
                 );
 
                 if (index !== -1) {
@@ -347,7 +397,7 @@ return;
         },
 
         recalculateLineItemTotals(lineItem: QuoteBuilderLineItem): void {
-            const taxes = lineItem.taxes.map(tax => ({
+            const taxes = lineItem.taxes.map((tax) => ({
                 tax_rate: tax.tax_rate,
                 inclusive: tax.inclusive,
             }));
@@ -357,7 +407,7 @@ return;
                 Number(lineItem.unit_price || 0),
                 lineItem.discount_type || null,
                 Number(lineItem.discount_value || 0),
-                taxes
+                taxes,
             );
 
             lineItem.subtotal = subtotal;
@@ -366,7 +416,11 @@ return;
         },
 
         applyPriceTier(lineItem: QuoteBuilderLineItem, catalogItem: any): void {
-            if (!catalogItem || !catalogItem.priceTiers || catalogItem.priceTiers.length === 0) {
+            if (
+                !catalogItem ||
+                !catalogItem.priceTiers ||
+                catalogItem.priceTiers.length === 0
+            ) {
                 return;
             }
 
@@ -382,7 +436,10 @@ return;
 
                 // Check quantity range
                 const minQty = Number(tier.min_quantity || 0);
-                const maxQty = tier.max_quantity !== null ? Number(tier.max_quantity) : Infinity;
+                const maxQty =
+                    tier.max_quantity !== null
+                        ? Number(tier.max_quantity)
+                        : Infinity;
 
                 return quantity >= minQty && quantity <= maxQty;
             });
@@ -405,6 +462,5 @@ return;
                 lineItem.applied_price_tiers = [];
             }
         },
-
     },
 });

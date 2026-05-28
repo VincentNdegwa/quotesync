@@ -30,5 +30,8 @@ export interface User extends UserBase {
     unreadNotifications?: DatabaseNotification[];
 }
 
-export type CreateUserPayload = Omit<UserBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateUserPayload = Omit<
+    UserBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateUserPayload = Partial<CreateUserPayload>;

@@ -13,5 +13,8 @@ export interface Customer extends CustomerBase {
     billable?: unknown;
 }
 
-export type CreateCustomerPayload = Omit<CustomerBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateCustomerPayload = Omit<
+    CustomerBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateCustomerPayload = Partial<CreateCustomerPayload>;

@@ -14,7 +14,13 @@ import type { RecurringInvoice } from './recurring-invoice';
 import type { User } from './user';
 import type { Workspace } from './workspace';
 
-export type InvoiceStatus = 'draft' | 'sent' | 'partial' | 'paid' | 'overdue' | 'void';
+export type InvoiceStatus =
+    | 'draft'
+    | 'sent'
+    | 'partial'
+    | 'paid'
+    | 'overdue'
+    | 'void';
 
 export interface InvoiceBase {
     id: number;
@@ -70,5 +76,8 @@ export interface Invoice extends InvoiceBase {
     reminders?: InvoiceReminder[];
 }
 
-export type CreateInvoicePayload = Omit<InvoiceBase, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
+export type CreateInvoicePayload = Omit<
+    InvoiceBase,
+    'id' | 'created_at' | 'updated_at' | 'deleted_at'
+>;
 export type UpdateInvoicePayload = Partial<CreateInvoicePayload>;

@@ -7,10 +7,7 @@ import {
 import { useFormat } from '@/composables/useFormat';
 import { useThemeStyles } from '@/composables/useThemeStyles';
 import { useBuilderStore } from '@/stores/builder';
-import type {
-    HeaderBlockConfig,
-    WorkspaceSettings,
-} from '@/types';
+import type { HeaderBlockConfig, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     config: HeaderBlockConfig;
@@ -24,7 +21,10 @@ const builderStore = useBuilderStore();
 const { theme } = useThemeStyles(props.settings);
 const effectiveBranding = computed(() => {
     // Use pending base64 for preview if available, otherwise use config URL or workspace logo
-    const logoUrl = builderStore.pendingLogoBase64 ?? props.config.logoUrl ?? props.settings.workspace.logo_url;
+    const logoUrl =
+        builderStore.pendingLogoBase64 ??
+        props.config.logoUrl ??
+        props.settings.workspace.logo_url;
 
     return {
         ...props.settings.workspace,
@@ -36,7 +36,9 @@ const { formatDate } = useFormat();
 
 const documentNumber = computed(() => builderStore.number);
 
-const issueDate = computed(() => builderStore.scheduled_at || builderStore.valid_until);
+const issueDate = computed(
+    () => builderStore.scheduled_at || builderStore.valid_until,
+);
 
 const expiryDate = computed(() => builderStore.valid_until);
 
@@ -99,15 +101,10 @@ const daysLeft = computed(() => {
                             daysLeft <= 7
                                 ? '#FEF3C7'
                                 : `color-mix(in oklab, ${theme.primaryColor} 10%, white)`,
-                        color:
-                            daysLeft <= 7
-                                ? '#92400E'
-                                : theme.primaryColor,
+                        color: daysLeft <= 7 ? '#92400E' : theme.primaryColor,
                     }"
                 >
-                    Expires in {{ daysLeft }} day{{
-                        daysLeft === 1 ? '' : 's'
-                    }}
+                    Expires in {{ daysLeft }} day{{ daysLeft === 1 ? '' : 's' }}
                 </div>
             </div>
         </div>

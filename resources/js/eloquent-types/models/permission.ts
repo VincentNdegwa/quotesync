@@ -13,5 +13,8 @@ export interface PermissionBase {
 
 export type Permission = PermissionBase;
 
-export type CreatePermissionPayload = Omit<PermissionBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreatePermissionPayload = Omit<
+    PermissionBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdatePermissionPayload = Partial<CreatePermissionPayload>;

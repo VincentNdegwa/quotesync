@@ -137,7 +137,10 @@ const itemUnitPrice = (item: QuoteBuilderLineItem): number => {
 };
 
 const sectionSubtotal = (section: any): number =>
-    section.line_items.reduce((sum: number, item: QuoteBuilderLineItem) => sum + itemTotal(item), 0);
+    section.line_items.reduce(
+        (sum: number, item: QuoteBuilderLineItem) => sum + itemTotal(item),
+        0,
+    );
 
 const itemMeta = (item: QuoteBuilderLineItem): string => {
     const parts: string[] = [];
@@ -152,7 +155,11 @@ const itemMeta = (item: QuoteBuilderLineItem): string => {
         parts.push(itemUnitPrice(item).toString());
     }
 
-    if (props.config.showDiscount && item.discount_value && Number(item.discount_value) > 0) {
+    if (
+        props.config.showDiscount &&
+        item.discount_value &&
+        Number(item.discount_value) > 0
+    ) {
         if (item.discount_type === 'percent') {
             parts.push(`${item.discount_value}% disc`);
         } else if (item.discount_type === 'fixed') {
@@ -180,8 +187,10 @@ const showBadge = (item: QuoteBuilderLineItem): boolean =>
 const showCheckbox = (item: QuoteBuilderLineItem): boolean =>
     item.is_optional && props.config.optionalItemStyle === 'checkbox';
 
-const itemCatalogItem = (item: QuoteBuilderLineItem): BuilderCatalogItem | undefined => {
-    return catalogItems.value.find(c => c.id === item.catalog_item_id);
+const itemCatalogItem = (
+    item: QuoteBuilderLineItem,
+): BuilderCatalogItem | undefined => {
+    return catalogItems.value.find((c) => c.id === item.catalog_item_id);
 };
 
 const stripeClass = (index: number): string => {
@@ -383,7 +392,8 @@ const stripeClass = (index: number): string => {
                                     }"
                                     @click="
                                         editMode &&
-                                        (builderStore.editingLineItemId = String(item.id))
+                                        (builderStore.editingLineItemId =
+                                            String(item.id))
                                     "
                                 >
                                     <TableCell
@@ -432,12 +442,16 @@ const stripeClass = (index: number): string => {
                                                 <p
                                                     v-if="
                                                         config.showSku &&
-                                                        itemCatalogItem(item)?.sku
+                                                        itemCatalogItem(item)
+                                                            ?.sku
                                                     "
                                                     class="mt-0.5 text-[10px] text-muted-foreground/70"
                                                 >
                                                     SKU
-                                                    {{ itemCatalogItem(item)?.sku }}
+                                                    {{
+                                                        itemCatalogItem(item)
+                                                            ?.sku
+                                                    }}
                                                 </p>
                                             </div>
                                             <span
@@ -530,11 +544,14 @@ const stripeClass = (index: number): string => {
                                         }"
                                     >
                                         <span>{{
-                                            item.discount_value && item.discount_type === 'percent'
+                                            item.discount_value &&
+                                            item.discount_type === 'percent'
                                                 ? `${item.discount_value}%`
-                                                : item.discount_value && item.discount_type === 'fixed'
-                                                    ? `${item.discount_value}`
-                                                    : '—'
+                                                : item.discount_value &&
+                                                    item.discount_type ===
+                                                        'fixed'
+                                                  ? `${item.discount_value}`
+                                                  : '—'
                                         }}</span>
                                     </TableCell>
                                     <TableCell
@@ -654,7 +671,10 @@ const stripeClass = (index: number): string => {
                         "
                         @click="
                             editMode &&
-                            console.log('Edit line item:', { sectionIndex, lineItemIndex })
+                            console.log('Edit line item:', {
+                                sectionIndex,
+                                lineItemIndex,
+                            })
                         "
                     >
                         <div class="flex items-start justify-between gap-4">
@@ -720,8 +740,7 @@ const stripeClass = (index: number): string => {
                                 )
                         "
                         @add-custom="
-                            () =>
-                                builderStore.addLineItem(sectionIndex)
+                            () => builderStore.addLineItem(sectionIndex)
                         "
                     >
                         <template #trigger>
@@ -741,9 +760,7 @@ const stripeClass = (index: number): string => {
                     variant="outline"
                     size="sm"
                     class="h-7 text-xs"
-                    @click.stop="
-                        () => builderStore.addLineItem(sectionIndex)
-                    "
+                    @click.stop="() => builderStore.addLineItem(sectionIndex)"
                 >
                     <Plus class="mr-1 h-3 w-3" />
                     Add Item

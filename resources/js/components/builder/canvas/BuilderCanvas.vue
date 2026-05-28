@@ -43,13 +43,23 @@ const handleMoveBlockDown = (blockId: string): void => {
     }
 };
 
-const handleInsertBlockUp = (payload: { blockId: string; type: string }): void => {
-    const index = blocks.value.findIndex((b) => String(b.id) === payload.blockId);
+const handleInsertBlockUp = (payload: {
+    blockId: string;
+    type: string;
+}): void => {
+    const index = blocks.value.findIndex(
+        (b) => String(b.id) === payload.blockId,
+    );
     builderStore.addBlock(payload.type as any, index);
 };
 
-const handleInsertBlockDown = (payload: { blockId: string; type: string }): void => {
-    const index = blocks.value.findIndex((b) => String(b.id) === payload.blockId);
+const handleInsertBlockDown = (payload: {
+    blockId: string;
+    type: string;
+}): void => {
+    const index = blocks.value.findIndex(
+        (b) => String(b.id) === payload.blockId,
+    );
     builderStore.addBlock(payload.type as any, index + 1);
 };
 
@@ -64,8 +74,8 @@ const handleDuplicateBlock = (blockId: string): void => {
 </script>
 
 <template>
-    <div 
-        class="h-full min-h-0 rounded-lg border bg-muted/20 p-6 overflow-y-auto"
+    <div
+        class="h-full min-h-0 overflow-y-auto rounded-lg border bg-muted/20 p-6"
         :style="{
             '--theme-font-family': themeStyles['--theme-font-family'],
             fontFamily: 'var(--theme-font-family) !important',
@@ -103,10 +113,18 @@ const handleDuplicateBlock = (blockId: string): void => {
                     @select="emit('select-block', block.id)"
                     @move-up="handleMoveBlockUp(block.id)"
                     @move-down="handleMoveBlockDown(block.id)"
-                    @insert-up="(type) => handleInsertBlockUp({ blockId: block.id, type })"
-                    @insert-down="(type) => handleInsertBlockDown({ blockId: block.id, type })"
+                    @insert-up="
+                        (type) =>
+                            handleInsertBlockUp({ blockId: block.id, type })
+                    "
+                    @insert-down="
+                        (type) =>
+                            handleInsertBlockDown({ blockId: block.id, type })
+                    "
                     @duplicate="handleDuplicateBlock(block.id)"
-                    @toggle-visible="builderStore.toggleBlockVisibility(block.id)"
+                    @toggle-visible="
+                        builderStore.toggleBlockVisibility(block.id)
+                    "
                     @delete="builderStore.removeBlock(block.id)"
                 >
                     <component

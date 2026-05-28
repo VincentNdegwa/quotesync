@@ -31,5 +31,8 @@ export interface QuoteTemplate extends QuoteTemplateBase {
     lineItems?: QuoteTemplateLineItem[];
 }
 
-export type CreateQuoteTemplatePayload = Omit<QuoteTemplateBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateQuoteTemplatePayload = Omit<
+    QuoteTemplateBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateQuoteTemplatePayload = Partial<CreateQuoteTemplatePayload>;

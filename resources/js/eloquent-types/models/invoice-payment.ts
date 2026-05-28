@@ -31,5 +31,8 @@ export interface InvoicePayment extends InvoicePaymentBase {
     createdBy?: User;
 }
 
-export type CreateInvoicePaymentPayload = Omit<InvoicePaymentBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateInvoicePaymentPayload = Omit<
+    InvoicePaymentBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateInvoicePaymentPayload = Partial<CreateInvoicePaymentPayload>;

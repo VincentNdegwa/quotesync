@@ -5,10 +5,7 @@ import {
     blockFontSizeClass,
 } from '@/composables/useBlockStyles';
 import { useBuilderStore } from '@/stores/builder';
-import type {
-    FromToBlockConfig,
-    WorkspaceSettings,
-} from '@/types';
+import type { FromToBlockConfig, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     config: FromToBlockConfig;
@@ -50,8 +47,7 @@ const client = computed(() => builderStore.client);
             </p>
             <p
                 v-if="
-                    config.showCompanyEmail &&
-                    effectiveBranding.company_email
+                    config.showCompanyEmail && effectiveBranding.company_email
                 "
                 class="text-muted-foreground"
             >
@@ -59,8 +55,7 @@ const client = computed(() => builderStore.client);
             </p>
             <p
                 v-if="
-                    config.showCompanyPhone &&
-                    effectiveBranding.company_phone
+                    config.showCompanyPhone && effectiveBranding.company_phone
                 "
                 class="text-muted-foreground"
             >

@@ -23,5 +23,8 @@ export interface QuoteMessage extends QuoteMessageBase {
     portalUser?: PortalUser;
 }
 
-export type CreateQuoteMessagePayload = Omit<QuoteMessageBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateQuoteMessagePayload = Omit<
+    QuoteMessageBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateQuoteMessagePayload = Partial<CreateQuoteMessagePayload>;

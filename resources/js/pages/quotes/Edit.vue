@@ -7,10 +7,7 @@ import BuilderShell from '@/components/builder/BuilderShell.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import { useBuilderData } from '@/composables/useBuilderData';
 import { useBuilderStore } from '@/stores/builder';
-import type {
-    QuoteBuilderState,
-    WorkspaceSettings,
-} from '@/types';
+import type { QuoteBuilderState, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     quoteId: number;
@@ -62,7 +59,9 @@ const save = async (updatedState?: QuoteBuilderState): Promise<void> => {
             const logoUrl = await uploadLogo(builderStore.pendingLogoFile);
 
             if (form.layout?.blocks) {
-                const headerBlock = form.layout.blocks.find((b: any) => b.type === 'header');
+                const headerBlock = form.layout.blocks.find(
+                    (b: any) => b.type === 'header',
+                );
 
                 if (headerBlock?.config) {
                     (headerBlock.config as any).logoUrl = logoUrl;

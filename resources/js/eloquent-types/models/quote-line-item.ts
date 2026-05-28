@@ -48,5 +48,8 @@ export interface QuoteLineItem extends QuoteLineItemBase {
     priceTiers?: PriceTier[];
 }
 
-export type CreateQuoteLineItemPayload = Omit<QuoteLineItemBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateQuoteLineItemPayload = Omit<
+    QuoteLineItemBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateQuoteLineItemPayload = Partial<CreateQuoteLineItemPayload>;

@@ -25,5 +25,9 @@ export interface InvoiceReminderStep extends InvoiceReminderStepBase {
     invoiceReminders?: InvoiceReminder[];
 }
 
-export type CreateInvoiceReminderStepPayload = Omit<InvoiceReminderStepBase, 'id' | 'created_at' | 'updated_at'>;
-export type UpdateInvoiceReminderStepPayload = Partial<CreateInvoiceReminderStepPayload>;
+export type CreateInvoiceReminderStepPayload = Omit<
+    InvoiceReminderStepBase,
+    'id' | 'created_at' | 'updated_at'
+>;
+export type UpdateInvoiceReminderStepPayload =
+    Partial<CreateInvoiceReminderStepPayload>;

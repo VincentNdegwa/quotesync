@@ -8,10 +8,7 @@ import {
 } from '@/composables/useBlockStyles';
 import { useFormat } from '@/composables/useFormat';
 import { useBuilderStore } from '@/stores/builder';
-import type {
-    SignatureBlockConfig,
-    WorkspaceSettings,
-} from '@/types';
+import type { SignatureBlockConfig, WorkspaceSettings } from '@/types';
 
 const props = defineProps<{
     config: SignatureBlockConfig;
@@ -29,62 +26,86 @@ const openDeclineModal = inject('openDeclineModal', () => {});
 
 const { formatDateTime } = useFormat();
 
-const isAccepted = computed(() => 
-    builderStore.$state.status === 'accepted' || builderStore.$state.status === 'won'
+const isAccepted = computed(
+    () =>
+        builderStore.$state.status === 'accepted' ||
+        builderStore.$state.status === 'won',
 );
 
-const isDeclined = computed(() => 
-    builderStore.$state.status === 'declined' || builderStore.$state.status === 'lost'
+const isDeclined = computed(
+    () =>
+        builderStore.$state.status === 'declined' ||
+        builderStore.$state.status === 'lost',
 );
-
 
 const updateAcceptText = (value: string | null): void => {
-    const block = builderStore.layout?.blocks.find(b => b.type === 'signature');
+    const block = builderStore.layout?.blocks.find(
+        (b) => b.type === 'signature',
+    );
 
     if (block) {
         builderStore.$patch({
             layout: {
                 ...builderStore.layout,
-                blocks: builderStore.layout!.blocks.map(b => 
-                    b.type === 'signature' 
-                        ? { ...b, config: { ...b.config, acceptButtonText: value ?? '' } }
-                        : b
-                )
-            }
+                blocks: builderStore.layout!.blocks.map((b) =>
+                    b.type === 'signature'
+                        ? {
+                              ...b,
+                              config: {
+                                  ...b.config,
+                                  acceptButtonText: value ?? '',
+                              },
+                          }
+                        : b,
+                ),
+            },
         });
     }
 };
 
 const updateDeclineText = (value: string | null): void => {
-    const block = builderStore.layout?.blocks.find(b => b.type === 'signature');
+    const block = builderStore.layout?.blocks.find(
+        (b) => b.type === 'signature',
+    );
 
     if (block) {
         builderStore.$patch({
             layout: {
                 ...builderStore.layout,
-                blocks: builderStore.layout!.blocks.map(b => 
-                    b.type === 'signature' 
-                        ? { ...b, config: { ...b.config, declineButtonText: value ?? '' } }
-                        : b
-                )
-            }
+                blocks: builderStore.layout!.blocks.map((b) =>
+                    b.type === 'signature'
+                        ? {
+                              ...b,
+                              config: {
+                                  ...b.config,
+                                  declineButtonText: value ?? '',
+                              },
+                          }
+                        : b,
+                ),
+            },
         });
     }
 };
 
 const updateContextText = (value: string | null): void => {
-    const block = builderStore.layout?.blocks.find(b => b.type === 'signature');
+    const block = builderStore.layout?.blocks.find(
+        (b) => b.type === 'signature',
+    );
 
     if (block) {
         builderStore.$patch({
             layout: {
                 ...builderStore.layout,
-                blocks: builderStore.layout!.blocks.map(b => 
-                    b.type === 'signature' 
-                        ? { ...b, config: { ...b.config, contextText: value ?? '' } }
-                        : b
-                )
-            }
+                blocks: builderStore.layout!.blocks.map((b) =>
+                    b.type === 'signature'
+                        ? {
+                              ...b,
+                              config: { ...b.config, contextText: value ?? '' },
+                          }
+                        : b,
+                ),
+            },
         });
     }
 };
@@ -150,7 +171,10 @@ const updateContextText = (value: string | null): void => {
                     >
                 </div>
                 <div class="text-sm text-muted-foreground">
-                    <p>Signed on {{ formatDateTime(builderStore.$state.accepted_at) }}</p>
+                    <p>
+                        Signed on
+                        {{ formatDateTime(builderStore.$state.accepted_at) }}
+                    </p>
                 </div>
             </div>
         </template>

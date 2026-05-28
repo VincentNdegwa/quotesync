@@ -20,5 +20,9 @@ export interface CatalogItemVariant extends CatalogItemVariantBase {
     catalogItem?: CatalogItem;
 }
 
-export type CreateCatalogItemVariantPayload = Omit<CatalogItemVariantBase, 'id' | 'created_at' | 'updated_at'>;
-export type UpdateCatalogItemVariantPayload = Partial<CreateCatalogItemVariantPayload>;
+export type CreateCatalogItemVariantPayload = Omit<
+    CatalogItemVariantBase,
+    'id' | 'created_at' | 'updated_at'
+>;
+export type UpdateCatalogItemVariantPayload =
+    Partial<CreateCatalogItemVariantPayload>;

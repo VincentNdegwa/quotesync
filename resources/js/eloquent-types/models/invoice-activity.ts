@@ -25,5 +25,9 @@ export interface InvoiceActivity extends InvoiceActivityBase {
     user?: User;
 }
 
-export type CreateInvoiceActivityPayload = Omit<InvoiceActivityBase, 'id' | 'created_at' | 'updated_at'>;
-export type UpdateInvoiceActivityPayload = Partial<CreateInvoiceActivityPayload>;
+export type CreateInvoiceActivityPayload = Omit<
+    InvoiceActivityBase,
+    'id' | 'created_at' | 'updated_at'
+>;
+export type UpdateInvoiceActivityPayload =
+    Partial<CreateInvoiceActivityPayload>;

@@ -53,7 +53,9 @@ const save = async (updatedState?: QuoteBuilderState): Promise<void> => {
             const logoUrl = await uploadLogo(builderStore.pendingLogoFile);
 
             if (form.layout?.blocks) {
-                const headerBlock = form.layout.blocks.find((b: any) => b.type === 'header');
+                const headerBlock = form.layout.blocks.find(
+                    (b: any) => b.type === 'header',
+                );
 
                 if (headerBlock?.config) {
                     (headerBlock.config as any).logoUrl = logoUrl;

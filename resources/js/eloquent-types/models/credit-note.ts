@@ -49,5 +49,8 @@ export interface CreditNote extends CreditNoteBase {
     lineItems?: CreditNoteLineItem[];
 }
 
-export type CreateCreditNotePayload = Omit<CreditNoteBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateCreditNotePayload = Omit<
+    CreditNoteBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateCreditNotePayload = Partial<CreateCreditNotePayload>;

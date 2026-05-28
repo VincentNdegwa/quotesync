@@ -23,5 +23,9 @@ export interface CatalogCategory extends CatalogCategoryBase {
     items?: CatalogItem[];
 }
 
-export type CreateCatalogCategoryPayload = Omit<CatalogCategoryBase, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
-export type UpdateCatalogCategoryPayload = Partial<CreateCatalogCategoryPayload>;
+export type CreateCatalogCategoryPayload = Omit<
+    CatalogCategoryBase,
+    'id' | 'created_at' | 'updated_at' | 'deleted_at'
+>;
+export type UpdateCatalogCategoryPayload =
+    Partial<CreateCatalogCategoryPayload>;

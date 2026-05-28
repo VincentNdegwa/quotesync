@@ -1,7 +1,13 @@
-import { ref, computed   } from 'vue';
-import type {Ref, ComputedRef} from 'vue';
+import { ref, computed } from 'vue';
+import type { Ref, ComputedRef } from 'vue';
 import { toast } from 'vue-sonner';
-import type { BuilderClientOption, BuilderTemplateOption, BuilderCatalogItem, BuilderTaxOption, BuilderConfigurationUnit } from '@/types';
+import type {
+    BuilderClientOption,
+    BuilderTemplateOption,
+    BuilderCatalogItem,
+    BuilderTaxOption,
+    BuilderConfigurationUnit,
+} from '@/types';
 
 // Singleton state - shared across all component instances
 const clients = ref<BuilderClientOption[]>([]);
@@ -28,7 +34,13 @@ type UseBuilderDataReturn = {
     catalogItems: Ref<BuilderCatalogItem[]>;
     taxes: Ref<BuilderTaxOption[]>;
     units: Ref<BuilderConfigurationUnit[]>;
-    loading: Ref<{ clients: boolean; templates: boolean; catalogItems: boolean; taxes: boolean; units: boolean }>;
+    loading: Ref<{
+        clients: boolean;
+        templates: boolean;
+        catalogItems: boolean;
+        taxes: boolean;
+        units: boolean;
+    }>;
     anyLoading: ComputedRef<boolean>;
     uploadLogo: (file: File) => Promise<string>;
     fetchClients: (search?: string) => Promise<void>;
@@ -41,7 +53,6 @@ type UseBuilderDataReturn = {
 };
 
 export function useBuilderData(): UseBuilderDataReturn {
-    
     async function uploadLogo(file: File): Promise<string> {
         const formData = new FormData();
         formData.append('file', file);
@@ -49,10 +60,11 @@ export function useBuilderData(): UseBuilderDataReturn {
         const response = await fetch('/builder/upload-logo', {
             method: 'POST',
             headers: {
-                'X-CSRF-TOKEN': document
-                    .querySelector('meta[name="csrf-token"]')
-                    ?.getAttribute('content') || '',
-                'Accept': 'application/json',
+                'X-CSRF-TOKEN':
+                    document
+                        .querySelector('meta[name="csrf-token"]')
+                        ?.getAttribute('content') || '',
+                Accept: 'application/json',
             },
             credentials: 'same-origin',
             body: formData,
@@ -61,7 +73,7 @@ export function useBuilderData(): UseBuilderDataReturn {
         if (!response.ok) {
             const text = await response.text();
             console.error('Upload error response:', text);
-            
+
             try {
                 const json = JSON.parse(text);
 
@@ -92,7 +104,9 @@ export function useBuilderData(): UseBuilderDataReturn {
         loading.value.clients = true;
 
         try {
-            const url = search ? `/builder/clients?search=${encodeURIComponent(search)}` : '/builder/clients';
+            const url = search
+                ? `/builder/clients?search=${encodeURIComponent(search)}`
+                : '/builder/clients';
             const response = await fetch(url);
             const json = await response.json();
             clients.value = json.data;
@@ -121,7 +135,9 @@ export function useBuilderData(): UseBuilderDataReturn {
         loading.value.catalogItems = true;
 
         try {
-            const url = search ? `/builder/catalog-items?search=${encodeURIComponent(search)}` : '/builder/catalog-items';
+            const url = search
+                ? `/builder/catalog-items?search=${encodeURIComponent(search)}`
+                : '/builder/catalog-items';
             const response = await fetch(url);
             const json = await response.json();
             catalogItems.value = json.data;

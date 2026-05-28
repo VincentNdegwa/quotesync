@@ -25,5 +25,8 @@ export interface ApprovalRule extends ApprovalRuleBase {
     quoteApprovals?: QuoteApproval[];
 }
 
-export type CreateApprovalRulePayload = Omit<ApprovalRuleBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateApprovalRulePayload = Omit<
+    ApprovalRuleBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateApprovalRulePayload = Partial<CreateApprovalRulePayload>;

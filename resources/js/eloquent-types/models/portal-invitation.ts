@@ -21,5 +21,9 @@ export interface PortalInvitation extends PortalInvitationBase {
     client?: Client;
 }
 
-export type CreatePortalInvitationPayload = Omit<PortalInvitationBase, 'id' | 'created_at' | 'updated_at'>;
-export type UpdatePortalInvitationPayload = Partial<CreatePortalInvitationPayload>;
+export type CreatePortalInvitationPayload = Omit<
+    PortalInvitationBase,
+    'id' | 'created_at' | 'updated_at'
+>;
+export type UpdatePortalInvitationPayload =
+    Partial<CreatePortalInvitationPayload>;

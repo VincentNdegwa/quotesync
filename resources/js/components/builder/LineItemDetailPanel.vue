@@ -90,8 +90,8 @@ const selectedTaxIds = computed<string[]>({
     },
     set: (nextValues) => {
         if (!lineItem.value) {
-return;
-}
+            return;
+        }
 
         const currentIds = new Set(
             lineItem.value.taxes.map((tax) => String(tax.tax_id)),
@@ -116,19 +116,26 @@ return;
                     inclusive: tax.inclusive,
                 });
             } else if (lineItem.value) {
-                lineItem.value.taxes = lineItem.value.taxes.filter(t => String(t.tax_id) !== key);
+                lineItem.value.taxes = lineItem.value.taxes.filter(
+                    (t) => String(t.tax_id) !== key,
+                );
             }
         });
     },
 });
 
-const updateField = (field: keyof QuoteBuilderLineItem, value: unknown): void => {
+const updateField = (
+    field: keyof QuoteBuilderLineItem,
+    value: unknown,
+): void => {
     if (lineItem.value) {
         (lineItem.value as any)[field] = value;
-        
+
         // Apply price tier when quantity changes
         if (field === 'quantity' && lineItem.value.catalog_item_id) {
-            const catalogItem = catalogItems.value.find(c => c.id === lineItem.value?.catalog_item_id);
+            const catalogItem = catalogItems.value.find(
+                (c) => c.id === lineItem.value?.catalog_item_id,
+            );
 
             if (catalogItem) {
                 builderStore.applyPriceTier(lineItem.value, catalogItem);
@@ -147,18 +154,18 @@ const selectCatalogItem = (catalogItem: BuilderCatalogItem): void => {
         lineItem.value.unit_price = catalogItem.unit_price;
         lineItem.value.cost_price = catalogItem.cost_price;
         lineItem.value.unit_id = catalogItem.unit_id;
-        
+
         const unit = units.value.find((u) => u.id === catalogItem.unit_id);
         lineItem.value.unit = unit?.symbol || null;
-        
-        lineItem.value.taxes = catalogItem.taxes.map(t => ({
+
+        lineItem.value.taxes = catalogItem.taxes.map((t) => ({
             tax_id: t.id,
             tax_amount: 0,
             tax_label: t.name,
             tax_rate: t.rate,
             inclusive: t.inclusive,
         }));
-        
+
         // Apply price tier based on current quantity
         builderStore.applyPriceTier(lineItem.value, catalogItem);
         builderStore.recalculateLineItemTotals(lineItem.value);
@@ -169,7 +176,7 @@ const selectUnit = (value: any): void => {
     if (lineItem.value) {
         const unitId = value === NO_UNIT_OPTION ? null : Number(value);
         lineItem.value.unit_id = unitId;
-        
+
         const unit = units.value.find((u) => u.id === unitId);
         lineItem.value.unit = unit?.symbol || null;
     }
@@ -179,8 +186,10 @@ const selectVariant = (value: any): void => {
     if (lineItem.value) {
         const variantId = value === BASE_VARIANT_OPTION ? null : Number(value);
         lineItem.value.catalog_item_variant_id = variantId;
-        
-        const variant = variants.value.find((v: BuilderCatalogItemVariant) => v.id === variantId);
+
+        const variant = variants.value.find(
+            (v: BuilderCatalogItemVariant) => v.id === variantId,
+        );
 
         if (variant) {
             lineItem.value.unit_price = variant.unit_price;
@@ -189,7 +198,7 @@ const selectVariant = (value: any): void => {
             lineItem.value.unit_price = currentCatalog.value?.unit_price || 0;
             lineItem.value.name = currentCatalog.value?.name || '';
         }
-        
+
         // Apply price tier after variant change
         if (currentCatalog.value) {
             builderStore.applyPriceTier(lineItem.value, currentCatalog.value);
@@ -200,12 +209,13 @@ const selectVariant = (value: any): void => {
 
 const removeItem = (): void => {
     if (!lineItem.value) {
-return;
-}
+        return;
+    }
 
     for (const section of builderStore.sections) {
         const index = section.line_items.findIndex(
-            (item: QuoteBuilderLineItem) => String(item.id) === builderStore.editingLineItemId
+            (item: QuoteBuilderLineItem) =>
+                String(item.id) === builderStore.editingLineItemId,
         );
 
         if (index !== -1) {
@@ -219,21 +229,22 @@ return;
 
 const isTierActive = (tier: any): boolean => {
     if (!lineItem.value) {
-return false;
-}
-    
+        return false;
+    }
+
     const quantity = Number(lineItem.value.quantity || 0);
     const variantId = lineItem.value.catalog_item_variant_id;
-    
+
     // Check variant match
     if (tier.variant_id !== null && tier.variant_id !== variantId) {
         return false;
     }
-    
+
     // Check quantity range
     const minQty = Number(tier.min_quantity || 0);
-    const maxQty = tier.max_quantity !== null ? Number(tier.max_quantity) : Infinity;
-    
+    const maxQty =
+        tier.max_quantity !== null ? Number(tier.max_quantity) : Infinity;
+
     return quantity >= minQty && quantity <= maxQty;
 };
 </script>
@@ -342,12 +353,7 @@ return false;
                             :value="String(variant.id)"
                         >
                             {{ variant.name }} —
-                            {{
-                                fmt(
-                                    Number(variant.unit_price || 0),
-                                    currency,
-                                )
-                            }}
+                            {{ fmt(Number(variant.unit_price || 0), currency) }}
                         </SelectItem>
                     </SelectContent>
                 </Select>
@@ -369,7 +375,9 @@ return false;
                     :model-value="lineItem?.description ?? ''"
                     rows="3"
                     placeholder="Optional description"
-                    @update:model-value="(value) => updateField('description', value)"
+                    @update:model-value="
+                        (value) => updateField('description', value)
+                    "
                 />
             </div>
             <div class="grid grid-cols-2 gap-2">
@@ -381,7 +389,9 @@ return false;
                         min="0"
                         step="0.01"
                         :model-value="lineItem?.quantity ?? 0"
-                        @update:model-value="(value) => updateField('quantity', Number(value))"
+                        @update:model-value="
+                            (value) => updateField('quantity', Number(value))
+                        "
                     />
                 </div>
                 <div class="grid gap-2">
@@ -422,16 +432,23 @@ return false;
                         min="0"
                         step="0.01"
                         :model-value="lineItem?.unit_price ?? 0"
-                        @update:model-value="(value) => updateField('unit_price', Number(value))"
+                        @update:model-value="
+                            (value) => updateField('unit_price', Number(value))
+                        "
                     />
                 </div>
                 <div class="grid gap-2">
                     <Label for="line-item-discount-type">Discount Type</Label>
                     <Select
                         :model-value="lineItem?.discount_type ?? null"
-                        @update:model-value="(value) => updateField('discount_type', value)"
+                        @update:model-value="
+                            (value) => updateField('discount_type', value)
+                        "
                     >
-                        <SelectTrigger id="line-item-discount-type" class="w-full">
+                        <SelectTrigger
+                            id="line-item-discount-type"
+                            class="w-full"
+                        >
                             <SelectValue placeholder="Select type" />
                         </SelectTrigger>
                         <SelectContent>
@@ -442,22 +459,39 @@ return false;
                 </div>
                 <div class="grid gap-2">
                     <Label for="line-item-discount">
-                        {{ lineItem?.discount_type === 'fixed' ? 'Discount Amount' : 'Discount %' }}
+                        {{
+                            lineItem?.discount_type === 'fixed'
+                                ? 'Discount Amount'
+                                : 'Discount %'
+                        }}
                     </Label>
                     <Input
                         id="line-item-discount"
                         type="number"
                         min="0"
-                        :max="lineItem?.discount_type === 'percent' ? 100 : undefined"
+                        :max="
+                            lineItem?.discount_type === 'percent'
+                                ? 100
+                                : undefined
+                        "
                         step="0.01"
                         :model-value="lineItem?.discount_value ?? 0"
-                        @update:model-value="(value) => updateField('discount_value', Number(value))"
+                        @update:model-value="
+                            (value) =>
+                                updateField('discount_value', Number(value))
+                        "
                     />
                 </div>
             </div>
-            
+
             <!-- Price Tiers -->
-            <div v-if="currentCatalog?.priceTiers && currentCatalog.priceTiers.length > 0" class="grid gap-2">
+            <div
+                v-if="
+                    currentCatalog?.priceTiers &&
+                    currentCatalog.priceTiers.length > 0
+                "
+                class="grid gap-2"
+            >
                 <Label>Price Tiers</Label>
                 <div class="space-y-2">
                     <div
@@ -465,33 +499,47 @@ return false;
                         :key="tier.id"
                         class="flex items-center justify-between rounded border p-2 text-sm"
                         :class="{
-                            'border-primary bg-primary/5': lineItem?.applied_price_tiers?.includes(tier.id),
+                            'border-primary bg-primary/5':
+                                lineItem?.applied_price_tiers?.includes(
+                                    tier.id,
+                                ),
                             'opacity-50': !isTierActive(tier),
                         }"
                     >
                         <div>
                             <div class="font-medium">
-                                {{ tier.min_quantity }}{{ tier.max_quantity ? ` - ${tier.max_quantity}` : '+' }} units
+                                {{ tier.min_quantity
+                                }}{{
+                                    tier.max_quantity
+                                        ? ` - ${tier.max_quantity}`
+                                        : '+'
+                                }}
+                                units
                             </div>
                             <div class="text-xs text-muted-foreground">
-                                <span v-if="tier.pricing_type === 'fixed_price'">
+                                <span
+                                    v-if="tier.pricing_type === 'fixed_price'"
+                                >
                                     Price: {{ fmt(tier.value) }}
                                 </span>
-                                <span v-else>
-                                    {{ tier.value }}% off
-                                </span>
+                                <span v-else> {{ tier.value }}% off </span>
                                 <span v-if="tier.variant_id" class="ml-1">
                                     (Variant only)
                                 </span>
                             </div>
                         </div>
-                        <div v-if="lineItem?.applied_price_tiers?.includes(tier.id)" class="text-xs text-primary font-medium">
+                        <div
+                            v-if="
+                                lineItem?.applied_price_tiers?.includes(tier.id)
+                            "
+                            class="text-xs font-medium text-primary"
+                        >
                             Applied
                         </div>
                     </div>
                 </div>
             </div>
-            
+
             <div class="grid gap-2">
                 <Label for="line-item-taxes">Taxes</Label>
                 <Select v-model="selectedTaxIds" multiple>

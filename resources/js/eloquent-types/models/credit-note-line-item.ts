@@ -26,5 +26,9 @@ export interface CreditNoteLineItem extends CreditNoteLineItemBase {
     creditNote?: CreditNote;
 }
 
-export type CreateCreditNoteLineItemPayload = Omit<CreditNoteLineItemBase, 'id' | 'created_at' | 'updated_at'>;
-export type UpdateCreditNoteLineItemPayload = Partial<CreateCreditNoteLineItemPayload>;
+export type CreateCreditNoteLineItemPayload = Omit<
+    CreditNoteLineItemBase,
+    'id' | 'created_at' | 'updated_at'
+>;
+export type UpdateCreditNoteLineItemPayload =
+    Partial<CreateCreditNoteLineItemPayload>;

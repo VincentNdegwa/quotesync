@@ -23,5 +23,8 @@ export interface Invitation extends InvitationBase {
     inviter?: User;
 }
 
-export type CreateInvitationPayload = Omit<InvitationBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateInvitationPayload = Omit<
+    InvitationBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateInvitationPayload = Partial<CreateInvitationPayload>;

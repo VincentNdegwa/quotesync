@@ -49,8 +49,7 @@ class UpdateTaskTool implements Tool
 
         $output = "Task Update Preview for Task ID {$taskId}\n";
         $output .= "========================================\n";
-        $output .= "Current Status: {$task->status}\n";
-        $output .= "Current Priority: " . ($task->priority ?? 'medium') . "\n";
+        $output .= "Current Title: {$task->title}\n";
         $output .= "Current Due: " . ($task->due_date ? $task->due_date->toFormattedDateString() : 'No due date') . "\n\n";
 
         $output .= "Proposed Changes:\n";

@@ -141,8 +141,12 @@ export function getAllBlockTypes(): BlockType[] {
     return Object.keys(BLOCK_REGISTRY) as BlockType[];
 }
 
-export function getBlocksByCategory(category: BlockRegistryEntry['category']): BlockRegistryEntry[] {
-    return Object.values(BLOCK_REGISTRY).filter((entry) => entry.category === category);
+export function getBlocksByCategory(
+    category: BlockRegistryEntry['category'],
+): BlockRegistryEntry[] {
+    return Object.values(BLOCK_REGISTRY).filter(
+        (entry) => entry.category === category,
+    );
 }
 
 export default BLOCK_REGISTRY;

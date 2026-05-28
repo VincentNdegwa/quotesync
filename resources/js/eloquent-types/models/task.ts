@@ -29,5 +29,8 @@ export interface Task extends TaskBase {
     workspace?: Workspace;
 }
 
-export type CreateTaskPayload = Omit<TaskBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateTaskPayload = Omit<
+    TaskBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateTaskPayload = Partial<CreateTaskPayload>;

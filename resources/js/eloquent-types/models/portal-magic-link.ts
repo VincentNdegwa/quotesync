@@ -21,5 +21,9 @@ export interface PortalMagicLink extends PortalMagicLinkBase {
     client?: Client;
 }
 
-export type CreatePortalMagicLinkPayload = Omit<PortalMagicLinkBase, 'id' | 'created_at' | 'updated_at'>;
-export type UpdatePortalMagicLinkPayload = Partial<CreatePortalMagicLinkPayload>;
+export type CreatePortalMagicLinkPayload = Omit<
+    PortalMagicLinkBase,
+    'id' | 'created_at' | 'updated_at'
+>;
+export type UpdatePortalMagicLinkPayload =
+    Partial<CreatePortalMagicLinkPayload>;

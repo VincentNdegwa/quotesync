@@ -184,7 +184,7 @@ const depositPercentValue = computed<string | number | undefined>({
         <div class="flex items-center gap-4 px-4 py-3">
             <button
                 type="button"
-                class="flex flex-1 items-center gap-4 text-left text-sm hover:bg-muted/40 rounded px-2 py-1"
+                class="flex flex-1 items-center gap-4 rounded px-2 py-1 text-left text-sm hover:bg-muted/40"
                 @click="expanded = !expanded"
             >
                 <span class="font-medium text-muted-foreground">{{
@@ -198,7 +198,8 @@ const depositPercentValue = computed<string | number | undefined>({
                     }}<strong>{{ state.valid_until || '—' }}</strong></span
                 >
                 <span v-if="mode !== 'invoice'"
-                    >Currency: <strong>{{ state.currency || '—' }}</strong></span
+                    >Currency:
+                    <strong>{{ state.currency || '—' }}</strong></span
                 >
                 <span
                     v-if="mode === 'quote' && state.requires_deposit"
@@ -255,7 +256,7 @@ const depositPercentValue = computed<string | number | undefined>({
                 </div>
 
                 <div
-                    class="flex items-center justify-between rounded-md border px-3 py-2 "
+                    class="flex items-center justify-between rounded-md border px-3 py-2"
                 >
                     <span class="text-sm">Active template</span>
                     <Switch

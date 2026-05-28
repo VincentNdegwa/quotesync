@@ -232,9 +232,7 @@ const handleCommentDeleted = (): void => {
                     </div>
                 </div>
 
-                <div
-                    class="overflow-hidden rounded-xl border shadow-sm"
-                >
+                <div class="overflow-hidden rounded-xl border shadow-sm">
                     <BuilderCanvas
                         v-if="builderStore.layout && settings"
                         :state="builderStore.$state"

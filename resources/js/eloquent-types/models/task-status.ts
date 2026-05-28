@@ -21,5 +21,8 @@ export interface TaskStatus extends TaskStatusBase {
     tasks?: Task[];
 }
 
-export type CreateTaskStatusPayload = Omit<TaskStatusBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateTaskStatusPayload = Omit<
+    TaskStatusBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateTaskStatusPayload = Partial<CreateTaskStatusPayload>;

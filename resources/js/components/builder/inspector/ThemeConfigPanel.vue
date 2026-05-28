@@ -11,7 +11,8 @@ const props = defineProps<{
 const builderStore = useBuilderStore();
 
 const theme = computed<ThemeConfig>(() => {
-    const workspacePrimaryColor = props.settings?.workspace.primary_color || '#2563EB';
+    const workspacePrimaryColor =
+        props.settings?.workspace.primary_color || '#2563EB';
 
     if (!builderStore.layout?.theme) {
         return {
@@ -60,7 +61,9 @@ const fontOptions: { value: FontFamily; label: string }[] = [
                 <ColorPickerRow
                     :model-value="theme.primaryColor"
                     placeholder="Default"
-                    @update:model-value="(val) => updateTheme({ primaryColor: val ?? '#2563EB' })"
+                    @update:model-value="
+                        (val) => updateTheme({ primaryColor: val ?? '#2563EB' })
+                    "
                     @reset="updateTheme({ primaryColor: '#2563EB' })"
                 />
             </div>
@@ -88,7 +91,12 @@ const fontOptions: { value: FontFamily; label: string }[] = [
                                     ? 'border-primary bg-primary/10 text-primary'
                                     : 'text-muted-foreground hover:border-muted-foreground/50'
                             "
-                            :style="{ fontFamily: option.value === 'source-sans' ? 'Source Sans 3, sans-serif' : option.value }"
+                            :style="{
+                                fontFamily:
+                                    option.value === 'source-sans'
+                                        ? 'Source Sans 3, sans-serif'
+                                        : option.value,
+                            }"
                             @click="updateTheme({ fontFamily: option.value })"
                         >
                             {{ option.label }}

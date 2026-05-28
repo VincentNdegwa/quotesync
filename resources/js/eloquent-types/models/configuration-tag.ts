@@ -22,5 +22,9 @@ export interface ConfigurationTag extends ConfigurationTagBase {
     clients?: Client[];
 }
 
-export type CreateConfigurationTagPayload = Omit<ConfigurationTagBase, 'id' | 'created_at' | 'updated_at' | 'deleted_at'>;
-export type UpdateConfigurationTagPayload = Partial<CreateConfigurationTagPayload>;
+export type CreateConfigurationTagPayload = Omit<
+    ConfigurationTagBase,
+    'id' | 'created_at' | 'updated_at' | 'deleted_at'
+>;
+export type UpdateConfigurationTagPayload =
+    Partial<CreateConfigurationTagPayload>;

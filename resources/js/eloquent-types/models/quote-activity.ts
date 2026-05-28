@@ -25,5 +25,8 @@ export interface QuoteActivity extends QuoteActivityBase {
     user?: User;
 }
 
-export type CreateQuoteActivityPayload = Omit<QuoteActivityBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateQuoteActivityPayload = Omit<
+    QuoteActivityBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateQuoteActivityPayload = Partial<CreateQuoteActivityPayload>;

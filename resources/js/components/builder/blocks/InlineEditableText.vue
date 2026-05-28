@@ -145,7 +145,12 @@ const onKeydown = (event: KeyboardEvent): void => {
 <template>
     <template v-if="editMode">
         <div v-if="!isEditing" class="cursor-pointer" @click="startEditing">
-            <div v-if="hasValue" :class="displayClass" :style="style" v-html="modelValue" />
+            <div
+                v-if="hasValue"
+                :class="displayClass"
+                :style="style"
+                v-html="modelValue"
+            />
             <p
                 v-else
                 class="text-muted-foreground italic"
@@ -197,7 +202,12 @@ const onKeydown = (event: KeyboardEvent): void => {
         </div>
     </template>
 
-    <div v-else-if="hasValue" :class="displayClass" :style="style" v-html="modelValue" />
+    <div
+        v-else-if="hasValue"
+        :class="displayClass"
+        :style="style"
+        v-html="modelValue"
+    />
 
     <p v-else-if="emptyText" :class="displayClass" :style="style">
         {{ emptyText }}

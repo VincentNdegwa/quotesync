@@ -31,5 +31,9 @@ export interface QuoteTemplateLineItem extends QuoteTemplateLineItemBase {
     taxes?: QuoteTemplateLineItemTax[];
 }
 
-export type CreateQuoteTemplateLineItemPayload = Omit<QuoteTemplateLineItemBase, 'id' | 'created_at' | 'updated_at'>;
-export type UpdateQuoteTemplateLineItemPayload = Partial<CreateQuoteTemplateLineItemPayload>;
+export type CreateQuoteTemplateLineItemPayload = Omit<
+    QuoteTemplateLineItemBase,
+    'id' | 'created_at' | 'updated_at'
+>;
+export type UpdateQuoteTemplateLineItemPayload =
+    Partial<CreateQuoteTemplateLineItemPayload>;

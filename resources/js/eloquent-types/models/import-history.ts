@@ -25,5 +25,8 @@ export interface ImportHistory extends ImportHistoryBase {
     user?: User;
 }
 
-export type CreateImportHistoryPayload = Omit<ImportHistoryBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateImportHistoryPayload = Omit<
+    ImportHistoryBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateImportHistoryPayload = Partial<CreateImportHistoryPayload>;

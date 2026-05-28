@@ -15,5 +15,8 @@ export interface IndustryBase {
 
 export type Industry = IndustryBase;
 
-export type CreateIndustryPayload = Omit<IndustryBase, 'id' | 'created_at' | 'updated_at'>;
+export type CreateIndustryPayload = Omit<
+    IndustryBase,
+    'id' | 'created_at' | 'updated_at'
+>;
 export type UpdateIndustryPayload = Partial<CreateIndustryPayload>;
