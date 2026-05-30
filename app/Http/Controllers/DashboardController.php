@@ -50,7 +50,6 @@ class DashboardController extends Controller
             'win_rate_trend' => $this->winRateTrend(),
             'quote_activity' => $this->quoteActivity(),
             'needs_attention' => $this->needsAttention(),
-            'recent_activity' => $this->recentActivity(),
             'team_performance' => $this->teamPerformance($request),
             'generated_at' => Carbon::now()->toIso8601String(),
         ]);
@@ -155,6 +154,7 @@ class DashboardController extends Controller
 
                 $pipelineValue = (float) $this->baseQuery()
                     ->whereIn('status', $this->pipelineStatuses)
+                    ->whereBetween('created_at', [$start, $end])
                     ->sum('base_total');
 
                 return [
@@ -306,36 +306,6 @@ class DashboardController extends Controller
                 'days_until_expiry' => $quote->valid_until
                     ? (int) now()->diffInDays($quote->valid_until)
                     : 0,
-            ])
-            ->values();
-    }
-
-    private function recentActivity(): Collection
-    {
-        return QuoteActivity::query()
-            ->where('workspace_id', $this->workspace->id)
-            ->with(['quote:id,number,title', 'user:id,name'])
-            ->latest()
-            ->limit(10)
-            ->get()
-            ->map(fn (QuoteActivity $activity): array => [
-                'id' => $activity->id,
-                'type' => $activity->type,
-                'description' => $activity->description,
-                'created_at' => $activity->created_at?->toIso8601String(),
-                'quote' => $activity->quote
-                    ? [
-                        'id' => $activity->quote->id,
-                        'number' => $activity->quote->number,
-                        'title' => $activity->quote->title,
-                    ]
-                    : null,
-                'user' => $activity->user
-                    ? [
-                        'id' => $activity->user->id,
-                        'name' => $activity->user->name,
-                    ]
-                    : null,
             ])
             ->values();
     }
