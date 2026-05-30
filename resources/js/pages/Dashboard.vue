@@ -266,8 +266,8 @@ const quoteStatusColorMap = computed<Record<string, string>>(() =>
 );
 
 const teamPerformanceColors = computed(() => [
-    quoteStatusColorMap.value.sent,
-    quoteStatusColorMap.value.won,
+    'var(--chart-2)',
+    '#10b981',
 ]);
 
 const quoteActivityChartOptions = computed(() => ({
@@ -459,7 +459,7 @@ defineOptions({
                         :height="320"
                         :series="quoteActivitySeries"
                         :categories="quoteActivityCategories"
-                        :colors="quoteActivityColors"
+                        :colors="['var(--chart-2)']"
                         distributed
                         :options="quoteActivityChartOptions"
                     />
