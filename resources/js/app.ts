@@ -3,6 +3,7 @@ import { MotionPlugin } from '@vueuse/motion';
 import { createPinia } from 'pinia';
 import { createApp, h } from 'vue';
 import { initializeTheme } from '@/composables/useAppearance';
+import { vCan } from '@/directives/can';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import BusinessSetupLayout from '@/layouts/business-setup/Layout.vue';
@@ -20,6 +21,8 @@ createInertiaApp({
         app.use(plugin);
         app.use(MotionPlugin);
         app.use(pinia);
+
+        app.directive('can', vCan);
 
         if (el) {
             app.mount(el);

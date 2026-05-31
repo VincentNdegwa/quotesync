@@ -93,6 +93,7 @@ class HandleInertiaRequests extends Middleware
                 'portal_user' => $isPortalUser ? $user : null,
                 'currentWorkspace' => $this->getCurrentWorkspacePayload($workspace),
                 'workspaces' => $this->getWorkspacesPayload($request, $user, $isPortalUser),
+                'permissions' => $this->getPermissionsPayload($user, $workspace, $isPortalUser),
             ],
             'notifications' => $this->getNotificationsPayload($user),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
@@ -194,6 +195,29 @@ class HandleInertiaRequests extends Middleware
         }
 
         return $this->getUserWorkspaces($user);
+    }
+
+    private function getPermissionsPayload(mixed $user, ?Workspace $workspace, bool $isPortalUser): array
+    {
+        if (! $user || ! $workspace || $isPortalUser || ! method_exists($user, 'roles')) {
+            return [];
+        }
+
+        $directPermissionNames = $user->permissions()
+            ->wherePivot('workspace_id', $workspace->id)
+            ->pluck('name');
+
+        $rolePermissionNames = $user->roles()
+            ->wherePivot('workspace_id', $workspace->id)
+            ->with(['permissions:id,name'])
+            ->get(['roles.id'])
+            ->flatMap(fn ($role) => $role->permissions->pluck('name'));
+
+        return $directPermissionNames
+            ->merge($rolePermissionNames)
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**

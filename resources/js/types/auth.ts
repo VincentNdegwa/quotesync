@@ -55,6 +55,7 @@ export type Auth = {
     portal_user: PortalUser | null;
     currentWorkspace: WorkspaceSummary | null;
     workspaces: WorkspaceSummary[];
+    permissions: string[];
 };
 
 export type TwoFactorConfigContent = {
